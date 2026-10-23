@@ -153,14 +153,20 @@ Reglas del usuario:
     revisar la lógica general del mod HD y depurar. 23/10: test_hd_audio_flow con el recorrido de menús de pausa
     (pausemenus) 0 vacíos y 0 saltos; el nivel de la pista HD se aplica ahora en vivo en el stream (antes iba en las
     muestras 0,2 s adelantado: los fundidos llegaban tarde y a saltos). Si el usuario sigue oyendo cortes, pedir dónde.
-  - [ ] Importar HD con calidad a elegir (herramientas libres, "voltron" de repos): Fuente (tal cual), Buena
-    (comprimido con la menor pérdida posible), Optimizada para Android / ahorro (resolución y bitrate de pantalla
-    chica), para que el mod corra también en Android. La compresión va integrada en el importador (el jugador no instala nada).
+  - [x] (launcher, Media Foundation; 23/10) Importar HD con calidad a elegir: resolución 1080p (sugerido PC) / 720p
+    (sugerido Android) × compresión Fuente / Buena (sugerido) / Ahorro. H.264 High + VBR + B por el encoder de
+    hardware (ganó a Main/CBR y al de software). VMAF contra la fuente: Buena 1080p 94,9 (apertura) / 97,1 (escena);
+    720p Buena 90,5 / 97,1; Ahorro 82-91. Reproducidos en el juego: 30 fps, 0 cuadros tarde. Tabla en HD_MOD.md.
+    Falta: el importador del APK (Android) solo copia; recodificar en el teléfono no (usar el del PC).
+  - [ ] Linux nativo sin videos HD (port_hdmovie.c: solo Windows y Android). Steam Deck con Proton usa la de
+    Windows. Opción: decodificar con FFmpeg/GStreamer cargados en tiempo de ejecución (dlopen) si están.
+  - [ ] Proton (usuario 23/10): que la versión de Windows corra bien en Proton estable sin "Experimental"; revisar
+    reportes (issues) de Steam Deck/Linux y qué falla (Media Foundation de los videos, D3D11, audio).
   - [ ] Ripear más assets aprendiendo de otros mods (MelonMIX HD y similares, "voltron" de repos): qué assets de
     Re:CoM sirven y cómo los usan.
   - [ ] v2.0: pasada de rendimiento para todas las consolas, solo lo medible y sin riesgo (medir antes/después,
     pruebas píxel a píxel).
-  - [ ] Instalador: barra de progreso al importar/comprimir el HD; instalar en PC en `X:/Games/ReKHCoM` (opcional)
+  - [ ] Instalador: barra de progreso al importar/comprimir el HD (hecha en el launcher, avanza dentro de cada video); instalar en PC en `X:/Games/ReKHCoM` (opcional)
     con todo lo necesario; ofrecer "Añadir a Steam" (instalador y launcher).
   - [ ] Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
     manteniendo su lógica; rollback si aplica; "voltron" de lógica de juegos online y de decomps que añadieron online

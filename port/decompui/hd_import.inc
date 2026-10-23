@@ -12,6 +12,10 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <mferror.h>
 
 namespace hd {
 
@@ -861,6 +865,7 @@ static bool ApplyRecipe(Rgba img, const std::string& ops, int boxW, int boxH, Rg
 struct Job {
     std::atomic<bool> running{ false };
     std::atomic<int> done{ 0 }, total{ 0 };
+    std::atomic<float> part{ 0 }; /* how far the file being re-encoded is, 0..1 */
     std::mutex lock;
     std::string status;
     void Say(const std::string& s) {
@@ -999,6 +1004,192 @@ static bool CopyMovie(const fs::path& src, const fs::path& dst) {
     return (bool)out;
 }
 
+/* The movies' quality (hd/quality, the launcher's own): a size, 1080p (the source's: the opening, credits and endings
+   are 1080p ~10 Mb/s, the story scenes 720p ~5 Mb/s) or 720p, and a compression, source (as it is), good or saving.
+   Re-encoded here with Windows' own Media Foundation into H.264 + AAC, which every player of the port takes. The
+   bitrates were measured with VMAF against the source (23/10, HD_MOD.md): good ~95 (hardly told apart), saving ~88. */
+struct Quality {
+    int maxHeight;   /* 0: the source's size */
+    int compression; /* 0 source, 1 good, 2 saving */
+};
+/* bits a second at 1080p and at 720p, per compression (the source's own at 0) */
+static const unsigned kBitrate1080[3] = { 10000000, 5000000, 2500000 };
+static const unsigned kBitrate720[3] = { 5000000, 2500000, 1200000 };
+
+template <class T> static void Release(T*& p) {
+    if (p)
+        p->Release();
+    p = nullptr;
+}
+
+/* src (a plain MP4) re-encoded into dst at quality q. False when anything failed (dst is then removed). */
+static bool Transcode(const fs::path& src, const fs::path& dst, const Quality& q) {
+    IMFAttributes* attr = nullptr;
+    IMFSourceReader* reader = nullptr;
+    IMFSinkWriter* writer = nullptr;
+    IMFMediaType *native = nullptr, *videoIn = nullptr, *videoOut = nullptr, *audioIn = nullptr, *audioOut = nullptr;
+    DWORD videoStream = 0, audioStream = 0;
+    bool haveAudio = false, ok = false;
+    UINT32 w = 0, h = 0, num = 30, den = 1, outW, outH;
+    LONGLONG duration = 0;
+    PROPVARIANT var;
+    HRESULT hr = MFCreateAttributes(&attr, 2);
+    if (SUCCEEDED(hr))
+        attr->SetUINT32(MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING, TRUE);
+    if (SUCCEEDED(hr))
+        hr = MFCreateSourceReaderFromURL(src.wstring().c_str(), attr, &reader);
+    Release(attr);
+    if (FAILED(hr))
+        return false;
+    PropVariantInit(&var);
+    if (SUCCEEDED(reader->GetPresentationAttribute((DWORD)MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &var)))
+        duration = (LONGLONG)var.uhVal.QuadPart;
+    PropVariantClear(&var);
+    hr = reader->GetNativeMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, &native);
+    if (SUCCEEDED(hr)) {
+        MFGetAttributeSize(native, MF_MT_FRAME_SIZE, &w, &h);
+        MFGetAttributeRatio(native, MF_MT_FRAME_RATE, &num, &den);
+        UINT32 bitrate = MFGetAttributeUINT32(native, MF_MT_AVG_BITRATE, 0);
+        if (!bitrate)
+            bitrate = h >= 1080 ? 10000000 : 5000000;
+        Release(native);
+        outW = w, outH = h;
+        if (q.maxHeight && h > (UINT32)q.maxHeight) {
+            outH = (UINT32)q.maxHeight;
+            outW = (w * outH / h + 1) & ~1u;
+        }
+        if (q.compression == 0 && outH == h) { /* nothing to change: the plain copy stays */
+            Release(reader);
+            return false;
+        }
+        UINT32 rate = (outH >= 1080 ? kBitrate1080 : kBitrate720)[q.compression];
+        if (rate > bitrate)
+            rate = bitrate;
+        if (const char* e = getenv("KHCOM_ENC_RATE")) /* the quality measurements' overrides */
+            rate = (UINT32)atoi(e);
+        hr = MFCreateMediaType(&videoIn);
+        if (SUCCEEDED(hr)) {
+            videoIn->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+            videoIn->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12);
+            videoIn->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
+            MFSetAttributeSize(videoIn, MF_MT_FRAME_SIZE, outW, outH);
+            MFSetAttributeRatio(videoIn, MF_MT_FRAME_RATE, num, den);
+            MFSetAttributeRatio(videoIn, MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
+            hr = reader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, videoIn);
+        }
+        if (SUCCEEDED(hr))
+            hr = MFCreateMediaType(&videoOut);
+        if (SUCCEEDED(hr)) {
+            videoOut->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+            videoOut->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
+            videoOut->SetUINT32(MF_MT_AVG_BITRATE, rate);
+            videoOut->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
+            videoOut->SetUINT32(MF_MT_MPEG2_PROFILE, getenv("KHCOM_ENC_PROFILE") ? atoi(getenv("KHCOM_ENC_PROFILE")) : 100);
+            MFSetAttributeSize(videoOut, MF_MT_FRAME_SIZE, outW, outH);
+            MFSetAttributeRatio(videoOut, MF_MT_FRAME_RATE, num, den);
+            MFSetAttributeRatio(videoOut, MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
+        }
+    }
+    /* the sound as 16-bit PCM in, AAC 128 kb/s out (the source's rate and channels) */
+    if (SUCCEEDED(hr) && SUCCEEDED(MFCreateMediaType(&audioIn))) {
+        audioIn->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+        audioIn->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+        audioIn->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16);
+        if (SUCCEEDED(reader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, audioIn))) {
+            Release(audioIn);
+            if (SUCCEEDED(reader->GetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, &audioIn))) {
+                UINT32 rate = MFGetAttributeUINT32(audioIn, MF_MT_AUDIO_SAMPLES_PER_SECOND, 48000);
+                UINT32 ch = MFGetAttributeUINT32(audioIn, MF_MT_AUDIO_NUM_CHANNELS, 2);
+                if ((rate == 44100 || rate == 48000) && (ch == 1 || ch == 2) && SUCCEEDED(MFCreateMediaType(&audioOut))) {
+                    audioOut->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+                    audioOut->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_AAC);
+                    audioOut->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16);
+                    audioOut->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, rate);
+                    audioOut->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, ch);
+                    audioOut->SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 16000);
+                    haveAudio = true;
+                }
+            }
+        }
+    }
+    DWORD videoIndex = 0; /* ReadSample names streams by their index in the file */
+    for (DWORD i = 0;; i++) {
+        IMFMediaType* t = nullptr;
+        GUID major = GUID_NULL;
+        if (FAILED(reader->GetNativeMediaType(i, 0, &t)))
+            break;
+        t->GetGUID(MF_MT_MAJOR_TYPE, &major);
+        t->Release();
+        if (major == MFMediaType_Video) {
+            videoIndex = i;
+            break;
+        }
+    }
+    reader->SetStreamSelection((DWORD)MF_SOURCE_READER_ALL_STREAMS, FALSE);
+    reader->SetStreamSelection((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, TRUE);
+    if (haveAudio)
+        reader->SetStreamSelection((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE);
+    if (SUCCEEDED(hr))
+        hr = MFCreateAttributes(&attr, 1);
+    if (SUCCEEDED(hr)) {
+        attr->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, getenv("KHCOM_ENC_HW") ? atoi(getenv("KHCOM_ENC_HW")) : TRUE);
+        hr = MFCreateSinkWriterFromURL(dst.wstring().c_str(), nullptr, attr, &writer);
+    }
+    Release(attr);
+    if (SUCCEEDED(hr))
+        hr = writer->AddStream(videoOut, &videoStream);
+    /* the encoder's settings: variable bitrate, best quality for the time, B frames */
+    static const GUID kRateControl = { 0x1c0608e9, 0x370c, 0x4710, { 0x8a, 0x58, 0xcb, 0x61, 0x81, 0xc4, 0x24, 0x23 } };
+    static const GUID kQualityVsSpeed = { 0x98332df8, 0x03cd, 0x476b, { 0x89, 0xfa, 0x3f, 0x9e, 0x44, 0x2d, 0xec, 0x9f } };
+    static const GUID kBFrames = { 0x8d390aac, 0xdc5c, 0x4200, { 0xb5, 0x7f, 0x81, 0x4d, 0x04, 0xba, 0xba, 0xb2 } };
+    IMFAttributes* params = nullptr;
+    if (SUCCEEDED(hr) && SUCCEEDED(MFCreateAttributes(&params, 3))) {
+        params->SetUINT32(kRateControl, getenv("KHCOM_ENC_RC") ? atoi(getenv("KHCOM_ENC_RC")) : 2 /* unconstrained VBR */);
+        params->SetUINT32(kQualityVsSpeed, getenv("KHCOM_ENC_QVS") ? atoi(getenv("KHCOM_ENC_QVS")) : 100);
+        params->SetUINT32(kBFrames, getenv("KHCOM_ENC_B") ? atoi(getenv("KHCOM_ENC_B")) : 2);
+    }
+    if (SUCCEEDED(hr))
+        hr = writer->SetInputMediaType(videoStream, videoIn, params);
+    Release(params);
+    if (SUCCEEDED(hr) && haveAudio && (FAILED(writer->AddStream(audioOut, &audioStream)) ||
+                                       FAILED(writer->SetInputMediaType(audioStream, audioIn, nullptr))))
+        hr = E_FAIL;
+    if (SUCCEEDED(hr))
+        hr = writer->BeginWriting();
+    bool videoDone = false, audioDone = !haveAudio;
+    while (SUCCEEDED(hr) && !(videoDone && audioDone)) {
+        DWORD index = 0, flags = 0;
+        LONGLONG time = 0;
+        IMFSample* sample = nullptr;
+        hr = reader->ReadSample((DWORD)MF_SOURCE_READER_ANY_STREAM, 0, &index, &flags, &time, &sample);
+        if (FAILED(hr))
+            break;
+        bool isVideo = index == videoIndex;
+        if (flags & MF_SOURCE_READERF_ENDOFSTREAM)
+            (isVideo ? videoDone : audioDone) = true;
+        if (sample) {
+            hr = writer->WriteSample(isVideo ? videoStream : audioStream, sample);
+            if (isVideo && duration > 0)
+                sJob.part = (float)((double)time / (double)duration);
+            sample->Release();
+        } else if (flags & MF_SOURCE_READERF_STREAMTICK) {
+            writer->SendStreamTick(isVideo ? videoStream : audioStream, time);
+        }
+    }
+    ok = SUCCEEDED(hr) && SUCCEEDED(writer->Finalize());
+    Release(writer);
+    Release(reader);
+    Release(videoIn);
+    Release(videoOut);
+    Release(audioIn);
+    Release(audioOut);
+    if (!ok) {
+        std::error_code ec;
+        fs::remove(dst, ec);
+    }
+    return ok;
+}
+
 static void WriteTrack(const fs::path& folder, const std::string& name, const std::vector<unsigned char>& ogg, uint64_t a, uint64_t b) {
     std::ofstream(folder / (name + ".ogg"), std::ios::binary).write((const char*)ogg.data(), (std::streamsize)ogg.size());
     std::ofstream(folder / (name + ".loop")) << a << " " << b << "\n";
@@ -1022,8 +1213,33 @@ static void MoveScenes(const fs::path& hdDir) {
     }
 }
 
-static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool music, bool sprites) {
+/* One movie into dst: copied as it is (quality 0), or re-encoded from a plain copy beside it (the copy is kept when
+   the re-encoding fails). */
+/* quality: 0..5, the size (0..2 1080p, 3..5 720p) times the compression (source, good, saving) */
+static bool ImportMovie(const fs::path& src, const fs::path& dst, int quality) {
     std::error_code ec;
+    Quality q = { quality >= 3 ? 720 : 0, quality % 3 };
+    if (quality <= 0 || quality > 5)
+        return CopyMovie(src, dst);
+    fs::path plain = fs::path(dst).replace_extension(".source.mp4");
+    if (!CopyMovie(src, plain))
+        return false;
+    sJob.part = 0;
+    bool ok = Transcode(plain, dst, q);
+    if (ok)
+        fs::remove(plain, ec);
+    else
+        fs::rename(plain, dst, ec);
+    sJob.part = 0;
+    return ok || !ec;
+}
+
+static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool music, bool sprites, int quality) {
+    std::error_code ec;
+    HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    bool mf = SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_LITE));
+    if (!mf)
+        quality = 0;
     fs::path outMovies = data / "hd" / "movies", outScenes = data / "hd" / "scenes", outMusic = data / "hd" / "music";
     MoveScenes(data / "hd");
     int imported = 0;
@@ -1043,8 +1259,8 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
                     list.push_back(f.path());
         sJob.total += (int)list.size();
         for (const fs::path& f : list) {
-            sJob.Say(std::string(T("Copiando ", "Copying ")) + f.filename().string());
-            if (CopyMovie(f, (f.filename().string().rfind("zz_event_", 0) == 0 ? outScenes : outMovies) / f.filename()))
+            sJob.Say(std::string(quality ? T("Recodificando ", "Re-encoding ") : T("Copiando ", "Copying ")) + f.filename().string());
+            if (ImportMovie(f, (f.filename().string().rfind("zz_event_", 0) == 0 ? outScenes : outMovies) / f.filename(), quality))
                 imported++;
             sJob.done++;
         }
@@ -1109,17 +1325,22 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
     }
     sJob.Say(imported ? std::string(T("Listo: ", "Done: ")) + std::to_string(imported) + T(" archivos importados.", " files imported.")
                       : std::string(T("No se encontró nada para importar en esa carpeta.", "Nothing to import was found in that folder.")));
+    if (mf)
+        MFShutdown();
+    if (SUCCEEDED(com))
+        CoUninitialize();
     sJob.running = false;
 }
 
-static void Start(const fs::path& source, const fs::path& data, bool movies, bool scenes, bool music, bool sprites) {
+static void Start(const fs::path& source, const fs::path& data, bool movies, bool scenes, bool music, bool sprites,
+                  int quality) {
     if (sJob.running)
         return;
     sJob.running = true;
     sJob.done = 0;
     sJob.total = 0;
-    sJob.Say(T("Importando…", "Importing…"));
-    std::thread(Run, source, data, movies, scenes, music, sprites).detach();
+    sJob.Say(T("Importando...", "Importing..."));
+    std::thread(Run, source, data, movies, scenes, music, sprites, quality).detach();
 }
 
 static int Count(const fs::path& folder, const char* ext) {
@@ -1193,29 +1414,73 @@ static bool HdModCard() {
     if (ImGui::Button(T("Buscar el juego", "Find the game")))
         source = hd::FindInstall();
     ImGui::SameLine();
-    if (ImGui::Button(T("Elegir carpeta…", "Choose folder…"))) {
+    if (ImGui::Button(T("Elegir carpeta...", "Choose folder..."))) {
         fs::path p = hd::PickFolder();
         if (!p.empty())
             source = p;
     }
+    /* the movies' quality, kept in hd/quality (the launcher's own: the game plays whatever was imported): 0..5, the
+       size (0..2 1080p, 3..5 720p) times the compression; 1080p good by default */
+    static int quality = -1;
+    if (quality < 0) {
+        quality = 1;
+        std::ifstream(sRoot / "hd" / "quality") >> quality;
+        quality = quality < 0 || quality > 5 ? 1 : quality;
+    }
+    int size = quality / 3, compression = quality % 3;
+    const char* const kSizeNames[2] = { T("1080p (original, sugerido en PC)", "1080p (original, suggested on PC)"),
+                                        T("720p (sugerido en Android)", "720p (suggested on Android)") };
+    const char* const kCompressionNames[3] = { T("Fuente", "Source"), T("Buena (sugerido)", "Good (suggested)"),
+                                               T("Ahorro", "Saving") };
+    static const char* const kScenesSize[6] = { "~7 GB", "~3.3 GB", "~1.6 GB", "~6 GB", "~3 GB", "~1.5 GB" };
+    bool pick = CycleRow(T("Resolución de los videos", "Movie resolution"),
+                         T("La apertura, los créditos y los finales son 1080p; las escenas de historia ya son 720p.",
+                           "The opening, credits and endings are 1080p; the story scenes are 720p already."),
+                         size, 2, kSizeNames);
+    pick |= CycleRow(T("Compresión de los videos", "Movie compression"),
+                     T("Fuente: tal cual. Buena: la mitad de espacio, casi sin diferencia visible. Ahorro: un cuarto "
+                       "del espacio, se nota algo en escenas con mucho movimiento. Se aplica al importar.",
+                       "Source: as it is. Good: half the space, hardly a visible difference. Saving: a quarter of the "
+                       "space, somewhat visible in busy scenes. Applied when importing."),
+                     compression, 3, kCompressionNames);
+    if (pick) {
+        quality = size * 3 + compression;
+        fs::create_directories(sRoot / "hd", ec);
+        std::ofstream(sRoot / "hd" / "quality") << quality << "\n";
+    }
+    ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
+    if (quality == 0)
+        ImGui::TextWrapped("%s", T("Fuente a 1080p ocupa el máximo; en móviles o equipos modestos puede ir más lento o "
+                                   "a saltos: allí conviene 720p.",
+                                   "Source at 1080p takes the most space; on phones or modest machines it may run slower "
+                                   "or stutter: 720p suits them better."));
+    else
+        ImGui::TextWrapped("%s", T("Recodificar lleva unos minutos (el mod completo, 20-40 min según el equipo).",
+                                   "Re-encoding takes a few minutes (the full mod, 20-40 min depending on the machine)."));
+    ImGui::PopStyleColor();
     ImGui::BeginDisabled(source.empty());
     if (ImGui::Button(T("Importar mod base (videos, música y gráficos)", "Import base mod (movies, music and graphics)")))
-        hd::Start(source, sRoot, true, false, true, true);
+        hd::Start(source, sRoot, true, false, true, true, quality);
     ImGui::SameLine();
-    if (ImGui::Button(T("Importar escenas (completo, ~7 GB)", "Import scenes (full, ~7 GB)")))
-        hd::Start(source, sRoot, false, true, false, false);
+    char scenesLabel[96];
+    snprintf(scenesLabel, sizeof(scenesLabel), "%s%s)", T("Importar escenas (completo, ", "Import scenes (full, "),
+             kScenesSize[quality]);
+    if (ImGui::Button(scenesLabel))
+        hd::Start(source, sRoot, false, true, false, false, quality);
     ImGui::EndDisabled();
     ImGui::EndDisabled();
     if (hd::sJob.running || !hd::sJob.Status().empty()) {
         int total = hd::sJob.total, done = hd::sJob.done;
-        if (hd::sJob.running && total > 0)
-            ImGui::ProgressBar((float)done / (float)total, ImVec2(-1, 0));
+        if (hd::sJob.running && total > 0) /* the file being re-encoded counts as far as it went */
+            ImGui::ProgressBar(std::min(1.0f, ((float)done + std::min(1.0f, (float)hd::sJob.part)) / (float)total),
+                               ImVec2(-1, 0));
         ImGui::TextWrapped("%s", hd::sJob.Status().c_str());
     }
     ImGui::Separator();
     ImGui::BeginDisabled(!haveBase);
-    changed |= ToggleRow(T("Videos HD", "HD movies"),
-                         T("La apertura y los finales de Sora y Riku, en 1080p.", "The opening and Sora's and Riku's endings, in 1080p."),
+    changed |= ToggleRow(T("Intros HD", "HD intros"),
+                         T("La apertura, los créditos y los finales de Sora y Riku de Re:Chain of Memories.",
+                           "Re:Chain of Memories' opening, credits and Sora's and Riku's endings."),
                          Ini("hd_movies"));
     ImGui::EndDisabled();
     ImGui::BeginDisabled(haveTracks == 0);
@@ -1239,15 +1504,15 @@ static bool HdModCard() {
                          Ini("hd_subtitles"));
     ImGui::EndDisabled();
     ImGui::BeginDisabled(haveSprites <= 0);
-    changed |= ToggleRow(T("Cartas HD (beta)", "HD cards (beta)"),
-                         T("Las cartas de combate con las ilustraciones, marcos y números de Re:Chain of Memories. "
-                           "Necesita la vista amplia.",
-                           "Battle cards with Re:Chain of Memories' illustrations, frames and numbers. Needs the wide view."),
-                         Ini("hd_cards"));
-    changed |= ToggleRow(T("Título HD (beta)", "HD title (beta)"),
-                         T("El logo de la pantalla de título de Re:Chain of Memories (sin el \"Re:\").",
-                           "The title screen's logo from Re:Chain of Memories (without the \"Re:\")."),
-                         Ini("hd_title"));
+    /* one switch, as the game's HD HUD: the cards, the battle HUD and the title logo */
+    if (ToggleRow(T("HUD HD", "HD HUD"),
+                  T("Las cartas, el HUD de combate y el logo del título con el arte de Re:Chain of Memories. "
+                    "Necesita la vista amplia.",
+                    "The cards, the battle HUD and the title logo with Re:Chain of Memories' art. Needs the wide view."),
+                  Ini("hd_cards"))) {
+        Ini("hd_title") = Ini("hd_cards");
+        changed = true;
+    }
     ImGui::EndDisabled();
     return changed;
 }

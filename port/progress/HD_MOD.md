@@ -132,3 +132,22 @@ escenas del 1.5 según #25 (por confirmar mirando). RLP: bucle del menú de tít
   se dibujan por el puente con el host (`SDL_RenderGeometry` del shim). Presupuesto de texturas 12 MB en Switch y
   Vita (32 MB en el resto). Web: sin importador.
 - Opciones: `hd_cards` (cartas, retratos y palabras de combate), `hd_title` (logo del título, intro y créditos).
+
+## Calidad de los videos al importar (23/10)
+
+El launcher recodifica con Media Foundation (Windows, sin instalar nada): H.264 High, VBR sin límite, 2 B-frames,
+calidad 100, encoder de hardware; AAC 128 kb/s. `ReKHCoM.exe --hd-import <origen> --scenes --quality N` (0..5:
+0-2 1080p, 3-5 720p; × Fuente / Buena / Ahorro). La elección queda en `hd/quality`. Bitrates: 1080p 10 / 5 / 2,5 Mb/s,
+720p 5 / 2,5 / 1,2 Mb/s (nunca más que la fuente; Fuente sin cambio de tamaño = copia tal cual).
+
+| preset | ROP (apertura 1080p) | zz_event_012 (escena 720p) | mod completo |
+|---|---|---|---|
+| 1080p Fuente | 143 MB, — | 56 MB, — | ~7 GB |
+| 1080p Buena (sugerido PC) | 70 MB, VMAF 94,9 | 29 MB, 97,1 | ~3,3 GB |
+| 1080p Ahorro | 40 MB, 89,5 | 15 MB, 91,4 | ~1,6 GB |
+| 720p Fuente | 69 MB, 93,7 | copia | ~6 GB |
+| 720p Buena (sugerido Android) | 36 MB, 90,5 | 29 MB, 97,1 | ~3 GB |
+| 720p Ahorro | 18 MB, 82,5 | 15 MB, 91,4 | ~1,5 GB |
+
+VMAF contra la fuente a su tamaño (el 720p de la apertura escalado a 1080p: cuenta la pérdida de resolución).
+Probado: Main/CBR 96,8 y el encoder de software 94,2 contra 97,1 del elegido a igual peso.

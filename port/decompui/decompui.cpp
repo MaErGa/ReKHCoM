@@ -2034,13 +2034,16 @@ int main(int argc, char** argv) {
     sRoot = ExeDir();
     UnblockOwnFiles();
     ApplyUiLanguage();
-    /* ReKHCoM.exe --hd-import [<source folder>] [--scenes] [--sprites-only]: the HD mod import without the window
+    /* ReKHCoM.exe --hd-import [<source folder>] [--scenes] [--sprites-only] [--quality 0|1|2]: the HD mod import without the window
        (power users, tests); without a folder the installed game is looked for */
     for (int i = 1; i < argc; i++)
         if (strcmp(argv[i], "--hd-import") == 0) {
             fs::path source = i + 1 < argc && argv[i + 1][0] != '-' ? fs::u8path(argv[i + 1]) : hd::FindInstall();
             bool scenes = false, spritesOnly = false;
+            int quality = 0;
             for (int j = 1; j < argc; j++) {
+                if (strcmp(argv[j], "--quality") == 0 && j + 1 < argc)
+                    quality = atoi(argv[j + 1]);
                 scenes |= strcmp(argv[j], "--scenes") == 0;
                 spritesOnly |= strcmp(argv[j], "--sprites-only") == 0;
             }
@@ -2049,7 +2052,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
             hd::sJob.running = true;
-            hd::Run(source, sRoot, !spritesOnly, scenes && !spritesOnly, !spritesOnly, true);
+            hd::Run(source, sRoot, !spritesOnly, scenes && !spritesOnly, !spritesOnly, true, quality);
             fprintf(stderr, "%s\n", hd::sJob.Status().c_str());
             return 0;
         }
