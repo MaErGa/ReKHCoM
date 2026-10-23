@@ -198,6 +198,8 @@ Reglas del usuario:
   - [x] Ajustes: "Intros HD" (apertura, créditos, finales; encendido por defecto salvo modo GBA Original),
     "Escenas HD", "HUD HD" (logo del título + cartas + HUD de combate en un solo interruptor).
   - [x] Nueva partida: preguntar "Escenas HD" y "HUD HD" (con una línea que explique qué es el HUD).
+- **23/10 ~11:20: #43 (Switch, cartas con frame skip) confirmado arreglado por el reportero con la pre1: cerrado.**
+  #47 cerrado (lo cerró el reportero). Esperan respuesta: #42, #44, #45, #46 (este usaba la 1.9.14).
 - **23/10 ~10:30: v2.0-pre2 publicada (solo Windows)**: #47 (pistas de Leon), launcher (calidad HD, Steam, instalar
   en carpeta, reportar), cabecera del log. Avisado en #47.
 - **23/10 ~09:40: v2.0-pre1 publicada (prerelease: Windows, Switch, Android)**, avisada en #42 #43 #44 #45 #46;
