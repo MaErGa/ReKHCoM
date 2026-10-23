@@ -34,13 +34,17 @@ ahí y mandar kh_com.log.
 |---|---|---|
 | Transporte (UDP directo, relay por código, Steam Spacewar) | 90 | PC; Android 64 por el puente UDP; consolas sin red (stubs) |
 | Determinismo / lockstep | 95 | PC↔PC y PC↔Android 64: 20/20 chequeos iguales |
-| Rollback en la batalla | 75 | PC↔PC: 0 esperas a ~160 ms de RTT, 0 desync; falta Android, pulir correcciones visibles |
-| Lobby en el juego (salas públicas, crear, unirse) | 10 | diseño: proveedor de salas común Steam/VPS (ver abajo) |
-| Inicio de sesión | 20 | Steam abierto = sesión; aviso si no; sin cuenta propia (VPS más adelante) |
-| Servidor propio (VPS: relay + lista de salas) | 30 | `netlink_relay.py` empareja por código; falta listar salas |
-| Android online | 70 | permiso, ajustes, relay/IP; rollback sin probar ahí |
-| Launcher (PC) | 70 | Steam/IP/Relay; falta "Online (lobby)" |
-| **Total online** | **~55** | |
+| Rollback en la batalla | 80 | PC↔PC: 0 esperas a ~160 ms de RTT, 0 desync, revisiones y sincronía de tiempo; falta Android |
+| Lobby en el juego (salas públicas, crear, unirse) | 70 | hecho con servidor propio (probado de punta a punta) y Steam (sin probar con dos cuentas) |
+| Inicio de sesión | 50 | Steam: aviso y "Reintentar"; servidor: nombre del jugador (online_name); cuentas propias: VPS futuro |
+| Servidor propio (VPS: relay + lista de salas) | 60 | `netlink_relay.py` lista salas públicas ('A'/'L'/'R'); falta desplegarlo en un VPS |
+| Android online | 75 | permiso, ajustes, relay/IP/salas por servidor; rollback y lobby sin probar ahí |
+| Launcher (PC) | 90 | Steam/IP/Relay/Salas (Steam o servidor) y nombre |
+| **Total online** | **~70** | |
+
+Carpetas de prueba actualizadas (23/10 18:35): `ReKHCoM-OnlineAlpha-TU` / `-AMIGO` con los exes EU/US/JP nuevos,
+launcher y `netlink.cfg = lobby:steam`, LEEME-ONLINE.txt "alpha 2". Prueba local del lobby:
+`sh port/tools/netlink_lobby.sh 2600` (servidor local, uno abre sala, el otro entra; capturas lobby_*.bmp).
 
 **Lobby (pedido 23/10):** en "Batalla de enlace" con el online activo, una pantalla del port (estilo Opciones) con
 las salas públicas, crear sala, actualizar y volver al cable; sin sesión de Steam, el aviso de iniciarla. Todo
