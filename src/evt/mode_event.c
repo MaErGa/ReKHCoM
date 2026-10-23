@@ -360,6 +360,10 @@ void EventUpdate() {
 }
 
 void Event_2() {
+#ifdef PLATFORM_PC
+    extern void PortHdSceneForget(void);
+    PortHdSceneForget(); /* the next event offers its HD scene again, wherever its task lands */
+#endif
     TaskPoolDestroy(&sEventTaskPool);
     EwramFree(gEventState);
     gEventState = NULL;

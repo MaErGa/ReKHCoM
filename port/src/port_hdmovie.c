@@ -68,13 +68,11 @@ static void SubsOrder(const char* order[2]) {
 #endif
 }
 
-/* The cartridge movie movieId, if its HD movie is imported and hd_movies is on. */
-int PortHdMoviePlay(int movieId) {
-    const char* name = MovieFile(movieId);
-    return gPortConfig.hdMovies && name != NULL && PlayFile(name);
-}
-
 #include "port_hdscenes.inc"
+
+/* the endings' scene already played as its event's (only the debug menu's events 073 / 195 reach them): the credits
+   do not show it again */
+static int sEndingScenePlayed;
 
 /* The full mod: the story event's Re:CoM scene, if imported and hd_scenes is on (event_message.c then ends the event
    through the game's own scene skip, so the event's results stay the game's). */
@@ -114,10 +112,29 @@ int PortHdScenePlay(int eventId) {
             played = PlayFile(kHdScenes[i].movie);
             if (played)
                 PlayExtras(eventId, 0);
+            if (played && IsEnding(eventId))
+                sEndingScenePlayed = 1;
             return played;
         }
     return 0;
 }
+
+/* The cartridge movie movieId, if its HD movie is imported and hd_movies is on. The story reaches the credits straight
+   from the last event (072 for Sora, mode_event.c EVENT_EXIT_MOVIE_ENDING): Re:CoM's ending scene, which has no event
+   of its own on that road, plays first (issue #42). */
+int PortHdMoviePlay(int movieId) {
+    const char* name = MovieFile(movieId);
+    if (!gPortConfig.hdMovies || name == NULL)
+        return 0;
+    if ((movieId == 4 || movieId == 5) && !sEndingScenePlayed) {
+        PlayFile(movieId == 4 ? "zz_event_151" : "zz_event_621"); /* the capsule room / Riku's ending */
+        if (movieId == 5)
+            PlayExtras(EVENT_195_RIKU_ENDING, 0); /* the crossroads, in the Re:CoM mode */
+    }
+    sEndingScenePlayed = 0;
+    return PlayFile(name);
+}
+
 
 #endif
 

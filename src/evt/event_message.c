@@ -2906,7 +2906,15 @@ void PortEventSkipScene(void) {
 }
 
 int PortHdScenePlay(int eventId);
-static const void* sPortHdSceneWork; /* the event whose HD scene was offered (once per event) */
+/* the event whose HD scene was offered (once per event): its task and number, forgotten when the event mode ends
+   (mode_event.c Event_2). The task alone was not enough: an event that hands over to the next one (the last battle's
+   event to the capsule room's ending, issue #42) gets its task at the same address, and the ending's scene was
+   never offered. */
+static const void* sPortHdSceneWork;
+static u16 sPortHdSceneEvent;
+void PortHdSceneForget(void) {
+    sPortHdSceneWork = NULL;
+}
 
 static int PortEventSkippable(u16 eventId) {
     return eventId != EVENT_068_13F_CASTLE_OBLIVION_LAST3 && eventId != EVENT_083_MONSTORO_E3_FAILURE_1 &&
@@ -2956,8 +2964,9 @@ u8 UpdateEventSeq(EventSeqWork* work, void* task) {
         portSkip = PortEventSkippable(work->eventId) && !work->ending;
     }
     /* the full HD mod: the event's Re:CoM scene plays first, then the event ends as skipping it does */
-    if (sPortHdSceneWork != work && !work->ending) {
+    if ((sPortHdSceneWork != work || sPortHdSceneEvent != work->eventId) && !work->ending) {
         sPortHdSceneWork = work;
+        sPortHdSceneEvent = work->eventId;
         if (PortEventSkippable(work->eventId) && PortHdScenePlay(work->eventId))
             portSkip = portHd = TRUE;
     }
