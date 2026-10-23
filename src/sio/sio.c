@@ -87,9 +87,10 @@ enum SioHandshakeWord {
    both games in the same order. The game's own empty state and pause request absorb the network's delay. */
 #include "port/port.h"
 #include "port/port_netlink.h"
+#include "port/port_ui.h"
 
 #define NET_RING 64
-#define NET_RESEND 16 /* slots sent again in every datagram, until the other side has them */
+#define NET_RESEND 24 /* slots sent again in every datagram, until the other side has them */
 enum { NET_HELLO = 1, NET_START, NET_SLOTS };
 typedef struct {
     u16 words[4];
@@ -134,9 +135,9 @@ static void NetSendControl(u8 type) {
 static void NetSendSlots(void) {
     u8 d[10 + NET_RESEND * 9];
     u32 first = sNet.acked, i, n;
-    if (sNet.mine - first > NET_RESEND)
-        first = sNet.mine - NET_RESEND;
-    n = sNet.mine - first;
+    n = sNet.mine - first; /* from the oldest the other side lacks: after an outage nothing is skipped */
+    if (n > NET_RESEND)
+        n = NET_RESEND;
     d[0] = NET_SLOTS;
     NetPut32(d + 1, first);
     d[5] = (u8)n;
@@ -195,10 +196,12 @@ static void NetReceive(void) {
 /* the frame's slot: one packet of the game's send queue, the pairs both sides have into the receive queue */
 static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
     u32 i;
-    if (!gSioWork.paused)
+    /* the network never cuts the link: while the other player is away the game waits (its packets stop being
+       taken once the queue is nearly full, instead of the cable's "queue full" error), no timeout is reported */
+    if (!gSioWork.paused && gSioWork.sendCount < 28)
         SioQueueSendFrame(sendFrame);
     NetReceive();
-    if (sNet.mine - sNet.paired < NET_RING) {
+    if (sNet.mine - sNet.paired < NET_RING && sNet.mine - sNet.acked < NET_RING) {
         NetSlot* s = &sNet.my[sNet.mine % NET_RING];
         if (gSioWork.sendCount > 0) {
             for (i = 0; i < 4; i++)
@@ -212,7 +215,7 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
         s->pause = gSioWork.recvCount > 3;
         sNet.mine++;
     }
-    while (sNet.paired < sNet.mine && sNet.peerKnown[sNet.paired % NET_RING]) {
+    while (sNet.paired < sNet.mine && sNet.peerKnown[sNet.paired % NET_RING] && gSioWork.recvCount < 30) {
         const NetSlot* mine = &sNet.my[sNet.paired % NET_RING];
         NetSlot* theirs = &sNet.peer[sNet.paired % NET_RING];
         const NetSlot* by[2];
@@ -234,8 +237,6 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
                 gSioWork.recvBuf[1][i][idx] = by[1]->words[i];
             }
             gSioWork.recvCount++;
-        } else if (nonzero) {
-            gSioWork.queueFull |= 2;
         }
         if (theirs->pause && !gSioWork.paused)
             sNet.pauseFrames = 5;
@@ -253,9 +254,16 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
         sNet.startFrames--;
         NetSendControl(NET_START);
     }
-    /* the cable pulled out: nothing heard for 3 seconds */
-    if (PortNetlinkSilentMs() > 3000)
-        gSioWork.timeout = gSioWork.isParent ? 1 : 2;
+    gSioWork.queueFull = 0;
+    gSioWork.timeout = 0;
+    gSioWork.hardwareError = 0;
+    gSioWork.checksumError = 0;
+    {
+        int silent = PortNetlinkSilentMs();
+        static u8 noticeTick;
+        if (silent > 1000 && silent < (1 << 29) && ++noticeTick % 30 == 0)
+            PortUiLinkWaitingNotice(silent / 1000);
+    }
     SioReadRecvFrame(recvFrame);
     if (PortNetlinkTrace() && !gSioWork.recvEmpty)
         PortLog("netlink: read %04x %04x | %04x %04x", recvFrame[0][0], recvFrame[1][0], recvFrame[0][1], recvFrame[1][1]);

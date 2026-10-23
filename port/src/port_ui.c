@@ -1595,6 +1595,18 @@ void PortUiNotice(const char* text) {
     sNoticeFrames = 120;
 }
 
+/* src/sio/sio.c over the network: the other player has not been heard for a while; the game waits (nothing is
+   cut) and goes on when the packets come back. */
+void PortUiLinkWaitingNotice(int seconds) {
+    static const char* const text[LANG_COUNT] = {
+        "Waiting for the other player... %d s", "En attente de l'autre joueur... %d s",
+        "Warte auf den anderen Spieler... %d s", "In attesa dell'altro giocatore... %d s",
+        "Esperando al otro jugador... %d s", "Waiting for the other player... %d s",
+    };
+    SDL_snprintf(sNotice, sizeof(sNotice), text[Lang()], seconds);
+    sNoticeFrames = 90;
+}
+
 /* map_tasks.c / poo.c: moogle points picked up on the field. Pickups close
    together add up in one notice: "+30 moogle points (total 1250)". */
 void PortMoogleNotice(unsigned amount, unsigned total) {

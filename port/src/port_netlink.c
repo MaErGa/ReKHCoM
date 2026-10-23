@@ -5,6 +5,7 @@
  * KHCOM_NETLINK=join:<ip>:<port>   connect to a host (the child, player 2)
  * KHCOM_NETLINK_LAG=<frames>       tests: hold every datagram that many frames before it goes out
  * KHCOM_NETLINK_LOSS=<percent>     tests: drop that share of the datagrams sent
+ * KHCOM_NETLINK_DROP=<from>-<to>   tests: an outage, nothing sent between those game frames
  */
 #include "port/port.h"
 #include "port/port_netlink.h"
@@ -36,6 +37,7 @@ static struct sockaddr_in sPeer;
 static int sHavePeer;
 static uint64_t sLastHeard;
 static int sLag, sLoss;
+static uint32_t sDropFrom, sDropTo;
 
 /* datagrams held back by KHCOM_NETLINK_LAG */
 typedef struct {
@@ -101,6 +103,13 @@ static int Open(const char* spec) {
     }
     if (SDL_getenv("KHCOM_NETLINK_LAG"))
         sLag = SDL_atoi(SDL_getenv("KHCOM_NETLINK_LAG"));
+    if (SDL_getenv("KHCOM_NETLINK_DROP")) {
+        unsigned a = 0, b = 0;
+        if (SDL_sscanf(SDL_getenv("KHCOM_NETLINK_DROP"), "%u-%u", &a, &b) == 2) {
+            sDropFrom = a;
+            sDropTo = b;
+        }
+    }
     if (SDL_getenv("KHCOM_NETLINK_LOSS"))
         sLoss = SDL_atoi(SDL_getenv("KHCOM_NETLINK_LOSS"));
     PortLog("netlink: %s, port %d%s%s", sRole == PORT_NETLINK_HOST ? "hosting" : "joining", port,
@@ -119,6 +128,8 @@ int PortNetlinkRole(void) {
 }
 
 static void SendNow(const uint8_t* data, int size) {
+    if (sDropTo && sFrame >= sDropFrom && sFrame < sDropTo)
+        return;
     if (sLoss > 0 && (int)(SDL_rand(100)) < sLoss)
         return;
     sendto(sSock, (const char*)data, size, 0, (struct sockaddr*)&sPeer, sizeof(sPeer));
