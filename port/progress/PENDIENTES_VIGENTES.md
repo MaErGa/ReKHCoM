@@ -142,7 +142,7 @@ Reglas del usuario:
   - [x] (estilo 12) Diario > Historia: el submenú no tiene las mejoras de vista ancha de los demás (el usuario marcó el margen
     izquierdo, el borde derecho y la barra de arriba a la derecha que se corta): dejarlo como los otros submenús.
   - [x] (3de66108c) Imagen de mundo HD (Elige un mundo, Diario): reemplazar las feas por el arte de "Naipes mundo" que se ve bien.
-  - [ ] Anillo de vida HD: bordes lisos (antialias) en la cara y el final de la barra.
+  - [x] Anillo de vida HD: bordes lisos (antialias) en la cara y el final de la barra. (supersampleo 4x, 2x consolas/Android; no en el renderer software)
   - [ ] Números de las cartas HD quizá muy chicos: comparar con Re:CoM (referencias/capturas del HD).
   - [ ] Cara HD de Sora al recibir daño: el pelo sale cortado.
   - [ ] Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;

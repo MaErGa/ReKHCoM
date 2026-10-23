@@ -427,6 +427,36 @@ int PortHdGauge(int hp, int maxHp, int riku) {
     return 1;
 }
 
+static void GaugeParts(SDL_Renderer* renderer, float x, float y, float s, const float* tint);
+
+/* The gauge drawn supersampled (23/10, the player: its face's and its bar's cut edges were jagged): its pieces go on
+   a texture at GAUGE_SS times the output, which comes down to the output in halves with linear filtering (each half a
+   2x2 box), premultiplied all the way; then the masks' hard cuts and the ring's edges are smooth. The consoles and
+   Android, with less memory and fill rate, use 2. */
+#if defined(PORT_GBA_RELOC) || defined(PORT_ANDROID64) || defined(__ANDROID__)
+#define GAUGE_SS 2
+#else
+#define GAUGE_SS 4
+#endif
+static SDL_Texture* sGaugeTarget[3];
+static int sGaugeTargetW[3], sGaugeTargetH[3];
+
+static SDL_Texture* GaugeTarget(SDL_Renderer* renderer, int i, int w, int h) {
+    if (sGaugeTarget[i] && (sGaugeTargetW[i] != w || sGaugeTargetH[i] != h)) {
+        SDL_DestroyTexture(sGaugeTarget[i]);
+        sGaugeTarget[i] = NULL;
+    }
+    if (!sGaugeTarget[i]) {
+        sGaugeTarget[i] = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, w, h);
+        if (!sGaugeTarget[i])
+            return NULL;
+        sGaugeTargetW[i] = w;
+        sGaugeTargetH[i] = h;
+        SDL_SetTextureScaleMode(sGaugeTarget[i], SDL_SCALEMODE_LINEAR);
+    }
+    return sGaugeTarget[i];
+}
+
 void PortHdGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, float shade) {
     /* gauge:01 sits at (60, 60) of Re:CoM's 640-wide screen: the GBA HUD's 240 gives 0.375 of a GBA pixel a unit */
     const float unit = 240.0f / 640.0f;
@@ -437,6 +467,68 @@ void PortHdGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, fl
     if (PortHdDrawLogged())
         PortLog("hd gauge %u hp %d/%d trail %d state %d face %d", (unsigned)PortFrameCount(), sGauge.hp, sGauge.maxHp,
                 sGauge.trail, sGauge.stateAnim, sGauge.faceAnim);
+    /* not on SDL's software renderer (the consoles' hosts, the tests' offscreen window): restoring the window as
+       the target crashed inside it */
+    if (!SDL_getenv("KHCOM_GAUGE_NO_SS") && SDL_strcmp(SDL_GetRendererName(renderer), SDL_SOFTWARE_RENDERER) != 0) {
+        /* the gauge's area in Re:CoM's units around its origin (ring, face, the bar at its longest, the alarm's glow) */
+        const float ux0 = -60.0f, uy0 = -60.0f, ux1 = 620.0f, uy1 = 220.0f;
+        float rx = x + ux0 * s, ry = y + uy0 * s, rw = (ux1 - ux0) * s, rh = (uy1 - uy0) * s;
+        int w0 = (int)SDL_ceilf(rw), h0 = (int)SDL_ceilf(rh), k = GAUGE_SS, level = 0;
+        SDL_Texture* big = w0 > 0 && h0 > 0 ? GaugeTarget(renderer, 0, w0 * k, h0 * k) : NULL;
+        if (big) {
+            SDL_Texture* prev = SDL_GetRenderTarget(renderer);
+            SDL_Rect viewport, clip;
+            int clipped = SDL_RenderClipEnabled(renderer);
+            SDL_FRect src, dst;
+            SDL_Texture* cur = big;
+            int cw = w0 * k, ch = h0 * k;
+            SDL_GetRenderViewport(renderer, &viewport);
+            SDL_GetRenderClipRect(renderer, &clip);
+            SDL_SetRenderTarget(renderer, big);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL_RenderClear(renderer);
+            GaugeParts(renderer, (x - rx) * k, (y - ry) * k, s * k, tint);
+            /* down in halves: each a 2x2 box of premultiplied pixels */
+            while (cw > w0) {
+                int nw = SDL_max(cw / 2, w0), nh = SDL_max(ch / 2, h0);
+                SDL_Texture* next = GaugeTarget(renderer, 1 + (level & 1), nw, nh);
+                if (!next)
+                    break;
+                SDL_SetRenderTarget(renderer, next);
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+                SDL_RenderClear(renderer);
+                SDL_SetTextureBlendMode(cur, SDL_BLENDMODE_NONE);
+                src.x = src.y = 0;
+                src.w = (float)cw;
+                src.h = (float)ch;
+                dst.x = dst.y = 0;
+                dst.w = (float)nw;
+                dst.h = (float)nh;
+                SDL_RenderTexture(renderer, cur, &src, &dst);
+                cur = next;
+                cw = nw;
+                ch = nh;
+                level++;
+            }
+            SDL_SetRenderTarget(renderer, prev);
+            SDL_SetRenderViewport(renderer, &viewport);
+            SDL_SetRenderClipRect(renderer, clipped ? &clip : NULL);
+            SDL_SetTextureBlendMode(cur, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+            src.x = src.y = 0;
+            src.w = (float)cw;
+            src.h = (float)ch;
+            dst.x = rx;
+            dst.y = ry;
+            dst.w = (float)w0;
+            dst.h = (float)h0;
+            SDL_RenderTexture(renderer, cur, &src, &dst);
+            return;
+        }
+    }
+    GaugeParts(renderer, x, y, s, tint);
+}
+
+static void GaugeParts(SDL_Renderer* renderer, float x, float y, float s, const float* tint) {
     PortHdLayoutDraw(renderer, HD_LAYOUT_GAUGE, HD_LAYOUT_TEX_GAUGE, 1, sGauge.stateAnim, sGauge.stateFrame, x, y, s, 1.0f, tint);
     PortHdLayoutDraw(renderer, HD_LAYOUT_GAUGE, HD_LAYOUT_TEX_GAUGE, 1, 7, HD_LAYOUT_HOLD(GAUGE_LEN(sGauge.maxHp)), x, y, s,
                      1.0f, tint);
