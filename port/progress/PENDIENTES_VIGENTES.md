@@ -189,6 +189,8 @@ Reglas del usuario:
   - [x] Ajustes: "Intros HD" (apertura, créditos, finales; encendido por defecto salvo modo GBA Original),
     "Escenas HD", "HUD HD" (logo del título + cartas + HUD de combate en un solo interruptor).
   - [x] Nueva partida: preguntar "Escenas HD" y "HUD HD" (con una línea que explique qué es el HUD).
+- **23/10 ~10:30: v2.0-pre2 publicada (solo Windows)**: #47 (pistas de Leon), launcher (calidad HD, Steam, instalar
+  en carpeta, reportar), cabecera del log. Avisado en #47.
 - **23/10 ~09:40: v2.0-pre1 publicada (prerelease: Windows, Switch, Android)**, avisada en #42 #43 #44 #45 #46;
   esperar si reportan mejora antes de la v2.0. APK probado en el emulador (arranca, 40 s, sin crash).
 - **Vita (reporte dentro de #44):** "bastante lenta"; sin undub aunque estén las ROM US y JP en la carpeta; texto HD
