@@ -814,6 +814,10 @@ int PortHarnessMode(const char* name, int arg) {
     }
     for (i = 0; i < sizeof(modes) / sizeof(modes[0]); i++) {
         if (strcmp(modes[i]->name, name) == 0) {
+            /* the link battle comes from the title, which resets the game state first (ChkBtlReset sets the VS
+               arena's bounds: without it the battle's camera had no room) */
+            if (modes[i] == &gModeSioBattle || modes[i] == &gModeVsbattle)
+                ResetGameState();
             ModeRequest(modes[i], arg);
             return 1;
         }

@@ -2,6 +2,9 @@
  * mode_vsbattle.c
  * Link Battle Mode
  */
+#ifdef PLATFORM_PC
+#include "engine.h"
+#endif
 
 #include "macros.h"
 #include "mode_vsbattle.h"
@@ -34,6 +37,9 @@ void mode_vsbattle_0(u32 playerId) {
     VsTaskArg arg2;
     BtlWork** rikuBtl;
 
+#ifdef PLATFORM_PC
+    PortSetBattleView(1); /* as mode_battle.c: the stage repeats sideways in the wide margins */
+#endif
     gBtlWork = EwramAlloc(sizeof(BtlWork));
     rikuBtl = &gRikuBtlWork;
     *rikuBtl = EwramAlloc(sizeof(BtlWork));
@@ -108,6 +114,9 @@ void mode_vsbattle_1() {
 }
 
 void mode_vsbattle_2() {
+#ifdef PLATFORM_PC
+    PortSetBattleView(0);
+#endif
     BgFxFree();
     TaskPoolDestroy(&gBtlWork->taskPools[1]);
     TaskPoolDestroy(&gBtlWork->taskPools[0]);

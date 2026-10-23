@@ -177,6 +177,13 @@ int PortNetlinkSilentMs(void) {
     return sLastHeard ? (int)(SDL_GetTicks() - sLastHeard) : 1 << 30;
 }
 
+int PortBtlCamTrace(void) {
+    static int trace = -1;
+    if (trace < 0)
+        trace = SDL_getenv("KHCOM_BTLCAM") != NULL;
+    return trace;
+}
+
 int PortNetlinkTrace(void) {
     static int trace = -1;
     if (trace < 0)
@@ -185,6 +192,9 @@ int PortNetlinkTrace(void) {
 }
 #else
 int PortNetlinkTrace(void) {
+    return 0;
+}
+int PortBtlCamTrace(void) {
     return 0;
 }
 int PortNetlinkRole(void) {
