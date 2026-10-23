@@ -63,6 +63,8 @@ CASES = {
              lambda l: None if l == 'fr' else banner('gMsTopBar', l)),
     'rikudeck': (lambda: ({'KHCOM_MODE': '60:roomriku:10800', 'KHCOM_KEYS': '400-403:START,' + ','.join(
                               f'{f}-{f + 3}:A' for f in range(480, 780, 60))}, 1100), lambda l: banner('gRikuDeckTitleBanner', l)),  # Reverse/Rebirth: its tutorial, then VIEW DECK
+    'premire': (lambda: ({'KHCOM_KEYS': WALK, 'KHCOM_MODE': '1450:WORLDSELECT'}, 2000),
+                lambda l: banner('gPremireChanceTitle', l)),  # the elite bonus screen, through the debug mode
     'levelup': (lambda: ({'KHCOM_BATTLE': '0:1:0', 'KHCOM_KEYS': '60-62:A', 'KHCOM_MODE': '400:levelup'}, 1000),
                 lambda l: banner('gLevelUpHeader', l)),
     'synthesis': (lambda: ({'KHCOM_MODE': '60:room:10901,120:fieldfreeze,200:doorpose:0', 'KHCOM_KEYS': '240-242:A'},

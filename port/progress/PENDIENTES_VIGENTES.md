@@ -136,9 +136,10 @@ savestate del usuario); números de cartas HD vs Re:CoM.
     en 5 idiomas + medidor a 3..100 %, comprobando que el HD sigue en el cuadro quieto (no solo al entrar).
   - [ ] Contador de mazo (`gRevCount*`) y medidor del enemigo como Re:CoM: buscar capturas del HUD de combate de
     Re:CoM en internet y reconstruirlos con Cockpit/gauge.lad y el código decompilado (CCardRevolver, CEnemyGauge).
-  - [ ] Revisar en el juego BONUS ÉLITE / PREMIUM BONUS y VER BARAJA (Riku): filas hechas, no vistas.
-  - [~] US y JP: correr la batería de menús también en esas versiones (23/10: partidas US/JP convertidas desde la
-    EU con el importador del launcher; US en curso; JP no tiene carteles HD).
+  - [x] (23/10) BONUS ÉLITE y VER BARAJA de Riku vistos en el juego. VER BARAJA volvía al píxel al quedar quieto
+    (copia BG, como el de Sora): arreglado en `card_deckmenu2_riku.c`. Casos nuevos `rikudeck` y `premire` en
+    `test_hd_menus.py`: 5 idiomas EU + US, 12/12.
+  - [x] US y JP: batería de menús US 19/19 (+ rikudeck/premire); JP no tiene carteles HD.
   - [x] Gemelo Python del dibujante: `port/tools/khhd_seqdraw.py`.
   - [ ] Batería HD de escritorio (`run_batteries.py --hd`): corría con el build anterior; repetirla con los cambios
     de hoy al terminar.
