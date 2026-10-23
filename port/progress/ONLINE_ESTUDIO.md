@@ -30,13 +30,13 @@ paquete**, reemplazando solo el transporte (registros, timer, interrupción) y d
    paquete de la ranura n (aunque sea vacío) por UDP; cuando tiene el del otro arma el par (jugador 0, jugador 1) de
    la ranura n y lo deja en la cola de recepción del juego, igual para los dos. Con latencia el juego ve más
    cuadros "vacíos" y su propio control de flujo hace el resto. Sin predicción ni resimulación.
-3. **Rollback (GGPO / GGRS)**: necesita que lo que se intercambia sean **entradas** (pad) y que la simulación sea
-   determinista y se pueda guardar/restaurar cada cuadro. El cable de KHCoM intercambia **comandos y estado** de la
-   batalla (no el pad): predecir un paquete del protocolo y corregirlo después rompería el checksum y la cola.
-   **No aplica sobre el cable.** Aplicaría solo reescribiendo la batalla VS para intercambiar el pad de cada
-   jugador y simular las dos consolas en cada lado (el port ya tiene savestates: `port_state.c`, ~400 KB por estado,
-   viable a 60 fps para 7-8 cuadros de rollback). Es la "reconstrucción en alpha de la lógica del multijugador" y es
-   un proyecto aparte, de semanas, para después de una alpha del cable funcionando.
+3. **Rollback (GGPO / GGRS)**: necesita que lo que se intercambia sean **entradas** y que la simulación sea
+   determinista y se pueda guardar/restaurar cada cuadro. Los menús del enlace intercambian comandos (conectar,
+   naipes, opciones): ahí no aplica. Pero **la batalla VS sí va por entradas** (`chara.c` `SioKeySyncSend/Recv`,
+   comando 0x0ACD): cada consola manda sus teclas, el padre reenvía las de los dos y ambas simulan con las mismas, y
+   `AgbMain` no avanza un cuadro sin el paquete (lockstep con demora). Rollback en la batalla es viable: predecir las
+   teclas del otro (repetir las últimas), simular, y al llegar las reales restaurar con savestate (`port_state.c`,
+   ~400 KB por estado) y resimular. Proyecto aparte, para después de la alpha del cable.
 
 ## Transporte y emparejamiento
 
@@ -64,3 +64,14 @@ paquete**, reemplazando solo el transporte (registros, timer, interrupción) y d
 3. Interfaz: opción "Enlace en red" con alojar/unirse e IP; luego códigos de sala.
 4. Steam (lobby + relay) como transporte alternativo, si se consigue AppID.
 5. Rollback solo si la batalla VS se reconstruye sobre entradas (opción 3).
+
+## Estado de la alpha (23/10, `port/src/port_netlink.c` + `src/sio/sio.c`, solo PC y solo con `KHCOM_NETLINK`)
+
+- Dos procesos ocultos en 127.0.0.1 (`mode_sio_battle` por harness, teclas por `KHCOM_KEYS`): handshake, conexión,
+  intercambio de datos/barajas, menú de opciones VS y entrada a la batalla en los dos. Los dos ven exactamente la
+  misma secuencia de pares (traza `KHCOM_NETLINK_TRACE`).
+- Con 6 cuadros de demora por envío (~100 ms) y 10% de pérdida también llegan juntos a la batalla. Hizo falta subir
+  el límite de reintentos de la aceptación (10 cuadros en el cable, 120 en red: `chara.c` SIO_CONNECT_RETRY_LIMIT).
+- En la batalla las teclas viajan (DERECHA del jugador 1 llega reenviada a los dos), pero en las capturas la
+  batalla se ve quieta (también sin demora): siguiente paso, ver por qué no avanza la batalla (¿espera algo del
+  cartucho que el harness no da?) antes de la interfaz (alojar/unirse en Opciones).

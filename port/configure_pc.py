@@ -91,7 +91,7 @@ def main():
     port_cflags += " -DPORT_RETROACHIEVEMENTS -DRC_CLIENT_SUPPORTS_HASH -Iport/third_party/rcheevos/include"
     # the PPU draws the rows beyond the GBA picture on several cores (port_ppu.c, RenderOuterRows)
     port_cflags += " -DPORT_PPU_THREADS"
-    ldflags = (f"-L{rel(sdl_arch / 'lib')} -lSDL3 -lgdi32 -lwinhttp -lcrypt32 -lmfplat -lmfreadwrite -lmfuuid -lole32 -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic -Wl,--disable-dynamicbase -Wl,--large-address-aware "
+    ldflags = (f"-L{rel(sdl_arch / 'lib')} -lSDL3 -lgdi32 -lwinhttp -lcrypt32 -lws2_32 -lmfplat -lmfreadwrite -lmfuuid -lole32 -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic -Wl,--disable-dynamicbase -Wl,--large-address-aware "
                + ("" if args.debug else "-Wl,--subsystem,windows"))
     if args.reloc:
         # above the bus range, which the check build reserves without access (port_memory.c)

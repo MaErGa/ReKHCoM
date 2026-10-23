@@ -80,6 +80,212 @@ enum SioHandshakeWord {
 #define SIO_MULTI_EMPTY 0xFFFF
 #define SIO_PAUSE_REQUEST 0x1000
 
+#ifdef PLATFORM_PC
+/* The cable over the network (port/src/port_netlink.c, port/progress/ONLINE_ESTUDIO.md): the game's packet queue
+   stays as it is; instead of the registers, each game frame is a slot both players fill with one packet (or none)
+   and send by UDP; slot n of player 1 and slot n of player 2 make the pair the cable would have carried, given to
+   both games in the same order. The game's own empty state and pause request absorb the network's delay. */
+#include "port/port.h"
+#include "port/port_netlink.h"
+
+#define NET_RING 64
+#define NET_RESEND 16 /* slots sent again in every datagram, until the other side has them */
+enum { NET_HELLO = 1, NET_START, NET_SLOTS };
+typedef struct {
+    u16 words[4];
+    u8 pause;
+} NetSlot;
+static struct {
+    u32 mine;   /* slots of ours made */
+    u32 paired; /* slots given to the game */
+    u32 acked;  /* ours the other side has */
+    u32 theirs; /* theirs we have, all of them below */
+    NetSlot my[NET_RING], peer[NET_RING];
+    u8 peerKnown[NET_RING];
+    u8 pauseFrames;
+    u8 startFrames; /* the parent repeats START this many frames */
+} sNet;
+
+static int NetActive(void) {
+    return PortNetlinkRole() != 0;
+}
+
+static void NetPut16(u8* p, u16 v) {
+    p[0] = (u8)v;
+    p[1] = (u8)(v >> 8);
+}
+static u16 NetGet16(const u8* p) {
+    return (u16)(p[0] | p[1] << 8);
+}
+static void NetPut32(u8* p, u32 v) {
+    NetPut16(p, (u16)v);
+    NetPut16(p + 2, (u16)(v >> 16));
+}
+static u32 NetGet32(const u8* p) {
+    return NetGet16(p) | (u32)NetGet16(p + 2) << 16;
+}
+
+static void NetSendControl(u8 type) {
+    u8 d[2] = { type, (u8)PortNetlinkRole() };
+    PortNetlinkSend(d, 2);
+}
+
+/* ours from the oldest the other side lacks: type, first slot, count, what we have of theirs, then 9 bytes a slot */
+static void NetSendSlots(void) {
+    u8 d[10 + NET_RESEND * 9];
+    u32 first = sNet.acked, i, n;
+    if (sNet.mine - first > NET_RESEND)
+        first = sNet.mine - NET_RESEND;
+    n = sNet.mine - first;
+    d[0] = NET_SLOTS;
+    NetPut32(d + 1, first);
+    d[5] = (u8)n;
+    NetPut32(d + 6, sNet.theirs);
+    for (i = 0; i < n; i++) {
+        const NetSlot* s = &sNet.my[(first + i) % NET_RING];
+        u8* p = d + 10 + i * 9;
+        NetPut16(p, s->words[0]);
+        NetPut16(p + 2, s->words[1]);
+        NetPut16(p + 4, s->words[2]);
+        NetPut16(p + 6, s->words[3]);
+        p[8] = s->pause;
+    }
+    PortNetlinkSend(d, (int)(10 + n * 9));
+}
+
+/* every datagram waiting: their slots into the ring; START moves a waiting child on */
+static void NetReceive(void) {
+    u8 d[PORT_NETLINK_MAX];
+    int n;
+    while ((n = PortNetlinkRecv(d, sizeof(d))) > 0) {
+        if (d[0] == NET_HELLO)
+            continue;
+        if ((d[0] == NET_START || d[0] == NET_SLOTS) && gSioWork.state == SIO_STATE_HANDSHAKE && !gSioWork.isParent) {
+            gSioWork.state = SIO_STATE_CONNECTED;
+            gSioWork.playerCount = 2; /* the parent was heard: two on the cable */
+            gSioWork.handshake = 1;
+            CpuFill32(0, &sNet, sizeof(sNet));
+            PortLog("netlink: connected (player 2)");
+        }
+        if (d[0] == NET_SLOTS && n >= 10 && gSioWork.state == SIO_STATE_CONNECTED) {
+            u32 first = NetGet32(d + 1), ack = NetGet32(d + 6), i, count = d[5];
+            if (ack > sNet.acked && ack <= sNet.mine)
+                sNet.acked = ack;
+            for (i = 0; i < count && 10 + (int)(i + 1) * 9 <= n; i++) {
+                u32 slot = first + i;
+                const u8* p = d + 10 + i * 9;
+                NetSlot* s;
+                if (slot < sNet.paired || slot >= sNet.paired + NET_RING)
+                    continue;
+                s = &sNet.peer[slot % NET_RING];
+                s->words[0] = NetGet16(p);
+                s->words[1] = NetGet16(p + 2);
+                s->words[2] = NetGet16(p + 4);
+                s->words[3] = NetGet16(p + 6);
+                s->pause = p[8];
+                sNet.peerKnown[slot % NET_RING] = 1;
+            }
+            while (sNet.theirs < sNet.paired + NET_RING && sNet.peerKnown[sNet.theirs % NET_RING] &&
+                   sNet.theirs >= sNet.paired)
+                sNet.theirs++;
+        }
+    }
+}
+
+/* the frame's slot: one packet of the game's send queue, the pairs both sides have into the receive queue */
+static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
+    u32 i;
+    if (!gSioWork.paused)
+        SioQueueSendFrame(sendFrame);
+    NetReceive();
+    if (sNet.mine - sNet.paired < NET_RING) {
+        NetSlot* s = &sNet.my[sNet.mine % NET_RING];
+        if (gSioWork.sendCount > 0) {
+            for (i = 0; i < 4; i++)
+                s->words[i] = gSioWork.sendBuf[i][gSioWork.sendReadIdx];
+            gSioWork.sendCount--;
+            if (++gSioWork.sendReadIdx > 31)
+                gSioWork.sendReadIdx = 0;
+        } else {
+            CpuFill16(0, s->words, sizeof(s->words));
+        }
+        s->pause = gSioWork.recvCount > 3;
+        sNet.mine++;
+    }
+    while (sNet.paired < sNet.mine && sNet.peerKnown[sNet.paired % NET_RING]) {
+        const NetSlot* mine = &sNet.my[sNet.paired % NET_RING];
+        NetSlot* theirs = &sNet.peer[sNet.paired % NET_RING];
+        const NetSlot* by[2];
+        u16 nonzero = 0;
+        by[gSioWork.playerId] = mine;
+        by[gSioWork.playerId ^ 1] = theirs;
+        for (i = 0; i < 4; i++)
+            nonzero |= by[0]->words[i] | by[1]->words[i];
+        if (nonzero && PortNetlinkTrace())
+            PortLog("netlink: pair %u  %04x %04x %04x %04x | %04x %04x %04x %04x", (unsigned)sNet.paired,
+                    by[0]->words[0], by[0]->words[1], by[0]->words[2], by[0]->words[3], by[1]->words[0],
+                    by[1]->words[1], by[1]->words[2], by[1]->words[3]);
+        if (nonzero && gSioWork.recvCount < 32) {
+            u8 idx = gSioWork.recvReadIdx + gSioWork.recvCount;
+            if (idx > 31)
+                idx -= 32;
+            for (i = 0; i < 4; i++) {
+                gSioWork.recvBuf[0][i][idx] = by[0]->words[i];
+                gSioWork.recvBuf[1][i][idx] = by[1]->words[i];
+            }
+            gSioWork.recvCount++;
+        } else if (nonzero) {
+            gSioWork.queueFull |= 2;
+        }
+        if (theirs->pause && !gSioWork.paused)
+            sNet.pauseFrames = 5;
+        sNet.peerKnown[sNet.paired % NET_RING] = 0;
+        sNet.paired++;
+    }
+    if (sNet.mine % 600 == 0)
+        PortLog("netlink: slot %u, %u paired, %u packets waiting", (unsigned)sNet.mine, (unsigned)sNet.paired,
+                (unsigned)gSioWork.recvCount);
+    gSioWork.paused = sNet.pauseFrames > 0;
+    if (sNet.pauseFrames > 0)
+        sNet.pauseFrames--;
+    NetSendSlots();
+    if (sNet.startFrames > 0) {
+        sNet.startFrames--;
+        NetSendControl(NET_START);
+    }
+    /* the cable pulled out: nothing heard for 3 seconds */
+    if (PortNetlinkSilentMs() > 3000)
+        gSioWork.timeout = gSioWork.isParent ? 1 : 2;
+    SioReadRecvFrame(recvFrame);
+    if (PortNetlinkTrace() && !gSioWork.recvEmpty)
+        PortLog("netlink: read %04x %04x | %04x %04x", recvFrame[0][0], recvFrame[1][0], recvFrame[0][1], recvFrame[1][1]);
+}
+
+/* the handshake: the host is the parent (player 1), whoever joins the child; both see two players once the other
+   is heard; the parent's start request starts the slots on both sides */
+static void NetHandshake(u8* request) {
+    int peer;
+    gSioWork.isParent = PortNetlinkRole() == PORT_NETLINK_HOST ? 8 : 0;
+    gSioWork.playerId = gSioWork.isParent ? 0 : 1;
+    NetSendControl(NET_HELLO);
+    NetReceive();
+    if (gSioWork.state != SIO_STATE_HANDSHAKE)
+        return; /* START arrived */
+    peer = PortNetlinkSilentMs() < 1000;
+    gSioWork.playerCount = peer ? 2 : 1;
+    gSioWork.handshake = peer ? 1 : 0;
+    if ((*request == 1 || (sSioAutoStartDone == 0 && peer)) && gSioWork.isParent && peer) {
+        gSioWork.state = SIO_STATE_CONNECTED;
+        CpuFill32(0, &sNet, sizeof(sNet));
+        sNet.startFrames = 30;
+        sSioAutoStartDone = -1;
+        PortLog("netlink: connected (player 1)");
+    } else if (*request == 1) {
+        sSioAutoStartDone = -1;
+    }
+}
+#endif
+
 u16 IsVBlankIntrLive() {
     if (REG_IME & 1) {
         if (REG_DISPSTAT & DISPSTAT_VBLANK_INTR) {
@@ -217,6 +423,15 @@ u32 SioRunStateMachine(u8* request, u16* sendFrame, u16 (*recvFrame)[2]) {
     u32 result;
     u32 recvEmpty, handshake, hardwareError, checksumError, queueFull, timeout;
 
+#ifdef PLATFORM_PC
+    PortNetlinkFrame();
+    if (NetActive() && gSioWork.state == SIO_STATE_HANDSHAKE && *request != SIO_REQUEST_RESET) {
+        NetHandshake(request);
+    } else if (NetActive() && (gSioWork.state == SIO_STATE_CONNECTED || gSioWork.state == SIO_STATE_INIT_TIMER)) {
+        gSioWork.state = SIO_STATE_CONNECTED;
+        NetSlotsFrame(sendFrame, recvFrame);
+    } else
+#endif
     switch (gSioWork.state) {
     case SIO_STATE_STOP:
         SioStop();
@@ -300,6 +515,12 @@ u32 SioTransferFrames(u8* request, u16* sendFrame, u16 (*recvFrame)[2]) {
     u32 result;
     u32 recvEmpty, handshake, hardwareError, checksumError, queueFull, timeout;
 
+#ifdef PLATFORM_PC
+    PortNetlinkFrame();
+    if (NetActive() && gSioWork.state == SIO_STATE_CONNECTED)
+        NetSlotsFrame(sendFrame, recvFrame);
+    else
+#endif
     if (gSioWork.state == SIO_STATE_CONNECTED) {
         if (!gSioWork.paused) {
             SioQueueSendFrame(sendFrame);
@@ -424,6 +645,10 @@ void SioReadRecvFrame(u16 (*frame)[2]) {
 }
 
 void SioVBlankUpdate() {
+#ifdef PLATFORM_PC
+    if (NetActive())
+        return; /* no transfers to count: the network's timeout and pause are NetSlotsFrame's */
+#endif
     if (gSioWork.paused) {
         sSioPauseTimer--;
 

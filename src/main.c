@@ -288,7 +288,7 @@ const char* PortHarnessModeName(void) {
 
 int PortHarnessMode(const char* name, int arg) {
     extern Mode gModeTitle, gModeMsShop, gModeMsCharge, gModeContinue, gModeWLogo, gModeEventselect,
-        gModeRikuDeckTutorial, gModeVsbattle;
+        gModeRikuDeckTutorial, gModeVsbattle, gModeSioBattle;
     static Mode* const modes[] = {
         &gModeTitle, &gModeDeck, &gModeStatus, &gModeJiminy, &gModeAllmap, &gModeMapinspect, &gModeWorldinspect,
         &gModeWorldselect, &gModeWORLDSELECT, &gModeWorldwarp, &gModeMsTop, &gModePremire,
@@ -296,6 +296,7 @@ int PortHarnessMode(const char* name, int arg) {
         /* the rest of test_android_scenarios.py's menu list (KHCOM_MODE) */
         &gModeMsShop, &gModeMsCharge, &gModeContinue, &gModeWLogo, &gModeEventselect, &gModeRikuDeckTutorial,
         &gModeVsbattle,
+        &gModeSioBattle, /* the link battle's menus (the network cable's tests, ONLINE_ESTUDIO.md) */
     };
     u32 i;
 
