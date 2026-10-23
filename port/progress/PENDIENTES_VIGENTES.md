@@ -144,12 +144,15 @@ Reglas del usuario:
   - [x] (3de66108c) Imagen de mundo HD (Elige un mundo, Diario): reemplazar las feas por el arte de "Naipes mundo" que se ve bien.
   - [x] Anillo de vida HD: bordes lisos (antialias) en la cara y el final de la barra. (supersampleo 4x, 2x consolas/Android; no en el renderer software)
   - [ ] Números de las cartas HD quizá muy chicos: comparar con Re:CoM (referencias/capturas del HD).
-  - [ ] Cara HD de Sora al recibir daño: el pelo sale cortado.
+  - [ ] Cara HD de Sora al recibir daño: el pelo sale cortado. (23/10: la textura de caras de Re:CoM está entera, sin cortes en sus bordes ni máscaras en la secuencia;
+    el sprite de combate se ve normal en los cuadros del golpe: falta una captura del momento exacto.)
   - [ ] Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
     el número de la carta grande parpadea al cambiar de carta; el título "QUITAR NAIPES" en HD como los demás. (El título "QUITAR/AÑADIR NAIPES" es BG, no sprite: hacerlo con PortHdStillSprite y un cartel armado desde el
     BG; los demás carteles salen de sprites con hd_menu_titles.py.)
-  - [ ] Pequeños cortes de audio al cambiar de menú: la música HD sin fundido de entrada/salida como el juego;
-    revisar la lógica general del mod HD y depurar.
+  - [x] (nivel en vivo; sin cortes medidos) Pequeños cortes de audio al cambiar de menú: la música HD sin fundido de entrada/salida como el juego;
+    revisar la lógica general del mod HD y depurar. 23/10: test_hd_audio_flow con el recorrido de menús de pausa
+    (pausemenus) 0 vacíos y 0 saltos; el nivel de la pista HD se aplica ahora en vivo en el stream (antes iba en las
+    muestras 0,2 s adelantado: los fundidos llegaban tarde y a saltos). Si el usuario sigue oyendo cortes, pedir dónde.
   - [ ] Importar HD con calidad a elegir (herramientas libres, "voltron" de repos): Fuente (tal cual), Buena
     (comprimido con la menor pérdida posible), Optimizada para Android / ahorro (resolución y bitrate de pantalla
     chica), para que el mod corra también en Android. La compresión va integrada en el importador (el jugador no instala nada).

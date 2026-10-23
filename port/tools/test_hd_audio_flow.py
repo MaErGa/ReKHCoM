@@ -37,6 +37,10 @@ SCENARIOS = {
     'boss': ({'KHCOM_BATTLE': '10:1:0', 'KHCOM_KEYS': '150-153:A'}, 1500),
     # our Options overlay over the field's song: open at 600, closed 300 frames later
     'options': ({'KHCOM_MODE': '60:room:10901', 'KHCOM_OPTIONS_AT': '600', 'KHCOM_OPTIONS_HOLD': '300'}, 1500),
+    # the pause menus as a player walks them over the field's song: menu, deck, back, status, back, close (23/10)
+    'pausemenus': ({'KHCOM_MODE': '60:room:10901',
+                    'KHCOM_KEYS': '400-403:START,480-483:A,700-703:B,780-783:DOWN,800-803:DOWN,820-823:DOWN,'
+                                  '840-843:DOWN,860-863:A,1080-1083:B,1160-1163:B'}, 1500),
 }
 LOOP_SLACK = 4  # frames of position step allowed beyond one frame's worth
 
@@ -49,7 +53,9 @@ def run(exe_dir, hd, name):
     d.mkdir(parents=True)
     for f in ('khcom.exe', 'SDL3.dll'):
         shutil.copy2(exe_dir / f, d / f)
-    (d / 'kh_com.ini').write_text('config_version=2\nview_mode=4\nhd_music=1\nhd_movies=0\nhd_scenes=0\n')
+    # graphics_mode set: without it the first start asks HD or GBA and waits (the title scenario timed out, 23/10)
+    (d / 'kh_com.ini').write_text('config_version=2\ngraphics_mode=1\nview_mode=4\nhd_music=1\nhd_movies=0\n'
+                                  'hd_scenes=0\n')
     shutil.copytree(hd / 'music', d / 'hd' / 'music')
     env = dict(os.environ, SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='disk', SDL_AUDIO_DISK_OUTPUT_FILE='out.raw',
                KHCOM_HDAUDIOLOG='hdaudio.log',

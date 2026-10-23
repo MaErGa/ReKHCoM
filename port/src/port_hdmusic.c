@@ -208,9 +208,16 @@ static void Resume(void) {
     }
 }
 
+/* The level is the stream's, applied as it plays: baked into the samples a fifth of a second ahead, the game's
+   fades came late and in steps, heard as small jumps when menus changed (23/10). sHold: PortHdMusicGain's. */
+static float sHold = 1.0f, sLevel = 1.0f;
+
 /* Decodes until about a fifth of a second is queued, looping at the track's loop points. */
 static void Feed(float gain) {
     float pcm[2048 * 2];
+    sLevel = gain;
+    SDL_SetAudioStreamGain(sStream, sLevel * sHold);
+    gain = 1.0f;
     Resume();
     while (SDL_GetAudioStreamQueued(sStream) < (int)(sRate / 5 * 2 * sizeof(float))) {
         int want = 2048, got, i;
@@ -385,8 +392,9 @@ void PortHdMusicHold(void) {
 /* The track's output level on top of its own (PortAudioMovieHold fades it out before an HD movie). */
 void PortHdMusicGain(float gain) {
 #if __STDC_HOSTED__
+    sHold = gain;
     if (sStream)
-        SDL_SetAudioStreamGain(sStream, gain);
+        SDL_SetAudioStreamGain(sStream, sLevel * sHold);
 #else
     (void)gain; /* the bridge's player has no output level */
 #endif
