@@ -146,10 +146,13 @@ Reglas del usuario:
   - [ ] Números de las cartas HD quizá muy chicos: comparar con Re:CoM (referencias/capturas del HD).
   - [ ] Cara HD de Sora al recibir daño: el pelo sale cortado. (23/10: la textura de caras de Re:CoM está entera, sin cortes en sus bordes ni máscaras en la secuencia;
     el sprite de combate se ve normal en los cuadros del golpe: falta una captura del momento exacto.)
-  - [~] (fundido y parpadeo arreglados; falta el título) Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
+  - [x] (23/10: títulos Quitar/Añadir naipes en HD, 5 idiomas EU; US/JP siguen GBA) Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
     el número de la carta grande parpadea al cambiar de carta; el título "QUITAR NAIPES" en HD como los demás. (El título "QUITAR/AÑADIR NAIPES" es BG, no sprite: hacerlo con PortHdStillSprite y un cartel armado desde el
     BG; los demás carteles salen de sprites con hd_menu_titles.py.)
-    23/10 investigación: no es OAM (volcado OAM de la pantalla Quitar naipes: nada arriba a la izquierda) ni las
+    23/10 hecho: el título está en BG3 (filas de arriba de gDeckRemove/AddGridMap con los tiles de texto del
+    idioma); hd_menu_titles.py BG_BANNERS arma el cartel (Q = O + cola, Ñ = N + virgulilla) y card_deckmenu2.c lo
+    dibuja con PortHdStillSprite(tiles de texto, mapa). Pendiente menor: US (otro juego de tiles) y JP.
+    Antes: no es OAM (volcado OAM de la pantalla Quitar naipes: nada arriba a la izquierda) ni las
     filas de arriba del mapa de BG3 (gDeckRemove/Add/DeleteGridMap, renderizados con gDeckMenuTiles + texto por
     idioma: vacíos ahí). Queda mirar BG0-2 (paneles gDeck1/2/3Panel). Re:CoM (FO0100 SP_camp) trae "AÑADIR NAIPES" /
     "QUITAR NAIPES" solo en letra recta chica; la cursiva de los carteles no tiene Q ni Ñ: armarlas (O + cola,
@@ -198,7 +201,9 @@ Reglas del usuario:
   en carpeta, reportar), cabecera del log. Avisado en #47.
 - **23/10 ~09:40: v2.0-pre1 publicada (prerelease: Windows, Switch, Android)**, avisada en #42 #43 #44 #45 #46;
   esperar si reportan mejora antes de la v2.0. APK probado en el emulador (arranca, 40 s, sin crash).
-- **Vita (reporte dentro de #44):** "bastante lenta"; sin undub aunque estén las ROM US y JP en la carpeta; texto HD
+- **Vita (reporte dentro de #44):** "bastante lenta"; sin undub aunque estén las ROM US y JP en la carpeta (23/10 arreglado:
+  el undub buscaba solo roms/B8CJ.gba y cargaba la ROM JP entera en 32 MB; ahora la busca por cabecera en cualquier
+  .gba de la carpeta de datos y de roms/ y la lee por partes; probado en PC con un nombre cualquiera, falta la Vita); texto HD
   no seleccionable. Ninguna versión de Vita reportada a velocidad completa.
 - **Switch rendimiento (#35, deko3d):** el host ya presenta por GPU; lo caro es la PPU en CPU y en un solo núcleo
   (PORT_PPU_THREADS es solo de escritorio; el invitado no tiene hilos ni TLS). Opciones: hilos en el invitado (host
