@@ -40,6 +40,11 @@ en el juego. Repo público aparte: https://github.com/MatyMeatBoy/GBANoCable (lo
 - Los "timeouts" del primer intento US no eran cuelgues: START en una escena abre la pausa de escena (detiene
   cuadros a propósito); el test copiaba la partida con el nombre EU. Arreglado (copia kh_com/_us/_jp.sav).
 
+**"Nueva partida vuelve al título" (usuario 23/10, luego dijo que quizá lo imaginó):** no estaba anotado. Probado
+EU con el mod HD completo y A: título → nueva → ROP HD → evento 0 → escena HD → selección de mundo, sin volver
+al título. Variantes con START durante la intro (HD, GBA original, sin HD, primer arranque) lanzadas: resultados en
+build/ng_*/kh_com.log ("mode:" en orden); si alguna muestra mode_title después de Mode_MenuNew, es el bug.
+
 **Otros pendientes vivos:** Switch motor nuevo (deko3d / PPU multinúcleo) NO implementado, solo investigado (#35);
 video HD en Linux (diseño GStreamer más abajo); Proton; pelo de Sora y cuadro negro en Agrabah (esperan captura /
 savestate del usuario); números de cartas HD vs Re:CoM.
