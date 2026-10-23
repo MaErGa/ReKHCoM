@@ -1529,7 +1529,7 @@ static void Present(void) {
             DrawEdgeBands(&src, &dst, outW, 3);
             DrawHeaderLeft(&src, &dst);
         }
-        if (!menuCanvas && sSideStyle == 9 && sFitScale <= 0) {
+        if (!menuCanvas && (sSideStyle == 9 || sSideStyle == 12) && sFitScale <= 0) {
             /* style 9: the scene's ground (its commonest colour) and its thick
                bars (blocks of six rows or more, so a frame's thin border is
                not one) carried on; nothing mirrored, nothing repeated */
@@ -1550,11 +1550,57 @@ static void Present(void) {
                     }
                     if (++counts[i] > counts[best]) best = i;
                 }
-            if (n) {
+            if (n && sSideStyle == 9) {
                 uint32_t g = colors[best];
                 SDL_SetRenderDrawColor(sRenderer, (Uint8)(g >> 16), (Uint8)(g >> 8), (Uint8)g, 255);
                 SDL_RenderFillRect(sRenderer, &left);
                 SDL_RenderFillRect(sRenderer, &right);
+            } else if (n) {
+                /* style 12, each side's own ground (23/10, the journal's Story page): a page cut by the GBA's edge carries on
+                   (its edge columns are its inside's colour); a thin border before a page is the ground behind it
+                   (the green paper left of the Story page); a sheet's shaded edge (a gradient: four colours or more
+                   in its last twelve columns) gives way to the other side's ground, as the sheet ends there */
+                uint32_t g = colors[best], side[2];
+                int kind[2], s2;
+                for (s2 = 0; s2 < 2; s2++) {
+                    int edgeCol = s2 ? GBA_SCREEN_W - 1 : 0, innerCol = s2 ? GBA_SCREEN_W - 12 : 11, grad = 0, rows = 0;
+                    uint32_t ec = 0, ic = 0;
+                    static uint32_t ecs[2][GBA_SCREEN_H];
+                    int y3, same = 0;
+                    for (y3 = 24; y3 < GBA_SCREEN_H - 24; y3++) {
+                        const uint32_t* row = &sComposite[((int)src.y + y3) * gPortScreen.width + (int)src.x];
+                        uint32_t seen[12];
+                        int ns = 0, k2, j2;
+                        for (k2 = 0; k2 < 12; k2++) {
+                            uint32_t c = row[s2 ? GBA_SCREEN_W - 1 - k2 : k2];
+                            for (j2 = 0; j2 < ns && seen[j2] != c; j2++) {}
+                            if (j2 == ns) seen[ns++] = c;
+                        }
+                        grad += ns >= 4;
+                        rows++;
+                        ecs[s2][y3] = row[edgeCol];
+                        same += row[edgeCol] == row[innerCol];
+                        ec = row[edgeCol];
+                        ic = row[innerCol];
+                    }
+                    (void)ic;
+                    {
+                        /* the edge column's commonest colour */
+                        int cnt = 0, bestCnt = 0, y4, y5;
+                        for (y4 = 24; y4 < GBA_SCREEN_H - 24; y4++) {
+                            cnt = 0;
+                            for (y5 = 24; y5 < GBA_SCREEN_H - 24; y5++) cnt += ecs[s2][y5] == ecs[s2][y4];
+                            if (cnt > bestCnt) { bestCnt = cnt; ec = ecs[s2][y4]; }
+                        }
+                    }
+                    side[s2] = ec;
+                    kind[s2] = same * 2 >= rows ? 0 : grad * 2 >= rows ? 2 : 1; /* 0 page, 2 shaded sheet, 1 border */
+                }
+                for (s2 = 0; s2 < 2; s2++) {
+                    uint32_t c = kind[s2] == 2 ? (kind[!s2] != 2 ? side[!s2] : g) : side[s2];
+                    SDL_SetRenderDrawColor(sRenderer, (Uint8)(c >> 16), (Uint8)(c >> 8), (Uint8)c, 255);
+                    SDL_RenderFillRect(sRenderer, s2 ? &right : &left);
+                }
             }
             sBandGround = n ? colors[best] : 0;
             DrawEdgeBands(&src, &dst, outW, 6);
@@ -1573,12 +1619,13 @@ static void Present(void) {
                         continue;
                     for (k = 0; k < 120 && row[k] == lc; k++) lrun++;
                     for (k = 0; k < 120 && row[GBA_SCREEN_W - 1 - k] == rc; k++) rrun++;
-                    if (lrun >= 80 && rrun < 80) {
+                    /* not over a bar that reaches the edge itself (the journal's yellow PAGE bar, 23/10) */
+                    if (lrun >= 80 && rrun < 16) {
                         SDL_FRect r = { dst.x + dst.w, PixelEdge(dst.y, yy, sc), (float)outW - dst.x - dst.w, 0 };
                         r.h = PixelEdge(dst.y, yy + 1, sc) - r.y;
                         SDL_SetRenderDrawColor(sRenderer, (Uint8)(lc >> 16), (Uint8)(lc >> 8), (Uint8)lc, 255);
                         SDL_RenderFillRect(sRenderer, &r);
-                    } else if (rrun >= 80 && lrun < 80) {
+                    } else if (rrun >= 80 && lrun < 16) {
                         SDL_FRect r = { 0, PixelEdge(dst.y, yy, sc), dst.x, 0 };
                         r.h = PixelEdge(dst.y, yy + 1, sc) - r.y;
                         SDL_SetRenderDrawColor(sRenderer, (Uint8)(rc >> 16), (Uint8)(rc >> 8), (Uint8)rc, 255);
@@ -1597,7 +1644,8 @@ static void Present(void) {
             SDL_SetRenderDrawColor(sRenderer, (Uint8)(uniform >> 16), (Uint8)(uniform >> 8), (Uint8)uniform, 255);
             SDL_RenderFillRect(sRenderer, &a);
             SDL_RenderFillRect(sRenderer, &b2);
-        } else if (!menuCanvas && sSideStyle != 3 && sSideStyle != 8 && sSideStyle != 9 && sSideStyle != 10 && sFitScale <= 0) {
+        } else if (!menuCanvas && sSideStyle != 3 && sSideStyle != 8 && sSideStyle != 9 && sSideStyle != 10 &&
+                   sSideStyle != 12 && sFitScale <= 0) {
             SideBar((int)src.x, (int)src.y, -1, dst.y, scale, 0.0f, dst.x, (int)src.x);
             SideBar((int)(src.x + src.w) - SIDE_STRIP, (int)src.y, 1, dst.y, scale, dst.x + dst.w, (float)outW,
                     (int)(src.x + src.w) - 1);

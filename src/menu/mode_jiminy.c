@@ -4,6 +4,7 @@
  */
 
 #include "sprites_msg.h"
+#include "engine.h"
 #include "jiminy_journal.h"
 #include "sprites_bos5.h"
 #include "sprites_emy.h"
@@ -1660,6 +1661,9 @@ void mode_jiminy_0() {
 }
 
 void mode_jiminy_1() {
+#ifdef PLATFORM_PC
+    PortSideStyle(PORT_SIDE_GROUND_BANDS); /* the lists (and back from a page) */
+#endif
     s32 i;
     u16 flags;
     u16 alpha;
@@ -2087,6 +2091,9 @@ void SplitThreeDecimalDigits(s16 value, u8* out) {
 }
 
 void JiminyDetailUpdate() {
+#ifdef PLATFORM_PC
+    PortSideStyle(PORT_SIDE_GROUND_SHEETS); /* the open book: each side's own ground in the wide view */
+#endif
     s32 count;
     const JiminyDetail* entries;
     s16 i;

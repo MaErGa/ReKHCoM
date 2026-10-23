@@ -139,7 +139,7 @@ Reglas del usuario:
   - [x] (cartas chicas, grupo 6) "Estado": las cartas de aliados (Donald, Goofy) siguen en pixel: hacerlas HD.
   - [x] (3de66108c, mismas filas) Diario (Historia): la imagen del mundo es la misma versión mala que "Elige un mundo" (mismo arreglo).
   - [ ] Opcional: mejorar los fondos de esos menús (p. ej. "Naipes mundo").
-  - [ ] Diario > Historia: el submenú no tiene las mejoras de vista ancha de los demás (el usuario marcó el margen
+  - [x] (estilo 12) Diario > Historia: el submenú no tiene las mejoras de vista ancha de los demás (el usuario marcó el margen
     izquierdo, el borde derecho y la barra de arriba a la derecha que se corta): dejarlo como los otros submenús.
   - [x] (3de66108c) Imagen de mundo HD (Elige un mundo, Diario): reemplazar las feas por el arte de "Naipes mundo" que se ve bien.
   - [ ] Anillo de vida HD: bordes lisos (antialias) en la cara y el final de la barra.

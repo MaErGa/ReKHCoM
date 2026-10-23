@@ -120,7 +120,8 @@ void PortSetBattleArenaBands(int left, int right, int leftStart, int leftWidth,
 /* GBA-size screens: how the side bars beyond them are filled. */
 enum { PORT_SIDE_STRETCH, PORT_SIDE_COLOR, PORT_SIDE_TEXTURE, PORT_SIDE_BLUR, PORT_SIDE_MENU, PORT_SIDE_PATTERN, PORT_SIDE_PIXEL_FADE, PORT_SIDE_EDGE_FADE,
        PORT_SIDE_BLUR_BANDS, PORT_SIDE_GROUND_BANDS, PORT_SIDE_MOVIE,
-       PORT_SIDE_SCENE_BANDS /* the PPU's own margin (scenery carried on) with the frame's bars drawn on */ };
+       PORT_SIDE_SCENE_BANDS, /* the PPU's own margin (scenery carried on) with the frame's bars drawn on */
+       PORT_SIDE_GROUND_SHEETS /* the journal's open book: GROUND_BANDS with each side's own ground (23/10) */ };
 void PortSideStyle(int style);
 /* Only the illustrated title BG; never text, logo, sprites or other modes. */
 void PortTitleArtFade(int enabled);
