@@ -146,7 +146,7 @@ Reglas del usuario:
   - [ ] Números de las cartas HD quizá muy chicos: comparar con Re:CoM (referencias/capturas del HD).
   - [ ] Cara HD de Sora al recibir daño: el pelo sale cortado. (23/10: la textura de caras de Re:CoM está entera, sin cortes en sus bordes ni máscaras en la secuencia;
     el sprite de combate se ve normal en los cuadros del golpe: falta una captura del momento exacto.)
-  - [ ] Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
+  - [~] (fundido y parpadeo arreglados; falta el título) Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
     el número de la carta grande parpadea al cambiar de carta; el título "QUITAR NAIPES" en HD como los demás. (El título "QUITAR/AÑADIR NAIPES" es BG, no sprite: hacerlo con PortHdStillSprite y un cartel armado desde el
     BG; los demás carteles salen de sprites con hd_menu_titles.py.)
   - [x] (nivel en vivo; sin cortes medidos) Pequeños cortes de audio al cambiar de menú: la música HD sin fundido de entrada/salida como el juego;

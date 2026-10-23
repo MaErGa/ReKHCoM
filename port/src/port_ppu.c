@@ -148,6 +148,12 @@ typedef struct BgTextTile {
     uint8_t source[32];
 } BgTextTile;
 static BgTextTile sBgTextTiles[2048];
+/* The registration a tile had before its latest: the game requests the new digit's copy by DMA, done at the next
+   vertical blank, and registers it at once; until the copy lands the tile still holds the previous digit, which
+   this one matches (the deck editor's PN digits showed their pixel font for that frame: a blink, 23/10). */
+static BgTextTile sBgTextTilesPrev[2048];
+
+static const BgTextTile* BgTextTileAt(unsigned offset);
 typedef struct BgTextGlyph {
     PortTextGlyph glyph;
     uint8_t bg, priority, screen;
@@ -183,13 +189,18 @@ static BgTextGlyph* BgTextNew(void) {
     return &sBgTextGlyphs[sBgTextCount++];
 }
 
-void PortClearBgTextTiles(void) { memset(sBgTextTiles, 0, sizeof(sBgTextTiles)); }
+void PortClearBgTextTiles(void) {
+    memset(sBgTextTiles, 0, sizeof(sBgTextTiles));
+    memset(sBgTextTilesPrev, 0, sizeof(sBgTextTilesPrev));
+}
 
 void PortRegisterBgTextTile(void* address, int code, int style, const void* source32) {
     uintptr_t offset = (uintptr_t)address - GBA_VRAM;
     BgTextTile* tile;
     if (offset >= 0x10000 || (offset & 31) || !source32) return;
     tile = &sBgTextTiles[offset / 32];
+    if (tile->code && memcmp(tile->source, source32, 32))
+        sBgTextTilesPrev[offset / 32] = *tile;
     tile->code = (uint16_t)code;
     tile->style = (uint8_t)style;
     tile->faceIndex = (uint8_t)((style & 0xFF00) ? (style >> 8) & 15 : 15);
@@ -730,6 +741,16 @@ uint32_t* gPortMenuBackground;
 
 #define PLTT16 ((const uint16_t*)(uintptr_t)GBA_PLTT)
 #define VRAM8 ((const uint8_t*)(uintptr_t)GBA_VRAM)
+
+/* The registration that matches what the tile holds now: the latest, else the one before. */
+static const BgTextTile* BgTextTileAt(unsigned offset) {
+    const BgTextTile* t = &sBgTextTiles[offset / 32];
+    if (t->code && !memcmp(t->source, VRAM8 + offset, 32))
+        return t;
+    t = &sBgTextTilesPrev[offset / 32];
+    return t->code && !memcmp(t->source, VRAM8 + offset, 32) ? t : &sBgTextTiles[offset / 32];
+}
+
 #define OAM16 ((const uint16_t*)(uintptr_t)GBA_OAM)
 
 /* Line buffers hold BGR555 colours; bit 15 marks a transparent pixel. */
@@ -1699,7 +1720,7 @@ scalar_world:
             if (sHdText && !(entry & 0xC00)) {
                 unsigned offset = ((cnt >> 2) & 3) * 0x4000 + tile * 32;
                 if (offset < 0x10000) {
-                    const BgTextTile* text = &sBgTextTiles[offset / 32];
+                    const BgTextTile* text = BgTextTileAt(offset);
                     if (text->code > 0x20 && !memcmp(text->source, VRAM8 + offset, 32)) {
                         if ((px & 7) == 0 && ((py & 7) == 0 || gy == 0) && BgTextRoom()) {
                             BgTextGlyph* glyph = BgTextNew();
@@ -3100,7 +3121,7 @@ static const BgTextTile* RegisteredDigit(unsigned base, uint16_t entry) {
     unsigned offset = base + (entry & 0x3FF) * 32;
     const BgTextTile* tile;
     if ((entry & 0xC00) || offset >= 0x10000) return NULL;
-    tile = &sBgTextTiles[offset / 32];
+    tile = BgTextTileAt(offset);
     return tile->code >= '0' && tile->code <= '9' && !memcmp(tile->source, VRAM8 + offset, 32) ? tile : NULL;
 }
 
@@ -3540,10 +3561,21 @@ static void RenderOuterRows(int y0, int y1, int below) {
     }
 }
 
+/* The sprite palette and the blend registers the picture is drawn with: the HD text is presented after the vertical
+   blank, when the game has already loaded the next frame's palette, so a fade's text came out a frame ahead of the
+   picture (the deck editor's L/R: the words over a black screen, 23/10). */
+static uint16_t sTextObjPalette[256], sTextBld[3];
+static int sTextLatched;
+
 void PortPpuRenderFrame(void) {
     int gy;
     int w = gPortScreen.width;
 
+    memcpy(sTextObjPalette, PLTT16 + 256, sizeof(sTextObjPalette));
+    sTextBld[0] = IO16(0x50);
+    sTextBld[1] = IO16(0x52);
+    sTextBld[2] = IO16(0x54);
+    sTextLatched = 1;
     PortPpuBeginFrame();
     LatchAffine(1);
     QueueMainHdParts();
@@ -4557,8 +4589,8 @@ void PortPpuRenderHud(uint32_t* buf) {
 /* HD text glyphs of one layer (0 world canvas, 1 HUD canvas, 2 screen layer), front last. */
 int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud) {
     uint16_t dispcnt = IO16(0x00);
-    uint16_t bldcnt = IO16(0x50);
-    int effect = (bldcnt >> 6) & 3, evy = IO16(0x54) & 31;
+    uint16_t bldcnt = sTextLatched ? sTextBld[0] : IO16(0x50);
+    int effect = (bldcnt >> 6) & 3, evy = (sTextLatched ? sTextBld[2] : IO16(0x54)) & 31;
     int n = 0, i;
 
     if (!sHdText || (dispcnt & 0x80))
@@ -4684,7 +4716,8 @@ int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud) {
         /* colour 1 is the face, colour 2 the shadow, as the game fades them */
         bank = a2 >> 12;
         for (k = 0; k < 2; k++) {
-            col[k] = PLTT16[256 + bank * 16 + (tag->style == 2 ? 15 - k : 1 + k)] & 0x7FFF;
+            int index = bank * 16 + (tag->style == 2 ? 15 - k : 1 + k);
+            col[k] = (sTextLatched ? sTextObjPalette[index] : PLTT16[256 + index]) & 0x7FFF;
             if (bldcnt & 0x10) {
                 if (effect == 2)
                     col[k] = Brighten(col[k], evy);
@@ -4697,7 +4730,7 @@ int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud) {
         out[n].style = tag->style;
         out[n].semi = 0;
         if (((a0 >> 10) & 3) == 1) {
-            int eva = IO16(0x52) & 31;
+            int eva = (sTextLatched ? sTextBld[1] : IO16(0x52)) & 31;
             out[n].semi = (uint8_t)(eva >= 1 && eva <= 16 ? eva * 255 / 16 : 0xA0);
         }
         out[n].face = sColorLut[col[0]];
