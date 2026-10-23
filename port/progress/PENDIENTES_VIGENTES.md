@@ -165,6 +165,9 @@ Reglas del usuario:
   - [ ] Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
     manteniendo su lógica; rollback si aplica; "voltron" de lógica de juegos online y de decomps que añadieron online
     (y cómo, p. ej. con Steam / AppID 480 "Spacewar"); reconstruir en alpha la lógica del multijugador de KHCoM.
+  - [ ] Registro y reportes (usuario 23/10): log más útil sin costo (cabecera con versión, plataforma, renderer,
+    ajustes; cambios de modo); botón opcional "Reportar un problema" que abre un issue de GitHub prellenado (sin VPS).
+    Más adelante, si se quiere automático: endpoint gratuito (Cloudflare Workers), siempre con consentimiento.
   - Todo esto antes de publicar la v2.0 (usuario 23/10 ~05:00, se fue a dormir: seguir sin pedir decisiones).
   - [x] (CEnemyGauge, capas de 560 del juego) Barra de vida de los enemigos como Re:CoM (CEnemyGauge decompilado, con su lógica como la de Sora).
   - [ ] **Bug:** un cuadro negro en medio del primer combate de Agrabah con HUD HD (el usuario dejará savestate);
