@@ -11,6 +11,39 @@ Reglas del usuario:
 - Nunca borrar carpetas ReKHCoM-vX sin que el usuario lo pida.
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
+## TRASPASO 23/10 ~12:40 (Claude, sesión principal; se acaban los tokens) — LEER PRIMERO
+
+**Cómo anotar avances (pedido del usuario):** cada avance va aquí en el momento (qué se hizo, commit, cómo se
+probó, qué falta), y al cerrar una sesión se deja un traspaso como este: estado, cómo retomar cada frente, dónde
+están las herramientas y qué no hacer. Subir cada pieza verificada a main enseguida.
+
+**Online (prioridad del usuario):** alpha completa y subida: `src/sio/sio.c` (ranuras, nunca cortar, búfer
+adaptativo, chequeo de desync cada 120 cuadros), `port/src/port_netlink.c` (UDP/relay; `netlink.cfg` o
+`KHCOM_NETLINK`), `port/src/port_steamlink.c` (Spacewar 480, `steam_api.dll` en bin/), `port/tools/netlink_relay.py`.
+Docs: `ONLINE_ESTUDIO.md`, `GBA_LINK_NETPLAY.md`. Carpetas de prueba en la raíz: `ReKHCoM-OnlineAlpha-TU` /
+`-AMIGO` (Steam host/join, partidas EU/US/JP, LEEME-ONLINE.txt). Probar en local: `$TMP/netlink2.sh` (dos procesos
+ocultos; `KHCOM_NETLINK_LAG/JITTER/LOSS/DROP/TRACE/FAKEDESYNC`). Falta: prueba real por Steam entre dos cuentas
+(el usuario con su amigo), rollback en la batalla VS, relay en Android (falta permiso INTERNET), sala por código
+en el juego. Repo público aparte: https://github.com/MatyMeatBoy/GBANoCable (local `00 Claude/GBANoCable`).
+
+**Issues:** #43 y #44 cerrados (confirmados). #42, #45, #46 tienen arreglo en v2.0-pre1 y esperan al reportero;
+#40 sin datos. Releases: v2.0-pre1 (Win/Switch/Android), v2.0-pre2 (Win). La v2.0 estable solo con OK del usuario.
+
+**En curso al cortar:**
+- Batería US de menús HD: 17/19; fallan "World Cards" y "World Warp" porque en la versión US el cartucho deja de
+  dibujar el cartel como sprite en el estado de selección (`mode_worldinspect.c` ~568, `mode_worldwarp.c` igual;
+  en EU lo sigue dibujando). Arreglo a hacer: como `card_deckmenu2.c` (Ver barajas), dibujar el cartel HD con
+  `PortHdStillSprite(gWorldInspectBarTiles, gWorldInspectBarFrame0, x, 0, ...)` bajo `VERSION_US` en ese estado,
+  si en pantalla sigue la copia BG del título (verificarlo antes con una captura US).
+- Re-ejecución de `debug_kit.py run --suites events --versions jp` (se había cortado por recompilar a mitad; ya
+  arreglado en case_bin.py). Ver `build/battery-events-jp-rerun.log`.
+- Los "timeouts" del primer intento US no eran cuelgues: START en una escena abre la pausa de escena (detiene
+  cuadros a propósito); el test copiaba la partida con el nombre EU. Arreglado (copia kh_com/_us/_jp.sav).
+
+**Otros pendientes vivos:** Switch motor nuevo (deko3d / PPU multinúcleo) NO implementado, solo investigado (#35);
+video HD en Linux (diseño GStreamer más abajo); Proton; pelo de Sora y cuadro negro en Agrabah (esperan captura /
+savestate del usuario); números de cartas HD vs Re:CoM.
+
 ## Estado (21/10 ~19:15)
 
 - **v1.9.14 publicada (estable, Latest)**, commit a97268171 (main): PC (Windows, Linux, Steam Deck) estable; Android,

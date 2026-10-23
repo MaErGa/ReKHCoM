@@ -75,7 +75,8 @@ def run(build, hd, save, out, name, lang, env_extra, check, expect):
     work.mkdir(parents=True)
     for f in ('khcom.exe', 'SDL3.dll'):
         shutil.copy2(build / f, work / f)
-    shutil.copy2(save, work / 'kh_com.sav')
+    for save_name in ('kh_com.sav', 'kh_com_us.sav', 'kh_com_jp.sav'):  # each version reads its own (23/10)
+        shutil.copy2(save, work / save_name)
     (work / 'kh_com.ini').write_text('config_version=2\nview_mode=4\n')
     env = dict(os.environ, SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='dummy', KHCOM_FAST='1',
                KHCOM_CONFIG='hd_cards=1;hd_text=1', KHCOM_HD_SPRITES=str(hd), KHCOM_WINDOW='1920x1080',
