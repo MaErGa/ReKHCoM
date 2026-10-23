@@ -28,6 +28,26 @@ equipo para probarlo. Pedir a quien juegue en Deck/Linux que pruebe la v2.0 con 
 **#42 (23/10 tarde):** el reportero miró `hd/movies` (los finales van a `hd/scenes` desde la pre1); se le pidió mirar
 ahí y mandar kh_com.log.
 
+## ONLINE — avance (usuario 23/10: "ir haciendo % de avances"; metas de ping: 20-150 ms local, 150-250 bien)
+
+| Parte | % | Estado |
+|---|---|---|
+| Transporte (UDP directo, relay por código, Steam Spacewar) | 90 | PC; Android 64 por el puente UDP; consolas sin red (stubs) |
+| Determinismo / lockstep | 95 | PC↔PC y PC↔Android 64: 20/20 chequeos iguales |
+| Rollback en la batalla | 75 | PC↔PC: 0 esperas a ~160 ms de RTT, 0 desync; falta Android, pulir correcciones visibles |
+| Lobby en el juego (salas públicas, crear, unirse) | 10 | diseño: proveedor de salas común Steam/VPS (ver abajo) |
+| Inicio de sesión | 20 | Steam abierto = sesión; aviso si no; sin cuenta propia (VPS más adelante) |
+| Servidor propio (VPS: relay + lista de salas) | 30 | `netlink_relay.py` empareja por código; falta listar salas |
+| Android online | 70 | permiso, ajustes, relay/IP; rollback sin probar ahí |
+| Launcher (PC) | 70 | Steam/IP/Relay; falta "Online (lobby)" |
+| **Total online** | **~55** | |
+
+**Lobby (pedido 23/10):** en "Batalla de enlace" con el online activo, una pantalla del port (estilo Opciones) con
+las salas públicas, crear sala, actualizar y volver al cable; sin sesión de Steam, el aviso de iniciarla. Todo
+detrás de un "proveedor de salas" (listar/crear/entrar) con Steam ahora y el servidor propio después (mismo
+protocolo para Android y consolas, que no tienen Steam). Las salas llevan nombre, versión del protocolo
+(NET_VERSION), región del cartucho y estado (esperando / en combate).
+
 ## TRASPASO 23/10 ~12:40 (Claude anterior) — referencia
 
 **Cómo anotar avances (pedido del usuario):** cada avance va aquí en el momento (qué se hizo, commit, cómo se
