@@ -149,6 +149,11 @@ Reglas del usuario:
   - [~] (fundido y parpadeo arreglados; falta el título) Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
     el número de la carta grande parpadea al cambiar de carta; el título "QUITAR NAIPES" en HD como los demás. (El título "QUITAR/AÑADIR NAIPES" es BG, no sprite: hacerlo con PortHdStillSprite y un cartel armado desde el
     BG; los demás carteles salen de sprites con hd_menu_titles.py.)
+    23/10 investigación: no es OAM (volcado OAM de la pantalla Quitar naipes: nada arriba a la izquierda) ni las
+    filas de arriba del mapa de BG3 (gDeckRemove/Add/DeleteGridMap, renderizados con gDeckMenuTiles + texto por
+    idioma: vacíos ahí). Queda mirar BG0-2 (paneles gDeck1/2/3Panel). Re:CoM (FO0100 SP_camp) trae "AÑADIR NAIPES" /
+    "QUITAR NAIPES" solo en letra recta chica; la cursiva de los carteles no tiene Q ni Ñ: armarlas (O + cola,
+    N + virgulilla) o escalar la letra del cartucho. Es visual grande: mostrar al usuario antes de cerrar.
   - [x] (nivel en vivo; sin cortes medidos) Pequeños cortes de audio al cambiar de menú: la música HD sin fundido de entrada/salida como el juego;
     revisar la lógica general del mod HD y depurar. 23/10: test_hd_audio_flow con el recorrido de menús de pausa
     (pausemenus) 0 vacíos y 0 saltos; el nivel de la pista HD se aplica ahora en vivo en el stream (antes iba en las
