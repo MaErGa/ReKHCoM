@@ -174,7 +174,9 @@ Reglas del usuario:
   - [ ] Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
     manteniendo su lógica; rollback si aplica; "voltron" de lógica de juegos online y de decomps que añadieron online
     (y cómo, p. ej. con Steam / AppID 480 "Spacewar"); reconstruir en alpha la lógica del multijugador de KHCoM.
-  - [ ] Registro y reportes (usuario 23/10): log más útil sin costo (cabecera con versión, plataforma, renderer,
+  - [x] (23/10: cabecera con versión, SO, Wine/Proton, pantalla, ajustes; cada cambio de modo; botón "Reportar un
+    problema..." en la tarjeta Partida del launcher, issue prellenado con el log y la carpeta del usuario oculta)
+    Registro y reportes (usuario 23/10): log más útil sin costo (cabecera con versión, plataforma, renderer,
     ajustes; cambios de modo); botón opcional "Reportar un problema" que abre un issue de GitHub prellenado (sin VPS).
     Más adelante, si se quiere automático: endpoint gratuito (Cloudflare Workers), siempre con consentimiento.
   - Todo esto antes de publicar la v2.0 (usuario 23/10 ~05:00, se fue a dormir: seguir sin pedir decisiones).

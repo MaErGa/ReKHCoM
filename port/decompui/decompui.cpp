@@ -973,6 +973,7 @@ static void DrawCover(float w, float h) {
 static void CreateDesktopShortcut();
 static void AddToSteam();
 static void InstallElsewhereRow();
+static void ReportProblemRow();
 
 static void PageHome(SDL_Window* window) {
     float avail = ImGui::GetContentRegionAvail().x;
@@ -1175,6 +1176,7 @@ static void PageHome(SDL_Window* window) {
                                       "It is converted to this version if it comes from another region; the current "
                                       "one is backed up first."));
         InstallElsewhereRow();
+        ReportProblemRow();
     }
     ImGui::EndChild();
 
@@ -2255,6 +2257,70 @@ static void InstallElsewhereRow() {
     }
 }
 
+/* ---- "Report a problem": a new GitHub issue opened in the browser, filled with the version, the selected game and
+   the last game log's header and end. Nothing is sent by itself: the player sees it and submits it. Personal folders
+   (the user profile) are hidden in the text. ---- */
+static std::string UrlEncode(const std::string& s) {
+    static const char* hex = "0123456789ABCDEF";
+    std::string out;
+    for (unsigned char c : s) {
+        if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            out += (char)c;
+        } else {
+            out += '%';
+            out += hex[c >> 4];
+            out += hex[c & 15];
+        }
+    }
+    return out;
+}
+
+static void ReportProblemRow() {
+    if (!SDL_getenv("DECOMPUI_REPORT_URL") && !ImGui::Button(T("Reportar un problema...", "Report a problem..."), ImVec2(-FLT_MIN, 0))) {
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", T("Abre un reporte en GitHub con la versión y el final del registro del juego; lo "
+                                      "revisas y lo envías tú (necesitas una cuenta de GitHub).",
+                                      "Opens a GitHub report with the version and the end of the game's log; you "
+                                      "review and submit it (needs a GitHub account)."));
+        return;
+    }
+    std::vector<std::string> lines;
+    {
+        std::ifstream f(sRoot / "kh_com.log");
+        std::string line;
+        while (std::getline(f, line))
+            lines.push_back(line);
+    }
+    std::string log;
+    size_t head = std::min<size_t>(lines.size(), 12), tail = lines.size() > 52 ? lines.size() - 40 : head;
+    for (size_t i = 0; i < head; i++)
+        log += lines[i] + "\n";
+    if (tail > head)
+        log += "...\n";
+    for (size_t i = std::max(tail, head); i < lines.size(); i++)
+        log += lines[i] + "\n";
+    /* the user profile's folder (it carries the account name) as %USERPROFILE%, in both slash styles */
+    if (const char* profile = getenv("USERPROFILE")) {
+        std::string a = profile, b = a;
+        std::replace(b.begin(), b.end(), '\\', '/');
+        for (const std::string& p : { a, b }) {
+            for (size_t at; !p.empty() && (at = log.find(p)) != std::string::npos;)
+                log.replace(at, p.size(), "%USERPROFILE%");
+        }
+    }
+    if (log.size() > 2000) /* GitHub takes addresses up to ~8 KB, the text grows when encoded */
+        log = log.substr(log.size() - 2000);
+    std::string body = std::string("**What happened** (and what you were doing):\n\n\n**Platform / device**: Windows\n"
+                                   "**Version**: ") + REKHCOM_VERSION + " " + kVersions[sSelected].regionEn +
+                       "\n\n**Log** (kh_com.log):\n```\n" + (log.empty() ? std::string("(no log yet)\n") : log) + "```\n";
+    std::string url = "https://github.com/MatyMeatBoy/ReKHCoM/issues/new?title=" + UrlEncode("[Bug] ") +
+                      "&body=" + UrlEncode(body);
+    if (const char* test = SDL_getenv("DECOMPUI_REPORT_URL")) /* harness: the address written there, no browser */
+        std::ofstream(fs::u8path(test)) << url;
+    else
+        ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
 /* Runs the game with the shared data folder; the launcher waits hidden. */
 static void Launch(SDL_Window* window) {
     const VersionState& st = sState[sSelected];
@@ -2418,6 +2484,10 @@ int main(int argc, char** argv) {
 
     if (SDL_getenv("DECOMPUI_SHORTCUT")) { /* harness: the shortcut alone, then exit */
         CreateDesktopShortcut();
+        return 0;
+    }
+    if (SDL_getenv("DECOMPUI_REPORT_URL")) { /* harness: the report's address alone, then exit */
+        ReportProblemRow();
         return 0;
     }
     if (SDL_getenv("DECOMPUI_STEAM")) { /* harness: "Add to Steam" into that folder, then exit */
