@@ -146,12 +146,12 @@ Reglas del usuario:
   - [ ] Números de las cartas HD quizá muy chicos: comparar con Re:CoM (referencias/capturas del HD).
   - [ ] Cara HD de Sora al recibir daño: el pelo sale cortado. (23/10: la textura de caras de Re:CoM está entera, sin cortes en sus bordes ni máscaras en la secuencia;
     el sprite de combate se ve normal en los cuadros del golpe: falta una captura del momento exacto.)
-  - [x] (23/10: títulos Quitar/Añadir naipes en HD, 5 idiomas EU; US/JP siguen GBA) Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
+  - [x] (23/10: títulos Quitar/Añadir naipes en HD, 5 idiomas EU + US; JP sigue GBA) Editar baraja (Quitar/Añadir naipes): al cambiar con L/R los textos HD aparecen un cuadro antes del fundido;
     el número de la carta grande parpadea al cambiar de carta; el título "QUITAR NAIPES" en HD como los demás. (El título "QUITAR/AÑADIR NAIPES" es BG, no sprite: hacerlo con PortHdStillSprite y un cartel armado desde el
     BG; los demás carteles salen de sprites con hd_menu_titles.py.)
     23/10 hecho: el título está en BG3 (filas de arriba de gDeckRemove/AddGridMap con los tiles de texto del
     idioma); hd_menu_titles.py BG_BANNERS arma el cartel (Q = O + cola, Ñ = N + virgulilla) y card_deckmenu2.c lo
-    dibuja con PortHdStillSprite(tiles de texto, mapa). Pendiente menor: US (otro juego de tiles) y JP.
+    dibuja con PortHdStillSprite(tiles de texto, mapa). US: mismas recetas que el inglés, con gDeckMenuTiles (compila; no visto en pantalla). JP sigue GBA.
     Antes: no es OAM (volcado OAM de la pantalla Quitar naipes: nada arriba a la izquierda) ni las
     filas de arriba del mapa de BG3 (gDeckRemove/Add/DeleteGridMap, renderizados con gDeckMenuTiles + texto por
     idioma: vacíos ahí). Queda mirar BG0-2 (paneles gDeck1/2/3Panel). Re:CoM (FO0100 SP_camp) trae "AÑADIR NAIPES" /

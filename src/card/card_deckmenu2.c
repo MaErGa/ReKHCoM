@@ -4298,6 +4298,26 @@ static void Deckmenu2_2(DeckMenuWork* work) {
             work->bannerX >> 8, 0, gFadeWork->mode == FADE_MODE_BLACK ? level : 0,
             gFadeWork->mode == FADE_MODE_WHITE || gFadeWork->mode == FADE_MODE_ADD_WHITE ? level : 0);
     }
+#if defined(VERSION_EU) || defined(VERSION_US)
+    /* the Remove / Add cards titles live in BG3 itself (the grid maps' top rows, the language's text tiles): their
+       HD banners over them (hd_menu_titles.py BG_BANNERS) */
+    else if (work->view != DECK_MENU_VIEW_KEYBOARD) {
+#ifdef VERSION_EU
+        static const void* const textTiles[5] = { gDeckMenuTextTiles, gDeckMenuTextFrenchTiles, gDeckMenuTextGermanTiles,
+                                                  gDeckMenuTextItalianTiles, gDeckMenuTextSpanishTiles };
+        const void* tiles = gLanguage < 5 ? textTiles[gLanguage] : NULL;
+#else
+        const void* tiles = gDeckMenuTiles; /* the American menu's tiles carry its text */
+#endif
+        const void* map = memcmp(GetBgScreenBase(3), gDeckRemoveGridMap, 128) == 0 ? (const void*)gDeckRemoveGridMap
+                          : memcmp(GetBgScreenBase(3), gDeckAddGridMap, 128) == 0 ? (const void*)gDeckAddGridMap
+                                                                                   : NULL;
+        int level = (int)(gFadeWork->amount >> 8) * 255 / 31;
+        if (map != NULL && tiles != NULL)
+            PortHdStillSprite(tiles, map, 0, 0, gFadeWork->mode == FADE_MODE_BLACK ? level : 0,
+                              gFadeWork->mode == FADE_MODE_WHITE || gFadeWork->mode == FADE_MODE_ADD_WHITE ? level : 0);
+    }
+#endif
 #endif
 
     switch (work->view) {

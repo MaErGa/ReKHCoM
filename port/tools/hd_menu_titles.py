@@ -235,6 +235,32 @@ BANNERS = [
 ]
 
 
+# the deck editor's Remove / Add cards titles: in BG3 (the grid maps' top rows, the language's text tiles), not
+# sprites; drawn by card_deckmenu2.c with PortHdStillSprite(text tiles, map). Name, map, text tiles, text.
+BG_BANNERS = [
+    ('gDeckRemoveGridSpanishBanner', 'gDeckRemoveGridMap', 'gDeckMenuTextSpanishTiles',
+     [(WWARP, 'QUITA'), (GETC, 'R'), ' ', (WWARP, 'NAIPES')]),
+    ('gDeckAddGridSpanishBanner', 'gDeckAddGridMap', 'gDeckMenuTextSpanishTiles',
+     [(WWARP, 'AÑADI'), (GETC, 'R'), ' ', (WWARP, 'NAIPES')]),
+    ('gDeckRemoveGridBanner', 'gDeckRemoveGridMap', 'gDeckMenuTextTiles',
+     [(UGETC, 'REMO'), (ULVUP, 'V'), (UGETC, 'E'), ' ', (UGETC, 'CARDS')]),
+    ('gDeckAddGridBanner', 'gDeckAddGridMap', 'gDeckMenuTextTiles', [(UGETC, 'ADD'), ' ', (UGETC, 'CARDS')]),
+    ('gDeckRemoveGridFrenchBanner', 'gDeckRemoveGridMap', 'gDeckMenuTextFrenchTiles',
+     [(FSAVE, 'R'), (FWWARP, 'ETI'), (FSAVE, 'R'), (FWWARP, 'E'), (FSAVE, 'R'), ' ', 'CARTES']),
+    ('gDeckAddGridFrenchBanner', 'gDeckAddGridMap', 'gDeckMenuTextFrenchTiles',
+     [(FWWARP, 'A'), (FJIMINY, 'J'), (FWWARP, 'O'), (FSAVE, 'U'), (FWWARP, 'TE'), (FSAVE, 'R'), ' ', 'CARTES']),
+    ('gDeckRemoveGridGermanBanner', 'gDeckRemoveGridMap', 'gDeckMenuTextGermanTiles',
+     [(GWWARP, 'KA'), (GGETC, 'RT'), (GWWARP, 'EN'), ' ', (GWWARP, 'WE'), (GGETC, 'G')]),
+    ('gDeckAddGridGermanBanner', 'gDeckAddGridMap', 'gDeckMenuTextGermanTiles',
+     [(GWWARP, 'KA'), (GGETC, 'RT'), (GWWARP, 'EN'), ' ', (UGETC, 'HI'), (GWWARP, 'N'), (IWSEL, 'Z'), (GLVUP, 'U')]),
+    ('gDeckRemoveGridItalianBanner', 'gDeckRemoveGridMap', 'gDeckMenuTextItalianTiles',
+     [(IWWARP, 'TO'), (IGETC, 'G'), (ILVUP, 'L'), 5, (IWSEL, 'I'), ' ', 'CARTE']),
+    ('gDeckAddGridItalianBanner', 'gDeckAddGridMap', 'gDeckMenuTextItalianTiles',
+     [(IWWARP, 'A'), (IGETC, 'GG'), (IWSEL, 'I'), (WWARP, 'U'), (IWWARP, 'N'), (IGETC, 'G'), (IWSEL, 'I'), ' ',
+      'CARTE']),
+]
+
+
 def rom():
     data = (ROOT / 'roms' / 'B8CP.gba').read_bytes()
     syms = {k: int(v, 16) for k, v in re.findall(r'\.set _(\w+), (0x[0-9a-f]+)',
@@ -274,8 +300,18 @@ def colour(data, syms, palette, index):
     return '%02X%02X%02X' % ((c & 31) * 255 // 31, ((c >> 5) & 31) * 255 // 31, ((c >> 10) & 31) * 255 // 31)
 
 
+# letters Re:CoM's lettering lacks, drawn as another letter plus a white stroke: (base letter, stroke)
+DECOR = {'Q': ('O', 'tail'), 'Ñ': ('N', 'tilde')}
+# the strokes as polygons: x as a fraction of the letter's width, y in GBA rows from the capitals' top
+STROKES = {
+    'tail': [(0.48, 4.4), (0.74, 4.4), (0.98, 7.2), (0.70, 7.2)],
+    'tilde': [(0.24, -0.35), (0.44, -1.7), (0.66, -1.15), (0.92, -1.9), (0.98, -0.95), (0.74, -0.15), (0.50, -0.7),
+              (0.32, 0.25)],
+}
+
+
 def pieces(text):
-    """(texture, rect, cap top, cap bottom, op) of each glyph or word, None for a word space."""
+    """(texture, rect, cap top, cap bottom, op, advance, stroke) of each glyph or word, None for a word space."""
     out = []
     for p in text:
         if p == ' ':
@@ -284,20 +320,73 @@ def pieces(text):
             out.append(p)
         elif isinstance(p, tuple):
             for ch in p[1]:
-                g = GLYPHS[(p[0], ch)]
-                out.append((p[0], g[:4], g[4], g[5], g[6] if len(g) > 6 else 'sblit', g[7] if len(g) > 7 else None))
+                deco = DECOR.get(ch)
+                g = GLYPHS[(p[0], deco[0] if deco else ch)]
+                out.append((p[0], g[:4], g[4], g[5], g[6] if len(g) > 6 else 'sblit', g[7] if len(g) > 7 else None,
+                            deco[1] if deco else None))
         else:
             tex, rect, ct, cb = WORDS[p]
-            out.append((tex, rect, ct, cb, 'blit', None))
+            out.append((tex, rect, ct, cb, 'blit', None, None))
     return out
 
 
 def row(spec, data, syms):
     name, fn, palette, text = spec[:4]
     tiles, frame = (spec[4] if len(spec) > 4 and spec[4] else name + 'Tiles'), f'{name}Frame{fn}'
-    px, (bx, by, bw, bh) = frame_pixels(data, syms, frame, tiles)
+    px, box = frame_pixels(data, syms, frame, tiles)
     if len(spec) > 5 and spec[5]:  # the picture the screen shows once still (its BG copy) is drawn from these tiles
         px = frame_pixels(data, syms, frame, spec[5])[0]
+    ops, own = banner_ops(px, box, lambda i: colour(data, syms, palette, i), text)
+    shared = sum(b[0] == name for b in BANNERS) > 1  # several frames of one tile set: the frame names it
+    return '\t'.join([name + (f'Frame{fn}' if shared else '') + 'Banner', '5', frame, tiles, *map(str, box), own, ops,
+                      spec[6] if len(spec) > 6 else 'eu'])
+
+
+def bg_pixels(data, syms, bg_map, text_tiles):
+    """A banner drawn in the deck menu's BG3 (its top two tile rows): {(x, y): palette index} from the map, the menu's
+    tiles and the language's text tiles (copied at 0x3800, card_deckmenu2.c), and the palette it uses."""
+    char = bytearray(0x8000)
+    base = syms['gDeckMenuTiles'] - 0x08000000
+    char[:0x3800] = data[base:base + 0x3800]
+    text = syms[text_tiles] - 0x08000000
+    char[0x3800:] = data[text:text + 0x4800]
+    m = syms[bg_map] - 0x08000000
+    px, pals = {}, Counter()
+    for r in range(2):
+        for c in range(32):
+            e = struct.unpack_from('<H', data, m + 2 * (r * 32 + c))[0]
+            for y in range(8):
+                for x in range(8):
+                    sx, sy = (7 - x if e >> 10 & 1 else x), (7 - y if e >> 11 & 1 else y)
+                    b = char[(e & 0x3FF) * 32 + sy * 4 + sx // 2]
+                    v = b >> 4 if sx & 1 else b & 15
+                    if v:
+                        px[(c * 8 + x, r * 8 + y)] = v
+                        pals[e >> 12] += 1
+    return px, pals.most_common(1)[0][0]
+
+
+def bg_row(spec, data, syms):
+    name, bg_map, text_tiles, text = spec
+    px, pal = bg_pixels(data, syms, bg_map, text_tiles)
+    # the bar's rows (its top line at row 1, its bottom line at row 13), without the menu's ground around it
+    top = next(y for y in range(16) if px.get((0, y)) == 15)
+    px = {(x, y): v for (x, y), v in px.items() if top <= y <= top + 12}
+    length = 0
+    while px.get((length, top)) == px[(0, top)]:
+        length += 1
+    box = (0, 0, (length + 16) // 8 * 8, 16)  # the bar and its arrow
+    ops, own = banner_ops(px, box, lambda i: colour(data, syms, 'gDeckMenuPalettes', pal * 16 + i), text)
+    rows = ['\t'.join([name, '5', bg_map, text_tiles, *map(str, box), own, ops, 'eu'])]
+    if text_tiles == 'gDeckMenuTextTiles':  # the American cartridge: the same title, its text in the menu's own tiles
+        rows.append('\t'.join([name.replace('Banner', 'UsBanner'), '5', bg_map, 'gDeckMenuTiles', *map(str, box), own,
+                               ops, 'us']))
+    return rows
+
+
+def banner_ops(px, box, colour_of, text):
+    """A banner's recipe: the bar from the cartridge's pixels (palette indices), the title in Re:CoM's lettering."""
+    bx, by, bw, bh = box
     top = min(y for _, y in px)
     top_index = px[(0, top)]
     length = 0
@@ -306,7 +395,7 @@ def row(spec, data, syms):
     body_index = Counter(v for (x, y), v in px.items() if y == top + 1 and x < length - 2).most_common(1)[0][0]
     tx = min(x for (x, y), v in px.items() if CAPS[0] <= y - top + 1 < CAPS[1] and x < length - 1 and
              v not in (body_index, top_index))
-    line, body = colour(data, syms, palette, top_index), colour(data, syms, palette, body_index)
+    line, body = colour_of(top_index), colour_of(body_index)
 
     def X(x):
         return round((x - bx) * K)
@@ -328,31 +417,34 @@ def row(spec, data, syms):
         if p is None or isinstance(p, int):
             x += (13 if p is None else p) * h / 26
             continue
-        tex, r, ct, cb, op, advance = p
+        tex, r, ct, cb, op, advance, deco = p
         s = h / (cb - ct)
         w = (r[2] - r[0]) * s
-        laid.append((tex, r, op, x, w, CAPS[0] + t - (ct - r[1]) * s, CAPS[0] + t + (r[3] - ct) * s))
+        laid.append((tex, r, op, x, w, CAPS[0] + t - (ct - r[1]) * s, CAPS[0] + t + (r[3] - ct) * s, deco))
         x += advance * s if advance else w - (3 * s if op == 'sblit' else 0)
     width = max(l[3] + l[4] for l in laid)
     f = min(1.0, (length + 1 - tx) / width)
     current = None
     own = laid[0][0]
-    for tex, r, op, x0, w, y0, y1 in laid:
+    strokes = []
+    for tex, r, op, x0, w, y0, y1, deco in laid:
         want = '' if tex == own else tex
         if want != current:
             if current is not None or want:
                 ops.append(f'src={want}')
             current = want
         ops.append(f'{op}=' + ','.join(map(str, (*r, X(tx + x0 * f), Y(y0), X(tx + (x0 + w) * f), Y(y1)))))
+        if deco:  # white, where the lettering's ink starts
+            strokes.append('poly=FFFFFFFF,' + ','.join(f'{X(tx + (x0 + a * w) * f)},{Y(CAPS[0] + t + b)}'
+                                                         for a, b in STROKES[deco]))
+    ops += strokes
     ops.append(f'scale={K}')
-    shared = sum(b[0] == name for b in BANNERS) > 1  # several frames of one tile set: the frame names it
-    return '\t'.join([name + (f'Frame{fn}' if shared else '') + 'Banner', '5', frame, tiles, str(bx), str(by), str(bw), str(bh), own, ';'.join(ops),
-                      spec[6] if len(spec) > 6 else 'eu'])
+    return ';'.join(ops), own
 
 
 def main():
     data, syms = rom()
-    rows = [row(b, data, syms) for b in BANNERS]
+    rows = [row(b, data, syms) for b in BANNERS] + [r for b in BG_BANNERS for r in bg_row(b, data, syms)]
     if '--write' not in sys.argv:
         print('\n'.join(rows))
         return

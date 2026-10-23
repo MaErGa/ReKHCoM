@@ -72,7 +72,8 @@ def main():
             for need in (tiles, frame):
                 if need != '-' and need not in s:
                     problems.append(f'{name} ({reg}): no symbol {need}')
-            if frame == '-' or frame not in s or data[reg] is None:
+            # a BG banner (hd_menu_titles.py BG_BANNERS) is named by its map: no OAM parts to check
+            if frame == '-' or frame.endswith('Map') or frame not in s or data[reg] is None:
                 continue
             for px, py, pw, ph in parts(data[reg], s, frame):
                 if px < x0 or py < y0 or px + pw > x0 + w or py + ph > y0 + h:
