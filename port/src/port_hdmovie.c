@@ -573,6 +573,24 @@ static int PlayFile(const char* name) {
         goto done;
     }
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+    /* the first picture before anything is shown: a system whose Media Foundation opens the file but cannot decode
+       its H.264 (Wine/Proton without the codec) keeps the cartridge's scene instead of a black movie */
+    {
+        int tries;
+        for (tries = 0; tries < 64 && !pending; tries++) {
+            DWORD flags = 0;
+            LONGLONG ts = 0;
+            hr = IMFSourceReader_ReadSample(reader, (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, &flags, &ts, &pending);
+            if (FAILED(hr) || (flags & MF_SOURCE_READERF_ENDOFSTREAM))
+                break;
+            if (pending)
+                nextVideo = ts;
+        }
+        if (!pending) {
+            PortLog("hd movie: %s gives no picture (0x%08lx): the cartridge's instead", path, (unsigned long)hr);
+            goto done;
+        }
+    }
     PortLog("hd movie: %s (%ux%u%s, %u Hz)", name, width, height, nv12 ? " NV12" : " RGB", rate);
     LoadSubs(&subs, name);
     played = 1;

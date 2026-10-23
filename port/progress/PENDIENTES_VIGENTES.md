@@ -215,6 +215,10 @@ savestate del usuario); números de cartas HD vs Re:CoM.
     gst-plugins-good + gst-libav (H.264/AAC). FFmpeg descartado: sus structs cambian por versión.
   - [ ] Proton (usuario 23/10): que la versión de Windows corra bien en Proton estable sin "Experimental"; revisar
     reportes (issues) de Steam Deck/Linux y qué falla (Media Foundation de los videos, D3D11, audio).
+    23/10: ningún issue de Proton/Deck abierto (solo #19 GLIBC, cerrado). Riesgo principal = H.264 por Media
+    Foundation en Proton estable: ahora el video HD lee su primer cuadro antes de mostrar nada y, si no sale imagen,
+    el juego sigue con la escena del cartucho (antes: video negro con sonido). test_hd_scenes 97/97 sin cambios.
+    Falta: probarlo en Proton real (llega como reporte).
   - [ ] Ripear más assets aprendiendo de otros mods (MelonMIX HD y similares, "voltron" de repos): qué assets de
     Re:CoM sirven y cómo los usan.
   - [ ] v2.0: pasada de rendimiento para todas las consolas, solo lo medible y sin riesgo (medir antes/después,
