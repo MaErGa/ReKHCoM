@@ -105,6 +105,11 @@ static struct {
     u8 peerKnown[NET_RING];
     u8 pauseFrames;
     u8 startFrames; /* the parent repeats START this many frames */
+    /* the battle's smoothing: after a frame without the other player's packet, the next pairs are held until
+       `target` of them are in hand, so an uneven connection makes few short waits instead of many hitches;
+       target grows with repeated waits and shrinks after a calm while (the only cost: that many frames of delay) */
+    u8 target, refill;
+    u32 frames, waited, lastWait, calm;
 } sNet;
 
 static int NetActive(void) {
@@ -212,8 +217,18 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
         } else {
             CpuFill16(0, s->words, sizeof(s->words));
         }
-        s->pause = gSioWork.recvCount > 3;
+        /* the cable's flow control (a pause request past 3 waiting packets) is not used: the slots already keep
+           both sides in step, and a pause would send empty packets that the lockstep battle reads as missing */
+        s->pause = 0;
         sNet.mine++;
+    }
+    {
+        u32 ready = (sNet.theirs < sNet.mine ? sNet.theirs : sNet.mine) - sNet.paired;
+        if (sNet.target == 0)
+            sNet.target = 2;
+        if (sNet.refill && gSioWork.recvCount == 0 && ready < sNet.target && (gSystemFlags & SYSTEM_FLAG_LINK_ACTIVE))
+            goto held;
+        sNet.refill = 0;
     }
     while (sNet.paired < sNet.mine && sNet.peerKnown[sNet.paired % NET_RING] && gSioWork.recvCount < 30) {
         const NetSlot* mine = &sNet.my[sNet.paired % NET_RING];
@@ -238,11 +253,10 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
             }
             gSioWork.recvCount++;
         }
-        if (theirs->pause && !gSioWork.paused)
-            sNet.pauseFrames = 5;
         sNet.peerKnown[sNet.paired % NET_RING] = 0;
         sNet.paired++;
     }
+held:
     if (sNet.mine % 600 == 0)
         PortLog("netlink: slot %u, %u paired, %u packets waiting", (unsigned)sNet.mine, (unsigned)sNet.paired,
                 (unsigned)gSioWork.recvCount);
@@ -265,6 +279,28 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
             PortUiLinkWaitingNotice(silent / 1000);
     }
     SioReadRecvFrame(recvFrame);
+    if (gSystemFlags & SYSTEM_FLAG_LINK_ACTIVE) { /* the lockstep battle: a frame without a pair is a frame waited */
+        sNet.frames++;
+        if (gSioWork.recvEmpty) {
+            sNet.waited++;
+            if (!sNet.refill) {
+                sNet.refill = 1;
+                if (sNet.frames - sNet.lastWait < 180 && sNet.target < 8) {
+                    sNet.target++;
+                    PortLog("netlink: uneven connection, buffer %u frames", (unsigned)sNet.target);
+                }
+                sNet.lastWait = sNet.frames;
+            }
+            sNet.calm = 0;
+        } else if (++sNet.calm > 900 && sNet.target > 2) {
+            sNet.target--;
+            sNet.calm = 0;
+            PortLog("netlink: steady connection, buffer %u frames", (unsigned)sNet.target);
+        }
+        if (sNet.frames % 600 == 0)
+            PortLog("netlink: battle %u frames, %u waited, buffer %u", (unsigned)sNet.frames, (unsigned)sNet.waited,
+                    (unsigned)sNet.target);
+    }
     if (PortNetlinkTrace() && !gSioWork.recvEmpty)
         PortLog("netlink: read %04x %04x | %04x %04x", recvFrame[0][0], recvFrame[1][0], recvFrame[0][1], recvFrame[1][1]);
 }
