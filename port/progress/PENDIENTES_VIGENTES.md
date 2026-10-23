@@ -179,7 +179,8 @@ Reglas del usuario:
     vacía, nunca borra la original; probado byte a byte); "Añadir a Steam" (Inicio: juego externo en shortcuts.vdf de
     la cuenta más reciente, con portada y logo; actualiza sin duplicar, las demás entradas intactas, copia
     shortcuts.vdf.rekhcom-backup; probado sobre una copia del Steam real, no sobre el real).
-  - [ ] Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
+  - [~] (estudio hecho 23/10: port/progress/ONLINE_ESTUDIO.md; cable por red a nivel de paquete, rollback no aplica
+    sobre el cable; falta la alpha port_netlink.c) Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
     manteniendo su lógica; rollback si aplica; "voltron" de lógica de juegos online y de decomps que añadieron online
     (y cómo, p. ej. con Steam / AppID 480 "Spacewar"); reconstruir en alpha la lógica del multijugador de KHCoM.
   - [x] (23/10: cabecera con versión, SO, Wine/Proton, pantalla, ajustes; cada cambio de modo; botón "Reportar un
