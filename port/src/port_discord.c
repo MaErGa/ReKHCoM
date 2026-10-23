@@ -174,6 +174,19 @@ static int Open(void) {
     return 0;
 }
 
+/* A test run (hidden window or a scheduled quit) never shows itself in the player's Discord profile: the batteries
+   start hundreds of games while the player plays. KHCOM_DISCORD_IPC (the presence's own tests) still connects. */
+static int HarnessRun(void) {
+    static int known = -1;
+    if (known < 0) {
+        const char* video = SDL_getenv("SDL_VIDEO_DRIVER");
+        known = SDL_getenv("KHCOM_DISCORD_IPC") == NULL
+                && (SDL_getenv("KHCOM_QUIT") != NULL
+                    || (video != NULL && (strcmp(video, "dummy") == 0 || strcmp(video, "offscreen") == 0)));
+    }
+    return known;
+}
+
 static const char* AppId(void) {
     const char* id = SDL_getenv("KHCOM_DISCORD_APP_ID");
     return id != NULL && *id ? id : REKHCOM_DISCORD_APP_ID;
@@ -355,7 +368,7 @@ void PortDiscordFrame(void) {
         sFieldSeen = 0;
     else if (gCurrentMode == &gModeMapFld)
         sFieldSeen = 1;
-    if (!gPortConfig.discordPresence || !*AppId()) {
+    if (!gPortConfig.discordPresence || !*AppId() || HarnessRun()) {
         if (sConnected)
             Close();
         return;
