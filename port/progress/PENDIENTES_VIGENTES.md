@@ -179,8 +179,9 @@ Reglas del usuario:
     vacía, nunca borra la original; probado byte a byte); "Añadir a Steam" (Inicio: juego externo en shortcuts.vdf de
     la cuenta más reciente, con portada y logo; actualiza sin duplicar, las demás entradas intactas, copia
     shortcuts.vdf.rekhcom-backup; probado sobre una copia del Steam real, no sobre el real).
-  - [~] (estudio hecho 23/10: port/progress/ONLINE_ESTUDIO.md; cable por red a nivel de paquete, alpha port_netlink.c conecta y
-    entra a la batalla VS por red con demora y pérdida; falta que la batalla avance y la interfaz) Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
+  - [~] (estudio hecho 23/10: port/progress/ONLINE_ESTUDIO.md; cable por red a nivel de paquete, alpha completa: Steam/IP/relay,
+    batalla sincronizada, sin cortes, búfer adaptativo, interfaz en el launcher; carpetas de prueba
+    ReKHCoM-OnlineAlpha-TU / -AMIGO; falta la prueba real entre dos personas y lo de "Siguiente" en ONLINE_ESTUDIO.md) Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
     manteniendo su lógica; rollback si aplica; "voltron" de lógica de juegos online y de decomps que añadieron online
     (y cómo, p. ej. con Steam / AppID 480 "Spacewar"); reconstruir en alpha la lógica del multijugador de KHCoM.
   - [x] (23/10: cabecera con versión, SO, Wine/Proton, pantalla, ajustes; cada cambio de modo; botón "Reportar un

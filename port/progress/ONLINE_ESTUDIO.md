@@ -65,13 +65,33 @@ paquete**, reemplazando solo el transporte (registros, timer, interrupción) y d
 4. Steam (lobby + relay) como transporte alternativo, si se consigue AppID.
 5. Rollback solo si la batalla VS se reconstruye sobre entradas (opción 3).
 
-## Estado de la alpha (23/10, `port/src/port_netlink.c` + `src/sio/sio.c`, solo PC y solo con `KHCOM_NETLINK`)
+## Estado de la alpha (23/10)
 
-- Dos procesos ocultos en 127.0.0.1 (`mode_sio_battle` por harness, teclas por `KHCOM_KEYS`): handshake, conexión,
-  intercambio de datos/barajas, menú de opciones VS y entrada a la batalla en los dos. Los dos ven exactamente la
-  misma secuencia de pares (traza `KHCOM_NETLINK_TRACE`).
-- Con 6 cuadros de demora por envío (~100 ms) y 10% de pérdida también llegan juntos a la batalla. Hizo falta subir
-  el límite de reintentos de la aceptación (10 cuadros en el cable, 120 en red: `chara.c` SIO_CONNECT_RETRY_LIMIT).
-- En la batalla las teclas viajan (DERECHA del jugador 1 llega reenviada a los dos), pero en las capturas la
-  batalla se ve quieta (también sin demora): siguiente paso, ver por qué no avanza la batalla (¿espera algo del
-  cartucho que el harness no da?) antes de la interfaz (alojar/unirse en Opciones).
+Código: `port/src/port_netlink.c` (transportes), `port/src/port_steamlink.c` (Steam), `src/sio/sio.c` (ranuras, solo
+PC y solo con red activa), `port/tools/netlink_relay.py` (relay para VPS). Sin red, el cable queda como siempre.
+
+- Transportes (`netlink.cfg` o `KHCOM_NETLINK`): `steam:host|join` (sala pública Spacewar 480 con etiqueta
+  rekhcom, primero la de un amigo; P2P por los relays de Valve), `host:<puerto>` / `join:<ip>:<puerto>` (UDP
+  directo), `relay:<servidor>:<puerto>:<CODIGO>:host|join` (VPS, crossplay). El launcher lo elige en Mejoras.
+- Probado con dos juegos ocultos: conexión, naipes, opciones VS y batalla sincronizada (las teclas del jugador 1
+  mueven su personaje en las dos pantallas). Con 6 cuadros de demora y 10% de pérdida; con 4 de demora + 6 de jitter
+  + 5% de pérdida esperó 3-6 cuadros de 3600; con un corte total de 10 s en plena batalla los dos esperan ("Esperando
+  al otro jugador... N s") y siguen sincronizados al volver. Relay: los dos se encuentran por código y juegan.
+- Lo que se cambió de la lógica del cable, solo en red: el límite de reintentos de la aceptación (10 -> 120
+  cuadros), la pausa de control de flujo del cable (apagada: peleaba con el búfer y la batalla esperaba el 23% de
+  los cuadros) y los errores de timeout / cola llena / checksum (nunca se reportan: se espera).
+- Fallo encontrado por el camino, solo del harness: entrar directo a la batalla de enlace saltaba el
+  ResetGameState del título (límites de la arena VS en 0). En juego real no pasa.
+- Steam probado hasta cargar la DLL y fallar limpio sin Steam abierto; la sala real necesita dos cuentas (prueba
+  del usuario con un amigo: carpetas `ReKHCoM-OnlineAlpha-TU` y `-AMIGO` en la raíz de KHCoMPC).
+
+## Siguiente (para llegar a "no se nota que es online")
+
+1. Hash del estado de batalla cada N cuadros en las ranuras: detectar desincronización (no debería haber: misma
+   semilla, mismas teclas) y repararla mandando el savestate del anfitrión al otro en vez de cortar (lo que hace
+   ShiningSoul2Recomp, `docs/MODERN_ONLINE.md` en D:/01Claude/BackupsCLAUDE/GBA).
+2. Reconexión tras reinicio del juego del otro: mismo esquema (savestate del anfitrión + número de ranura).
+3. Rollback en la batalla (predecir las teclas del otro, resimular con `port_state.c`): quita la demora del búfer.
+4. VPS: `netlink_relay.py` en cualquier VPS de 4-6 USD/mes (1 vCPU basta: ~10 KB/s por partida). Para salas por
+   código desde el juego y crossplay (Android, Switch, Linux): el transporte relay ya funciona en cualquier sistema
+   con UDP; falta compilarlo en esos ports y una pantalla para escribir el código.
