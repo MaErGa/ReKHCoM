@@ -438,6 +438,7 @@ static void GaugeParts(SDL_Renderer* renderer, float x, float y, float s, const 
 #else
 #define GAUGE_SS 4
 #endif
+#if __STDC_HOSTED__ /* the consoles' SDL shim has no render targets: there the gauge draws as before */
 static SDL_Texture* sGaugeTarget[3];
 static int sGaugeTargetW[3], sGaugeTargetH[3];
 
@@ -457,6 +458,8 @@ static SDL_Texture* GaugeTarget(SDL_Renderer* renderer, int i, int w, int h) {
     return sGaugeTarget[i];
 }
 
+#endif
+
 void PortHdGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, float shade) {
     /* gauge:01 sits at (60, 60) of Re:CoM's 640-wide screen: the GBA HUD's 240 gives 0.375 of a GBA pixel a unit */
     const float unit = 240.0f / 640.0f;
@@ -467,8 +470,9 @@ void PortHdGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, fl
     if (PortHdDrawLogged())
         PortLog("hd gauge %u hp %d/%d trail %d state %d face %d", (unsigned)PortFrameCount(), sGauge.hp, sGauge.maxHp,
                 sGauge.trail, sGauge.stateAnim, sGauge.faceAnim);
-    /* not on SDL's software renderer (the consoles' hosts, the tests' offscreen window): restoring the window as
-       the target crashed inside it */
+#if __STDC_HOSTED__
+    /* not on SDL's software renderer (the tests' offscreen window): restoring the window as the target crashed
+       inside it */
     if (!SDL_getenv("KHCOM_GAUGE_NO_SS") && SDL_strcmp(SDL_GetRendererName(renderer), SDL_SOFTWARE_RENDERER) != 0) {
         /* the gauge's area in Re:CoM's units around its origin (ring, face, the bar at its longest, the alarm's glow) */
         const float ux0 = -60.0f, uy0 = -60.0f, ux1 = 620.0f, uy1 = 220.0f;
@@ -525,6 +529,7 @@ void PortHdGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, fl
             return;
         }
     }
+#endif
     GaugeParts(renderer, x, y, s, tint);
 }
 
