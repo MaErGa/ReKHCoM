@@ -14,4 +14,13 @@ void PortNetlinkFrame(void);                 /* once a game frame (the test lag)
 int PortNetlinkSilentMs(void);               /* since the other player was last heard */
 int PortNetlinkTrace(void);                  /* KHCOM_NETLINK_TRACE: every packet pair in the log */
 
+
+/* port_steamlink.c: the same datagrams through a Steam room and Steam's P2P messages (Windows) */
+int PortSteamlinkStart(int role);
+void PortSteamlinkFrame(void);
+int PortSteamlinkHasPeer(void);
+void PortSteamlinkSend(const uint8_t* data, int size);
+int PortSteamlinkRecv(uint8_t* data, int cap);
+const char* PortSteamlinkStatus(void); /* what the Steam link is doing, for the screen */
+
 #endif

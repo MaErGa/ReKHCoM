@@ -1,8 +1,11 @@
 /* The link cable over the network (alpha, port/progress/ONLINE_ESTUDIO.md): a UDP socket to the other player.
  * src/sio/sio.c keeps the game's own packet queue and asks here for the datagrams; this file only moves bytes.
  *
- * KHCOM_NETLINK=host:<port>        wait for the other player on that port (the cable's parent, player 1)
- * KHCOM_NETLINK=join:<ip>:<port>   connect to a host (the child, player 2)
+ * KHCOM_NETLINK=steam:host         open a Steam room (port_steamlink.c): the cable's parent, player 1
+ * KHCOM_NETLINK=steam:join         enter a friend's Steam room: the child, player 2
+ * KHCOM_NETLINK=host:<port>        wait for the other player on that UDP port (player 1)
+ * KHCOM_NETLINK=join:<ip>:<port>   connect to a host by address (player 2)
+ * Without the variable, netlink.cfg in the data folder (the launcher writes it) holds the same text.
  * KHCOM_NETLINK_LAG=<frames>       tests: hold every datagram that many frames before it goes out
  * KHCOM_NETLINK_LOSS=<percent>     tests: drop that share of the datagrams sent
  * KHCOM_NETLINK_DROP=<from>-<to>   tests: an outage, nothing sent between those game frames
@@ -31,7 +34,7 @@ typedef int Sock;
 #define closesocket close
 #endif
 
-static int sChecked, sRole;
+static int sChecked, sRole, sSteam;
 static Sock sSock = BAD_SOCK;
 static struct sockaddr_in sPeer;
 static int sHavePeer;
@@ -117,14 +120,39 @@ static int Open(const char* spec) {
     return 1;
 }
 
+/* the link's setting: KHCOM_NETLINK, else the first line of netlink.cfg */
+static const char* Spec(void) {
+    static char line[160];
+    const char* env = SDL_getenv("KHCOM_NETLINK");
+    FILE* f;
+    if (env)
+        return env;
+    f = fopen(PortConfigPath("netlink.cfg"), "r");
+    if (!f)
+        return NULL;
+    if (!fgets(line, sizeof(line), f))
+        line[0] = 0;
+    fclose(f);
+    line[strcspn(line, "\r\n")] = 0;
+    return line[0] && SDL_strcmp(line, "off") != 0 ? line : NULL;
+}
+
 int PortNetlinkRole(void) {
     if (!sChecked) {
-        const char* spec = SDL_getenv("KHCOM_NETLINK");
+        const char* spec = Spec();
         sChecked = 1;
-        if (spec && !Open(spec))
+        if (spec && SDL_strncmp(spec, "steam:", 6) == 0) {
+            sRole = SDL_strcmp(spec + 6, "host") == 0 ? PORT_NETLINK_HOST : PORT_NETLINK_JOIN;
+            sSteam = PortSteamlinkStart(sRole);
+            if (!sSteam)
+                sRole = 0;
+            else
+                PortLog("netlink: through Steam, %s", sRole == PORT_NETLINK_HOST ? "hosting" : "joining");
+        } else if (spec && !Open(spec)) {
             sRole = 0;
+        }
     }
-    return sSock != BAD_SOCK ? sRole : 0;
+    return sSock != BAD_SOCK || sSteam ? sRole : 0;
 }
 
 static void SendNow(const uint8_t* data, int size) {
@@ -132,11 +160,15 @@ static void SendNow(const uint8_t* data, int size) {
         return;
     if (sLoss > 0 && (int)(SDL_rand(100)) < sLoss)
         return;
+    if (sSteam) {
+        PortSteamlinkSend(data, size);
+        return;
+    }
     sendto(sSock, (const char*)data, size, 0, (struct sockaddr*)&sPeer, sizeof(sPeer));
 }
 
 void PortNetlinkSend(const uint8_t* data, int size) {
-    if (!PortNetlinkRole() || !sHavePeer || size <= 0 || size > PORT_NETLINK_MAX)
+    if (!PortNetlinkRole() || !(sHavePeer || sSteam) || size <= 0 || size > PORT_NETLINK_MAX)
         return;
     if (sLag > 0 && sHeldCount < (int)SDL_arraysize(sHeld)) {
         Held* h = &sHeld[sHeldCount++];
@@ -158,6 +190,12 @@ int PortNetlinkRecv(uint8_t* data, int cap) {
     int n;
     if (!PortNetlinkRole())
         return 0;
+    if (sSteam) {
+        n = PortSteamlinkRecv(data, cap);
+        if (n > 0)
+            sLastHeard = SDL_GetTicks();
+        return n;
+    }
     n = (int)recvfrom(sSock, (char*)data, cap, 0, (struct sockaddr*)&from, &len);
     if (n <= 0)
         return 0;
@@ -175,6 +213,8 @@ int PortNetlinkRecv(uint8_t* data, int cap) {
 void PortNetlinkFrame(void) {
     int i, kept = 0;
     sFrame++;
+    if (sSteam)
+        PortSteamlinkFrame();
     for (i = 0; i < sHeldCount; i++) {
         if (sHeld[i].due <= sFrame)
             SendNow(sHeld[i].data, sHeld[i].size);

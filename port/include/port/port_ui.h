@@ -25,6 +25,7 @@ void PortUiTitleHint(void);
 /* Short message in the corner of the screen (UTF-8). */
 void PortUiNotice(const char* text);
 void PortUiLinkWaitingNotice(int seconds);
+void PortUiLinkNotice(const char* en, const char* es, const char* name);
 void PortUiZoomStep(int dir); /* the main zoom, one step (dir < 0: closer), with a notice */
 /* Transparent single-line text using the cartridge font. Caller owns pixels. */
 int PortUiRenderTextLine(uint32_t* pixels, int width, int height, const char* text, uint32_t color);

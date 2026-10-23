@@ -1607,6 +1607,12 @@ void PortUiLinkWaitingNotice(int seconds) {
     sNoticeFrames = 90;
 }
 
+/* port_steamlink.c's state on screen: Spanish for the Spanish game, English otherwise */
+void PortUiLinkNotice(const char* en, const char* es, const char* name) {
+    SDL_snprintf(sNotice, sizeof(sNotice), Lang() == LANG_ES ? es : en, name ? name : "");
+    sNoticeFrames = 240;
+}
+
 /* map_tasks.c / poo.c: moogle points picked up on the field. Pickups close
    together add up in one notice: "+30 moogle points (total 1250)". */
 void PortMoogleNotice(unsigned amount, unsigned total) {

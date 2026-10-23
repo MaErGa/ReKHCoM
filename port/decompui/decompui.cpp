@@ -1374,6 +1374,81 @@ static void PageSound() {
         SaveIni();
 }
 
+/* The link battle over the network (alpha, port/progress/ONLINE_ESTUDIO.md): netlink.cfg holds one line the game
+   reads when the link starts: off, steam:host, steam:join, host:<port> or join:<ip>:<port>. */
+static void NetlinkRows() {
+    static int mode = -1, port = 47777;
+    static char ip[64] = "";
+    static const char* const kSpecs[5] = { "off", "steam:host", "steam:join", "host", "join" };
+    const char* const names[5] = { T("Desactivado (cable)", "Off (cable)"), T("Steam: crear sala", "Steam: open a room"),
+                                   T("Steam: unirse a un amigo", "Steam: join a friend"),
+                                   T("IP: alojar", "IP: host"), T("IP: unirse", "IP: join") };
+    fs::path cfg = sRoot / "netlink.cfg";
+    bool save = false;
+    if (mode < 0) {
+        std::string line;
+        std::ifstream f(cfg);
+        std::getline(f, line);
+        mode = 0;
+        for (int i = 1; i < 3; i++)
+            if (line == kSpecs[i])
+                mode = i;
+        if (line.rfind("host:", 0) == 0) {
+            mode = 3;
+            port = std::atoi(line.c_str() + 5);
+        } else if (line.rfind("join:", 0) == 0) {
+            size_t colon = line.rfind(':');
+            mode = 4;
+            snprintf(ip, sizeof(ip), "%s", line.substr(5, colon - 5).c_str());
+            port = std::atoi(line.c_str() + colon + 1);
+        }
+        if (port <= 0 || port > 65535)
+            port = 47777;
+    }
+    save |= CycleRow(T("Enlace en red (alpha)", "Network link (alpha)"),
+                     T("La batalla de enlace (Título > Batalla de enlace) por internet en vez del cable. Steam: los dos "
+                       "con Steam abierto; uno crea la sala y el otro se une (prefiere la sala de un amigo de Steam). "
+                       "IP: quien aloja abre el puerto UDP en su router; el otro escribe su IP.",
+                       "The link battle (Title > Link battle) over the internet instead of the cable. Steam: both with "
+                       "Steam open; one opens a room and the other joins (a Steam friend's room first). IP: the host "
+                       "opens the UDP port on the router; the other types the host's IP."),
+                     mode, 5, names);
+    if (mode == 4) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(T("IP de quien aloja", "Host's IP"));
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(Px(220));
+        save |= ImGui::InputText("##netlink_ip", ip, sizeof(ip));
+    }
+    if (mode >= 3) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(T("Puerto UDP", "UDP port"));
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(Px(120));
+        save |= ImGui::InputInt("##netlink_port", &port, 0, 0);
+        port = std::clamp(port, 1, 65535);
+    }
+    if (mode == 1 || mode == 2) {
+        std::error_code ec;
+        bool dll = fs::exists(sRoot / "bin" / "steam_api.dll", ec) || fs::exists(sRoot / "steam_api.dll", ec);
+        ImGui::PushFont(sFontSmall);
+        ImGui::TextColored(dll ? kMuted : kAccent, "%s",
+                           dll ? T("Usa la app de pruebas de Valve (Spacewar, 480): no hace falta tenerla.",
+                                   "Uses Valve's test app (Spacewar, 480): you do not need to own it.")
+                               : T("Falta steam_api.dll junto al juego.", "steam_api.dll is missing next to the game."));
+        ImGui::PopFont();
+    }
+    if (save) {
+        std::ofstream f(cfg, std::ios::trunc);
+        if (mode == 3)
+            f << "host:" << port << "\n";
+        else if (mode == 4)
+            f << "join:" << ip << ":" << port << "\n";
+        else
+            f << kSpecs[mode] << "\n";
+    }
+}
+
 static void PageExtras() {
     bool changed = false;
     BeginCard("extras");
@@ -1483,6 +1558,8 @@ static void PageExtras() {
                            "cartridge."),
                          Ini("ps2_mode"));
 #endif
+    ImGui::Separator();
+    NetlinkRows();
     ImGui::EndChild();
     if (changed)
         SaveIni();
@@ -2471,6 +2548,23 @@ int main(int argc, char** argv) {
             return 0;
         }
     ScanInstall();
+    /* a dump left next to the launcher (the simplest install: drop it in the folder) is checked and installed once */
+    {
+        std::error_code ec;
+        for (const auto& e : fs::directory_iterator(sRoot, ec)) {
+            std::string ext = e.path().extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            if (ext != ".gba" || e.file_size(ec) != kRomSize)
+                continue;
+            std::vector<unsigned char> head;
+            bool already = false;
+            if (ReadFile(e.path(), head) && head.size() == kRomSize)
+                for (int v = 0; v < kVersionCount; v++)
+                    already |= sState[v].installed && std::memcmp(head.data() + 0xAC, kVersions[v].code, 4) == 0;
+            if (!already)
+                InstallRom(e.path());
+        }
+    }
     LoadIni();
     LoadLauncherState();
     SaveLauncherState(); /* the first time, keeps the language chosen from the system */
