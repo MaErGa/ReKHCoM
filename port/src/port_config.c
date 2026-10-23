@@ -358,6 +358,10 @@ static void PortConfigLoadFile(void) {
         if (line[0] == '#' || line[0] == ';' || eq == NULL)
             continue;
         *eq = '\0';
+        if (SDL_strcmp(Trim(line), "online_name") == 0) { /* the one text setting */
+            SDL_strlcpy(gPortConfig.onlineName, Trim(eq + 1), sizeof(gPortConfig.onlineName));
+            continue;
+        }
         for (i = 0; i < sizeof(sKeys) / sizeof(sKeys[0]); i++) {
             if (SDL_strcmp(Trim(line), sKeys[i].name) == 0) {
                 int v = SDL_atoi(eq + 1);
@@ -452,6 +456,8 @@ void PortConfigSave(void) {
     sConfigVersion = CONFIG_VERSION;
     for (i = 0; i < sizeof(sKeys) / sizeof(sKeys[0]); i++)
         fprintf(f, "%s=%d\n", sKeys[i].name, *sKeys[i].value);
+    if (gPortConfig.onlineName[0])
+        fprintf(f, "online_name=%s\n", gPortConfig.onlineName);
     fclose(f);
 #ifdef __EMSCRIPTEN__
     EM_ASM({ if(Module.persistSoon)Module.persistSoon(); });

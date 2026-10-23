@@ -147,7 +147,7 @@ enum {
 };
 
 /* Two pages, each a run of items: the options and the Re:CoM settings. */
-enum { PAGE_MAIN, PAGE_PS2, PAGE_NEWGAME, PAGE_CHEATS, PAGE_CONTROLS, PAGE_REMATCH, PAGE_ACHIEVEMENTS };
+enum { PAGE_MAIN, PAGE_PS2, PAGE_NEWGAME, PAGE_CHEATS, PAGE_CONTROLS, PAGE_REMATCH, PAGE_ACHIEVEMENTS, PAGE_LOBBY };
 static int sPage;
 static int sTitleArmed, sTitleRequest; /* ITEM_TITLE: confirmed once / due once the menu has closed */
 static int sModePick = PORT_MODE_HD, sModeArmed, sModeConfirmKey; /* ITEM_MODE_RESET: the mode shown, confirmed once */
@@ -1529,6 +1529,19 @@ void PortUiOpenModeChoice(void) {
     sWizCursor = 0;
 }
 
+/* The online lobby (port_lobby.c), before the link battle's menu: the public rooms, open one, enter one, or the
+   cable. The game waits under it as under the options. */
+static int sLobbyCursor;
+static void LobbyKey(int key);
+void PortUiOpenLobby(void) {
+    extern void PortLobbyRefresh(void);
+    PortUiOpenOptions();
+    sOpenSound = 0; /* the game's own confirm has just sounded */
+    sPage = PAGE_LOBBY;
+    sLobbyCursor = 0;
+    PortLobbyRefresh();
+}
+
 void PortUiForceClose(void) {
     sOpenSound = sCloseSound = 0;
     sOpen = 0;
@@ -1716,6 +1729,27 @@ int PortUiHandleEvent(const void* p) {
         }
         if (click) { extern void PortMenuSoundClick(void); PortMenuSoundClick(); }
         return AchievementMenuInput(ev);
+    }
+    if (sPage == PAGE_LOBBY && (ev->type == SDL_EVENT_KEY_DOWN || ev->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN)) {
+        int key = -1;
+        if (ev->type == SDL_EVENT_KEY_DOWN) {
+            switch (ev->key.key) {
+                case SDLK_UP: case SDLK_W: key = 0; break;
+                case SDLK_DOWN: case SDLK_S: key = 1; break;
+                case SDLK_RETURN: case SDLK_SPACE: case SDLK_X: case SDLK_K: key = ev->key.repeat ? -1 : 3; break;
+                case SDLK_ESCAPE: case SDLK_BACKSPACE: case SDLK_Z: case SDLK_J: key = ev->key.repeat ? -1 : 4; break;
+            }
+        } else {
+            switch (UiPadButton(ev)) {
+                case SDL_GAMEPAD_BUTTON_DPAD_UP: key = 0; break;
+                case SDL_GAMEPAD_BUTTON_DPAD_DOWN: key = 1; break;
+                case SDL_GAMEPAD_BUTTON_SOUTH: case SDL_GAMEPAD_BUTTON_START: key = 3; break;
+                case SDL_GAMEPAD_BUTTON_EAST: key = 4; break;
+            }
+        }
+        if (key >= 0)
+            LobbyKey(key);
+        return 1;
     }
     if (sPage == PAGE_NEWGAME && (ev->type == SDL_EVENT_KEY_DOWN || ev->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN)) {
         int key = -1;
@@ -2657,6 +2691,161 @@ static void DrawNintendoNote(int l, int width, int height, int left) {
 }
 #include "port_achievement_menu.inc"
 
+/* ---- the online lobby ---------------------------------------------------------------------------------------- */
+int PortLobbyBackend(void);
+int PortLobbyReady(void);
+void PortLobbyRefresh(void);
+void PortLobbyFrame(void);
+int PortLobbyRoomCount(void);
+const char* PortLobbyRoomName(int i);
+int PortLobbyRoomRegion(int i);
+int PortLobbyRegion(void);
+const char* PortLobbyPlayerName(void);
+const char* PortLobbyMyCode(void);
+void PortLobbyCreate(void);
+void PortLobbyJoin(int i);
+void PortLobbyCable(void);
+
+enum { LROW_CREATE = -1, LROW_REFRESH = -2, LROW_RETRY = -3, LROW_CABLE = -4 }; /* >= 0: a room */
+static const char* const sLobbyTitle[LANG_COUNT] = { "Online battle", "Combat en ligne", "Online-Kampf",
+                                                     "Battaglia online", "Batalla en línea", "Online battle" };
+static const char* const sLobbyCreate[LANG_COUNT] = { "Open a public room", "Ouvrir une salle publique",
+                                                      "Öffentlichen Raum öffnen", "Apri una stanza pubblica",
+                                                      "Abrir una sala pública", "Open a public room" };
+static const char* const sLobbyRefresh[LANG_COUNT] = { "Refresh", "Actualiser", "Aktualisieren", "Aggiorna",
+                                                       "Actualizar", "Refresh" };
+static const char* const sLobbyRetry[LANG_COUNT] = { "Try again", "Réessayer", "Erneut versuchen", "Riprova",
+                                                     "Reintentar", "Try again" };
+static const char* const sLobbyCable[LANG_COUNT] = { "Play by cable (local)", "Jouer par câble (local)",
+                                                     "Per Kabel spielen (lokal)", "Gioca via cavo (locale)",
+                                                     "Jugar por cable (local)", "Play by cable (local)" };
+static const char* const sLobbyRoom[LANG_COUNT] = { "%s's room", "Salle de %s", "Raum von %s", "Stanza di %s",
+                                                    "Sala de %s", "%s's room" };
+static const char* const sLobbyLogin[LANG_COUNT] = {
+    "Open Steam and sign in to play online.", "Ouvrez Steam et connectez-vous pour jouer en ligne.",
+    "Öffne Steam und melde dich an, um online zu spielen.", "Apri Steam e accedi per giocare online.",
+    "Abre Steam e inicia sesión para jugar en línea.", "Open Steam and sign in to play online." };
+static const char* const sLobbyNoServer[LANG_COUNT] = {
+    "The room server does not answer.", "Le serveur de salles ne répond pas.", "Der Raumserver antwortet nicht.",
+    "Il server delle stanze non risponde.", "El servidor de salas no responde.", "The room server does not answer." };
+static const char* const sLobbyAsking[LANG_COUNT] = { "Looking for rooms...", "Recherche de salles...",
+                                                      "Suche nach Räumen...", "Ricerca di stanze...",
+                                                      "Buscando salas...", "Looking for rooms..." };
+static const char* const sLobbyEmpty[LANG_COUNT] = {
+    "No public rooms right now: open one.", "Aucune salle publique : ouvrez-en une.",
+    "Gerade keine öffentlichen Räume: öffne einen.", "Nessuna stanza pubblica: aprine una.",
+    "No hay salas públicas ahora: abre una.", "No public rooms right now: open one." };
+static const char* const sLobbyAs[LANG_COUNT] = { "Playing as %s", "Joueur : %s", "Spieler: %s", "Giocatore: %s",
+                                                  "Jugando como %s", "Playing as %s" };
+static const char* const sLobbyOther[LANG_COUNT] = { "another version", "autre version", "andere Version",
+                                                     "altra versione", "otra versión", "another version" };
+static const char* const sLobbyHelp[LANG_COUNT] = { "Confirm: choose   Back: cable", "Valider : choisir   Retour : câble",
+                                                    "Bestätigen: wählen   Zurück: Kabel", "Conferma: scegli   Indietro: cavo",
+                                                    "Confirmar: elegir   Atrás: cable", "Confirm: choose   Back: cable" };
+static const char* const sLobbyOpened[LANG_COUNT] = { "Room open: waiting for a rival", "Salle ouverte : en attente",
+                                                      "Raum offen: warte auf Gegner", "Stanza aperta: in attesa",
+                                                      "Sala abierta: esperando rival", "Room open: waiting for a rival" };
+
+/* the rows: open a room, the rooms, refresh, the cable; signed out or no server: try again, the cable */
+static int LobbyRows(int* rows) {
+    int n = 0, i, ready = PortLobbyReady(), count = PortLobbyRoomCount();
+    if (ready < 0) {
+        rows[n++] = LROW_RETRY;
+        rows[n++] = LROW_CABLE;
+        return n;
+    }
+    rows[n++] = LROW_CREATE;
+    for (i = 0; i < count && n < 10; i++)
+        rows[n++] = i;
+    rows[n++] = LROW_REFRESH;
+    rows[n++] = LROW_CABLE;
+    return n;
+}
+
+static void LobbyKey(int key) {
+    int rows[16], n = LobbyRows(rows), row;
+    sLobbyCursor = SDL_clamp(sLobbyCursor, 0, n - 1);
+    if (key == 0 || key == 1) {
+        sLobbyCursor = (sLobbyCursor + (key == 0 ? n - 1 : 1)) % n;
+        return;
+    }
+    if (key == 4) {
+        PortLobbyCable();
+        Close();
+        return;
+    }
+    if (key != 3)
+        return;
+    row = rows[sLobbyCursor];
+    if (row == LROW_CABLE) {
+        PortLobbyCable();
+        Close();
+    } else if (row == LROW_REFRESH || row == LROW_RETRY) {
+        PortLobbyRefresh();
+    } else if (row == LROW_CREATE) {
+        PortLobbyCreate();
+        if (PortLobbyMyCode()[0])
+            PortUiLinkNotice("Room %s open: waiting for a rival", "Sala %s abierta: esperando rival", PortLobbyMyCode());
+        else
+            PortUiLinkNotice(sLobbyOpened[0], sLobbyOpened[4], NULL);
+        Close();
+    } else if (row >= 0 && PortLobbyRoomRegion(row) == PortLobbyRegion()) {
+        PortLobbyJoin(row);
+        Close();
+    }
+}
+
+static void DrawLobby(int l, int width, int height) {
+    int rows[16], n, i, panelW = SDL_min(width - 24, 250), x0, y0, h, y, ready, count;
+    char status[160], label[96];
+    PortLobbyFrame();
+    n = LobbyRows(rows);
+    sLobbyCursor = SDL_clamp(sLobbyCursor, 0, n - 1);
+    ready = PortLobbyReady();
+    count = PortLobbyRoomCount();
+    if (ready == -1)
+        SDL_strlcpy(status, sLobbyLogin[l], sizeof(status));
+    else if (ready == -2)
+        SDL_strlcpy(status, sLobbyNoServer[l], sizeof(status));
+    else if (count < 0)
+        SDL_strlcpy(status, sLobbyAsking[l], sizeof(status));
+    else if (count == 0)
+        SDL_strlcpy(status, sLobbyEmpty[l], sizeof(status));
+    else
+        SDL_snprintf(status, sizeof(status), sLobbyAs[l], PortLobbyPlayerName());
+    h = 22 + DrawWrapped(status, 0, 0, panelW - 16, 0, 0) * 11 + 4 + n * 14 + 16;
+    x0 = (width - panelW) / 2;
+    y0 = SDL_max(2, (height - h) / 2);
+    Fill(0, 0, width, height, 0xFF000000u);
+    Fill(x0 - 2, y0 - 2, panelW + 4, h + 4, MENU_GREY);
+    Fill(x0, y0, panelW, h, 0xFFFFFFFFu);
+    DrawText(sLobbyTitle[l], x0 + 8, y0 + 4, MENU_RED_DARK, 0xFFD8D8D8u);
+    Fill(x0 + 8, y0 + 17, panelW - 16, 1, MENU_GREY);
+    y = y0 + 22;
+    y += DrawWrapped(status, x0 + 8, y, panelW - 16, ready < 0 ? MENU_RED_DARK : MENU_DIM, 1) * 11 + 4;
+    for (i = 0; i < n; i++) {
+        int sel = i == sLobbyCursor, row = rows[i], other = 0;
+        const char* text = label;
+        if (row == LROW_CREATE) text = sLobbyCreate[l];
+        else if (row == LROW_REFRESH) text = sLobbyRefresh[l];
+        else if (row == LROW_RETRY) text = sLobbyRetry[l];
+        else if (row == LROW_CABLE) text = sLobbyCable[l];
+        else {
+            static const char* const regions[3] = { "EU", "US", "JP" };
+            int region = PortLobbyRoomRegion(row);
+            other = region != PortLobbyRegion();
+            SDL_snprintf(label, sizeof(label), sLobbyRoom[l], PortLobbyRoomName(row));
+            if (other)
+                SDL_snprintf(label + SDL_strlen(label), sizeof(label) - SDL_strlen(label), " (%s, %s)",
+                             region >= 0 && region < 3 ? regions[region] : "?", sLobbyOther[l]);
+        }
+        MenuBar(x0 + 8, y + 2, panelW - 16, sel);
+        DrawText(text, x0 + 24, y, other ? MENU_DIM : MENU_INK, 0xFFD8D8D8u);
+        y += 14;
+    }
+    DrawText(sLobbyHelp[l], x0 + 8, y0 + h - 12, MENU_DIM, 0xFFFFFFFFu);
+}
+
 static void DrawMenu(int l, int width, int height) {
     int rows, i, x, y, labelW = 0, valueW = 0, barX = 10, barW, top = MENU_TOP, artX;
     int rowH = sPage == PAGE_CONTROLS && sControlPad ? 14 : 16;
@@ -2668,6 +2857,7 @@ static void DrawMenu(int l, int width, int height) {
     }
 
     if (sPage == PAGE_ACHIEVEMENTS) { DrawAchievementMenu(l, width, height); return; }
+    if (sPage == PAGE_LOBBY) { DrawLobby(l, width, height); return; }
     if (sPage == PAGE_NEWGAME) {
         DrawWizard(l, width, height);
         return;
@@ -2810,6 +3000,34 @@ static int HarnessOptionsAction(void) {
             p = comma ? comma + 1 : NULL;
         }
         return changed;
+    }
+    if (sPage == PAGE_LOBBY && (SDL_getenv("KHCOM_LOBBY_KEYS") || SDL_getenv("KHCOM_LOBBY_SHOTS"))) {
+        const char* w = SDL_getenv("KHCOM_LOBBY_KEYS");
+        const char* t = SDL_getenv("KHCOM_LOBBY_SHOTS");
+        sHarnessTick++;
+        while (t && *t) { /* the window as lobby_<tick>.bmp */
+            if (SDL_atoi(t) == sHarnessTick) {
+                extern void PortHarnessShot(const char* name);
+                char name[32];
+                SDL_snprintf(name, sizeof(name), "lobby_%d.bmp", sHarnessTick);
+                PortHarnessShot(name);
+            }
+            t = SDL_strchr(t, ',');
+            if (t)
+                t++;
+        }
+        while (w && *w) {
+            const char* comma = SDL_strchr(w, ',');
+            const char* colon = SDL_strchr(w, ':');
+            if (colon && (!comma || colon < comma) && SDL_atoi(w) == sHarnessTick) {
+                PortLog("lobby-test: tick=%d cursor=%d rooms=%d key=%d", sHarnessTick, sLobbyCursor,
+                        PortLobbyRoomCount(), SDL_atoi(colon + 1));
+                LobbyKey(SDL_atoi(colon + 1));
+                changed = 1;
+            }
+            w = comma ? comma + 1 : NULL;
+        }
+        return 0;
     }
     if (sPage == PAGE_NEWGAME && SDL_getenv("KHCOM_WIZARD_KEYS")) {
         const char* w = SDL_getenv("KHCOM_WIZARD_KEYS");

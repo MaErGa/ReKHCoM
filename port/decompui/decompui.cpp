@@ -373,18 +373,28 @@ static void SaveIni() {
             sIni[kv.first] = kv.second; /* the game's change, not the launcher's */
     }
     sIniOnDisk = sIni;
+    std::string onlineName; /* the one text setting (the lobby's name): kept as written */
+    {
+        std::ifstream in(sRoot / "kh_com.ini");
+        std::string l;
+        while (std::getline(in, l))
+            if (l.rfind("online_name=", 0) == 0)
+                onlineName = l;
+    }
     std::ofstream f(sRoot / "kh_com.ini", std::ios::trunc);
     f << "# Kingdom Hearts: Chain of Memories (PC) settings\n";
     for (const Setting& s : kSettings)
         f << s.key << "=" << sIni[s.key] << "\n";
     /* keys this launcher does not know (newer game options) are kept */
     for (const auto& kv : sIni) {
-        bool known = false;
+        bool known = kv.first == "online_name";
         for (const Setting& s : kSettings)
             known = known || kv.first == s.key;
         if (!known)
             f << kv.first << "=" << kv.second << "\n";
     }
+    if (!onlineName.empty())
+        f << onlineName << "\n";
 }
 
 /* Language the European game starts in (the language screen's cursor):
@@ -1379,12 +1389,15 @@ static void PageSound() {
    relay:<server>:<port>:<CODE>:host|join (a relay by a room code, port/tools/netlink_relay.py: crossplay with Android). */
 static void NetlinkRows() {
     static int mode = -1, port = 47777;
-    static char ip[64] = "", room[17] = "";
-    static const char* const kSpecs[7] = { "off", "steam:host", "steam:join", "host", "join", "relay-host", "relay-join" };
-    const char* const names[7] = { T("Desactivado (cable)", "Off (cable)"), T("Steam: crear sala", "Steam: open a room"),
+    static char ip[64] = "", room[17] = "", name[25] = "";
+    static const char* const kSpecs[9] = { "off", "steam:host", "steam:join", "host", "join", "relay-host", "relay-join",
+                                           "lobby:steam", "lobby-server" };
+    const char* const names[9] = { T("Desactivado (cable)", "Off (cable)"), T("Steam: crear sala", "Steam: open a room"),
                                    T("Steam: unirse a un amigo", "Steam: join a friend"),
                                    T("IP: alojar", "IP: host"), T("IP: unirse", "IP: join"),
-                                   T("Relay: crear sala", "Relay: open a room"), T("Relay: unirse a una sala", "Relay: join a room") };
+                                   T("Relay: crear sala", "Relay: open a room"), T("Relay: unirse a una sala", "Relay: join a room"),
+                                   T("Salas en el juego (Steam)", "Rooms in the game (Steam)"),
+                                   T("Salas en el juego (servidor)", "Rooms in the game (server)") };
     fs::path cfg = sRoot / "netlink.cfg";
     bool save = false;
     if (mode < 0) {
@@ -1395,6 +1408,21 @@ static void NetlinkRows() {
         for (int i = 1; i < 3; i++)
             if (line == kSpecs[i])
                 mode = i;
+        if (line == "lobby:steam" || line == "lobby")
+            mode = 7;
+        else if (line.rfind("lobby:", 0) == 0) { /* lobby:<server>:<port> */
+            size_t colon = line.rfind(':');
+            mode = 8;
+            snprintf(ip, sizeof(ip), "%s", line.substr(6, colon - 6).c_str());
+            port = std::atoi(line.c_str() + colon + 1);
+        }
+        {
+            std::ifstream ini(sRoot / "kh_com.ini");
+            std::string l;
+            while (std::getline(ini, l))
+                if (l.rfind("online_name=", 0) == 0)
+                    snprintf(name, sizeof(name), "%s", l.substr(12).c_str());
+        }
         if (line.rfind("host:", 0) == 0) {
             mode = 3;
             port = std::atoi(line.c_str() + 5);
@@ -1430,15 +1458,15 @@ static void NetlinkRows() {
                        "Steam open; one opens a room and the other joins (a Steam friend's room first). IP: the host "
                        "opens the UDP port on the router; the other types the host's IP. Relay: both type the same server "
                        "and room code (Android too)."),
-                     mode, 7, names);
-    if (mode == 4 || mode >= 5) {
+                     mode, 9, names);
+    if (mode == 4 || mode == 5 || mode == 6 || mode == 8) {
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(mode >= 5 ? T("Servidor relay", "Relay server") : T("IP de quien aloja", "Host's IP"));
+        ImGui::TextUnformatted(mode >= 5 ? T("Servidor", "Server") : T("IP de quien aloja", "Host's IP"));
         ImGui::SameLine();
         ImGui::SetNextItemWidth(Px(220));
         save |= ImGui::InputText("##netlink_ip", ip, sizeof(ip));
     }
-    if (mode >= 3) {
+    if (mode >= 3 && mode != 7) {
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(T("Puerto UDP", "UDP port"));
         ImGui::SameLine();
@@ -1446,7 +1474,28 @@ static void NetlinkRows() {
         save |= ImGui::InputInt("##netlink_port", &port, 0, 0);
         port = std::clamp(port, 1, 65535);
     }
-    if (mode >= 5) {
+    if (mode == 8) { /* the name on the rooms this player opens (Steam shows its own) */
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(T("Tu nombre", "Your name"));
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(Px(220));
+        if (ImGui::InputText("##online_name", name, sizeof(name))) {
+            std::vector<std::string> lines;
+            std::string l;
+            {
+                std::ifstream ini(sRoot / "kh_com.ini");
+                while (std::getline(ini, l))
+                    if (l.rfind("online_name=", 0) != 0)
+                        lines.push_back(l);
+            }
+            std::ofstream out(sRoot / "kh_com.ini", std::ios::trunc);
+            for (const std::string& x : lines)
+                out << x << "\n";
+            if (name[0])
+                out << "online_name=" << name << "\n";
+        }
+    }
+    if (mode == 5 || mode == 6) {
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(T("Código de sala", "Room code"));
         ImGui::SameLine();
@@ -1460,7 +1509,7 @@ static void NetlinkRows() {
             save = true;
         }
     }
-    if (mode == 1 || mode == 2) {
+    if (mode == 1 || mode == 2 || mode == 7) {
         std::error_code ec;
         bool dll = fs::exists(sRoot / "bin" / "steam_api.dll", ec) || fs::exists(sRoot / "steam_api.dll", ec);
         ImGui::PushFont(sFontSmall);
@@ -1476,10 +1525,16 @@ static void NetlinkRows() {
             f << "host:" << port << "\n";
         else if (mode == 4)
             f << "join:" << ip << ":" << port << "\n";
-        else if (mode >= 5 && ip[0] && room[0])
+        else if ((mode == 5 || mode == 6) && ip[0] && room[0])
             f << "relay:" << ip << ":" << port << ":" << room << ":" << (mode == 5 ? "host" : "join") << "\n";
-        else if (mode >= 5)
+        else if (mode == 5 || mode == 6)
             f << "off\n"; /* until the server and the code are written */
+        else if (mode == 7)
+            f << "lobby:steam\n";
+        else if (mode == 8 && ip[0])
+            f << "lobby:" << ip << ":" << port << "\n";
+        else if (mode == 8)
+            f << "off\n"; /* until the server is written */
         else
             f << kSpecs[mode] << "\n";
     }

@@ -61,6 +61,8 @@ static int UdpOpen(int bindPort) {
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
         return 0;
 #endif
+    if (sSock != BAD_SOCK)
+        closesocket(sSock); /* the lobby opens it again for the room it picked */
     sSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sSock == BAD_SOCK)
         return 0;
@@ -190,6 +192,11 @@ static int sLag, sLoss, sJitter;
 static uint32_t sDropFrom, sDropTo;
 static int sRelay, sRelayPlayers;
 static char sRoom[17];
+/* the lobby (port_lobby.c): the link it picked, replacing netlink.cfg; a public room's announce */
+static char sUse[160];
+static int sUseSet;
+static int sAnnounce, sAnnounceVersion, sAnnounceRegion;
+static char sAnnounceName[25];
 
 /* datagrams held back by KHCOM_NETLINK_LAG */
 typedef struct {
@@ -200,6 +207,20 @@ typedef struct {
 static Held sHeld[256];
 static int sHeldCount;
 static uint32_t sFrame;
+
+static void RelayAnnounce(void) {
+    uint8_t d[19 + 24];
+    size_t n = SDL_strlen(sAnnounceName), c = SDL_strlen(sRoom);
+    if (n > 24)
+        n = 24;
+    SDL_memset(d, 0, sizeof(d));
+    d[0] = 'A';
+    d[1] = (uint8_t)sAnnounceVersion;
+    d[2] = (uint8_t)sAnnounceRegion;
+    SDL_memcpy(d + 3, sRoom, c > 16 ? 16 : c);
+    SDL_memcpy(d + 19, sAnnounceName, n);
+    UdpSend(&sPeer, d, (int)(19 + n));
+}
 
 static void RelayHello(void) {
     uint8_t d[2 + sizeof(sRoom)];
@@ -276,7 +297,8 @@ static int Open(const char* spec) {
 }
 
 /* the link's setting: KHCOM_NETLINK, else the first line of netlink.cfg */
-static const char* Spec(void) {
+/* netlink.cfg's line (or KHCOM_NETLINK), as written: "lobby:..." is the lobby's (port_lobby.c), not a link */
+const char* PortNetlinkConfig(void) {
     static char line[160];
     const char* env = SDL_getenv("KHCOM_NETLINK");
     FILE* f;
@@ -293,6 +315,74 @@ static const char* Spec(void) {
         ;
     line[i] = 0;
     return line[0] && SDL_strcmp(line, "off") != 0 ? line : NULL;
+}
+
+static const char* Spec(void) {
+    const char* spec = sUseSet ? (sUse[0] ? sUse : NULL) : PortNetlinkConfig();
+    return spec && SDL_strncmp(spec, "lobby", 5) != 0 ? spec : NULL;
+}
+
+/* The lobby's choice (NULL: the cable): the link starts again with it at its next use */
+void PortNetlinkUse(const char* spec) {
+    SDL_strlcpy(sUse, spec ? spec : "", sizeof(sUse));
+    sUseSet = 1;
+    sChecked = 0;
+    sRole = 0;
+    sSteam = 0;
+    sRelay = 0;
+    sRelayPlayers = 0;
+    sHavePeer = 0;
+    sLastHeard = 0;
+    sAnnounce = 0;
+    SDL_memset(&sPeer, 0, sizeof(sPeer));
+    PortLog("netlink: the lobby picked %s", spec ? spec : "the cable");
+}
+
+/* the lobby's host: its room is listed publicly while it waits (relay servers; Steam lists its own lobbies) */
+void PortNetlinkAnnounce(int version, int region, const char* name) {
+    sAnnounce = 1;
+    sAnnounceVersion = version;
+    sAnnounceRegion = region;
+    SDL_strlcpy(sAnnounceName, name ? name : "", sizeof(sAnnounceName));
+}
+
+/* The lobby's list on a relay server: 'L' asked (the socket opened for it), 'R' read back (-1 while none came) */
+static NetAddr sLobbyServer;
+int PortNetlinkLobbyAsk(const char* server, int port, int version) {
+    uint8_t d[2] = { 'L', (uint8_t)version };
+    if (!UdpReady() && !UdpOpen(0))
+        return 0;
+    if (!UdpResolve(server, port, &sLobbyServer))
+        return 0;
+    UdpSend(&sLobbyServer, d, 2);
+    return 1;
+}
+
+int PortNetlinkLobbyRead(char (*codes)[17], char (*names)[25], int* regions, int max) {
+    uint8_t d[PORT_NETLINK_MAX];
+    NetAddr from;
+    int n, count = -1;
+    if (!UdpReady())
+        return -1;
+    while ((n = UdpRecv(d, sizeof(d), &from)) > 0) {
+        int at = 2, i;
+        if (d[0] != 'R' || n < 2 || !SameAddr(&from, &sLobbyServer))
+            continue;
+        count = 0;
+        for (i = 0; i < d[1] && count < max && at + 18 <= n; i++) {
+            int len = d[at + 17];
+            if (at + 18 + len > n)
+                break;
+            regions[count] = d[at];
+            SDL_memcpy(codes[count], d + at + 1, 16);
+            codes[count][16] = 0;
+            SDL_memcpy(names[count], d + at + 18, (size_t)(len > 24 ? 24 : len));
+            names[count][len > 24 ? 24 : len] = 0;
+            at += 18 + len;
+            count++;
+        }
+    }
+    return count;
 }
 
 int PortNetlinkRole(void) {
@@ -407,8 +497,11 @@ void PortNetlinkFrame(void) {
     sFrame++;
     if (sSteam)
         PortSteamlinkFrame();
-    if (sRelay && UdpReady() && sFrame % 60 == 0) /* the room again: the relay finds a changed address */
+    if (sRelay && UdpReady() && sFrame % 60 == 0) { /* the room again: the relay finds a changed address */
         RelayHello();
+        if (sAnnounce && sRelayPlayers < 2 && sRole == PORT_NETLINK_HOST)
+            RelayAnnounce();
+    }
     SendHeld();
 }
 
@@ -446,6 +539,30 @@ int PortNetlinkTrace(void) {
     return trace;
 }
 #else
+const char* PortNetlinkConfig(void) {
+    return NULL;
+}
+void PortNetlinkUse(const char* spec) {
+    (void)spec;
+}
+void PortNetlinkAnnounce(int version, int region, const char* name) {
+    (void)version;
+    (void)region;
+    (void)name;
+}
+int PortNetlinkLobbyAsk(const char* server, int port, int version) {
+    (void)server;
+    (void)port;
+    (void)version;
+    return 0;
+}
+int PortNetlinkLobbyRead(char (*codes)[17], char (*names)[25], int* regions, int max) {
+    (void)codes;
+    (void)names;
+    (void)regions;
+    (void)max;
+    return -1;
+}
 uint32_t PortNetlinkMs(void) {
     return 0;
 }

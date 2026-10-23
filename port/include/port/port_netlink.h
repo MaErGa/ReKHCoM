@@ -22,6 +22,13 @@ int PortRollbackResimulating(void);          /* 1 while frames are played again 
 void PortLinkYieldFrame(void);               /* port_main.c: the pacing gives one frame of time back */
 
 
+/* the lobby (port_lobby.c) */
+const char* PortNetlinkConfig(void);                 /* netlink.cfg's line (or KHCOM_NETLINK) */
+void PortNetlinkUse(const char* spec);               /* the link picked in the lobby; NULL the cable */
+void PortNetlinkAnnounce(int version, int region, const char* name); /* the host's public room, listed */
+int PortNetlinkLobbyAsk(const char* server, int port, int version);
+int PortNetlinkLobbyRead(char (*codes)[17], char (*names)[25], int* regions, int max); /* -1: no answer yet */
+
 /* port_steamlink.c: the same datagrams through a Steam room and Steam's P2P messages (Windows) */
 int PortSteamlinkStart(int role);
 void PortSteamlinkFrame(void);
@@ -29,5 +36,10 @@ int PortSteamlinkHasPeer(void);
 void PortSteamlinkSend(const uint8_t* data, int size);
 int PortSteamlinkRecv(uint8_t* data, int cap);
 const char* PortSteamlinkStatus(void); /* what the Steam link is doing, for the screen */
+int PortSteamlinkLobbyReady(void);       /* 1 signed in, -1 not (Steam closed or no session), 0 no Steam here */
+const char* PortSteamlinkUserName(void);
+void PortSteamlinkLobbyList(void);
+int PortSteamlinkLobbyRooms(uint64_t* ids, char (*names)[25], int* regions, int max); /* -1 until the answer */
+void PortSteamlinkTarget(uint64_t lobby, int region);
 
 #endif

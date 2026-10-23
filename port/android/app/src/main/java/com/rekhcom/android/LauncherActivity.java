@@ -18,7 +18,7 @@ public class LauncherActivity extends Activity {
     private static final String[] HASHES={"8db73586cdb11b3795907edebf43228dbcd3e6b2",
         "10729bd884f8fdca7a310b6d606c52e46657aa48","59ec0a0a4ccd1e6acb3bbd7bfb21d63988958cfa"};
     private Spinner region,zoom,bank,netMode;
-    private EditText netAddress,netPort,netRoom;
+    private EditText netAddress,netPort,netRoom,netName;
     private TextView status;
     private Button play;
     private int saveRegion,saveBank=1,zoomFirst;
@@ -88,22 +88,25 @@ public class LauncherActivity extends Activity {
     private static final String[] NET_SPECS={"off","host","join","relay-host","relay-join"};
     private void netlinkRows(LinearLayout layout){
         TextView help=new TextView(this);help.setText(t("Enlace en red (alpha): la batalla de enlace (Título > Batalla de enlace) por internet en vez del cable. IP: quien aloja abre el puerto UDP en su router y el otro escribe su IP. Relay: los dos escriben el mismo servidor y el mismo código de sala (también con PC).","Network link (alpha): the link battle (Title > Link battle) over the internet instead of the cable. IP: the host opens the UDP port on the router and the other types the host's IP. Relay: both type the same server and room code (PC too)."));help.setTextColor(Color.LTGRAY);help.setPadding(0,dp(16),0,0);layout.addView(help);
-        netMode=spinner(layout,t("Enlace en red (alpha)","Network link (alpha)"),new String[]{t("Desactivado (cable)","Off (cable)"),t("IP: alojar","IP: host"),t("IP: unirse","IP: join"),t("Relay: crear sala","Relay: open a room"),t("Relay: unirse a una sala","Relay: join a room")});
+        netMode=spinner(layout,t("Enlace en red (alpha)","Network link (alpha)"),new String[]{t("Desactivado (cable)","Off (cable)"),t("IP: alojar","IP: host"),t("IP: unirse","IP: join"),t("Relay: crear sala","Relay: open a room"),t("Relay: unirse a una sala","Relay: join a room"),t("Salas en el juego (servidor)","Rooms in the game (server)")});
         netAddress=field(layout,t("IP de quien aloja / servidor relay","Host's IP / relay server"),android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);
         netPort=field(layout,t("Puerto UDP","UDP port"),android.text.InputType.TYPE_CLASS_NUMBER);
         netRoom=field(layout,t("Código de sala","Room code"),android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        netName=field(layout,t("Tu nombre en las salas","Your name on the rooms"),android.text.InputType.TYPE_CLASS_TEXT);
         String line="";
         try(BufferedReader in=new BufferedReader(new InputStreamReader(new FileInputStream(new File(getFilesDir(),"netlink.cfg")),"UTF-8"))){String l=in.readLine();if(l!=null)line=l.trim();}catch(IOException ignored){}
         String[] f=line.split(":",-1);int mode=0;String port="47777";
         if(f[0].equals("host")&&f.length>=2){mode=1;port=f[1];}
         else if(f[0].equals("join")&&f.length>=3){mode=2;netAddress.setText(f[1]);port=f[2];}
         else if(f[0].equals("relay")&&f.length>=5){mode="host".equals(f[4])?3:4;netAddress.setText(f[1]);port=f[2];netRoom.setText(f[3]);}
+        else if(f[0].equals("lobby")&&f.length>=3){mode=5;netAddress.setText(f[1]);port=f[2];}
+        try{java.util.Properties ini=new java.util.Properties();File config=new File(getFilesDir(),"kh_com.ini");if(config.isFile())try(FileInputStream in=new FileInputStream(config)){ini.load(in);}netName.setText(ini.getProperty("online_name",""));}catch(IOException ignored){}
         netPort.setText(port);netMode.setSelection(mode);
         netMode.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onItemSelected(android.widget.AdapterView<?> a,View v,int p,long id){netlinkFields();}public void onNothingSelected(android.widget.AdapterView<?> a){}});
         netlinkFields();
     }
     private EditText field(LinearLayout p,String hint,int type){EditText e=new EditText(this);e.setHint(hint);e.setInputType(type);e.setSingleLine(true);e.setTextColor(Color.WHITE);e.setHintTextColor(Color.GRAY);p.addView(e,new LinearLayout.LayoutParams(-1,-2));return e;}
-    private void netlinkFields(){int m=netMode.getSelectedItemPosition();netAddress.setVisibility(m==2||m>=3?View.VISIBLE:View.GONE);netPort.setVisibility(m>=1?View.VISIBLE:View.GONE);netRoom.setVisibility(m>=3?View.VISIBLE:View.GONE);}
+    private void netlinkFields(){int m=netMode.getSelectedItemPosition();netAddress.setVisibility(m==2||m>=3?View.VISIBLE:View.GONE);netPort.setVisibility(m>=1?View.VISIBLE:View.GONE);netRoom.setVisibility(m==3||m==4?View.VISIBLE:View.GONE);netName.setVisibility(m==5?View.VISIBLE:View.GONE);}
     /* the line for netlink.cfg; null when a needed field is empty (the link then stays off) */
     private String netlinkSpec(){
         int m=netMode.getSelectedItemPosition();
@@ -114,6 +117,7 @@ public class LauncherActivity extends Activity {
         if(m==1)return "host:"+port;
         if(address.isEmpty()||address.contains(":"))return null;
         if(m==2)return "join:"+address+":"+port;
+        if(m==5)return "lobby:"+address+":"+port;
         if(room.isEmpty())return null;
         return "relay:"+address+":"+port+":"+(room.length()>16?room.substring(0,16):room)+":"+(m==3?"host":"join");
     }
@@ -235,6 +239,8 @@ public class LauncherActivity extends Activity {
             properties.setProperty("zoom",Integer.toString((zoom.getSelectedItemPosition()+zoomFirst)*2));
             properties.setProperty("save_bank",Integer.toString(bank.getSelectedItemPosition()+1));
             properties.setProperty("narrow_fit","1");
+            String online=netName.getText().toString().trim();
+            if(!online.isEmpty())properties.setProperty("online_name",online.length()>24?online.substring(0,24):online);
             File temp=File.createTempFile("config-",".tmp",getFilesDir());
             try(FileOutputStream out=new FileOutputStream(temp)){properties.store(out,"ReKHCoM Android alpha");out.getFD().sync();}
             if(!temp.renameTo(config))throw new IOException("No se pudo escribir la configuración");

@@ -158,6 +158,7 @@ typedef struct PortConfig {
     int graphicsMode;          /* PORT_MODE_*: chosen on the first start (0 asks), each with its presets (PortApplyGraphicsMode) */
     int graphicsModeApplied;   /* the mode whose presets were last applied: the launcher only changes graphics_mode */
     int gbaBorder;             /* GBA classic: the decorative border around the GBA picture (0 none, 1..3 designs) */
+    char onlineName[25];       /* online_name: the player's name on the lobby's rooms (relay servers; Steam uses its own) */
 } PortConfig;
 
 extern PortConfig gPortConfig;

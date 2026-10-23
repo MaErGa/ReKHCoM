@@ -71,7 +71,7 @@ typedef struct {
 #define CB_LOBBY_CREATED 513
 #define CB_CALL_COMPLETED 703
 #define CB_SESSION_REQUEST 1251
-#define PROTOCOL "link-1"
+#define PROTOCOL "link-3" /* the slots' rules (NET_VERSION in src/sio/sio.c): other versions never meet */
 
 static struct {
     HMODULE dll;
@@ -104,6 +104,10 @@ static struct {
     void(S_CALL* SetIdentity)(void*, SteamId);
     void(S_CALL* ReleaseMessage)(NetMessage*);
     void(S_CALL* InitRelay)(void*);
+    const char*(S_CALL* LobbyData)(void*, SteamId, const char*);
+    void(S_CALL* ListSlotsFilter)(void*, int);
+    SBool(S_CALL* LoggedOn)(void*);
+    const char*(S_CALL* PersonaName)(void*);
 } S;
 
 static int sState; /* 0 not started, 1 ready, -1 failed */
@@ -114,6 +118,14 @@ static unsigned char sPeerIdentity[136]; /* SteamNetworkingIdentity */
 static ApiCall sPending;
 static uint64_t sNextSearch;
 static char sStatus[160];
+/* the lobby (port_lobby.c): the public rooms found, the one to enter, what the room we open says */
+#define ROOMS_MAX 20
+static int sListing, sListDone;
+static int sRoomCount;
+static SteamId sRoomIds[ROOMS_MAX], sTarget;
+static char sRoomNames[ROOMS_MAX][25];
+static int sRoomRegions[ROOMS_MAX];
+static int sRegion;
 
 /* the link's state, in the log and on screen (English, Spanish) */
 static void Status2(const char* en, const char* es, const char* name) {
@@ -174,6 +186,10 @@ static int Load(void) {
     F(SetIdentity, "SteamAPI_SteamNetworkingIdentity_SetSteamID64");
     F(ReleaseMessage, "SteamAPI_SteamNetworkingMessage_t_Release");
     F(InitRelay, "SteamAPI_ISteamNetworkingUtils_InitRelayNetworkAccess");
+    F(LobbyData, "SteamAPI_ISteamMatchmaking_GetLobbyData");
+    F(ListSlotsFilter, "SteamAPI_ISteamMatchmaking_AddRequestLobbyListFilterSlotsAvailable");
+    F(LoggedOn, "SteamAPI_ISteamUser_BLoggedOn");
+    F(PersonaName, "SteamAPI_ISteamFriends_GetPersonaName");
 #undef F
     return 1;
 }
@@ -181,6 +197,7 @@ static int Load(void) {
 static void Search(void) {
     void* mm = S.Matchmaking();
     S.ListStringFilter(mm, "rekhcom", PROTOCOL, 0 /* equal */);
+    S.ListSlotsFilter(mm, 1); /* rooms still waiting for their second player */
     S.ListDistanceFilter(mm, 3 /* worldwide */);
     sPending = S.RequestLobbyList(mm);
     sNextSearch = SDL_GetTicks() + 3000;
@@ -205,12 +222,34 @@ static void OnResult(int id, const unsigned char* p) {
         }
         sLobby = c->lobby;
         S.SetLobbyData(S.Matchmaking(), sLobby, "rekhcom", PROTOCOL);
-        S.SetLobbyData(S.Matchmaking(), sLobby, "name", S.FriendName(S.Friends(), sMe));
+        S.SetLobbyData(S.Matchmaking(), sLobby, "name", S.PersonaName(S.Friends()));
+        {
+            char region[4];
+            SDL_snprintf(region, sizeof(region), "%d", sRegion);
+            S.SetLobbyData(S.Matchmaking(), sLobby, "region", region);
+        }
         Status2("Steam: room open, waiting for your friend%s", "Steam: sala abierta, esperando a tu amigo%s", NULL);
     } else if (id == CB_LOBBY_MATCH_LIST) {
         const LobbyMatchList* m = (const LobbyMatchList*)p;
         SteamId pick = 0;
         uint32_t i;
+        if (sListing) { /* the lobby's list: kept for the screen, nothing entered */
+            sRoomCount = 0;
+            for (i = 0; i < m->count && sRoomCount < ROOMS_MAX; i++) {
+                SteamId lobby = S.LobbyByIndex(S.Matchmaking(), (int)i);
+                const char* name = S.LobbyData(S.Matchmaking(), lobby, "name");
+                const char* region = S.LobbyData(S.Matchmaking(), lobby, "region");
+                if (S.LobbyOwner(S.Matchmaking(), lobby) == sMe)
+                    continue;
+                sRoomIds[sRoomCount] = lobby;
+                SDL_strlcpy(sRoomNames[sRoomCount], name && *name ? name : "?", sizeof(sRoomNames[0]));
+                sRoomRegions[sRoomCount] = region ? SDL_atoi(region) : 0;
+                sRoomCount++;
+            }
+            sListing = 0;
+            sListDone = 1;
+            return;
+        }
         for (i = 0; i < m->count; i++) {
             SteamId lobby = S.LobbyByIndex(S.Matchmaking(), (int)i);
             SteamId owner = S.LobbyOwner(S.Matchmaking(), lobby);
@@ -262,18 +301,23 @@ static void Pump(void) {
         }
         S.FreeCallback(sPipe);
     }
-    if (sRole == PORT_NETLINK_JOIN && !sPeer && !sPending && SDL_GetTicks() >= sNextSearch)
+    if (sRole == PORT_NETLINK_JOIN && !sPeer && !sPending && !sTarget && SDL_GetTicks() >= sNextSearch)
         Search();
 }
 
-int PortSteamlinkStart(int role) {
-    if (sState)
-        return sState > 0;
+/* Steam once: 1 ready and signed in, 0 not (Steam closed, no session, no steam_api.dll) */
+static int Init(void) {
+    static int loaded;
+    static uint64_t retryAt;
+    if (sState > 0)
+        return 1;
+    if (sState < 0 && SDL_GetTicks() < retryAt)
+        return 0; /* the lobby's "try again": Steam may have been opened or signed in since */
     sState = -1;
-    sRole = role;
+    retryAt = SDL_GetTicks() + 2000;
     SDL_setenv_unsafe("SteamAppId", "480", 1); /* Spacewar, Valve's test app */
     SDL_setenv_unsafe("SteamGameId", "480", 1);
-    if (!Load())
+    if (!loaded && !(loaded = Load()))
         return 0;
     if (!S.Init()) {
         Status2("Open Steam and sign in to link%s", "Abre Steam e inicia sesion para enlazar%s", NULL);
@@ -284,9 +328,61 @@ int PortSteamlinkStart(int role) {
     sMe = S.MySteamId(S.User());
     S.InitRelay(S.Utils());
     sState = 1;
+    return 1;
+}
+
+/* the lobby (port_lobby.c): 1 signed in to Steam, -1 not (it tells the player to open Steam and sign in) */
+int PortSteamlinkLobbyReady(void) {
+    if (!Init())
+        return -1;
+    return S.LoggedOn(S.User()) ? 1 : -1;
+}
+
+const char* PortSteamlinkUserName(void) {
+    return sState > 0 ? S.PersonaName(S.Friends()) : "";
+}
+
+/* the public rooms: asked, then read once the answer came (-1 until then) */
+void PortSteamlinkLobbyList(void) {
+    if (!Init() || sPending)
+        return;
+    sListing = 1;
+    sListDone = 0;
+    Search();
+}
+
+int PortSteamlinkLobbyRooms(uint64_t* ids, char (*names)[25], int* regions, int max) {
+    int i;
+    if (sState > 0)
+        Pump();
+    if (!sListDone)
+        return -1;
+    for (i = 0; i < sRoomCount && i < max; i++) {
+        ids[i] = sRoomIds[i];
+        SDL_strlcpy(names[i], sRoomNames[i], sizeof(names[0]));
+        regions[i] = sRoomRegions[i];
+    }
+    return i;
+}
+
+/* the room picked in the lobby: this one to enter (0: the first one found, as before); the cartridge region shown */
+void PortSteamlinkTarget(uint64_t lobby, int region) {
+    sTarget = lobby;
+    sRegion = region;
+}
+
+int PortSteamlinkStart(int role) {
+    if (!Init())
+        return 0;
+    sRole = role;
+    sPeer = 0;
+    sListing = 0;
     if (role == PORT_NETLINK_HOST) {
         sPending = S.CreateLobby(S.Matchmaking(), 2 /* public */, 2);
         Status2("Steam: opening a room%s", "Steam: abriendo una sala%s", NULL);
+    } else if (sTarget) {
+        sPending = S.JoinLobby(S.Matchmaking(), sTarget);
+        Status2("Steam: entering the room%s", "Steam: entrando a la sala%s", NULL);
     } else {
         Search();
     }
@@ -320,6 +416,25 @@ int PortSteamlinkRecv(uint8_t* data, int cap) {
     return n;
 }
 #else
+int PortSteamlinkLobbyReady(void) {
+    return 0;
+}
+const char* PortSteamlinkUserName(void) {
+    return "";
+}
+void PortSteamlinkLobbyList(void) {
+}
+int PortSteamlinkLobbyRooms(uint64_t* ids, char (*names)[25], int* regions, int max) {
+    (void)ids;
+    (void)names;
+    (void)regions;
+    (void)max;
+    return -1;
+}
+void PortSteamlinkTarget(uint64_t lobby, int region) {
+    (void)lobby;
+    (void)region;
+}
 int PortSteamlinkStart(int role) {
     (void)role;
     return 0;

@@ -508,6 +508,11 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
         PortLog("netlink: read %04x %04x | %04x %04x", recvFrame[0][0], recvFrame[1][0], recvFrame[0][1], recvFrame[1][1]);
 }
 
+/* mode_sio.c: a link is going (the lobby is not opened again) */
+int NetLinkConnected(void) {
+    return sNetState != NULL && NetActive() && gSioWork.state == SIO_STATE_CONNECTED;
+}
+
 /* port_rollback.c: the link session's frames */
 int NetRollbackSession(void) {
     return sNetState != NULL && NetActive() && gSioWork.state == SIO_STATE_CONNECTED;
