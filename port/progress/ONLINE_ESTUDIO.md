@@ -97,4 +97,5 @@ PC y solo con red activa), `port/tools/netlink_relay.py` (relay para VPS). Sin r
 3. Rollback en la batalla (predecir las teclas del otro, resimular con `port_state.c`): quita la demora del búfer.
 4. VPS: `netlink_relay.py` en cualquier VPS de 4-6 USD/mes (1 vCPU basta: ~10 KB/s por partida). Para salas por
    código desde el juego y crossplay (Android, Switch, Linux): el transporte relay ya funciona en cualquier sistema
-   con UDP; falta compilarlo en esos ports y una pantalla para escribir el código.
+   con UDP; falta compilarlo en esos ports y una pantalla para escribir el código. Android: la APK hoy no pide
+   el permiso INTERNET (es offline a propósito): agregarlo solo cuando el enlace en red llegue a Android.
