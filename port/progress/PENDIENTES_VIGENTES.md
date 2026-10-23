@@ -30,11 +30,11 @@ en el juego. Repo público aparte: https://github.com/MatyMeatBoy/GBANoCable (lo
 #40 sin datos. Releases: v2.0-pre1 (Win/Switch/Android), v2.0-pre2 (Win). La v2.0 estable solo con OK del usuario.
 
 **En curso al cortar:**
-- Batería US de menús HD: 17/19; fallan "World Cards" y "World Warp" porque en la versión US el cartucho deja de
-  dibujar el cartel como sprite en el estado de selección (`mode_worldinspect.c` ~568, `mode_worldwarp.c` igual;
-  en EU lo sigue dibujando). Arreglo a hacer: como `card_deckmenu2.c` (Ver barajas), dibujar el cartel HD con
-  `PortHdStillSprite(gWorldInspectBarTiles, gWorldInspectBarFrame0, x, 0, ...)` bajo `VERSION_US` en ese estado,
-  si en pantalla sigue la copia BG del título (verificarlo antes con una captura US).
+- ~~Batería US de menús HD: 17/19~~ **hecho 23/10 (sesión nueva): 19/19 US**, EU 14/14 en world/warp/deck. En
+  US/JP el cartucho deja de dibujar el cartel como sprite en el estado de selección (queda la copia BG):
+  `mode_worldinspect.c` / `mode_worldwarp.c` dibujan ahí el cartel HD con `PortHdStillSprite` (como Ver barajas),
+  alineado con la copia BG (visto a 1080p). `test_hd_menus.py` resuelve `--hd` a ruta absoluta (con una relativa
+  todos los casos caían al cartucho). Partida US de prueba: `build/us_menus_test.sav`.
 - Re-ejecución de `debug_kit.py run --suites events --versions jp` (se había cortado por recompilar a mitad; ya
   arreglado en case_bin.py). Ver `build/battery-events-jp-rerun.log`.
 - Los "timeouts" del primer intento US no eran cuelgues: START en una escena abre la pausa de escena (detiene

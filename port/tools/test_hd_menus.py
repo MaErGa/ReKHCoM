@@ -107,7 +107,8 @@ def main():
     ap.add_argument('--save', default=str(SAVE))
     ap.add_argument('--out', default=str(ROOT / 'build/hdmenus'))
     args = ap.parse_args()
-    build, hd, save, out = Path(args.build), Path(args.hd), Path(args.save), Path(args.out)
+    # the game runs in its own folder: a relative HD path would point nowhere and every case would fall back
+    build, hd, save, out = Path(args.build), Path(args.hd).resolve(), Path(args.save), Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     only = set(args.only.split(',')) if args.only else None
     jobs = []
