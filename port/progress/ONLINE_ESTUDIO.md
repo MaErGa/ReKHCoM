@@ -87,9 +87,12 @@ PC y solo con red activa), `port/tools/netlink_relay.py` (relay para VPS). Sin r
 
 ## Siguiente (para llegar a "no se nota que es online")
 
-1. Hash del estado de batalla cada N cuadros en las ranuras: detectar desincronización (no debería haber: misma
-   semilla, mismas teclas) y repararla mandando el savestate del anfitrión al otro en vez de cortar (lo que hace
-   ShiningSoul2Recomp, `docs/MODERN_ONLINE.md` en D:/01Claude/BackupsCLAUDE/GBA).
+1. Hecho (23/10): hash del estado compartido de la batalla (posición y VT de los dos, en orden de jugador, y los
+   generadores aleatorios) cada 120 cuadros, comparado entre los dos: 0 desync en 20+ comprobaciones con los dos
+   peleando; `KHCOM_NETLINK_FAKEDESYNC` prueba que salta. Reparar mandando el savestate del anfitrión NO sirve en
+   KHCoM: cada máquina guarda el mundo desde su lado (gBtlWork es el jugador local, gRikuBtlWork el otro), el
+   estado de una no es válido en la otra sin intercambiar los lados. Haría falta esa transformación; mientras
+   tanto el lockstep por teclas con la misma semilla hace la desync imposible y la comprobación lo vigila.
 2. Reconexión tras reinicio del juego del otro: mismo esquema (savestate del anfitrión + número de ranura).
 3. Rollback en la batalla (predecir las teclas del otro, resimular con `port_state.c`): quita la demora del búfer.
 4. VPS: `netlink_relay.py` en cualquier VPS de 4-6 USD/mes (1 vCPU basta: ~10 KB/s por partida). Para salas por
