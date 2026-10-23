@@ -697,7 +697,8 @@ static void cardbattle_0(CardBattleWork* work) {
     u8 i;
 
     CpuFill32(0, work, sizeof(CardBattleWork));
-    gCardBattleState->rikuWork = work;
+    // @bug As Sora's: gCardBattleState is only allocated later (NULL write; the link battle's rival side).
+    BIOS_PTR(gCardBattleState)->rikuWork = work;
     work->tiles = AllocSpriteFrameTiles(0x80);
     work->palette = LoadObjPalette(gBStatesPalette, sizeof(gBStatesPalette));
     UpdateSpriteFrameTiles(work->tiles, gStockValueFrames[0], gStockValueTiles);

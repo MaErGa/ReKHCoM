@@ -2655,6 +2655,14 @@ static void VBlankCycle(void) {
     }
 }
 
+/* The network link's lockstep (src/sio/sio.c): while the other player's packet for this link frame is on its way the
+   game waits inside the frame; the last picture stays on screen (with the waiting notice) and the window answers. */
+void PortLinkIdle(void) {
+    Present();
+    PumpEvents();
+    SDL_Delay(1);
+}
+
 /*
  * One frame per vertical blank, like the cartridge: measured on hardware-
  * accurate timing (port/tools/bizhawk_timing.lua), the game's

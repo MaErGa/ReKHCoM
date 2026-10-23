@@ -49,6 +49,15 @@ void mode_vsbattle_0(u32 playerId) {
     } else {
         SeedRandom(gCharaLinkRecv.seed);
     }
+#ifdef PLATFORM_PC
+    {
+        extern int PortNetlinkTrace(void);
+        extern void PortLog(const char* format, ...);
+        if (PortNetlinkTrace()) /* the battle's seed: the parent's, sent in the link exchange (chara.c) */
+            PortLog("netlink: vs seed sent %04x received %04x, player %d", gCharaLinkSend.seed, gCharaLinkRecv.seed,
+                    gSioPlayerId);
+    }
+#endif
 
     VsBtlWorkInit();
     AllocBattleTiles();
@@ -200,6 +209,18 @@ u32 VsBattleStateHash(void) {
         h = (h ^ (u32)(u16)a->hp) * 16777619u;
     }
     h = (h ^ PortRandomState()) * 16777619u;
+    {
+        /* KHCOM_NETLINK_TRACE: the parts, to find what two games disagree on */
+        extern int PortNetlinkTrace(void);
+        extern void PortLog(const char* format, ...);
+        if (PortNetlinkTrace()) {
+            const BtlObj* a = bySide[0]->actor;
+            const BtlObj* b = bySide[1]->actor;
+            PortLog("netlink: hash %08x p1 %d,%d,%d hp %d p2 %d,%d,%d hp %d rng %08x", (unsigned)h, a ? (int)a->x : 0,
+                    a ? (int)a->y : 0, a ? (int)a->z : 0, a ? (int)a->hp : 0, b ? (int)b->x : 0, b ? (int)b->y : 0,
+                    b ? (int)b->z : 0, b ? (int)b->hp : 0, (unsigned)PortRandomState());
+        }
+    }
     return h ? h : 1;
 }
 #endif

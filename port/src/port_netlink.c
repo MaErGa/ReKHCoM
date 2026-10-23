@@ -12,15 +12,27 @@
  * KHCOM_NETLINK_JITTER=<frames>    tests: and up to that many more, at random (an uneven connection)
  * KHCOM_NETLINK_LOSS=<percent>     tests: drop that share of the datagrams sent
  * KHCOM_NETLINK_DROP=<from>-<to>   tests: an outage, nothing sent between those game frames
+ *
+ * The socket itself is four calls (UdpOpen/UdpResolve/UdpSend/UdpRecv): BSD sockets where the game is hosted (PC,
+ * Android 32-bit), the host's through the bridge where it is a guest image (Android 64-bit, consoles: udp_* in
+ * port/ps5/shared/bridge_list.h; a host without a network answers 0 and the link stays the cable).
  */
 #include "port/port.h"
 #include "port/port_netlink.h"
 
-#if __STDC_HOSTED__ && !defined(__EMSCRIPTEN__)
+#if !defined(__EMSCRIPTEN__)
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* an IPv4 address and port, in network order */
+typedef struct {
+    uint32_t ip;
+    uint16_t port;
+} NetAddr;
+
+#if __STDC_HOSTED__
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -37,10 +49,140 @@ typedef int Sock;
 #define BAD_SOCK (-1)
 #define closesocket close
 #endif
+static Sock sSock = BAD_SOCK;
+
+/* a non-blocking UDP socket on that port (0: any) */
+static int UdpOpen(int bindPort) {
+    struct sockaddr_in me;
+#ifdef _WIN32
+    WSADATA wsa;
+    u_long nb = 1;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+        return 0;
+#endif
+    sSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sSock == BAD_SOCK)
+        return 0;
+#ifdef _WIN32
+    ioctlsocket(sSock, FIONBIO, &nb);
+#else
+    fcntl(sSock, F_SETFL, fcntl(sSock, F_GETFL, 0) | O_NONBLOCK);
+#endif
+    SDL_memset(&me, 0, sizeof(me));
+    me.sin_family = AF_INET;
+    me.sin_addr.s_addr = htonl(INADDR_ANY);
+    me.sin_port = htons((unsigned short)bindPort);
+    if (bind(sSock, (struct sockaddr*)&me, sizeof(me)) != 0) {
+        closesocket(sSock);
+        sSock = BAD_SOCK;
+        return 0;
+    }
+    return 1;
+}
+
+/* host (an address or a name) and port */
+static int UdpResolve(const char* host, int port, NetAddr* to) {
+    struct addrinfo hints, *res = NULL;
+    SDL_memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    if (getaddrinfo(host, NULL, &hints, &res) != 0 || !res)
+        return 0;
+    to->ip = ((struct sockaddr_in*)res->ai_addr)->sin_addr.s_addr;
+    to->port = htons((unsigned short)port);
+    freeaddrinfo(res);
+    return 1;
+}
+
+static void UdpSend(const NetAddr* to, const void* data, int size) {
+    struct sockaddr_in a;
+    SDL_memset(&a, 0, sizeof(a));
+    a.sin_family = AF_INET;
+    a.sin_addr.s_addr = to->ip;
+    a.sin_port = to->port;
+    sendto(sSock, (const char*)data, size, 0, (struct sockaddr*)&a, sizeof(a));
+}
+
+static int UdpRecv(void* data, int cap, NetAddr* from) {
+    struct sockaddr_in a;
+#ifdef _WIN32
+    int len = sizeof(a);
+#else
+    socklen_t len = sizeof(a);
+#endif
+    int n = (int)recvfrom(sSock, (char*)data, cap, 0, (struct sockaddr*)&a, &len);
+    if (n <= 0)
+        return 0;
+    from->ip = a.sin_addr.s_addr;
+    from->port = a.sin_port;
+    return n;
+}
+
+static int UdpReady(void) {
+    return sSock != BAD_SOCK;
+}
+#else
+#include "bridge_calls.h"
+static int sSockOpen;
+
+static int UdpOpen(int bindPort) {
+    sSockOpen = h_udp_open(bindPort);
+    return sSockOpen;
+}
+
+static int UdpResolve(const char* host, int port, NetAddr* to) {
+    uint8_t a[6];
+    if (!h_udp_resolve(host, port, a))
+        return 0;
+    SDL_memcpy(&to->ip, a, 4);
+    SDL_memcpy(&to->port, a + 4, 2);
+    return 1;
+}
+
+static void UdpSend(const NetAddr* to, const void* data, int size) {
+    uint8_t a[6];
+    SDL_memcpy(a, &to->ip, 4);
+    SDL_memcpy(a + 4, &to->port, 2);
+    h_udp_send(a, data, size);
+}
+
+static int UdpRecv(void* data, int cap, NetAddr* from) {
+    uint8_t a[6];
+    int n = h_udp_recv(data, cap, a);
+    if (n <= 0)
+        return 0;
+    SDL_memcpy(&from->ip, a, 4);
+    SDL_memcpy(&from->port, a + 4, 2);
+    return n;
+}
+
+static int UdpReady(void) {
+    return sSockOpen;
+}
+#endif
+
+static int SameAddr(const NetAddr* a, const NetAddr* b) {
+    return a->ip == b->ip && a->port == b->port;
+}
+
+/* "a.b.c.d:port" for the log */
+static const char* AddrText(const NetAddr* a) {
+    static char text[24];
+    const uint8_t* ip = (const uint8_t*)&a->ip;
+    const uint8_t* port = (const uint8_t*)&a->port;
+    SDL_snprintf(text, sizeof(text), "%u.%u.%u.%u:%u", ip[0], ip[1], ip[2], ip[3], (unsigned)(port[0] << 8 | port[1]));
+    return text;
+}
+
+/* the tests' random loss and jitter (SDL_rand is not in the consoles' shim) */
+static uint32_t TestRand(uint32_t n) {
+    static uint32_t seed = 0x2545F491;
+    seed = seed * 1664525u + 1013904223u;
+    return n ? (seed >> 8) % n : 0;
+}
 
 static int sChecked, sRole, sSteam;
-static Sock sSock = BAD_SOCK;
-static struct sockaddr_in sPeer;
+static NetAddr sPeer;
 static int sHavePeer;
 static uint64_t sLastHeard;
 static int sLag, sLoss, sJitter;
@@ -58,39 +200,18 @@ static Held sHeld[256];
 static int sHeldCount;
 static uint32_t sFrame;
 
-/* host (an address or a name) and port into to */
-static int Resolve(const char* host, int port, struct sockaddr_in* to) {
-    struct addrinfo hints, *res = NULL;
-    SDL_memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    if (getaddrinfo(host, NULL, &hints, &res) != 0 || !res)
-        return 0;
-    SDL_memcpy(to, res->ai_addr, sizeof(*to));
-    to->sin_port = htons((unsigned short)port);
-    freeaddrinfo(res);
-    return 1;
-}
-
 static void RelayHello(void) {
     uint8_t d[2 + sizeof(sRoom)];
     size_t n = SDL_strlen(sRoom);
     d[0] = 'J';
     d[1] = (uint8_t)sRole;
     SDL_memcpy(d + 2, sRoom, n);
-    sendto(sSock, (const char*)d, (int)(2 + n), 0, (struct sockaddr*)&sPeer, sizeof(sPeer));
+    UdpSend(&sPeer, d, (int)(2 + n));
 }
 
 static int Open(const char* spec) {
     char host[128] = "";
     int port = 0;
-    struct sockaddr_in me;
-#ifdef _WIN32
-    WSADATA wsa;
-    u_long nb = 1;
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-        return 0;
-#endif
     if (SDL_strncmp(spec, "host:", 5) == 0) {
         port = SDL_atoi(spec + 5);
         sRole = PORT_NETLINK_HOST;
@@ -122,26 +243,12 @@ static int Open(const char* spec) {
     }
     if (port <= 0 || port > 65535 || !sRole)
         return 0;
-    sSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sSock == BAD_SOCK)
-        return 0;
-#ifdef _WIN32
-    ioctlsocket(sSock, FIONBIO, &nb);
-#else
-    fcntl(sSock, F_SETFL, fcntl(sSock, F_GETFL, 0) | O_NONBLOCK);
-#endif
-    SDL_memset(&me, 0, sizeof(me));
-    me.sin_family = AF_INET;
-    me.sin_addr.s_addr = htonl(INADDR_ANY);
-    me.sin_port = htons((unsigned short)(sRole == PORT_NETLINK_HOST && !sRelay ? port : 0));
-    if (bind(sSock, (struct sockaddr*)&me, sizeof(me)) != 0) {
+    if (!UdpOpen(sRole == PORT_NETLINK_HOST && !sRelay ? port : 0)) {
         PortLog("netlink: could not bind port %d", port);
-        closesocket(sSock);
-        sSock = BAD_SOCK;
         return 0;
     }
     if (sRole == PORT_NETLINK_JOIN || sRelay) { /* the other player, or the relay, by address or name */
-        if (!Resolve(host, port, &sPeer)) {
+        if (!UdpResolve(host, port, &sPeer)) {
             PortLog("netlink: %s not found", host);
             return 0;
         }
@@ -172,6 +279,7 @@ static const char* Spec(void) {
     static char line[160];
     const char* env = SDL_getenv("KHCOM_NETLINK");
     FILE* f;
+    int i;
     if (env)
         return env;
     f = fopen(PortConfigPath("netlink.cfg"), "r");
@@ -180,7 +288,9 @@ static const char* Spec(void) {
     if (!fgets(line, sizeof(line), f))
         line[0] = 0;
     fclose(f);
-    line[strcspn(line, "\r\n")] = 0;
+    for (i = 0; line[i] && line[i] != '\r' && line[i] != '\n'; i++)
+        ;
+    line[i] = 0;
     return line[0] && SDL_strcmp(line, "off") != 0 ? line : NULL;
 }
 
@@ -199,13 +309,13 @@ int PortNetlinkRole(void) {
             sRole = 0;
         }
     }
-    return sSock != BAD_SOCK || sSteam ? sRole : 0;
+    return UdpReady() || sSteam ? sRole : 0;
 }
 
 static void SendNow(const uint8_t* data, int size) {
     if (sDropTo && sFrame >= sDropFrom && sFrame < sDropTo)
         return;
-    if (sLoss > 0 && (int)(SDL_rand(100)) < sLoss)
+    if (sLoss > 0 && (int)TestRand(100) < sLoss)
         return;
     if (sSteam) {
         PortSteamlinkSend(data, size);
@@ -215,10 +325,10 @@ static void SendNow(const uint8_t* data, int size) {
         uint8_t d[PORT_NETLINK_MAX + 1];
         d[0] = 'D';
         SDL_memcpy(d + 1, data, (size_t)size);
-        sendto(sSock, (const char*)d, size + 1, 0, (struct sockaddr*)&sPeer, sizeof(sPeer));
+        UdpSend(&sPeer, d, size + 1);
         return;
     }
-    sendto(sSock, (const char*)data, size, 0, (struct sockaddr*)&sPeer, sizeof(sPeer));
+    UdpSend(&sPeer, data, size);
 }
 
 void PortNetlinkSend(const uint8_t* data, int size) {
@@ -226,7 +336,7 @@ void PortNetlinkSend(const uint8_t* data, int size) {
         return;
     if ((sLag > 0 || sJitter > 0) && sHeldCount < (int)SDL_arraysize(sHeld)) {
         Held* h = &sHeld[sHeldCount++];
-        h->due = sFrame + (uint32_t)sLag + (sJitter > 0 ? (uint32_t)SDL_rand(sJitter + 1) : 0);
+        h->due = sFrame + (uint32_t)sLag + (sJitter > 0 ? TestRand((uint32_t)sJitter + 1) : 0);
         h->size = size;
         SDL_memcpy(h->data, data, (size_t)size);
         return;
@@ -235,12 +345,7 @@ void PortNetlinkSend(const uint8_t* data, int size) {
 }
 
 int PortNetlinkRecv(uint8_t* data, int cap) {
-    struct sockaddr_in from;
-#ifdef _WIN32
-    int len = sizeof(from);
-#else
-    socklen_t len = sizeof(from);
-#endif
+    NetAddr from;
     int n;
     if (!PortNetlinkRole())
         return 0;
@@ -250,11 +355,11 @@ int PortNetlinkRecv(uint8_t* data, int cap) {
             sLastHeard = SDL_GetTicks();
         return n;
     }
-    n = (int)recvfrom(sSock, (char*)data, cap, 0, (struct sockaddr*)&from, &len);
+    n = UdpRecv(data, cap, &from);
     if (n <= 0)
         return 0;
     if (sRelay) { /* only the relay writes: 'O' its room count, 'D' the other player's datagram */
-        if (from.sin_addr.s_addr != sPeer.sin_addr.s_addr || from.sin_port != sPeer.sin_port)
+        if (!SameAddr(&from, &sPeer))
             return 0;
         if (data[0] == 'O' && n >= 2) {
             if (data[1] != sRelayPlayers)
@@ -268,13 +373,13 @@ int PortNetlinkRecv(uint8_t* data, int cap) {
     } else if (sRole == PORT_NETLINK_HOST && !sHavePeer) { /* the first player to write is the other end of the cable */
         sPeer = from;
         sHavePeer = 1;
-        PortLog("netlink: player 2 at %s:%d", inet_ntoa(from.sin_addr), ntohs(from.sin_port));
-    } else if (from.sin_addr.s_addr != sPeer.sin_addr.s_addr || from.sin_port != sPeer.sin_port) {
+        PortLog("netlink: player 2 at %s", AddrText(&from));
+    } else if (!SameAddr(&from, &sPeer)) {
         /* player 2 back from another address (a new connection after a cut): taken once the old one went quiet */
         if (sRole != PORT_NETLINK_HOST || PortNetlinkSilentMs() < 2000)
             return 0;
         sPeer = from;
-        PortLog("netlink: player 2 back at %s:%d", inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+        PortLog("netlink: player 2 back at %s", AddrText(&from));
     }
     sLastHeard = SDL_GetTicks();
     return n;
@@ -285,7 +390,7 @@ void PortNetlinkFrame(void) {
     sFrame++;
     if (sSteam)
         PortSteamlinkFrame();
-    if (sRelay && sSock != BAD_SOCK && sFrame % 60 == 0) /* the room again: the relay finds a changed address */
+    if (sRelay && UdpReady() && sFrame % 60 == 0) /* the room again: the relay finds a changed address */
         RelayHello();
     for (i = 0; i < sHeldCount; i++) {
         if (sHeld[i].due <= sFrame)
@@ -298,6 +403,15 @@ void PortNetlinkFrame(void) {
 
 int PortNetlinkSilentMs(void) {
     return sLastHeard ? (int)(SDL_GetTicks() - sLastHeard) : 1 << 30;
+}
+
+uint32_t PortNetlinkMs(void) {
+    return (uint32_t)SDL_GetTicks();
+}
+
+int PortNetlinkDelayOverride(void) {
+    const char* d = SDL_getenv("KHCOM_NETLINK_DELAY");
+    return d ? SDL_atoi(d) : 0;
 }
 
 int PortNetlinkFakeDesync(void) { /* KHCOM_NETLINK_FAKEDESYNC: tests of the desync check */
@@ -321,6 +435,12 @@ int PortNetlinkTrace(void) {
     return trace;
 }
 #else
+uint32_t PortNetlinkMs(void) {
+    return 0;
+}
+int PortNetlinkDelayOverride(void) {
+    return 0;
+}
 int PortNetlinkTrace(void) {
     return 0;
 }

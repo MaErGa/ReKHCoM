@@ -55,4 +55,8 @@ int h_touch_poll(HostTouch* fingers, int max);
 int h_app_state(void);
 int h_hd_music(int op, const char* path, int gain);
 int h_hd_movie(const char* movie, const char* subs1, const char* subs2, const char* font);
+int h_udp_open(int bind_port);
+int h_udp_resolve(const char* host, int port, uint8_t* addr6);
+void h_udp_send(const uint8_t* addr6, const void* data, int size);
+int h_udp_recv(void* data, int cap, uint8_t* addr6);
 #endif

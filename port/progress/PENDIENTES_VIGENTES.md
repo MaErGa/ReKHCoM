@@ -21,10 +21,18 @@ están las herramientas y qué no hacer. Subir cada pieza verificada a main ense
 adaptativo, chequeo de desync cada 120 cuadros), `port/src/port_netlink.c` (UDP/relay; `netlink.cfg` o
 `KHCOM_NETLINK`), `port/src/port_steamlink.c` (Spacewar 480, `steam_api.dll` en bin/), `port/tools/netlink_relay.py`.
 Docs: `ONLINE_ESTUDIO.md`, `GBA_LINK_NETPLAY.md`. Carpetas de prueba en la raíz: `ReKHCoM-OnlineAlpha-TU` /
-`-AMIGO` (Steam host/join, partidas EU/US/JP, LEEME-ONLINE.txt). Probar en local: `$TMP/netlink2.sh` (dos procesos
-ocultos; `KHCOM_NETLINK_LAG/JITTER/LOSS/DROP/TRACE/FAKEDESYNC`). Falta: prueba real por Steam entre dos cuentas
-(el usuario con su amigo), rollback en la batalla VS, relay en Android (falta permiso INTERNET), sala por código
-en el juego. Repo público aparte: https://github.com/MatyMeatBoy/GBANoCable (local `00 Claude/GBANoCable`).
+`-AMIGO` (Steam host/join, partidas EU/US/JP, LEEME-ONLINE.txt). Probar en local: `sh port/tools/netlink_pair.sh
+<cuadros> <teclas> [direct|relay]` (dos procesos ocultos, `BUILD=build/pc-...`; `LINK_ENV` para
+`KHCOM_NETLINK_LAG/JITTER/LOSS/DROP`). Repo público aparte: https://github.com/MatyMeatBoy/GBANoCable.
+**23/10 tarde (sesión nueva): online en Android y relay en los launchers.** `port_netlink.c` usa 4 primitivas UDP:
+sockets BSD donde el juego es nativo (PC, Android 32) y el puente del host donde es imagen invitada (entradas nuevas
+`udp_open/udp_resolve/udp_send/udp_recv` al final de `bridge_list.h`, host en `port/ps5/shared/udp_host.h`: real en
+Android 64 y en el host de prueba Linux; Switch/Vita/PS4/PS5 responden 0 = sigue el cable). APK con permiso INTERNET
+y sección "Enlace en red (alpha)" en la app (Desactivado / IP alojar / IP unirse / Relay crear / Relay unirse; escribe
+`files/netlink.cfg`). Launcher de PC: modos Relay (servidor, puerto, código). PC directo y relay probados tras el
+cambio (batalla VS sincronizada). Falta: prueba Android 64 en el emulador contra PC por relay (10.0.2.2), prueba real
+por Steam (usuario y su amigo), un relay público (VPS) para que el modo relay sirva sin montar uno, rollback,
+sockets reales en Switch (libnx: `socketInitializeDefault` + `UDP_HOST_POSIX`).
 
 **Issues:** #43 y #44 cerrados (confirmados). #42, #45, #46 tienen arreglo en v2.0-pre1 y esperan al reportero;
 #40 sin datos. Releases: v2.0-pre1 (Win/Switch/Android), v2.0-pre2 (Win). La v2.0 estable solo con OK del usuario.
@@ -213,6 +221,12 @@ savestate del usuario); números de cartas HD vs Re:CoM.
     audio/x-raw,format=S16LE,rate=48000,channels=2 ! appsink`; reutilizar de PlayFile (Windows) el ritmo por marcas
     de tiempo, subtítulos, pausa y fundidos sacándolos a funciones comunes. Probar en la VM ARM64 con
     gst-plugins-good + gst-libav (H.264/AAC). FFmpeg descartado: sus structs cambian por versión.
+    23/10 (revisión): el paquete de Linux es i386, así que un dlopen de GStreamer necesita las librerías **i386** del
+    sistema (gstreamer1.0-libav:i386), que casi nadie tiene (en Steam Deck tampoco: ahí va la de Windows por Proton).
+    Alternativa que no depende de la arquitectura: lanzar el `gst-launch-1.0` (o `ffmpeg`) de 64 bits del sistema
+    como proceso aparte y leer por tubería los cuadros (RGBA/NV12) y el audio (s16le 48 kHz), con el mismo reloj por
+    audio que PlayFile. Si no hay ninguno instalado, la escena del cartucho (como Proton sin H.264). Decidir antes de
+    implementar (es diseño grande): pedir OK al usuario.
   - [ ] Proton (usuario 23/10): que la versión de Windows corra bien en Proton estable sin "Experimental"; revisar
     reportes (issues) de Steam Deck/Linux y qué falla (Media Foundation de los videos, D3D11, audio).
     23/10: ningún issue de Proton/Deck abierto (solo #19 GLIBC, cerrado). Riesgo principal = H.264 por Media

@@ -643,6 +643,8 @@ static void GamePush(const int16_t* frames, uint32_t count) {
 /* HD music: the host decodes the track the game names and mixes it into the game's blocks (shared/hd_music_host.h) */
 #define HD_MUSIC_LOG Log
 #include "hd_music_host.h"
+/* the network link's socket (shared/udp_host.h): none on this host yet, the link stays the cable */
+#include "udp_host.h"
 static void H_audio_push(const int16_t* frames, uint32_t count) { HdMusicPush(frames, count, sGameRate, GamePush); }
 /* HD movies: only the Android host plays them (bridge entry hd_movie); the game plays its own movie */
 static int H_hd_movie(const char* movie, const char* subs1, const char* subs2, const char* font) {
@@ -1228,6 +1230,7 @@ int main(int argc, char** argv) {
         HM(atan2, (double (*)(double, double))atan2), HM(pow, (double (*)(double, double))pow), HM(exp, (double (*)(double))exp),
         HM(log_e, (double (*)(double))log), HM(fmod, (double (*)(double, double))fmod), HM(sinf, (float (*)(float))sinf),
         HM(cosf, (float (*)(float))cosf), HM(powf, (float (*)(float, float))powf), HF(set_title), HF(notify), HF(touch_poll), HF(app_state), HF(hd_music), HF(hd_movie),
+        HF(udp_open), HF(udp_resolve), HF(udp_send), HF(udp_recv),
     };
     for (int i = 0; i < HF_COUNT; ++i)
         if (!t[i]) {

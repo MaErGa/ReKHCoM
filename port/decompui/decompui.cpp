@@ -1375,14 +1375,16 @@ static void PageSound() {
 }
 
 /* The link battle over the network (alpha, port/progress/ONLINE_ESTUDIO.md): netlink.cfg holds one line the game
-   reads when the link starts: off, steam:host, steam:join, host:<port> or join:<ip>:<port>. */
+   reads when the link starts: off, steam:host, steam:join, host:<port>, join:<ip>:<port> or
+   relay:<server>:<port>:<CODE>:host|join (a relay by a room code, port/tools/netlink_relay.py: crossplay with Android). */
 static void NetlinkRows() {
     static int mode = -1, port = 47777;
-    static char ip[64] = "";
-    static const char* const kSpecs[5] = { "off", "steam:host", "steam:join", "host", "join" };
-    const char* const names[5] = { T("Desactivado (cable)", "Off (cable)"), T("Steam: crear sala", "Steam: open a room"),
+    static char ip[64] = "", room[17] = "";
+    static const char* const kSpecs[7] = { "off", "steam:host", "steam:join", "host", "join", "relay-host", "relay-join" };
+    const char* const names[7] = { T("Desactivado (cable)", "Off (cable)"), T("Steam: crear sala", "Steam: open a room"),
                                    T("Steam: unirse a un amigo", "Steam: join a friend"),
-                                   T("IP: alojar", "IP: host"), T("IP: unirse", "IP: join") };
+                                   T("IP: alojar", "IP: host"), T("IP: unirse", "IP: join"),
+                                   T("Relay: crear sala", "Relay: open a room"), T("Relay: unirse a una sala", "Relay: join a room") };
     fs::path cfg = sRoot / "netlink.cfg";
     bool save = false;
     if (mode < 0) {
@@ -1401,6 +1403,20 @@ static void NetlinkRows() {
             mode = 4;
             snprintf(ip, sizeof(ip), "%s", line.substr(5, colon - 5).c_str());
             port = std::atoi(line.c_str() + colon + 1);
+        } else if (line.rfind("relay:", 0) == 0) { /* relay:<server>:<port>:<code>:host|join */
+            std::vector<std::string> f;
+            size_t at = 6, next;
+            while ((next = line.find(':', at)) != std::string::npos) {
+                f.push_back(line.substr(at, next - at));
+                at = next + 1;
+            }
+            f.push_back(line.substr(at));
+            if (f.size() == 4) {
+                mode = f[3] == "host" ? 5 : 6;
+                snprintf(ip, sizeof(ip), "%s", f[0].c_str());
+                port = std::atoi(f[1].c_str());
+                snprintf(room, sizeof(room), "%s", f[2].c_str());
+            }
         }
         if (port <= 0 || port > 65535)
             port = 47777;
@@ -1408,14 +1424,16 @@ static void NetlinkRows() {
     save |= CycleRow(T("Enlace en red (alpha)", "Network link (alpha)"),
                      T("La batalla de enlace (Título > Batalla de enlace) por internet en vez del cable. Steam: los dos "
                        "con Steam abierto; uno crea la sala y el otro se une (prefiere la sala de un amigo de Steam). "
-                       "IP: quien aloja abre el puerto UDP en su router; el otro escribe su IP.",
+                       "IP: quien aloja abre el puerto UDP en su router; el otro escribe su IP. Relay: los dos escriben "
+                       "el mismo servidor y el mismo código de sala (también con Android).",
                        "The link battle (Title > Link battle) over the internet instead of the cable. Steam: both with "
                        "Steam open; one opens a room and the other joins (a Steam friend's room first). IP: the host "
-                       "opens the UDP port on the router; the other types the host's IP."),
-                     mode, 5, names);
-    if (mode == 4) {
+                       "opens the UDP port on the router; the other types the host's IP. Relay: both type the same server "
+                       "and room code (Android too)."),
+                     mode, 7, names);
+    if (mode == 4 || mode >= 5) {
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(T("IP de quien aloja", "Host's IP"));
+        ImGui::TextUnformatted(mode >= 5 ? T("Servidor relay", "Relay server") : T("IP de quien aloja", "Host's IP"));
         ImGui::SameLine();
         ImGui::SetNextItemWidth(Px(220));
         save |= ImGui::InputText("##netlink_ip", ip, sizeof(ip));
@@ -1427,6 +1445,20 @@ static void NetlinkRows() {
         ImGui::SetNextItemWidth(Px(120));
         save |= ImGui::InputInt("##netlink_port", &port, 0, 0);
         port = std::clamp(port, 1, 65535);
+    }
+    if (mode >= 5) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(T("Código de sala", "Room code"));
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(Px(160));
+        if (ImGui::InputText("##netlink_room", room, sizeof(room), ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank)) {
+            char* w = room;
+            for (const char* r = room; *r; r++) /* letters and digits: the relay's codes */
+                if ((*r >= 'A' && *r <= 'Z') || (*r >= '0' && *r <= '9'))
+                    *w++ = *r;
+            *w = 0;
+            save = true;
+        }
     }
     if (mode == 1 || mode == 2) {
         std::error_code ec;
@@ -1444,6 +1476,10 @@ static void NetlinkRows() {
             f << "host:" << port << "\n";
         else if (mode == 4)
             f << "join:" << ip << ":" << port << "\n";
+        else if (mode >= 5 && ip[0] && room[0])
+            f << "relay:" << ip << ":" << port << ":" << room << ":" << (mode == 5 ? "host" : "join") << "\n";
+        else if (mode >= 5)
+            f << "off\n"; /* until the server and the code are written */
         else
             f << kSpecs[mode] << "\n";
     }

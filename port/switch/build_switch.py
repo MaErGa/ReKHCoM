@@ -195,7 +195,7 @@ def build_host(regions):
     (assets / 'achievements').mkdir()
     shutil.copy2(ROOT / 'port/assets/achievements/badges.png', assets / 'achievements/badges.png')
     (share / 'src').mkdir()
-    for src in (HERE / 'host/switch_host.c', PS5 / 'shared/bridge.h', PS5 / 'shared/bridge_list.h', PS5 / 'shared/hd_music_host.h',
+    for src in (HERE / 'host/switch_host.c', PS5 / 'shared/bridge.h', PS5 / 'shared/bridge_list.h', PS5 / 'shared/hd_music_host.h', PS5 / 'shared/udp_host.h',
                 ROOT / 'port/third_party/stb/stb_vorbis.c'):
         shutil.copy2(src, share / 'src' / src.name)
     Image.open(PS5 / 'sce_sys/icon0.png').convert('RGB').resize((256, 256), Image.LANCZOS).save(share / 'icon.jpg', quality=92)

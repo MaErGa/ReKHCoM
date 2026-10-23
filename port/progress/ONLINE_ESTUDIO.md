@@ -85,6 +85,33 @@ PC y solo con red activa), `port/tools/netlink_relay.py` (relay para VPS). Sin r
 - Steam probado hasta cargar la DLL y fallar limpio sin Steam abierto; la sala real necesita dos cuentas (prueba
   del usuario con un amigo: carpetas `ReKHCoM-OnlineAlpha-TU` y `-AMIGO` en la raíz de KHCoMPC).
 
+## Lockstep estricto (23/10 tarde) — por qué y cómo
+
+Hallazgo con el primer cruce PC (x86) contra Android 64 (emulador, mucho más lento): DESYNC en el primer chequeo de la
+batalla VS. Las posiciones coincidían; difería el generador aleatorio. El generador es el del cartucho (enteros puros,
+igual en todas las plataformas); la causa era otra: el hijo nunca recibió la semilla del padre (ni su VT). Los
+pares de datos que llegaban a los dos juegos eran idénticos y en el mismo orden, pero **en distinto cuadro del
+juego**: fuera de la batalla el lado que esperaba seguía corriendo cuadros sin datos, y la máquina de estados del
+intercambio (chara.c, SioExchangeSend/Recv) avanzaba distinto en cada lado. Con dos PC parejos no se notaba.
+
+Arreglo (como hace el cable real, que sincroniza las dos consolas cuadro a cuadro): **cada "cuadro de enlace" del
+juego (cada llamada al cable desde la conexión) crea su ranura N y recibe exactamente el par N − D**, con la misma D
+en los dos juegos. Si el par no llegó, el juego espera dentro de ese cuadro (imagen quieta, ventana viva, aviso
+"Esperando al otro jugador") en vez de correr un cuadro vacío. Así los dos ejecutan la misma secuencia de cuadros
+de GBA y todo lo que sale de ella (RNG, intercambio, batalla) es idéntico sin tocar la lógica del juego.
+
+- D la elige el padre: mide el ida y vuelta (RTT) con los HELLO del handshake (cada uno lleva su reloj y el eco del
+  otro) y toma D = (RTT/2 + 25 ms) / 16,7 ms, entre 2 y 12 cuadros; viaja en START y en cada paquete de ranuras.
+  `KHCOM_NETLINK_DELAY=<n>` la fija (pruebas). Reemplaza al búfer adaptativo anterior, que no podía ser determinista
+  (cada lado ajustaba el suyo).
+- HELLO lleva la versión del protocolo (NET_VERSION 2): dos builds de reglas distintas no se conectan y avisan.
+- Bugs del cartucho que esto destapó en Android (sin recuperación de fallos): `card_battle_riku.c` cardbattle_0
+  escribía en `gCardBattleState` antes de crearlo (el hijo crea primero la tarea del rival): `BIOS_PTR`, como su
+  gemela de Sora.
+- Pruebas: `sh port/tools/netlink_pair.sh` (dos PC, `LINK_ENV` para lag/jitter/pérdida) y
+  `sh port/tools/netlink_android.sh` (emulador o teléfono contra PC por relay; `KHCOM_NETLINK_TRACE=1` registra pares,
+  semilla y las partes de cada hash).
+
 ## Siguiente (para llegar a "no se nota que es online")
 
 1. Hecho (23/10): hash del estado compartido de la batalla (posición y VT de los dos, en orden de jugador, y los

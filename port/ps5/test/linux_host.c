@@ -240,6 +240,13 @@ static int L_app_state(void) { return 0; }
 static int L_hd_music(int op, const char* path, int gain) { (void)op; (void)path; (void)gain; return 0; }
 static int L_hd_movie(const char* m, const char* a, const char* b, const char* f) { (void)m; (void)a; (void)b; (void)f; return 0; }
 
+/* the network link's socket (shared/udp_host.h): BSD sockets */
+#define UDP_HOST_POSIX
+#include "udp_host.h"
+#define L_udp_open H_udp_open
+#define L_udp_resolve H_udp_resolve
+#define L_udp_send H_udp_send
+#define L_udp_recv H_udp_recv
 #define HF(name) [HF_##name] = (uint64_t)(uintptr_t)L_##name
 #define HM(name, fn) [HF_##name] = (uint64_t)(uintptr_t)fn
 static void* MapFixed(uint32_t base, size_t size) {
@@ -295,6 +302,7 @@ int main(int argc, char** argv) {
         HF(gfx_blend), HF(audio_open), HF(audio_push), HF(audio_queued), HF(audio_clear), HF(audio_ratio), HF(pad_poll),
         HF(quit_requested), HM(sin, sin), HM(cos, cos), HM(tan, tan), HM(atan2, atan2), HM(pow, pow), HM(exp, exp),
         HM(log_e, log), HM(fmod, fmod), HM(sinf, sinf), HM(cosf, cosf), HM(powf, powf), HF(set_title), HF(notify), HF(touch_poll), HF(app_state), HF(hd_music), HF(hd_movie),
+        HF(udp_open), HF(udp_resolve), HF(udp_send), HF(udp_recv),
     };
     _Static_assert(sizeof(t) / sizeof(t[0]) == HF_COUNT, "bridge table out of step with bridge_list.h");
     memcpy(table, t, sizeof(t));

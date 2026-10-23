@@ -14,6 +14,9 @@ void PortNetlinkFrame(void);                 /* once a game frame (the test lag)
 int PortNetlinkSilentMs(void);               /* since the other player was last heard */
 int PortNetlinkTrace(void);
 int PortNetlinkFakeDesync(void);                  /* KHCOM_NETLINK_TRACE: every packet pair in the log */
+uint32_t PortNetlinkMs(void);                /* a millisecond clock for the round trip */
+int PortNetlinkDelayOverride(void);          /* KHCOM_NETLINK_DELAY: the lockstep's delay in frames, 0 none */
+void PortLinkIdle(void);                     /* port_main.c: one wait while the other player's frame is on its way */
 
 
 /* port_steamlink.c: the same datagrams through a Steam room and Steam's P2P messages (Windows) */
