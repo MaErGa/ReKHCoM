@@ -201,7 +201,8 @@ static void Search(void) {
     S.ListDistanceFilter(mm, 3 /* worldwide */);
     sPending = S.RequestLobbyList(mm);
     sNextSearch = SDL_GetTicks() + 3000;
-    Status2("Steam: looking for your friend's room%s", "Steam: buscando la sala de tu amigo%s", NULL);
+    if (!sListing) /* the lobby's own list says what it does */
+        Status2("Steam: looking for your friend's room%s", "Steam: buscando la sala de tu amigo%s", NULL);
 }
 
 static void SetPeer(SteamId peer) {
