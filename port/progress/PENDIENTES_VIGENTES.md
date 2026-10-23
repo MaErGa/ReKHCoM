@@ -11,7 +11,24 @@ Reglas del usuario:
 - Nunca borrar carpetas ReKHCoM-vX sin que el usuario lo pida.
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
-## TRASPASO 23/10 ~12:40 (Claude, sesión principal; se acaban los tokens) — LEER PRIMERO
+## TRASPASO 23/10 tarde (Claude, sesión nueva; el PC se reinició a mitad) — LEER PRIMERO
+
+**Hecho y en main esta sesión:** carteles HD de World Cards / World Warp en US (19/19 US) y VER BARAJA de Riku quieto;
+casos `rikudeck`/`premire` en test_hd_menus; Discord no se conecta en corridas de prueba; video HD: si Media
+Foundation no da imagen (Proton sin H.264) queda la escena del cartucho; **online**: puente UDP (Android 64), permiso
+INTERNET y ajustes de enlace en la app, modos Relay en el launcher de PC, **lockstep estricto** (ver ONLINE_ESTUDIO.md
+"Lockstep estricto"), y el NULL del cartucho en `card_battle_riku.c` cardbattle_0 (rival en la VS). PC↔PC directo y
+relay, con y sin lag/jitter/pérdida: mismo hash, semilla recibida, 0 esperas sin lag (demora 3).
+**En curso al escribir esto:** prueba PC↔Android 64 en el emulador con el lockstep (`sh port/tools/netlink_android.sh
+emulator-5554 12000 2600`, logs en build/netlink). Antes del lockstep daba DESYNC y crash; el crash ya está arreglado.
+**Cortado por el reinicio:** las baterías de escritorio (events jp, wide eu...): relanzar con
+`py -3 port/tools/run_batteries.py --detach --resume` cuando el emulador esté cerrado (poca RAM).
+**Proton (usuario 23/10):** en builds tempranas "solo cargaba con Proton Experimental". Sin issue abierto; sin
+equipo para probarlo. Pedir a quien juegue en Deck/Linux que pruebe la v2.0 con Proton estable y mande kh_com.log.
+**#42 (23/10 tarde):** el reportero miró `hd/movies` (los finales van a `hd/scenes` desde la pre1); se le pidió mirar
+ahí y mandar kh_com.log.
+
+## TRASPASO 23/10 ~12:40 (Claude anterior) — referencia
 
 **Cómo anotar avances (pedido del usuario):** cada avance va aquí en el momento (qué se hizo, commit, cómo se
 probó, qué falta), y al cerrar una sesión se deja un traspaso como este: estado, cómo retomar cada frente, dónde
