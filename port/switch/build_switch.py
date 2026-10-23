@@ -170,7 +170,7 @@ ls -l ReKHCoM.nro
 
 
 def version():
-    text = (ROOT / 'port/decompui/decompui.cpp').read_text(encoding='utf-8')
+    text = (ROOT / 'port/include/port/port_version.h').read_text(encoding='utf-8')
     return re.search(r'#define REKHCOM_VERSION\s+"v([^"]+)"', text).group(1)
 
 

@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "port/port.h"
+#include "port/port_version.h"
 #include "mode.h"
 #include "port/port_aspect.h"
 #include "port/port_hd2d.h"
@@ -2124,6 +2125,43 @@ void PortHarnessShot(const char* name) {
     SDL_strlcpy(sHarnessShot, name, sizeof(sHarnessShot));
 }
 
+/* The log's header: what a report needs to tell machines apart (version, system, Wine/Proton, display, settings). */
+static void LogSystem(void) {
+#if !__STDC_HOSTED__ /* the consoles' guest: its SDL shim has none of the system queries */
+    PortLog("ReKHCoM %s (built %s)", REKHCOM_VERSION, __DATE__);
+#else
+    const SDL_DisplayMode* dm = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(sWindow));
+    PortLog("ReKHCoM %s (built %s), %s, %d cores, %d MB RAM", REKHCOM_VERSION, __DATE__, SDL_GetPlatform(),
+            SDL_GetNumLogicalCPUCores(), SDL_GetSystemRAM());
+#ifdef _WIN32
+    {
+        typedef LONG(WINAPI * RtlGetVersionFn)(OSVERSIONINFOW*);
+        typedef const char*(CDECL * WineVersionFn)(void);
+        typedef void(CDECL * WineHostFn)(const char**, const char**);
+        HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+        RtlGetVersionFn rtl = ntdll ? (RtlGetVersionFn)(void*)GetProcAddress(ntdll, "RtlGetVersion") : NULL;
+        WineVersionFn wine = ntdll ? (WineVersionFn)(void*)GetProcAddress(ntdll, "wine_get_version") : NULL;
+        WineHostFn host = ntdll ? (WineHostFn)(void*)GetProcAddress(ntdll, "wine_get_host_version") : NULL;
+        OSVERSIONINFOW v = { sizeof(v) };
+        if (rtl && rtl(&v) == 0)
+            PortLog("OS: Windows %lu.%lu.%lu", v.dwMajorVersion, v.dwMinorVersion, v.dwBuildNumber);
+        if (wine) {
+            const char *sys = "", *rel = "";
+            if (host)
+                host(&sys, &rel);
+            PortLog("Wine %s on %s %s%s", wine(), sys, rel, SDL_getenv("STEAM_COMPAT_DATA_PATH") ? " (Proton)" : "");
+        }
+    }
+#endif
+    if (dm)
+        PortLog("Display: %dx%d @ %.2f Hz", dm->w, dm->h, dm->refresh_rate);
+#endif
+    PortLog("Settings: graphics mode %d, view %d, fullscreen %d, vsync %d, frame skip %d, HD movies %d music %d "
+            "scenes %d HUD %d text %d", gPortConfig.graphicsMode, gPortConfig.viewMode, gPortConfig.fullscreen,
+            gPortConfig.vsync, gPortConfig.frameSkip, gPortConfig.hdMovies, gPortConfig.hdMusic, gPortConfig.hdScenes,
+            gPortConfig.hdCards, gPortConfig.hdText);
+}
+
 static void HarnessFrame(void) {
     const char* shots = SDL_getenv("KHCOM_SHOTS");
     const char* quit = SDL_getenv("KHCOM_QUIT");
@@ -2131,12 +2169,17 @@ static void HarnessFrame(void) {
     const char* oam = SDL_getenv("KHCOM_OAMDUMP");
     const char* saveAt = SDL_getenv("KHCOM_SAVESTATE");
 
-    if (SDL_getenv("KHCOM_TRACE_MODES")) {
+    {
+        /* every mode change in the log (a report then tells where the game was); the tests' own wording with
+           KHCOM_TRACE_MODES */
         extern const char* PortHarnessModeName(void);
         static const char* previous;
         const char* name = PortHarnessModeName();
         if (name != previous) {
-            PortLog("harness: frame %u mode %s", (unsigned)sFrameCount, name);
+            if (SDL_getenv("KHCOM_TRACE_MODES"))
+                PortLog("harness: frame %u mode %s", (unsigned)sFrameCount, name);
+            else
+                PortLog("mode: %s (frame %u)", name, (unsigned)sFrameCount);
             previous = name;
         }
     }
@@ -2784,6 +2827,7 @@ int main(int argc, char** argv) {
     if (sRenderer == NULL)
         PortFatal("Could not create the renderer: %s", SDL_GetError());
     PortLog("Renderer: %s", SDL_GetRendererName(sRenderer));
+    LogSystem();
     ApplyWindowMode();
 #ifdef _WIN32
     SDL_SetRenderDrawColor(sRenderer, 0, 0, 0, 255);

@@ -37,7 +37,7 @@ def main():
     ap.add_argument('--cpus', default='8')
     args = ap.parse_args()
     version = args.version or re.search(r'#define REKHCOM_VERSION\s+"([^"]+)"',
-                                        (ROOT / 'port/decompui/decompui.cpp').read_text(encoding='utf-8'))[1]
+                                        (ROOT / 'port/include/port/port_version.h').read_text(encoding='utf-8'))[1]
     if not IMAGE.is_file():
         sys.exit(f'PS5 VM image not found: {IMAGE}')
     # The VM disk is persistent: two QEMU processes on it would corrupt it.

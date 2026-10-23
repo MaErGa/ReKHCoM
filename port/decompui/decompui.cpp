@@ -62,9 +62,7 @@ namespace fs = std::filesystem;
 #include "../achievements/offline_achievements.h"
 #include "../achievements/toast_layout.h"
 
-#ifndef REKHCOM_VERSION
-#define REKHCOM_VERSION "v2.0"
-#endif
+#include "../include/port/port_version.h"
 
 static bool sSpanish;
 

@@ -50,7 +50,7 @@ def tool(name):
 
 def version():
     import re
-    text = (ROOT / 'port/decompui/decompui.cpp').read_text(encoding='utf-8')
+    text = (ROOT / 'port/include/port/port_version.h').read_text(encoding='utf-8')
     major, minor = re.search(r'#define REKHCOM_VERSION\s+"v(\d+)\.(\d+)', text).groups()
     return f'{int(major):02d}.{int(minor):02d}'
 

@@ -76,7 +76,7 @@ def main():
             if not args.release_version:
                 p.error('PS5 --package requires --release-version')
             version = re.search(r'#define REKHCOM_VERSION\s+"([^"]+)"',
-                                (ROOT / 'port/decompui/decompui.cpp').read_text(encoding='utf-8'))
+                                (ROOT / 'port/include/port/port_version.h').read_text(encoding='utf-8'))
             if not version or args.release_version != version[1]:
                 p.error('--release-version must match REKHCOM_VERSION in the launcher')
             numeric_version = re.match(r'v?(\d+)\.(\d+)(?:\.(\d+))?', args.release_version)
@@ -133,7 +133,7 @@ def main():
     if args.package and set(versions) != {'eu', 'us', 'jp'}:
         p.error('A public package requires EU, US and JP; partial packages are not supported')
     version = re.search(r'#define REKHCOM_VERSION\s+"([^"]+)"',
-                        (ROOT / 'port/decompui/decompui.cpp').read_text(encoding='utf-8'))
+                        (ROOT / 'port/include/port/port_version.h').read_text(encoding='utf-8'))
     if args.package and (not version or args.release_version != version[1]):
         p.error('--release-version must match REKHCOM_VERSION in the launcher; this tool does not change versions')
     base = ROOT.parent / 'toolchain'

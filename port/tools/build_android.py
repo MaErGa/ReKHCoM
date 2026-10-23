@@ -62,7 +62,7 @@ def main():
     # seconds instead of a failed guest or Gradle build minutes later (check_sources.py)
     subprocess.run([sys.executable,str(ROOT/'port/tools/check_sources.py')],check=True)
     release=re.search(r'#define REKHCOM_VERSION\s+"([^"]+)"',
-                      (ROOT/'port/decompui/decompui.cpp').read_text(encoding='utf-8'))[1]
+                      (ROOT/'port/include/port/port_version.h').read_text(encoding='utf-8'))[1]
     version_name=release.removeprefix('v')+'-android-beta'
     parts=re.match(r'v(\d+)\.(\d+)(?:\.(\d+))?',release)  # v2.0 = v2.0.0
     major,minor,patch=(int(g or 0) for g in parts.groups())
