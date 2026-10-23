@@ -973,6 +973,8 @@ static void DrawCover(float w, float h) {
 }
 
 static void CreateDesktopShortcut();
+static void AddToSteam();
+static void InstallElsewhereRow();
 
 static void PageHome(SDL_Window* window) {
     float avail = ImGui::GetContentRegionAvail().x;
@@ -992,16 +994,24 @@ static void PageHome(SDL_Window* window) {
     /* the two secondary actions side by side, under the play bar */
     {
         float gap = Px(10), full = ImGui::GetContentRegionAvail().x;
-        float half = ready ? (full - gap) * 0.5f : full;
-        if (ImGui::Button(T("Instalar ROM...", "Install ROM..."), ImVec2(half, 0)))
+        float third = ready ? (full - 2 * gap) / 3.0f : full;
+        if (ImGui::Button(T("Instalar ROM...", "Install ROM..."), ImVec2(third, 0)))
             PickRom(window);
         if (ready) {
             ImGui::SameLine(0, gap);
-            if (ImGui::Button(T("Acceso directo", "Desktop shortcut"), ImVec2(half, 0)))
+            if (ImGui::Button(T("Acceso directo", "Desktop shortcut"), ImVec2(third, 0)))
                 CreateDesktopShortcut();
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("%s", T("Un acceso \"ReKHCoM\" que abre el juego sin pasar por el launcher.",
                                           "A \"ReKHCoM\" shortcut that opens the game without the launcher."));
+            ImGui::SameLine(0, gap);
+            if (ImGui::Button(T("Añadir a Steam", "Add to Steam"), ImVec2(third, 0)))
+                AddToSteam();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", T("Lo añade a tu biblioteca de Steam como juego externo, con su portada "
+                                          "(para jugar con el mando de Steam o en Steam Deck / Big Picture).",
+                                          "Adds it to your Steam library as a non-Steam game, with its cover (to play "
+                                          "with Steam Input, Big Picture or on a Steam Deck)."));
         }
     }
     if (!ready) {
@@ -1166,6 +1176,7 @@ static void PageHome(SDL_Window* window) {
                                       "A save from an emulator (mGBA, VBA, NO$GBA...) or GameShark / Action Replay. "
                                       "It is converted to this version if it comes from another region; the current "
                                       "one is backed up first."));
+        InstallElsewhereRow();
     }
     ImGui::EndChild();
 
@@ -1907,6 +1918,345 @@ static void CreateDesktopShortcut() {
            !ok);
 }
 
+/* ---- "Add to Steam": a non-Steam game in Steam's shortcuts.vdf (binary KeyValues: 0x00 a map, 0x01 a string,
+   0x02 an int32, 0x07 a uint64, 0x08 the map's end; names and strings end with a zero) ---- */
+struct Vdf {
+    unsigned char type = 0;
+    std::string text;
+    uint64_t number = 0;
+    std::vector<std::pair<std::string, Vdf>> items;
+    Vdf* Find(const std::string& key) {
+        for (auto& kv : items)
+            if (_stricmp(kv.first.c_str(), key.c_str()) == 0)
+                return &kv.second;
+        return nullptr;
+    }
+    Vdf& Set(const std::string& key, unsigned char t) {
+        Vdf* v = Find(key);
+        if (!v) {
+            items.emplace_back(key, Vdf());
+            v = &items.back().second;
+        }
+        v->type = t;
+        return *v;
+    }
+};
+
+static bool VdfRead(const std::string& d, size_t& at, Vdf& map) {
+    auto str = [&](std::string& out) {
+        size_t end = d.find('\0', at);
+        if (end == std::string::npos)
+            return false;
+        out = d.substr(at, end - at);
+        at = end + 1;
+        return true;
+    };
+    while (at < d.size()) {
+        unsigned char t = (unsigned char)d[at++];
+        if (t == 0x08)
+            return true;
+        std::string key;
+        if (!str(key))
+            return false;
+        Vdf& v = map.items.emplace_back(key, Vdf()).second;
+        v.type = t;
+        if (t == 0x00) {
+            if (!VdfRead(d, at, v))
+                return false;
+        } else if (t == 0x01) {
+            if (!str(v.text))
+                return false;
+        } else if (t == 0x02 || t == 0x07) {
+            size_t n = t == 0x02 ? 4 : 8;
+            if (at + n > d.size())
+                return false;
+            memcpy(&v.number, d.data() + at, n);
+            at += n;
+        } else {
+            return false; /* a type this does not know: the file is left alone */
+        }
+    }
+    return false;
+}
+
+static void VdfWrite(std::string& out, const Vdf& map) {
+    for (const auto& kv : map.items) {
+        out += (char)kv.second.type;
+        out += kv.first;
+        out += '\0';
+        if (kv.second.type == 0x00) {
+            VdfWrite(out, kv.second);
+        } else if (kv.second.type == 0x01) {
+            out += kv.second.text;
+            out += '\0';
+        } else {
+            out.append((const char*)&kv.second.number, kv.second.type == 0x02 ? 4 : 8);
+        }
+    }
+    out += (char)0x08;
+}
+
+static uint32_t Crc32(const std::string& s) {
+    uint32_t c = 0xFFFFFFFFu;
+    for (unsigned char b : s) {
+        c ^= b;
+        for (int k = 0; k < 8; k++)
+            c = (c >> 1) ^ (0xEDB88320u & (0u - (c & 1)));
+    }
+    return ~c;
+}
+
+/* The Steam account to add it to: the one that signed in last in config/loginusers.vdf ("MostRecent", else the
+   newest "timestamp"), else every account folder in userdata. */
+static std::vector<fs::path> SteamUserConfigs(const fs::path& steam) {
+    std::vector<fs::path> out;
+    std::error_code ec;
+    std::ifstream f(steam / "config" / "loginusers.vdf");
+    std::string line, id, best;
+    unsigned long long newest = 0;
+    bool mostRecent = false;
+    auto value = [](const std::string& l) { /* the second quoted string of a line */
+        size_t a = l.find('"', l.find('"', l.find('"') + 1) + 1);
+        size_t b = a == std::string::npos ? a : l.find('"', a + 1);
+        return b == std::string::npos ? std::string() : l.substr(a + 1, b - a - 1);
+    };
+    while (std::getline(f, line)) {
+        size_t q = line.find('"');
+        size_t e = q == std::string::npos ? q : line.find('"', q + 1);
+        if (e != std::string::npos && e - q - 1 == 17 && std::isdigit((unsigned char)line[q + 1]) &&
+            line.find('"', e + 1) == std::string::npos)
+            id = line.substr(q + 1, 17);
+        if (id.empty() || mostRecent)
+            continue;
+        if (line.find("\"MostRecent\"") != std::string::npos && value(line) == "1") {
+            best = id;
+            mostRecent = true;
+        } else if (line.find("\"timestamp\"") != std::string::npos) {
+            unsigned long long t = std::strtoull(value(line).c_str(), nullptr, 10);
+            if (t >= newest) {
+                newest = t;
+                best = id;
+            }
+        }
+    }
+    if (!best.empty()) {
+        fs::path p = steam / "userdata" / std::to_string(std::stoull(best) & 0xFFFFFFFFull) / "config";
+        if (fs::is_directory(p, ec))
+            return { p };
+    }
+    for (const auto& e : fs::directory_iterator(steam / "userdata", ec))
+        if (e.path().filename() != "0" && fs::is_directory(e.path() / "config", ec))
+            out.push_back(e.path() / "config");
+    return out;
+}
+
+/* Adds (or updates) "ReKHCoM" in Steam as a non-Steam game that starts this version's game like the desktop
+   shortcut, with the launcher's cover and logo as its Steam artwork. Steam reads the list when it starts. */
+static void AddToSteam() {
+    const VersionState& st = sState[sSelected];
+    if (!st.installed || !fs::exists(st.exe))
+        return;
+    fs::path steam;
+    if (const char* test = SDL_getenv("DECOMPUI_STEAM")) { /* harness: a copy of Steam's folders */
+        steam = fs::u8path(test);
+    } else {
+        wchar_t buf[MAX_PATH];
+        DWORD size = sizeof(buf);
+        if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\Valve\\Steam", L"SteamPath", RRF_RT_REG_SZ, nullptr, buf, &size) ==
+            ERROR_SUCCESS)
+            steam = fs::path(buf);
+    }
+    std::vector<fs::path> configs = steam.empty() ? std::vector<fs::path>() : SteamUserConfigs(steam);
+    if (configs.empty()) {
+        Notice(T("No se encontró Steam (o ninguna cuenta ha iniciado sesión en él).",
+                 "Steam was not found (or no account has signed in to it)."), true);
+        return;
+    }
+    std::string exe = "\"" + st.exe.u8string() + "\"", dir = "\"" + sRoot.u8string() + "\"";
+    std::string args = "--data-dir \"" + sRoot.u8string() + "\" --rom \"" + RomPath(sSelected).u8string() + "\"";
+    std::string name = "ReKHCoM";
+    uint32_t appid = Crc32(exe + name) | 0x80000000u;
+    int done = 0;
+    std::error_code ec;
+    for (const fs::path& config : configs) {
+        fs::path file = config / "shortcuts.vdf";
+        Vdf root;
+        if (fs::exists(file, ec)) {
+            std::ifstream in(file, std::ios::binary);
+            std::string d((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+            size_t at = 0;
+            if (!VdfRead(d, at, root))
+                continue; /* not understood: never overwritten */
+        }
+        Vdf& list = root.Find("shortcuts") ? *root.Find("shortcuts") : root.Set("shortcuts", 0x00);
+        list.type = 0x00;
+        Vdf* entry = nullptr;
+        for (auto& kv : list.items) {
+            Vdf* e = kv.second.Find("Exe");
+            if (kv.second.type == 0x00 && e && _stricmp(e->text.c_str(), exe.c_str()) == 0)
+                entry = &kv.second;
+        }
+        if (!entry) {
+            entry = &list.items.emplace_back(std::to_string(list.items.size()), Vdf()).second;
+            entry->type = 0x00;
+        }
+        entry->Set("appid", 0x02).number = appid;
+        entry->Set("AppName", 0x01).text = name;
+        entry->Set("Exe", 0x01).text = exe;
+        entry->Set("StartDir", 0x01).text = dir;
+        entry->Set("icon", 0x01).text = (sRoot / "ReKHCoM.exe").u8string();
+        entry->Set("LaunchOptions", 0x01).text = args;
+        entry->Set("AllowOverlay", 0x02).number = 1;
+        entry->Set("AllowDesktopConfig", 0x02).number = 1;
+        if (!entry->Find("tags"))
+            entry->Set("tags", 0x00);
+        std::string out;
+        VdfWrite(out, root);
+        if (fs::exists(file, ec))
+            fs::copy_file(file, config / "shortcuts.vdf.rekhcom-backup", fs::copy_options::overwrite_existing, ec);
+        std::ofstream(file, std::ios::binary | std::ios::trunc).write(out.data(), (std::streamsize)out.size());
+        /* the artwork: the cover as the library's capsule, the logo over the hero */
+        fs::create_directories(config / "grid", ec);
+        std::string id = std::to_string(appid);
+        fs::copy_file(sRoot / "assets" / "boxart.jpg", config / "grid" / (id + "p.jpg"), fs::copy_options::overwrite_existing, ec);
+        fs::copy_file(sRoot / "assets" / "logo.png", config / "grid" / (id + "_logo.png"), fs::copy_options::overwrite_existing, ec);
+        done++;
+    }
+    Notice(done ? T("Añadido a Steam. Si Steam está abierto, reinícialo para verlo en la biblioteca.",
+                    "Added to Steam. If Steam is open, restart it to see it in the library.")
+                : T("No se pudo leer la lista de juegos de Steam; no se cambió nada.",
+                    "Steam's game list could not be read; nothing was changed."),
+           !done);
+}
+
+/* ---- "Install in another folder": the whole ReKHCoM folder (game, launcher, ROMs, saves, HD mod) copied into
+   another one, e.g. X:/Games/ReKHCoM, with a progress bar. The folder it came from is never deleted (the player's
+   saves stay there too until they remove it). ---- */
+struct InstallJob {
+    std::atomic<bool> running{ false }, finished{ false }, ok{ false };
+    std::atomic<long long> done{ 0 }, total{ 0 };
+    fs::path dst;
+};
+static InstallJob sInstall;
+
+static void InstallCopy(fs::path from, fs::path to) {
+    std::error_code ec;
+    std::vector<fs::path> files;
+    long long total = 0;
+    for (auto it = fs::recursive_directory_iterator(from, ec); !ec && it != fs::recursive_directory_iterator(); it.increment(ec))
+        if (it->is_regular_file(ec)) {
+            files.push_back(it->path());
+            total += (long long)it->file_size(ec);
+        }
+    sInstall.total = total;
+    bool ok = !ec;
+    std::vector<char> buf(1 << 22);
+    for (const fs::path& f : files) {
+        fs::path out = to / fs::relative(f, from, ec);
+        fs::create_directories(out.parent_path(), ec);
+        std::ifstream in(f, std::ios::binary);
+        std::ofstream o(out, std::ios::binary | std::ios::trunc);
+        if (!in || !o) {
+            ok = false;
+            continue;
+        }
+        while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) {
+            o.write(buf.data(), in.gcount());
+            sInstall.done += in.gcount();
+        }
+        ok = ok && (bool)o;
+    }
+    sInstall.ok = ok;
+    sInstall.finished = true;
+    sInstall.running = false;
+}
+
+/* The folder to install into: chosen in the system dialog, opening at <drive>:\Games when there is one. */
+static fs::path PickInstallFolder() {
+    fs::path out;
+    IFileOpenDialog* dialog = nullptr;
+    if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog))))
+        return out;
+    DWORD options = 0;
+    dialog->GetOptions(&options);
+    dialog->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+    dialog->SetTitle(sUiLanguage == 1 ? L"Carpeta donde instalar ReKHCoM" : L"Folder to install ReKHCoM in");
+    std::error_code ec;
+    for (wchar_t d = L'D'; d <= L'Z'; d++) {
+        std::wstring games = std::wstring(1, d) + L":\\Games";
+        IShellItem* item = nullptr;
+        if (fs::is_directory(games, ec) &&
+            SUCCEEDED(SHCreateItemFromParsingName(games.c_str(), nullptr, IID_PPV_ARGS(&item)))) {
+            dialog->SetFolder(item);
+            item->Release();
+            break;
+        }
+    }
+    if (SUCCEEDED(dialog->Show(nullptr))) {
+        IShellItem* item = nullptr;
+        if (SUCCEEDED(dialog->GetResult(&item))) {
+            PWSTR path = nullptr;
+            if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path))) {
+                out = path;
+                CoTaskMemFree(path);
+            }
+            item->Release();
+        }
+    }
+    dialog->Release();
+    return out;
+}
+
+static void InstallElsewhereRow() {
+    std::error_code ec;
+    ImGui::BeginDisabled(sInstall.running);
+    if (ImGui::Button(T("Instalar en otra carpeta...", "Install in another folder..."), ImVec2(-FLT_MIN, 0))) {
+        fs::path pick = PickInstallFolder();
+        if (!pick.empty()) {
+            fs::path dst = _wcsicmp(pick.filename().c_str(), L"ReKHCoM") == 0 ? pick : pick / "ReKHCoM";
+            fs::path rel = fs::relative(dst, sRoot, ec);
+            bool inside = !ec && !rel.empty() && rel.native()[0] != L'.';
+            if (fs::equivalent(dst, sRoot, ec) || inside)
+                Notice(T("Elige una carpeta fuera de esta instalación.", "Choose a folder outside this installation."), true);
+            else if (fs::exists(dst, ec) && !fs::is_empty(dst, ec))
+                Notice(T("Esa carpeta ya tiene archivos: elige una vacía (no se sobrescribe nada).",
+                         "That folder is not empty: choose an empty one (nothing is overwritten)."), true);
+            else {
+                sInstall.dst = dst;
+                sInstall.done = 0;
+                sInstall.total = 0;
+                sInstall.finished = false;
+                sInstall.running = true;
+                std::thread(InstallCopy, sRoot, dst).detach();
+            }
+        }
+    }
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", T("Copia todo (juego, ROMs, partidas, mod HD) a otra carpeta, p. ej. D:/Games/ReKHCoM. "
+                                  "Esta carpeta no se borra.",
+                                  "Copies everything (game, ROMs, saves, HD mod) to another folder, e.g. "
+                                  "D:/Games/ReKHCoM. This folder is not deleted."));
+    if (sInstall.running) {
+        long long total = sInstall.total;
+        ImGui::ProgressBar(total > 0 ? (float)((double)sInstall.done / (double)total) : 0.0f, ImVec2(-FLT_MIN, 0));
+    } else if (sInstall.finished) {
+        ImGui::PushFont(sFontSmall);
+        ImGui::TextColored(sInstall.ok ? kText : kAccent, "%s %s", sInstall.ok ? T("Instalado en", "Installed in")
+                                                                            : T("Copia incompleta en", "Incomplete copy in"),
+                           sInstall.dst.u8string().c_str());
+        ImGui::PopFont();
+        if (sInstall.ok && ImGui::Button(T("Abrir desde ahí (cierra este)", "Open from there (closes this one)"),
+                                         ImVec2(-FLT_MIN, 0))) {
+            ShellExecuteW(nullptr, L"open", (sInstall.dst / "ReKHCoM.exe").wstring().c_str(), nullptr,
+                          sInstall.dst.wstring().c_str(), SW_SHOWNORMAL);
+            SDL_Event quit = {};
+            quit.type = SDL_EVENT_QUIT;
+            SDL_PushEvent(&quit);
+        }
+    }
+}
+
 /* Runs the game with the shared data folder; the launcher waits hidden. */
 static void Launch(SDL_Window* window) {
     const VersionState& st = sState[sSelected];
@@ -2071,6 +2421,16 @@ int main(int argc, char** argv) {
     if (SDL_getenv("DECOMPUI_SHORTCUT")) { /* harness: the shortcut alone, then exit */
         CreateDesktopShortcut();
         return 0;
+    }
+    if (SDL_getenv("DECOMPUI_STEAM")) { /* harness: "Add to Steam" into that folder, then exit */
+        AddToSteam();
+        return 0;
+    }
+    if (const char* to = SDL_getenv("DECOMPUI_INSTALL_TO")) { /* harness: "Install in another folder" there, then exit */
+        InstallCopy(sRoot, fs::u8path(to));
+        fprintf(stderr, "install: %s, %lld of %lld bytes\n", sInstall.ok ? "ok" : "failed", (long long)sInstall.done,
+                (long long)sInstall.total);
+        return sInstall.ok ? 0 : 1;
     }
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
         return 1;

@@ -166,8 +166,11 @@ Reglas del usuario:
     Re:CoM sirven y cómo los usan.
   - [ ] v2.0: pasada de rendimiento para todas las consolas, solo lo medible y sin riesgo (medir antes/después,
     pruebas píxel a píxel).
-  - [ ] Instalador: barra de progreso al importar/comprimir el HD (hecha en el launcher, avanza dentro de cada video); instalar en PC en `X:/Games/ReKHCoM` (opcional)
-    con todo lo necesario; ofrecer "Añadir a Steam" (instalador y launcher).
+  - [x] (launcher, 23/10) Instalador: barra de progreso al importar/recodificar el HD (avanza dentro de cada
+    video); "Instalar en otra carpeta..." (tarjeta Partida: copia todo a <unidad>:/Games/ReKHCoM o la elegida, carpeta
+    vacía, nunca borra la original; probado byte a byte); "Añadir a Steam" (Inicio: juego externo en shortcuts.vdf de
+    la cuenta más reciente, con portada y logo; actualiza sin duplicar, las demás entradas intactas, copia
+    shortcuts.vdf.rekhcom-backup; probado sobre una copia del Steam real, no sobre el real).
   - [ ] Online (estudio preliminar + alpha): llevar el modo cable link (espera latencia cero) a online moderno
     manteniendo su lógica; rollback si aplica; "voltron" de lógica de juegos online y de decomps que añadieron online
     (y cómo, p. ej. con Steam / AppID 480 "Spacewar"); reconstruir en alpha la lógica del multijugador de KHCoM.
