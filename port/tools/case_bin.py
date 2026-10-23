@@ -18,7 +18,13 @@ def place(exe_dir, work, case_dir, files=('khcom.exe', 'SDL3.dll')):
             src, dst = exe_dir / f, shared / f
             s = src.stat()
             if not dst.exists() or (dst.stat().st_size, int(dst.stat().st_mtime)) != (s.st_size, int(s.st_mtime)):
-                shutil.copy2(src, dst)
+                try:
+                    shutil.copy2(src, dst)
+                except PermissionError:
+                    # the build was relinked mid-sweep while cases still run the shared copy (hard links): the
+                    # sweep goes on with the copy it started with (23/10: events jp stopped here)
+                    if not dst.exists():
+                        raise
     for f in files:
         try:
             os.link(shared / f, case_dir / f)

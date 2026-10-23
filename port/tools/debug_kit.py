@@ -286,6 +286,9 @@ def report():
 
 
 def main():
+    # Japanese names in the logs: the Windows console's code page must not stop the summary (23/10)
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(errors='replace')
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('command', choices=('run', 'report'))
     ap.add_argument('--versions', default='us,eu,jp')
