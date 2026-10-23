@@ -98,7 +98,8 @@ Reglas del usuario:
   - [ ] Contador de mazo (`gRevCount*`) y medidor del enemigo como Re:CoM: buscar capturas del HUD de combate de
     Re:CoM en internet y reconstruirlos con Cockpit/gauge.lad y el código decompilado (CCardRevolver, CEnemyGauge).
   - [ ] Revisar en el juego BONUS ÉLITE / PREMIUM BONUS y VER BARAJA (Riku): filas hechas, no vistas.
-  - [ ] US y JP: correr la batería de menús también en esas versiones (solo se vio EU en 5 idiomas).
+  - [~] US y JP: correr la batería de menús también en esas versiones (23/10: partidas US/JP convertidas desde la
+    EU con el importador del launcher; US en curso; JP no tiene carteles HD).
   - [x] Gemelo Python del dibujante: `port/tools/khhd_seqdraw.py`.
   - [ ] Batería HD de escritorio (`run_batteries.py --hd`): corría con el build anterior; repetirla con los cambios
     de hoy al terminar.
@@ -167,7 +168,11 @@ Reglas del usuario:
     720p Buena 90,5 / 97,1; Ahorro 82-91. Reproducidos en el juego: 30 fps, 0 cuadros tarde. Tabla en HD_MOD.md.
     Falta: el importador del APK (Android) solo copia; recodificar en el teléfono no (usar el del PC).
   - [ ] Linux nativo sin videos HD (port_hdmovie.c: solo Windows y Android). Steam Deck con Proton usa la de
-    Windows. Opción: decodificar con FFmpeg/GStreamer cargados en tiempo de ejecución (dlopen) si están.
+    Windows. Diseño (23/10): GStreamer por dlopen (API de funciones, sin structs salvo GstMapInfo): pipeline
+    `filesrc ! decodebin ! videoconvert ! video/x-raw,format=NV12 ! appsink` + `audioconvert ! audioresample !
+    audio/x-raw,format=S16LE,rate=48000,channels=2 ! appsink`; reutilizar de PlayFile (Windows) el ritmo por marcas
+    de tiempo, subtítulos, pausa y fundidos sacándolos a funciones comunes. Probar en la VM ARM64 con
+    gst-plugins-good + gst-libav (H.264/AAC). FFmpeg descartado: sus structs cambian por versión.
   - [ ] Proton (usuario 23/10): que la versión de Windows corra bien en Proton estable sin "Experimental"; revisar
     reportes (issues) de Steam Deck/Linux y qué falla (Media Foundation de los videos, D3D11, audio).
   - [ ] Ripear más assets aprendiendo de otros mods (MelonMIX HD y similares, "voltron" de repos): qué assets de
@@ -199,6 +204,9 @@ Reglas del usuario:
   - [x] Ajustes: "Intros HD" (apertura, créditos, finales; encendido por defecto salvo modo GBA Original),
     "Escenas HD", "HUD HD" (logo del título + cartas + HUD de combate en un solo interruptor).
   - [x] Nueva partida: preguntar "Escenas HD" y "HUD HD" (con una línea que explique qué es el HUD).
+- **23/10 ~12:20: batería events jp se cortó a los 5 casos por recompilar build/pc-jp a mitad (copia bloqueada):
+  case_bin ya no se corta si el build se reenlaza (sigue con su copia); debug_kit ya no se cae al imprimir japonés.
+  Relanzada.**
 - **23/10 ~12:00: #47 confirmó en la pre2 las pistas de Leon y todos los SFX con música HD → #44 cerrado con esa
   confirmación (mismo síntoma). Lección: un arreglo confirmado por un reportero sirve para cerrar issues gemelos
   de otros reporteros, siempre dejando la puerta abierta a reabrir. Esperan: #42, #45, #46 (#40 sin datos).**
