@@ -42,8 +42,9 @@ en el juego. Repo público aparte: https://github.com/MatyMeatBoy/GBANoCable (lo
 
 **"Nueva partida vuelve al título" (usuario 23/10, luego dijo que quizá lo imaginó):** no estaba anotado. Probado
 EU con el mod HD completo y A: título → nueva → ROP HD → evento 0 → escena HD → selección de mundo, sin volver
-al título. Variantes con START durante la intro (HD, GBA original, sin HD, primer arranque) lanzadas: resultados en
-build/ng_*/kh_com.log ("mode:" en orden); si alguna muestra mode_title después de Mode_MenuNew, es el bug.
+al título. Variantes con START durante la intro (HD, GBA original, sin HD, primer arranque) : las 4 quedaron en la
+intro porque el START del test abre la pausa de película (previsto), ninguna volvió al título. Cerrado como no
+reproducible salvo nuevo reporte con pasos.
 
 **Otros pendientes vivos:** Switch motor nuevo (deko3d / PPU multinúcleo) NO implementado, solo investigado (#35);
 video HD en Linux (diseño GStreamer más abajo); Proton; pelo de Sora y cuadro negro en Agrabah (esperan captura /
