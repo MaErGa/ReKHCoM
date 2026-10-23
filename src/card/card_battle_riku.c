@@ -879,7 +879,7 @@ static void cardbattle_0(CardBattleWork* work) {
     sRikuSelectedCard = NULL;
     CreateRikuCardDisplay(work, work->listIndex);
     sRikuCardRequest = CARD_REQUEST_NONE;
-    gCardBattleState->rikuListIndex = work->listIndex;
+    BIOS_PTR(gCardBattleState)->rikuListIndex = work->listIndex; // @bug the same NULL state as above
 }
 
 static u8 cardbattle_1(CardBattleWork* work, void* task) {
