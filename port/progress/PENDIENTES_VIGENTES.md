@@ -25,8 +25,16 @@ emulator-5554 12000 2600`, logs en build/netlink). Antes del lockstep daba DESYN
 `py -3 port/tools/run_batteries.py --detach --resume` cuando el emulador esté cerrado (poca RAM).
 **Proton (usuario 23/10):** en builds tempranas "solo cargaba con Proton Experimental". Sin issue abierto; sin
 equipo para probarlo. Pedir a quien juegue en Deck/Linux que pruebe la v2.0 con Proton estable y mande kh_com.log.
-**#42 (23/10 tarde):** el reportero miró `hd/movies` (los finales van a `hd/scenes` desde la pre1); se le pidió mirar
-ahí y mandar kh_com.log.
+**#42 (23/10 noche): ARREGLADO en main (2df4e1d34)**, comentado en el issue. Causa: la escena HD se ofrecía una vez
+por tarea de evento (`sPortHdSceneWork`), y un evento que sigue a otro (072, el último combate → 073, la sala de la
+cápsula) reusa la misma dirección: la escena del final nunca se pedía. Ahora una vez por instancia (se olvida en
+Event_2 y compara el número de evento). Los créditos además reproducen antes la escena del final si ningún evento lo
+hizo. Probado con `eventplay:72` (flujo real, no el menú de depuración, que es lo que probaba test_hd_scenes):
+zz_event_151 una sola vez y luego RSE, con y sin escenas HD. Esto pudo afectar a cualquier escena de un evento
+encadenado: rehacer test_hd_scenes con cadenas reales. **Pendiente de #42:** "pistas HD intercambiadas" (solo hay un
+video de YouTube; averiguar cuáles: pedir nombres al reportero si hace falta).
+**Online Android con rollback:** conecta, pero el emulador es demasiado lento para llegar a la batalla con demora 2
+(menús en lockstep): probar en un Android real (reporte) o con más tiempo.
 
 ## ONLINE — avance (usuario 23/10: "ir haciendo % de avances"; metas de ping: 20-150 ms local, 150-250 bien)
 
