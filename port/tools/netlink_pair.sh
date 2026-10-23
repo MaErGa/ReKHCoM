@@ -3,7 +3,10 @@
 # BUILD=build/pc-eu (the exe), K1=<keys only player 1 gets>, SHOTS=300,900, MODE=60:mode_sio_battle:1,
 # FAKE1=1 (player 1 fakes a desync), LINK_ENV="KHCOM_NETLINK_LAG=6 ..." (both). relay starts netlink_relay.py on 47801.
 R="$(cd "$(dirname "$0")/../.." && pwd)"
-cd "$R"; B=build/netlink; rm -rf $B/p1 $B/p2; mkdir -p $B/p1 $B/p2
+cd "$R"; B=build/netlink
+# games left by an interrupted run hold the ports: gone first
+powershell -NoProfile -ExecutionPolicy Bypass -File port/tools/netlink_cleanup.ps1 2>/dev/null
+rm -rf $B/p1 $B/p2; mkdir -p $B/p1 $B/p2
 BUILD=${BUILD:-build/pc-eu}
 for p in p1 p2; do cp $BUILD/khcom.exe $BUILD/SDL3.dll $B/$p/; printf 'config_version=2\ngraphics_mode=1\nview_mode=4\n' > $B/$p/kh_com.ini; done
 F=$1; K=$2; HOW=${3:-direct}

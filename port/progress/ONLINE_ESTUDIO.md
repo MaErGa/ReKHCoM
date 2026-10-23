@@ -112,6 +112,38 @@ de GBA y todo lo que sale de ella (RNG, intercambio, batalla) es idéntico sin t
   `sh port/tools/netlink_android.sh` (emulador o teléfono contra PC por relay; `KHCOM_NETLINK_TRACE=1` registra pares,
   semilla y las partes de cada hash).
 
+## Rollback en la batalla (23/10 noche)
+
+Pedido del usuario: que la batalla se sienta local (como Monster Hunter Rise, sin ver "cómo retrocede") con ping
+de 20-150 ms y que siga bien hasta 250 ms en picos. Metas fijadas con él: 20-150 ms local, 150-250 ms bien con
+correcciones chicas, 300 ms fuera de alcance.
+
+- **Batalla VS: rollback.** El cuadro de enlace n juega el par n − D con D = 1 (RTT ≤ ~70 ms) o 2; si el paquete
+  del otro no llegó se adivina (su último paquete otra vez) y el juego sigue. Al llegar el real distinto, el juego
+  vuelve a la instantánea de ese cuadro y re-simula hasta el presente en el mismo cuadro real, sin dibujar, sonar ni
+  esperar (`port/src/port_rollback.c`: anillo de 32 instantáneas de ~740 KB tomadas en la espera de VBlank del bucle
+  principal, como los estados rápidos; las teclas de cada cuadro se guardan y se repiten).
+- **Menús del enlace: lockstep** con la misma D (cambian de pantalla y cargan según lo recibido: no se juegan sobre
+  adivinanzas). `VsBattleRunning()` (mode_vsbattle.c) decide; `SYSTEM_FLAG_LINK_ACTIVE` NO sirve: está prendida en
+  todo el enlace.
+- **Revisiones:** los paquetes del cartucho no son solo teclas (el padre retransmite las de los dos; los menús
+  responden a lo recibido), así que un cuadro re-simulado puede producir otro paquete propio: reemplaza al enviado,
+  se reenvía en un datagrama propio durante 500 ms (por reloj: un juego que espera no hace cuadros) y el otro lado
+  re-simula lo que usó el viejo. Converge porque cada paquete depende solo de cuadros anteriores.
+- **Sincronía de tiempo:** el que corre adelantado cede un cuadro de su horario (`PortLinkYieldFrame`) cada 8 cuadros
+  mientras su ventaja supere la del otro (viaja en cada paquete), como GGPO. Sin esto uno adivinaba casi todo y el
+  otro casi nada.
+- **Ventana:** solo se espera si el otro queda más de 12 cuadros atrás (corte real).
+- **Chequeo de desync** sobre cuadros ya definitivos (48 cuadros atrás, sin rollback pendiente).
+- Medido (dos PC, relay local, simulador por tiempo): RTT ~160 ms con jitter y 1 % de pérdida: **0 cuadros
+  esperados en 2400 de batalla**, 47-114 rollbacks, 20/20 chequeos sin desync. Extremo (RTT ~230 ms, jitter de
+  hasta 8 cuadros, 5 % de pérdida): 10/10 sin desync, esperas solo en los picos.
+- Herramientas: `KHCOM_ROLLBACK_TEST=<n>` fuerza un rollback de 6 cuadros cada n y compara cada cuadro re-simulado
+  con el original (primera región/byte distinto al registro; el mezclador de audio no cuenta: no suena al
+  re-simular). `port/tools/netlink_cleanup.ps1` mata juegos de prueba colgados (ocupan los puertos).
+- Lecciones del camino: el simulador de lag contaba cuadros y un juego que espera no hace cuadros (bloqueo solo del
+  arnés): ahora va por reloj. Un reenvío de revisiones medido en cuadros tampoco vencía nunca durante una espera.
+
 ## Siguiente (para llegar a "no se nota que es online")
 
 1. Hecho (23/10): hash del estado compartido de la batalla (posición y VT de los dos, en orden de jugador, y los

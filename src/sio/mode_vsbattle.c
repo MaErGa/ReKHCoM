@@ -187,6 +187,12 @@ void PlayVsBattleBgm() {
 Mode gModeVsbattle = { "mode_vsbattle", (ModeInitFunc)mode_vsbattle_0, mode_vsbattle_1, mode_vsbattle_2 };
 
 #ifdef PLATFORM_PC
+/* The network link (sio.c): the link battle is running, the one part of the link that plays on guessed packets */
+int VsBattleRunning(void) {
+    extern Mode* gCurrentMode;
+    return gCurrentMode == &gModeVsbattle;
+}
+
 /* The network link's desync check (sio.c): a hash of what both games must agree on during a link battle, in
    player order (the cable's parent first): each fighter's position and HP, and the random generators. 0 when no
    link battle is running. */

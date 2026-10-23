@@ -8,8 +8,9 @@
  * KHCOM_NETLINK=relay:<server>:<port>:<code>:host|join   meet through a relay (port/tools/netlink_relay.py on a
  *                                  VPS) by a room code: no ports to open, any platform with UDP (crossplay)
  * Without the variable, netlink.cfg in the data folder (the launcher writes it) holds the same text.
- * KHCOM_NETLINK_LAG=<frames>       tests: hold every datagram that many frames before it goes out
- * KHCOM_NETLINK_JITTER=<frames>    tests: and up to that many more, at random (an uneven connection)
+ * KHCOM_NETLINK_LAG=<frames>       tests: hold every datagram that long (in 16.7 ms frames of time, so a game that
+ *                                  waits for the other one keeps its datagrams going) before it goes out
+ * KHCOM_NETLINK_JITTER=<frames>    tests: and up to that much more, at random (an uneven connection)
  * KHCOM_NETLINK_LOSS=<percent>     tests: drop that share of the datagrams sent
  * KHCOM_NETLINK_DROP=<from>-<to>   tests: an outage, nothing sent between those game frames
  *
@@ -312,6 +313,8 @@ int PortNetlinkRole(void) {
     return UdpReady() || sSteam ? sRole : 0;
 }
 
+static void SendHeld(void);
+
 static void SendNow(const uint8_t* data, int size) {
     if (sDropTo && sFrame >= sDropFrom && sFrame < sDropTo)
         return;
@@ -336,7 +339,7 @@ void PortNetlinkSend(const uint8_t* data, int size) {
         return;
     if ((sLag > 0 || sJitter > 0) && sHeldCount < (int)SDL_arraysize(sHeld)) {
         Held* h = &sHeld[sHeldCount++];
-        h->due = sFrame + (uint32_t)sLag + (sJitter > 0 ? TestRand((uint32_t)sJitter + 1) : 0);
+        h->due = (uint32_t)SDL_GetTicks() + ((uint32_t)sLag + (sJitter > 0 ? TestRand((uint32_t)sJitter + 1) : 0)) * 50 / 3;
         h->size = size;
         SDL_memcpy(h->data, data, (size_t)size);
         return;
@@ -349,6 +352,8 @@ int PortNetlinkRecv(uint8_t* data, int cap) {
     int n;
     if (!PortNetlinkRole())
         return 0;
+    if (sHeldCount)
+        SendHeld(); /* a game waiting for the other one runs no frames: its held datagrams still go */
     if (sSteam) {
         n = PortSteamlinkRecv(data, cap);
         if (n > 0)
@@ -385,20 +390,26 @@ int PortNetlinkRecv(uint8_t* data, int cap) {
     return n;
 }
 
-void PortNetlinkFrame(void) {
+/* the tests' held datagrams whose time has come */
+static void SendHeld(void) {
     int i, kept = 0;
-    sFrame++;
-    if (sSteam)
-        PortSteamlinkFrame();
-    if (sRelay && UdpReady() && sFrame % 60 == 0) /* the room again: the relay finds a changed address */
-        RelayHello();
+    uint32_t now = (uint32_t)SDL_GetTicks();
     for (i = 0; i < sHeldCount; i++) {
-        if (sHeld[i].due <= sFrame)
+        if ((int32_t)(now - sHeld[i].due) >= 0)
             SendNow(sHeld[i].data, sHeld[i].size);
         else
             sHeld[kept++] = sHeld[i];
     }
     sHeldCount = kept;
+}
+
+void PortNetlinkFrame(void) {
+    sFrame++;
+    if (sSteam)
+        PortSteamlinkFrame();
+    if (sRelay && UdpReady() && sFrame % 60 == 0) /* the room again: the relay finds a changed address */
+        RelayHello();
+    SendHeld();
 }
 
 int PortNetlinkSilentMs(void) {

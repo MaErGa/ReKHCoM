@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "port/port.h"
+#include "port/port_netlink.h"
 #include "port/port_version.h"
 #include "mode.h"
 #include "port/port_aspect.h"
@@ -2442,6 +2443,13 @@ int PortPacedByVsync(void) {
     return sPacedByVsync;
 }
 
+/* The network link's time sync (src/sio/sio.c): the game running ahead of the other player gives one frame of time
+   back (its pacing schedule moves a frame later), so neither keeps playing on guesses. */
+void PortLinkYieldFrame(void) {
+    if (sNextFrame)
+        sNextFrame += (uint64_t)(sPerfFreq / GBA_FPS);
+}
+
 static uint64_t sPpuTicks;
 
 /* experimental_frame_skip: a frame that starts half a frame late is not drawn nor presented (at most three in a
@@ -2476,6 +2484,29 @@ static int FrameSkipDue(int sizeChanged) {
 }
 
 /* One display frame: draw, vertical blank, present, input, pacing. */
+/* A frame the network link's rollback plays again (port_rollback.c): the game's frame as VBlankCycle runs it when it
+   skips drawing (the same logic, test_frameskip.py), with nothing shown, sounded or paced, and the keys it had. */
+static void ResimCycle(void) {
+    extern int gPortInMainLoop;
+    *(volatile uint16_t*)(uintptr_t)(GBA_IWRAM + 0x7FF8) &= ~1; /* BIOS IntrCheck */
+    PortBiosAreaRefresh();
+    (void)PortTakeScreenMark();
+    PortPpuRunFrameEvents();
+    IO16(0x06) = GBA_SCREEN_H;
+    IO16(0x04) = (IO16(0x04) & ~6) | 1 | (((IO16(0x04) >> 8) == GBA_SCREEN_H) ? 4 : 0);
+    PortDmaVBlank();
+    if (IO16(0x04) & 0x08)
+        PortRaiseIrq(0x0001);
+    PortPpuVBlankLines();
+    IO16(0x04) &= ~1;
+    {
+        extern void PortMenuLatch(void);
+        PortMenuLatch();
+    }
+    IO16(0x130) = (uint16_t)(~PortInputResolve(PortInputKeys() | HarnessKeys(sFrameCount) | PortBotKeys(sFrameCount)) & 0x3FF);
+    PortRollbackBoundary(gPortInMainLoop);
+}
+
 static void VBlankCycle(void) {
     const char* frameLogPath = SDL_getenv("KHCOM_FRAMELOG");
     uint64_t frameLogStart = frameLogPath ? SDL_GetPerformanceCounter() : 0;
@@ -2608,6 +2639,10 @@ static void VBlankCycle(void) {
     }
     IO16(0x130) = (uint16_t)(~PortInputResolve(PortInputKeys() | HarnessKeys(sFrameCount) | PortBotKeys(sFrameCount)) & 0x3FF);
     HarnessFrame();
+    {
+        extern int gPortInMainLoop;
+        PortRollbackBoundary(gPortInMainLoop); /* the network link: a wrong guess taken back, this frame kept */
+    }
     if (frameLogStart) frameLogWork = SDL_GetPerformanceCounter();
     Pace();
 
@@ -2672,6 +2707,10 @@ void PortFrame(void) {
 #ifdef __EMSCRIPTEN__
     PortWebWaitVisible();
 #endif
+    if (PortRollbackResimulating()) { /* the network link plays a frame again: the game's frame alone */
+        ResimCycle();
+        return;
+    }
     PortStateService();
     {
         /* Options > Return to title screen: the game's own soft reset, as its Continue screen does */
