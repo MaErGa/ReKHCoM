@@ -300,6 +300,13 @@ int PortNetlinkSilentMs(void) {
     return sLastHeard ? (int)(SDL_GetTicks() - sLastHeard) : 1 << 30;
 }
 
+int PortNetlinkFakeDesync(void) { /* KHCOM_NETLINK_FAKEDESYNC: tests of the desync check */
+    static int fake = -1;
+    if (fake < 0)
+        fake = SDL_getenv("KHCOM_NETLINK_FAKEDESYNC") && *SDL_getenv("KHCOM_NETLINK_FAKEDESYNC");
+    return fake;
+}
+
 int PortBtlCamTrace(void) {
     static int trace = -1;
     if (trace < 0)
@@ -318,6 +325,9 @@ int PortNetlinkTrace(void) {
     return 0;
 }
 int PortBtlCamTrace(void) {
+    return 0;
+}
+int PortNetlinkFakeDesync(void) {
     return 0;
 }
 int PortNetlinkRole(void) {

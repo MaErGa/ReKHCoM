@@ -176,3 +176,30 @@ void PlayVsBattleBgm() {
 }
 
 Mode gModeVsbattle = { "mode_vsbattle", (ModeInitFunc)mode_vsbattle_0, mode_vsbattle_1, mode_vsbattle_2 };
+
+#ifdef PLATFORM_PC
+/* The network link's desync check (sio.c): a hash of what both games must agree on during a link battle, in
+   player order (the cable's parent first): each fighter's position and HP, and the random generators. 0 when no
+   link battle is running. */
+u32 VsBattleStateHash(void) {
+    extern u32 PortRandomState(void);
+    BtlWork* bySide[2];
+    u32 h = 2166136261u;
+    int i;
+    if (gBtlWork == NULL || gRikuBtlWork == NULL || !(gBtlWork->flags & BTL_FLAG_VS_BATTLE))
+        return 0;
+    bySide[gSioPlayerId == SIO_PLAYER_PARENT ? 0 : 1] = gBtlWork;
+    bySide[gSioPlayerId == SIO_PLAYER_PARENT ? 1 : 0] = gRikuBtlWork;
+    for (i = 0; i < 2; i++) {
+        const BtlObj* a = bySide[i]->actor;
+        if (a == NULL)
+            continue;
+        h = (h ^ (u32)a->x) * 16777619u;
+        h = (h ^ (u32)a->y) * 16777619u;
+        h = (h ^ (u32)a->z) * 16777619u;
+        h = (h ^ (u32)(u16)a->hp) * 16777619u;
+    }
+    h = (h ^ PortRandomState()) * 16777619u;
+    return h ? h : 1;
+}
+#endif

@@ -91,7 +91,8 @@ enum SioHandshakeWord {
 
 #define NET_RING 64
 #define NET_RESEND 24 /* slots sent again in every datagram, until the other side has them */
-enum { NET_HELLO = 1, NET_START, NET_SLOTS };
+enum { NET_HELLO = 1, NET_START, NET_SLOTS, NET_HASH };
+#define NET_HASH_EVERY 120 /* battle frames between desync checks */
 typedef struct {
     u16 words[4];
     u8 pause;
@@ -110,7 +111,31 @@ static struct {
        target grows with repeated waits and shrinks after a calm while (the only cost: that many frames of delay) */
     u8 target, refill;
     u32 frames, waited, lastWait, calm;
+    /* the desync check: our hashes and theirs by battle frame (the groups the game consumed) */
+    u32 groups, hashAt[2][8], hash[2][8], checks, mismatches;
 } sNet;
+
+/* both hashes of one battle frame known: compare */
+static void NetHashCompare(u32 at) {
+    int i, j;
+    for (i = 0; i < 8; i++)
+        if (sNet.hash[0][i] && sNet.hashAt[0][i] == at)
+            for (j = 0; j < 8; j++)
+                if (sNet.hash[1][j] && sNet.hashAt[1][j] == at) {
+                    sNet.checks++;
+                    if (sNet.hash[0][i] != sNet.hash[1][j]) {
+                        if (sNet.mismatches++ == 0)
+                            PortUiLinkNotice("Link: the games differ (desync); reported in the log",
+                                             "Enlace: las partidas difieren (desincronizacion); queda en el registro", NULL);
+                        PortLog("netlink: DESYNC at battle frame %u: %08x here, %08x there", (unsigned)at,
+                                (unsigned)sNet.hash[0][i], (unsigned)sNet.hash[1][j]);
+                    } else if (sNet.checks % 10 == 0) {
+                        PortLog("netlink: %u state checks, %u desync", (unsigned)sNet.checks, (unsigned)sNet.mismatches);
+                    }
+                    sNet.hash[0][i] = sNet.hash[1][j] = 0;
+                    return;
+                }
+}
 
 static int NetActive(void) {
     return PortNetlinkRole() != 0;
@@ -166,6 +191,13 @@ static void NetReceive(void) {
     while ((n = PortNetlinkRecv(d, sizeof(d))) > 0) {
         if (d[0] == NET_HELLO)
             continue;
+        if (d[0] == NET_HASH && n >= 9) {
+            u32 at = NetGet32(d + 1), slot = (at / NET_HASH_EVERY) % 8;
+            sNet.hashAt[1][slot] = at;
+            sNet.hash[1][slot] = NetGet32(d + 5);
+            NetHashCompare(at);
+            continue;
+        }
         if ((d[0] == NET_START || d[0] == NET_SLOTS) && gSioWork.state == SIO_STATE_HANDSHAKE && !gSioWork.isParent) {
             gSioWork.state = SIO_STATE_CONNECTED;
             gSioWork.playerCount = 2; /* the parent was heard: two on the cable */
@@ -279,6 +311,27 @@ held:
             PortUiLinkWaitingNotice(silent / 1000);
     }
     SioReadRecvFrame(recvFrame);
+    if ((gSystemFlags & SYSTEM_FLAG_LINK_ACTIVE) && !gSioWork.recvEmpty) {
+        /* the game runs one battle frame with this group: every NET_HASH_EVERY of them, the state before it */
+        extern u32 VsBattleStateHash(void);
+        if (sNet.groups % NET_HASH_EVERY == 0) {
+            u32 h = VsBattleStateHash(), slot = (sNet.groups / NET_HASH_EVERY) % 8;
+            if (h && PortNetlinkFakeDesync() && sNet.groups >= 1200) /* tests: the check must catch a difference */
+                h ^= 1;
+            if (h) {
+                u8 d[9];
+                sNet.hashAt[0][slot] = sNet.groups;
+                sNet.hash[0][slot] = h;
+                d[0] = NET_HASH;
+                NetPut32(d + 1, sNet.groups);
+                NetPut32(d + 5, h);
+                PortNetlinkSend(d, 9);
+                PortNetlinkSend(d, 9); /* twice: a lost check is only a skipped check */
+                NetHashCompare(sNet.groups);
+            }
+        }
+        sNet.groups++;
+    }
     if (gSystemFlags & SYSTEM_FLAG_LINK_ACTIVE) { /* the lockstep battle: a frame without a pair is a frame waited */
         sNet.frames++;
         if (gSioWork.recvEmpty) {

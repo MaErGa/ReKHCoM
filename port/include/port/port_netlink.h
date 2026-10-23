@@ -12,7 +12,8 @@ void PortNetlinkSend(const uint8_t* data, int size);
 int PortNetlinkRecv(uint8_t* data, int cap); /* one datagram from the other player, 0 when none */
 void PortNetlinkFrame(void);                 /* once a game frame (the test lag) */
 int PortNetlinkSilentMs(void);               /* since the other player was last heard */
-int PortNetlinkTrace(void);                  /* KHCOM_NETLINK_TRACE: every packet pair in the log */
+int PortNetlinkTrace(void);
+int PortNetlinkFakeDesync(void);                  /* KHCOM_NETLINK_TRACE: every packet pair in the log */
 
 
 /* port_steamlink.c: the same datagrams through a Steam room and Steam's P2P messages (Windows) */
