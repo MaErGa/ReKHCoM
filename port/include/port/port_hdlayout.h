@@ -25,6 +25,9 @@ int PortHdGauge(int hp, int maxHp, int riku);
 #ifdef SDL_h_
 /* Draw it on the HUD canvas placed at (ox, oy), scale screen pixels a GBA pixel, darkened to shade (1: none). */
 void PortHdGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, float shade);
+/* The enemy HP gauge as Re:CoM 1.5 draws it (CEnemyGauge): 1 when it takes the cartridge's place this frame. */
+int PortHdEnemyGauge(int visible, int hp, int maxHp, const void* who);
+void PortHdEnemyGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, float shade);
 #endif
 void PortHdLayoutShutdown(void);
 

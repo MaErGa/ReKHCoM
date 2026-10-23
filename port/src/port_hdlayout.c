@@ -539,3 +539,87 @@ static void GaugeParts(SDL_Renderer* renderer, float x, float y, float s, const 
     PortHdLayoutDraw(renderer, HD_LAYOUT_GAUGE, sGauge.riku ? HD_LAYOUT_TEX_RIKU_FACES : HD_LAYOUT_TEX_GAUGE_FACES, 0,
                      sGauge.faceAnim, sGauge.faceFrame, x, y, s, 1.0f, tint);
 }
+
+/* ---- the enemy HP gauge (Gauge::CEnemyGauge, read from Re:CoM's executable, HUD_HD_RECOM.md) ------------------
+   gauge.lad's layout group 0: seven places in sequence 1 (0 the track, 1 the HP label, 2 the red trail, 3 the green
+   HP, 4..6 the extra bars' counter). Re:CoM's rules: a hit drops the green at once and holds the trail 1.5 s, then the
+   trail closes a tenth of the gap and one more each step; healing moves both. Its bars hold 200 HP each; here a bar
+   is the cartridge's own 560 (its gauge's layers: green, blue, yellow, red), so the HP and its layers stay the game's.
+   The gauge sits where the cartridge's is, its right end on the cartridge bar's. */
+#define ENEMY_LAYER 560
+static const int kEnemyPlaceGroup[7] = { 2, 0, 1, 3, 4, 5, 6 };
+static struct {
+    int active, frame, hp, maxHp, trail, delayMs, started, anim;
+    const void* who;
+} sEnemy;
+
+int PortHdEnemyGauge(int visible, int hp, int maxHp, const void* who) {
+    if (!gPortConfig.hdCards || !PortHdLayoutReady(HD_LAYOUT_GAUGE, HD_LAYOUT_TEX_GAUGE))
+        return 0;
+    if (!visible || !who) {
+        sEnemy.active = 0;
+        sEnemy.started = 0;
+        return 1; /* nothing shown, as the cartridge then shows nothing */
+    }
+    hp = SDL_max(hp, 0);
+    sEnemy.maxHp = maxHp;
+    if (!sEnemy.started || sEnemy.who != who || sEnemy.frame + 1 != (int)PortFrameCount()) {
+        memset(&sEnemy, 0, sizeof(sEnemy));
+        sEnemy.started = 1;
+        sEnemy.who = who;
+        sEnemy.hp = sEnemy.trail = hp;
+    }
+    sEnemy.frame = (int)PortFrameCount();
+    sEnemy.maxHp = maxHp;
+    if (hp != sEnemy.hp) {
+        if (hp < sEnemy.hp)
+            sEnemy.delayMs = 1500;
+        sEnemy.hp = hp;
+        if (sEnemy.trail < hp) {
+            sEnemy.trail = hp;
+            sEnemy.delayMs = 0;
+        }
+    }
+    if (sEnemy.trail > sEnemy.hp) {
+        if (sEnemy.delayMs <= 0) {
+            sEnemy.trail -= (sEnemy.trail - sEnemy.hp) / 10 + 1;
+            if (sEnemy.trail < sEnemy.hp)
+                sEnemy.trail = sEnemy.hp;
+        }
+        sEnemy.delayMs -= 17;
+    }
+    sEnemy.anim++;
+    sEnemy.active = 1;
+    return 1;
+}
+
+void PortHdEnemyGaugeDraw(SDL_Renderer* renderer, float ox, float oy, float scale, float shade) {
+    const float unit = 240.0f / 640.0f;
+    float s = unit * scale, tint[4] = { shade, shade, shade, 1.0f };
+    /* Re:CoM's bar ends at x 495 of its 640; the cartridge's at 236 of its 240, which the HUD keeps from its right */
+    float x = ox + ((float)(gPortHudW - GBA_SCREEN_W) + 236.0f - 495.0f * unit) * scale, y = oy;
+    int layer, layers, hpFrame, trailFrame, trailLayer, i;
+    if (!sEnemy.active || sEnemy.frame != (int)PortFrameCount())
+        return;
+    layer = sEnemy.hp > 0 ? (sEnemy.hp - 1) / ENEMY_LAYER : 0;
+    trailLayer = sEnemy.trail > 0 ? (sEnemy.trail - 1) / ENEMY_LAYER : 0;
+    {
+        /* one bar at most: it is the enemy's whole HP, as the cartridge's gauge (its length by the maximum) */
+        int full = sEnemy.maxHp > 0 && sEnemy.maxHp < ENEMY_LAYER ? sEnemy.maxHp : ENEMY_LAYER;
+        hpFrame = (sEnemy.hp - layer * ENEMY_LAYER) * 200 / full;
+        trailFrame = trailLayer > layer ? 200 : (sEnemy.trail - layer * ENEMY_LAYER) * 200 / full;
+    }
+    layers = layer;
+    if (PortHdDrawLogged())
+        PortLog("hd enemy gauge %u hp %d trail %d layer %d", (unsigned)PortFrameCount(), sEnemy.hp, sEnemy.trail, layer);
+    for (i = 0; i < 7; i++) {
+        int frame;
+        if (i >= 4 && layers <= 0)
+            continue; /* the bars' counter: only with bars left (0 is the bar's track, its empty length) */
+        frame = i == 2 ? HD_LAYOUT_HOLD(SDL_clamp(trailFrame, 0, 200))
+              : i == 3 ? HD_LAYOUT_HOLD(SDL_clamp(hpFrame, 0, 200))
+              : i == 6 ? HD_LAYOUT_HOLD(layers)
+              : sEnemy.anim;
+        PortHdLayoutDraw(renderer, HD_LAYOUT_GAUGE, HD_LAYOUT_TEX_GAUGE, 1, kEnemyPlaceGroup[i], frame, x, y, s, 1.0f, tint);
+    }
+}

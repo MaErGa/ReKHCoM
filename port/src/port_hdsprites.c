@@ -493,6 +493,8 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
         return;
     if (layer == 1) /* Re:CoM's HP gauge on the HUD canvas, under the cards */
         PortHdGaugeDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
+    if (layer == 1)
+        PortHdEnemyGaugeDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
     for (i = 0; i < sDrawCount[layer]; i++) {
         const HdSpriteDraw* q = &sDraws[layer][i];
         HdSpriteState* st = &sState[q->id];
