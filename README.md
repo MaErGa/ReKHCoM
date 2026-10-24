@@ -8,8 +8,8 @@ browser and PS5), with its own renderer, audio and launcher, with widescreen and
 ultrawide support at the cartridge's original speed.
 
 <p align="center">
-  <a href="https://github.com/MatyMeatBoy/ReKHCoM/releases/latest"><b>⬇ Download the latest release (v1.9.13)</b></a>
-  &nbsp;·&nbsp; <a href="https://matymeatboy.github.io/ReKHCoM/"><b>▶ Play in your browser · Alpha</b></a>
+  <a href="https://github.com/MatyMeatBoy/ReKHCoM/releases/latest"><b>⬇ Download the latest release (v1.9.14)</b></a>
+  &nbsp;·&nbsp; <a href="https://matymeatboy.github.io/ReKHCoM/"><b>▶ Play in your browser · Beta</b></a>
   &nbsp;·&nbsp; <a href="CHANGELOG.md">Changelog</a>
   &nbsp;·&nbsp; <a href="https://github.com/MatyMeatBoy/ReKHCoM/tags">Previous version tags</a>
 </p>
@@ -19,33 +19,34 @@ included), in all five European languages, English (US) and Japanese.
 
 <p align="center"><img src="docs/screenshots/battle.png" width="49%"> <img src="docs/screenshots/field.png" width="49%"></p>
 
-Development versions are tracked in [Git tags](https://github.com/MatyMeatBoy/ReKHCoM/tags).
-Only stable versions appear as public releases. The current stable is **v1.9.13**.
+Every release stays available: stable versions, and test builds marked as pre-release. The
+current stable is **v1.9.14**; older stables can be picked again (for example in Quiver Launcher,
+Versions → Change Version).
 
 | Platform | Download | Status |
 |---|---|---|
-| Windows | `ReKHCoM-v1.9.13-windows-x86.zip` | Stable |
-| Linux (x86) | `ReKHCoM-v1.9.13-linux-x86.tar.gz` | Stable, tested in virtual machines |
-| Steam Deck | `ReKHCoM-v1.9.13-steamdeck-i386.tar.gz` | Stable, tested in virtual machines |
-| Anbernic (RG34XX and similar) | `ReKHCoM-v1.9.13-linux-armhf-anbernic-alpha.zip` | Alpha |
-| Android | `ReKHCoM-v1.9.13-android-alpha.apk` | Alpha |
-| Browser | [matymeatboy.github.io/ReKHCoM](https://matymeatboy.github.io/ReKHCoM/) | Alpha |
-| PS5 | `PPSA98511.zip` (shown as ReKHCoM-v1.9.13-ps5-alpha) | Alpha |
-| PS4 (GoldHEN) | `ReKHCoM-v1.9.13-ps4-alpha.pkg` | Alpha, never run on a console yet |
-| Nintendo Switch (Atmosphère) | `ReKHCoM-v1.9.13-switch-alpha.nro` | Alpha, never run on a console yet |
-| PS Vita (HENkaku) | `ReKHCoM-v1.9.13-vita-alpha.vpk` | Alpha, never run on a console yet |
+| Windows | `ReKHCoM-v1.9.14-windows-x86.zip` | Stable |
+| Linux (x86) | `ReKHCoM-v1.9.14-linux-x86.tar.gz` | Stable |
+| Steam Deck | `ReKHCoM-v1.9.14-steamdeck-i386.tar.gz` | Stable |
+| Android | `ReKHCoM-v1.9.14-android-beta.apk` | Beta |
+| Browser | [matymeatboy.github.io/ReKHCoM](https://matymeatboy.github.io/ReKHCoM/) | Beta |
+| PS5 | `PPSA98511.zip` (shown as ReKHCoM-v1.9.14-ps5-beta) | Beta |
+| PS4 (GoldHEN) | `ReKHCoM-v1.9.14-ps4-beta.pkg` | Beta |
+| Nintendo Switch (Atmosphère) | `ReKHCoM-v1.9.14-switch-beta.nro` | Beta |
+| PS Vita (HENkaku) | `ReKHCoM-v1.9.14-vita-beta.vpk` | Beta |
+| Anbernic (RG34XX and similar) | `ReKHCoM-v1.9.14-linux-armhf-anbernic-beta.zip` | Beta |
 
-## What's new in v1.9.13
+Betas are still being debugged: reports are welcome.
 
-- **Nintendo Switch and PS Vita alphas.** Homebrew builds of the same game (never run on a console
-  yet: reports welcome).
-- **Discord status.** Your profile shows the world, floor, character, level and boss, in the game's
-  language. On by default.
-- **Return to title screen** from Options at any moment.
-- **Android:** the Wonderland boss crash is fixed (#33); clearer message where the phone keeps the
-  game's memory busy (#22, #34).
-- **Windows:** clean fullscreen start; no SmartScreen stop after allowing the launcher.
-- **Agrabah widescreen** margins completed.
+## What's new in v1.9.14
+
+- **Android:** phones that keep the game's usual memory range busy (Poco F8 Ultra, Huawei Mate XT)
+  load the game elsewhere (#22, #34); the error box can share its log; remapping a key can be
+  cancelled from a gamepad (#37); "Hide touch controls" hides every touch button (#38).
+- **Windows:** faster widescreen drawing, spread over several CPU cores.
+- **Nintendo Switch and PS Vita betas**, **Discord status**, **Return to title screen** from Options,
+  and the **HD mod** (beta: Re:Chain of Memories' music, movies and subtitles imported from your own
+  KINGDOM HEARTS HD 1.5+2.5 ReMIX), all from the v1.9.13 test build.
 
 ## Achievements
 
@@ -161,8 +162,8 @@ Each region uses its own save file; the launcher picks the matching version.
 
 ## Play in your browser
 
-Open [ReKHCoM Web · Alpha](https://matymeatboy.github.io/ReKHCoM/), select your ROM and
-press **Play**. Your ROM stays on your device. The web alpha supports keyboard,
+Open [ReKHCoM Web · Beta](https://matymeatboy.github.io/ReKHCoM/), select your ROM and
+press **Play**. Your ROM stays on your device. The web beta supports keyboard,
 gamepad and centered touch controls, optional HD text with the PC fonts, and normal save import
 and export. The website starts in English and also offers Spanish; game language
 is selected separately. Fullscreen and embedded views readjust automatically.
@@ -175,15 +176,18 @@ Export a backup before clearing browser data.
 ## Running (Windows)
 
 1. Download the [latest stable ZIP](https://github.com/MatyMeatBoy/ReKHCoM/releases/latest)
-   and extract `ReKHCoM-v1.9.13-windows-x86.zip` into a writable folder of its own
+   and extract `ReKHCoM-v1.9.14-windows-x86.zip` into a writable folder of its own
    (for example `ReKHCoM`).
 2. Run `ReKHCoM.exe` and install your cartridge dump with **Install ROM...** (or drag
    the file onto the window). The dump is checked by SHA-1 and copied to `roms/`.
 3. Press **Play**. The launcher starts `khcom_eu.exe`, `khcom_us.exe` or `khcom_jp.exe`
    for the version you chose.
 
-To update (from v1.9.11 on), extract the new ZIP over the same folder and replace the
-files: the package carries no saves, settings or ROM, so those are kept.
+To update, extract the new ZIP over the same folder and replace the files: the package carries
+no saves, settings or ROM, so those are kept (Quiver Launcher updates the same way). An install
+from v1.9.10 or older lives in a versioned folder (`ReKHCoM-v1.9.10-windows-x86`): if the new
+version ends up next to it instead, its launcher brings the saves, settings, ROMs and HD mod over
+on the first start.
 
 **Create a desktop shortcut** (below **Play**) makes a shortcut that starts the game
 directly, without the launcher.
@@ -239,7 +243,7 @@ your dump during the first configure step.
 To make a distributable ZIP without ROMs, saves or local settings:
 
 ```sh
-python port/tools/package_release.py --version v1.9.13 --sdl ../toolchain/SDL3-3.4.18
+python port/tools/package_release.py --version v1.9.14 --sdl ../toolchain/SDL3-3.4.18
 ```
 
 ## Controls
