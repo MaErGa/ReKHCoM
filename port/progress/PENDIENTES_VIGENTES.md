@@ -72,6 +72,18 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
      pegado al costado desde el hombro, con el antebrazo junto al corte), entero, solo la punta tramada.
      **Carga HD medida (33 videos, 2,63 GB = 39 %):** Original 4 s → 6 s; Buena 413 → 237 s (1,74x); Ahorro 452 →
      247 s (1,83x); mod completo Buena ~17,6 → ~10 min, Ahorro ~19,3 → ~10,5 min. Vía GPU: medición corriendo.
+  6d. **TRASPASO ~07:00 (Claude, sin tokens) — integración de aprobados con honores, EN EL ÁRBOL SIN COMMITEAR:**
+     Coliseo 121 (1ee40e4e6) y **Coliseo 122 (c62c7d8ee, honores 08:27 UTC)** encendidos para todos, aislados de la
+     Preliminar V1: bloques `PortPreliminarPixelSource` 121/122 en port_preliminar_v1_tiles.h, filas 121/122 en
+     _data.inc (v[21]=1), port_ppu.c (`sPreliminarApprovedOnly`, `sScene121On/122On`, `KHCOM_SCENE121_WIDE=0` /
+     `KHCOM_SCENE122_WIDE=0` los apagan; DrawTextBg incluye 121/122). Verificar: `sh build/scene121_check.sh 121 0:120`
+     y `sh build/scene121_check.sh 122 0:121` (serie; GBA idéntico, márgenes distintos EU/US/JP); si sale bien,
+     commitear y pushear; si un caso se corta por tiempo, es bug (reproducir solo). Agrabah 107/108 recibió ★ de nuevo
+     08:27 (ya integrado). Darkside 01: receta = main; espera "Darkside · arena y contexto".
+     **Carga HD vía GPU medida:** Buena 237 → 203 s con GPU (total vs pre6: 413 → 203 s = 2,03x). Está en la rama
+     `claude/hd-gpu` (a73f81340): revisar el MP4 (ffprobe + un cuadro) y mergear a main; luego subir workers si la CPU
+     queda libre; siguientes ideas: audio AAC sin recodificar, leer el video sin la copia previa (IStream des-XOR).
+     El usuario pidió seguir mejorando el "descompresor"/importador.
   7. App 0.4.2: cada pieza en UNA pestaña (con una propuesta nueva pendiente queda solo en Preliminares, conservando
      la aprobación anterior a la vista); las nubes se ven aunque el envío no se haya procesado (pedido del usuario).
   8. Coliseo 121 integrado aislado en el árbol (sin commitear al escribir): receta 121 de 1ee40e4e6 en
