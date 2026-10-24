@@ -123,10 +123,20 @@ for(const v of zoomSteps){const o=el('option');o.value=v+'%';$('zoomSteps').appe
 function resize() {
   if (!current) return;
   $('paper').style.width = current.width * scale + 'px'; $('paper').style.height = current.height * scale + 'px';
+  padPaper();
   if(document.activeElement!==$('zoomNumber'))$('zoomNumber').value=Math.round(scale*100)+'%'; renderClouds();
 }
+/* room to pan at any zoom (the user, 24/10: zoomed out it did not move): margins around the paper so it can travel
+   until a little empty space (12 % of the view) shows past its edge, never further, wherever it is dragged; a paper
+   smaller than the view travels from one edge of the view to the other */
+function padPaper(){
+  const v=$('viewport'),cw=v.clientWidth,ch=v.clientHeight,pw=current.width*scale,ph=current.height*scale;
+  const mx=Math.round(Math.max(cw*.12,cw-cw*.12-pw)),my=Math.round(Math.max(ch*.12,ch-ch*.12-ph));
+  $('paper').style.margin=my+'px '+mx+'px';
+}
+function centerPaper(){const v=$('viewport');v.scrollLeft=(v.scrollWidth-v.clientWidth)/2;v.scrollTop=(v.scrollHeight-v.clientHeight)/2;}
 function fitScale(){return Math.max(.03,Math.min(($('viewport').clientWidth - 24) / current.width, ($('viewport').clientHeight - 24) / current.height, 8));}
-function fit() { if (!current) return; fitMode=true; scale = fitScale(); resize(); $('viewport').scrollTo(0,0); }
+function fit() { if (!current) return; fitMode=true; scale = fitScale(); resize(); centerPaper(); }
 function zoomTo(value, anchor) {
   if(!current)return; fitMode=false;
   const viewport=$('viewport'),before=$('paper').getBoundingClientRect(),vr=viewport.getBoundingClientRect();
