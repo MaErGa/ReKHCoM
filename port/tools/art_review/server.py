@@ -23,7 +23,61 @@ from runtime_version import build_id
 ROOT = Path(__file__).resolve().parents[3]
 WEB = Path(__file__).with_name('web')
 STATUSES = ['pending', 'changes_requested', 'approved', 'honors']
+# the pen's colours (the user, 24/10: like Windows' screenshot markup): red, orange, yellow, green, cyan, blue,
+# magenta, black; names go into the deliveries so the agent can read "the yellow scribble"
+DOODLE_COLORS = {'#e53935': 'rojo', '#fb8c00': 'naranja', '#fdd835': 'amarillo', '#43a047': 'verde',
+                 '#00acc1': 'celeste', '#1e5bd8': 'azul', '#d81b9a': 'magenta', '#111111': 'negro'}
 RUNNING_BUILD = build_id()
+
+
+def clean_doodles(doodles):
+    """Pen strokes drawn over the image: normalized points, the width in image pixels, one of the eight colours."""
+    if not isinstance(doodles, list) or len(doodles) > 500:
+        raise ValueError('Máximo 500 trazos por imagen')
+    clean, ids = [], set()
+    for d in doodles:
+        rid = str(d.get('id', ''))
+        if not rid or rid in ids or len(rid) > 80:
+            raise ValueError('ID de trazo inválido')
+        ids.add(rid)
+        color = str(d.get('color', '')).lower()
+        if color not in DOODLE_COLORS:
+            raise ValueError('Color de trazo inválido')
+        width = d.get('width')
+        points = d.get('points')
+        if isinstance(width, bool) or not isinstance(width, (int, float)) or not math.isfinite(width) or not 0 < width <= 512:
+            raise ValueError('Grosor de trazo inválido')
+        if not isinstance(points, list) or not 1 <= len(points) <= 5000:
+            raise ValueError('Trazo inválido')
+        out = []
+        for p in points:
+            if not isinstance(p, list) or len(p) != 2 or any(isinstance(v, bool) or not isinstance(v, (int, float))
+                                                              or not math.isfinite(v) for v in p):
+                raise ValueError('Punto de trazo inválido')
+            out.append([min(1.0, max(0.0, p[0])), min(1.0, max(0.0, p[1]))])
+        clean.append(dict(id=rid, color=color, width=width, points=out))
+    return clean
+
+
+def draw_doodles(image, doodles):
+    """The strokes onto a PIL image, at the image's own pixels."""
+    draw = ImageDraw.Draw(image)
+    for d in doodles:
+        pts = [(x * image.width, y * image.height) for x, y in d['points']]
+        w = max(1, round(d['width']))
+        if len(pts) > 1:
+            draw.line(pts, fill=d['color'], width=w, joint='curve')
+        r = w / 2
+        for x, y in (pts[0], pts[-1]):
+            draw.ellipse((x - r, y - r, x + r, y + r), fill=d['color'])
+
+
+def doodle_box(d, width, height):
+    xs = [p[0] * width for p in d['points']]
+    ys = [p[1] * height for p in d['points']]
+    r = d['width'] / 2
+    return [max(0, math.floor(min(xs) - r)), max(0, math.floor(min(ys) - r)),
+            min(width, math.ceil(max(xs) + r)), min(height, math.ceil(max(ys) + r))]
 
 
 def now():
@@ -105,10 +159,10 @@ class Store:
             except (OSError, ValueError):
                 continue
             for a in payload.get('assets', []):
-                if a.get('annotations') or str(a.get('general', '')).strip():
+                if a.get('annotations') or a.get('doodles') or str(a.get('general', '')).strip():
                     newest[a['id']] = dict(submission=payload['submission_id'], created=payload['created'],
                                            image_id=a['id'], version=a['version'], clouds=len(a['annotations']),
-                                           cloud_ids=[n['id'] for n in a['annotations']],
+                                           cloud_ids=[n['id'] for n in a['annotations']] + [d['id'] for d in a.get('doodles', [])],
                                            status_then=a['status'],
                                            read=str(path.with_name('COMENTARIOS_PARA_CODEX.txt')))
         # a cloud named in a later version's revision_info.response_to is answered, even if sent again afterwards
@@ -119,7 +173,7 @@ class Store:
             latest = versions[-1]
             unanswered = [n for i in fam['version_ids'] if (n := newest.get(i))
                           and not any(c['created'] > n['created'] for c in children.get(i, []))
-                          and not set(n['cloud_ids']) <= answered]
+                          and not (n['cloud_ids'] and set(n['cloud_ids']) <= answered)]  # a general comment alone waits for a child
             if unanswered:
                 who, todo = 'agente', 'Responder cada envío con una versión hija (parent_id = image_id del envío) y su ficha'
             elif latest['status'] in ('pending', 'changes_requested'):
@@ -183,7 +237,7 @@ class Store:
             item = dict(id=asset_id, title=str(title)[:200], version=str(version)[:300],
                         provenance=str(provenance)[:4000], parent_id=parent_id, sha256=pixel_sha,
                         source_sha256=raw_sha, width=size[0], height=size[1], created=now(), updated=now(),
-                        revision=0, status=status if status in STATUSES else 'pending', annotations=[],
+                        revision=0, status=status if status in STATUSES else 'pending', annotations=[], doodles=[],
                         general='', submitted_revision=None, image_url='/images/' + asset_id + '.png',
                         revision_info=revision_info or {})
             with self.db() as db:
@@ -223,7 +277,8 @@ class Store:
                 item['decision_at'] = now()
                 if item.get('revision_info',{}).get('response_to'):
                     item['revision_info']['subsequent_human_verdict'] = data['status']
-            item.update(annotations=clean, status=data['status'], general=str(data.get('general', ''))[:16000],
+            item.update(annotations=clean, doodles=clean_doodles(data.get('doodles', [])),
+                        status=data['status'], general=str(data.get('general', ''))[:16000],
                         revision=item['revision'] + 1, updated=now())
             with self.db() as db:
                 db.execute('UPDATE assets SET data=? WHERE id=?', (json.dumps(item, ensure_ascii=False), item['id']))
@@ -239,7 +294,7 @@ class Store:
             assets = [self.get(i) for i in ids]
             if expected_revisions and any(expected_revisions.get(a['id']) != a['revision'] for a in assets):
                 raise ValueError('Cambió una revisión. Recarga y vuelve a enviar.')
-            if not any(a['annotations'] or a['general'].strip() or a['status'] != 'pending' for a in assets):
+            if not any(a['annotations'] or a.get('doodles') or a['general'].strip() or a['status'] != 'pending' for a in assets):
                 raise ValueError('Añade un comentario o una valoración antes de enviar')
             if any(not n['comment'].strip() for a in assets for n in a['annotations']):
                 raise ValueError('Cada nube necesita un comentario; revisa las nubes vacías')
@@ -254,9 +309,24 @@ class Store:
                     shutil.copyfile(self.root / 'images' / image_name, temp / image_name)
                     with Image.open(temp / image_name) as source:
                         im = source.convert('RGB')
+                    doodles = a.get('doodles', [])
                     overview = im.copy()
+                    draw_doodles(overview, doodles)
                     draw = ImageDraw.Draw(overview)
                     regions = []
+                    strokes = []
+                    if doodles:
+                        scribbled = im.copy()
+                        draw_doodles(scribbled, doodles)
+                        doodled = a['id'] + '-garabatos.png'
+                        scribbled.save(temp / doodled)
+                        for index, d in enumerate(doodles, 1):
+                            strokes.append(dict(id=d['id'], number=index, color=d['color'],
+                                                color_name=DOODLE_COLORS[d['color']], width_px=d['width'],
+                                                points=len(d['points']),
+                                                box_xyxy_exclusive=doodle_box(d, im.width, im.height)))
+                    else:
+                        doodled = None
                     for index, n in enumerate(a['annotations'], 1):
                         x0, y0 = int(n['x'] * im.width), int(n['y'] * im.height)
                         x1 = min(im.width, math.ceil((n['x'] + n['w']) * im.width))
@@ -268,7 +338,8 @@ class Store:
                         regions.append(dict(n, number=index, pixels_xyxy_exclusive=[x0,y0,x1,y1], crop=crop))
                     marked = a['id'] + '-zonas.png'
                     overview.save(temp / marked)
-                    records.append(dict(a, snapshot=image_name, marked=marked, annotations=regions))
+                    records.append(dict(a, snapshot=image_name, marked=marked, annotations=regions,
+                                        doodles=doodles, doodle_summary=strokes, doodled=doodled))
                 payload = dict(schema='rekhcom.art-review/1', submission_id=sid, created=now(), reexport_of=reexport_of,
                                coordinate_system='Top-left origin. Normalized x/y/w/h in [0,1]; pixel bounds x1/y1 exclusive. Coordinates refer to delivered image, not ROM tiles.',
                                author='human', purpose='Regional feedback for next art versions and a traceable learning case bank.',
@@ -296,6 +367,14 @@ class Store:
                                    'ESTADO HUMANO: ' + a['status'], 'PROCEDENCIA: ' + a['provenance'],
                                    'ARCHIVO: ' + a['snapshot'], 'MAPA DE ZONAS: ' + a['marked'],
                                    'COMENTARIO GENERAL: ' + a['general'], ''])
+                    if a['doodles']:
+                        header.extend(['GARABATOS DEL HUMANO (lápiz sobre la imagen): ' + a['doodled'],
+                                       'Son marcas a mano alzada que señalan o dibujan cómo debería quedar; leerlos junto a',
+                                       'las nubes y el comentario general. Puntos exactos en comentarios.json (doodles).'])
+                        for s in a['doodle_summary']:
+                            header.append('TRAZO %s | %s | grosor %s px | caja [x0,y0,x1,y1): %s' % (
+                                s['number'], s['color_name'], s['width_px'], s['box_xyxy_exclusive']))
+                        header.append('')
                     for n in a['annotations']:
                         header.extend(['NUBE %s | ID %s' % (n['number'],n['id']),
                                        'ZONA NORMALIZADA: ' + json.dumps({k:n[k] for k in ['x','y','w','h']}),
@@ -317,6 +396,11 @@ class Store:
                         '- Versión anterior: `' + str(a.get('parent_id')) + '`',
                         '', '![Imagen de revisión](' + a['marked'] + ')', '', 'Comentario general:', ''])
                     md.extend(['> ' + line for line in a['general'].splitlines()] or ['_Sin comentario general._'])
+                    if a['doodles']:
+                        md.extend(['', '#### Garabatos (%d trazos)' % len(a['doodles']), '',
+                                   '![Garabatos del humano](' + a['doodled'] + ')', ''])
+                        md.extend('- Trazo %s: %s, %s px, caja `%s`' % (s['number'], s['color_name'], s['width_px'],
+                                                                         s['box_xyxy_exclusive']) for s in a['doodle_summary'])
                     for n in a['annotations']:
                         md.extend(['', '#### Nube %s · %s · %s' % (n['number'],n['category'],n['priority']),
                             '', '- ID: `' + n['id'] + '`', '- Zona en píxeles `[x0,y0,x1,y1)`: `' + str(n['pixels_xyxy_exclusive']) + '`',
@@ -395,7 +479,7 @@ def handler(store):
                 assets=store.all()
                 delivered=[a for a in assets if not a.get('revision_info',{}).get('catalog_key')]
                 return self.reply(200, dict(assets=store.all(), approvals=store.approvals(), queue=store.queue(), data_dir=str(store.root), code_dir=str(Path(__file__).resolve().parent),
-                    app_version='0.4.2', app_build=RUNNING_BUILD, disk_build=build_id(), auto_restart=True,
+                    app_version='0.5.0', app_build=RUNNING_BUILD, disk_build=build_id(), auto_restart=True,
                     latest_delivery_id=(delivered or assets)[-1]['id'] if assets else None))
             if route == '/api/queue':
                 return self.reply(200, dict(pieces=store.queue()))

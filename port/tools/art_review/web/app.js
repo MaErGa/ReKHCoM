@@ -32,52 +32,71 @@ function showRevisions(){
 revisionPicker.onchange=()=>choose(revisionPicker.value);
 previousRevision.onclick=()=>{const list=pieceVersions(),i=list.findIndex(a=>a.id===current.id);if(i>0)choose(list[i-1].id);};
 nextRevision.onclick=()=>{const list=pieceVersions(),i=list.findIndex(a=>a.id===current.id);if(i<list.length-1)choose(list[i+1].id);};
+/* the library's tabs (the user, 24/10): Pre = waiting for your review, Rev = you sent clouds and wait for the new
+   version (so they are not reviewed twice), Aprobado = Aprobados / Honores. Each piece is in one tab. */
+let acceptedSub='approved';
+const accepted=a=>a&&(a.status==='approved'||a.status==='honors');
+const hasFeedback=a=>a&&(a.annotations.length||(a.doodles||[]).length||a.general.trim());
+function pieceGroups(){
+  const byId=new Map(assets.map(a=>[a.id,a])),groups=new Map();
+  for(const a of assets){let root=a;const seen=new Set();while(root.parent_id&&byId.has(root.parent_id)&&!seen.has(root.id)){seen.add(root.id);root=byId.get(root.parent_id);}if(!groups.has(root.id))groups.set(root.id,{root,versions:[]});groups.get(root.id).versions.push(a);}
+  for(const g of groups.values()){
+    const family=approvals.find(f=>f.family_id===g.root.id),latest=g.versions.at(-1),turn=queue.find(q=>q.family_id===g.root.id);
+    g.turn=turn;
+    if(accepted(latest)){
+      const honors=family?.build_version&&byId.get(family.build_version);
+      g.tab='accepted';g.sub=honors||latest.status==='honors'?'honors':'approved';
+      g.shown=g.sub==='honors'?(honors||latest):(byId.get(family?.approved_version)||latest);
+    }else{
+      const sent=latest.submitted_revision!=null&&latest.submitted_revision===latest.revision&&hasFeedback(latest);
+      g.tab=(turn?.turn==='agente'&&turn.unanswered.length)||sent?'review':'pending';g.shown=latest;
+    }
+  }
+  return groups;
+}
+function tabOf(id){for(const g of pieceGroups().values())if(g.versions.some(v=>v.id===id))return g;return null;}
 function gallery() {
   $('gallery').replaceChildren();
   $('assetPicker').replaceChildren();
-  const byId=new Map(assets.map(a=>[a.id,a])),groups=new Map();
-  for(const a of assets){let root=a;const seen=new Set();while(root.parent_id&&byId.has(root.parent_id)&&!seen.has(root.id)){seen.add(root.id);root=byId.get(root.parent_id);}if(!groups.has(root.id))groups.set(root.id,{root,versions:[]});groups.get(root.id).versions.push(a);}
-  const search=$('searchPieces').value.trim().toLocaleLowerCase('es');let total=0,counts={pending:0,accepted:0};
-  /* Preliminares: the newest version while it still waits for a verdict; approved ones go straight to Ya aceptados
-     (and come back here only when a newer proposal of the piece arrives) */
-  const accepted=a=>a&&(a.status==='approved'||a.status==='honors');
-  /* each piece in ONE tab (the user, 24/10): a newer proposal waiting keeps it in Preliminares only (its approval
-     stays and is shown there); Ya aceptados has the pieces with nothing pending */
-  const pick=(tab,versions,family)=>accepted(versions.at(-1))?(tab==='accepted'?byId.get(family?.approved_version)||versions.at(-1):null):(tab==='pending'?versions.at(-1):null);
-  for (const {root,versions} of groups.values()) {
-    const family=approvals.find(f=>f.family_id===root.id);
-    for(const tab of ['pending','accepted'])if(pick(tab,versions,family))counts[tab]++;
-    const a=pick(libraryTab,versions,family);
-    if(!a||search&&!(`${root.title} ${a.version}`).toLocaleLowerCase('es').includes(search))continue;total++;
+  const search=$('searchPieces').value.trim().toLocaleLowerCase('es');let total=0;const counts={pending:0,review:0,accepted:0,approved:0,honors:0};
+  for (const {root,versions,tab,sub,shown:a,turn} of pieceGroups().values()) {
+    counts[tab]++;if(tab==='accepted')counts[sub]++;
+    if(tab!==libraryTab||tab==='accepted'&&sub!==acceptedSub)continue;
+    if(search&&!(`${root.title} ${a.version}`).toLocaleLowerCase('es').includes(search))continue;total++;
     const option=el('option','',root.title+' · '+a.version);option.value=a.id;option.selected=a.id===current?.id;$('assetPicker').append(option);
     const button = el('button','asset' + (versions.some(v=>v.id===current?.id) ? ' active' : ''));
-    const img = el('img'); img.src = a.image_url;img.loading='lazy';img.alt = ''; button.append(img,el('strong','',root.title),el('small',a.status==='honors'?'honors':'',labels[a.status]+(a.status==='approved'&&libraryTab==='pending'?' · falta ★ para build':'')),el('small','',a.version),el('small','',versions.length+' revisión(es) · ver Historial'));
-    const turn=queue.find(q=>q.family_id===root.id);
-    if(turn&&libraryTab==='pending')button.append(el('small','turn '+(turn.turn==='humano'?'you':'agent'),turn.turn==='humano'?'● Te toca':'◌ Esperando al agente'+(turn.unanswered.length?` (${turn.unanswered.length} envío(s))`:'')));
-    button.onclick = () => choose(a.id,{follow:libraryTab==='pending'}); $('gallery').append(button);
+    const img = el('img'); img.src = a.image_url;img.loading='lazy';img.alt = ''; button.append(img,el('strong','',root.title),el('small',a.status==='honors'?'honors':'',labels[a.status]+(a.status==='approved'&&tab==='accepted'?' · falta ★ para build':'')),el('small','',a.version),el('small','',versions.length+' revisión(es) · ver Historial'));
+    if(tab==='pending')button.append(el('small','turn you','● Te toca'));
+    if(tab==='review')button.append(el('small','turn agent','◌ Enviado · esperando versión nueva'+(turn?.unanswered.length?` (${turn.unanswered.length} envío(s))`:'')));
+    button.onclick = () => choose(a.id,{follow:tab!=='accepted'}); $('gallery').append(button);
   }
   if(current&&!Array.from($('assetPicker').options).some(o=>o.value===current.id)){
     const pinned=el('option','',`En revisión: ${current.title} · ${labels[current.status]} (fuera del filtro)`);pinned.value=current.id;pinned.selected=true;$('assetPicker').prepend(pinned);
   }
   if(!total)$('gallery').append(el('p','subtle','No hay piezas en esta pestaña.'));
-  $('tabPending').textContent=`Preliminares (${counts.pending})`;$('tabAccepted').textContent=`Ya aceptados (${counts.accepted})`;
-  $('tabPending').setAttribute('aria-selected',String(libraryTab==='pending'));$('tabAccepted').setAttribute('aria-selected',String(libraryTab==='accepted'));
+  $('tabPending').textContent=`Pre (${counts.pending})`;$('tabReview').textContent=`Rev (${counts.review})`;$('tabAccepted').textContent=`Aprobado (${counts.accepted})`;
+  $('tabApproved').textContent=`Aprobados (${counts.approved})`;$('tabHonors').textContent=`★ Honores (${counts.honors})`;
+  for(const [id,on] of [['tabPending',libraryTab==='pending'],['tabReview',libraryTab==='review'],['tabAccepted',libraryTab==='accepted'],['tabApproved',acceptedSub==='approved'],['tabHonors',acceptedSub==='honors']])$(id).setAttribute('aria-selected',String(on));
+  $('acceptedTabs').hidden=libraryTab!=='accepted';
 }
-function setLibraryTab(value){libraryTab=value;gallery();}
-$('tabPending').onclick=()=>setLibraryTab('pending');$('tabAccepted').onclick=()=>setLibraryTab('accepted');$('searchPieces').oninput=gallery;
+function setLibraryTab(value,sub){libraryTab=value;if(sub)acceptedSub=sub;gallery();}
+function tabForPiece(id){const g=tabOf(id);if(g){libraryTab=g.tab;if(g.sub)acceptedSub=g.sub;}}
+$('tabPending').onclick=()=>setLibraryTab('pending');$('tabReview').onclick=()=>setLibraryTab('review');$('tabAccepted').onclick=()=>setLibraryTab('accepted');
+$('tabApproved').onclick=()=>setLibraryTab('accepted','approved');$('tabHonors').onclick=()=>setLibraryTab('accepted','honors');$('searchPieces').oninput=gallery;
 async function choose(id, options={}) {
   try { await flushGeneral(); await saveChain; } catch(e) { return toast(e.message); }
   current = assets.find(a => a.id === id); selected = null;
   /* the tab stays the one the reviewer is on (moving between revisions of an accepted piece used to jump to
      Preliminares); only the first load picks it from the piece */
-  if(options.tab)libraryTab=options.tab;
+  if(options.tab)tabForPiece(id);
+  undoStack=[];if(current&&!current.doodles)current.doodles=[];
   /* an update notice was for the piece shown before: it must not take this one elsewhere */
   if(pendingUpdate&&pendingUpdate.kind==='image'&&pendingUpdate.forId!==id){pendingUpdate=null;$('updates').hidden=true;}
   followLatest=options.follow===true;
   const address=new URL(location.href);address.searchParams.set('image',id);address.searchParams.delete('latest');history.replaceState(null,'',address);
   if(followLatest)address.searchParams.delete('view');else address.searchParams.set('view','history');history.replaceState(null,'',address);
   historical=false;$('historyBanner').hidden=true;
-  for(const k of ['status','general','draw','submit','rate'])$(k).disabled=false;
+  for(const k of ['status','general','draw','pen','eraser','submit','rate'])$(k).disabled=false;
   localStorage.setItem('atlas-selected', id);
   $('title').textContent = current.title; $('version').textContent = current.version;
   $('imageSize').textContent = `${current.width} × ${current.height} px`;
@@ -96,12 +115,18 @@ function showApproval(){
   $('rate').textContent=historical?'Histórico':labels[current.status]+' ▾';
 }
 async function updateRegistry(){const state=await api('/api/state');approvals=state.approvals||[];queue=state.queue||[];showApproval();}
+/* zoom like a standard image viewer (the user, 24/10): the wheel zooms toward the cursor in steps, − / ＋ and the
+   keys + − 0 (fit) 1 (1:1), a % box with presets, double click toggles fit / 1:1, drag with the hand (or Space,
+   or the middle button) to move */
+const zoomSteps=[5,10,15,20,25,33,50,67,75,100,125,150,200,300,400,500,600,800,1000,1200,1600,2000,2400,3200];
+for(const v of zoomSteps){const o=el('option');o.value=v+'%';$('zoomSteps').append(o);}
 function resize() {
   if (!current) return;
   $('paper').style.width = current.width * scale + 'px'; $('paper').style.height = current.height * scale + 'px';
-  $('zoom').value = scale * 100; $('zoomValue').textContent = Math.round(scale * 100) + '%';$('zoomNumber').value=Math.round(scale*100); renderClouds();
+  if(document.activeElement!==$('zoomNumber'))$('zoomNumber').value=Math.round(scale*100)+'%'; renderClouds();
 }
-function fit() { if (!current) return; fitMode=true; scale = Math.max(.03,Math.min(($('viewport').clientWidth - 24) / current.width, ($('viewport').clientHeight - 24) / current.height, 4)); resize(); $('viewport').scrollTo(0,0); }
+function fitScale(){return Math.max(.03,Math.min(($('viewport').clientWidth - 24) / current.width, ($('viewport').clientHeight - 24) / current.height, 8));}
+function fit() { if (!current) return; fitMode=true; scale = fitScale(); resize(); $('viewport').scrollTo(0,0); }
 function zoomTo(value, anchor) {
   if(!current)return; fitMode=false;
   const viewport=$('viewport'),before=$('paper').getBoundingClientRect(),vr=viewport.getBoundingClientRect();
@@ -110,26 +135,72 @@ function zoomTo(value, anchor) {
   scale=Math.max(.05,Math.min(32,value));resize();
   const after=$('paper').getBoundingClientRect();viewport.scrollLeft+=after.left+px*scale-p.x;viewport.scrollTop+=after.top+py*scale-p.y;
 }
-$('fit').onclick = fit; $('zoom').oninput = () => zoomTo(Number($('zoom').value)/100);
-$('zoom').max='3200';
-const zoomNumber=el('input');zoomNumber.id='zoomNumber';zoomNumber.type='number';zoomNumber.min='5';zoomNumber.max='3200';zoomNumber.setAttribute('aria-label','Zoom en porcentaje');$('zoomValue').before(zoomNumber);$('zoomValue').hidden=true;zoomNumber.onchange=()=>zoomTo(Number(zoomNumber.value)/100);
-const fitWidth=el('button','','Ancho');fitWidth.id='fitWidth';$('fit').after(fitWidth);fitWidth.onclick=()=>zoomTo(($('viewport').clientWidth-24)/current.width);
-$('actual').onclick=()=>zoomTo(1);$('minus').onclick=()=>zoomTo(scale/1.5);$('plus').onclick=()=>zoomTo(scale*1.5);
-$('viewport').addEventListener('wheel',e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();zoomTo(scale*Math.exp(-e.deltaY*.004),{x:e.clientX,y:e.clientY});},{passive:false});
+function zoomStep(dir,anchor){
+  const now=scale*100*(1+dir*1e-6);
+  const next=dir>0?zoomSteps.find(v=>v>now):[...zoomSteps].reverse().find(v=>v<now);
+  if(next)zoomTo(next/100,anchor);
+}
+$('fit').onclick = fit;
+$('zoomNumber').onchange=()=>{const v=parseFloat($('zoomNumber').value);if(v>0)zoomTo(v/100);else resize();};
+$('zoomNumber').onkeydown=e=>{if(e.key==='Enter'){$('zoomNumber').onchange();$('zoomNumber').blur();}if(e.key==='Escape'){$('zoomNumber').blur();resize();}};
+$('zoomNumber').onfocus=()=>$('zoomNumber').select();$('zoomNumber').onblur=()=>resize();
+$('fitWidth').onclick=()=>zoomTo(($('viewport').clientWidth-24)/current.width);
+$('actual').onclick=()=>zoomTo(1);$('minus').onclick=()=>zoomStep(-1);$('plus').onclick=()=>zoomStep(1);
+let wheelRest=0;
+$('viewport').addEventListener('wheel',e=>{
+  if(!current||e.shiftKey&&!e.ctrlKey)return; /* Shift + wheel scrolls sideways */
+  e.preventDefault();
+  if(e.ctrlKey&&!Number.isInteger(e.deltaY)){zoomTo(scale*Math.exp(-e.deltaY*.01),{x:e.clientX,y:e.clientY});return;} /* trackpad pinch: smooth */
+  wheelRest+=e.deltaMode?e.deltaY*40:e.deltaY;if(Math.abs(wheelRest)<40)return;
+  zoomStep(wheelRest<0?1:-1,{x:e.clientX,y:e.clientY});wheelRest=0;
+},{passive:false});
+$('viewport').addEventListener('dblclick',e=>{if(!current||mode==='draw'||mode==='pen'||mode==='eraser')return;if(fitMode||Math.abs(scale-fitScale())<.01)zoomTo(1,{x:e.clientX,y:e.clientY});else fit();});
+window.addEventListener('keydown',e=>{
+  if(document.querySelector('dialog[open]')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undoDoodle();return;}
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key;
+  if(k==='+'||k==='=')zoomStep(1);else if(k==='-'||k==='_')zoomStep(-1);else if(k==='0')fit();else if(k==='1')zoomTo(1);
+  else if(k==='n'||k==='N')setMode('draw');else if(k==='p'||k==='P')setMode('pen');else if(k==='e'||k==='E')setMode('eraser');
+  else if(k==='h'||k==='H')setMode('hand');else if(k==='v'||k==='V')setMode('select');else return;
+  e.preventDefault();
+});
 window.addEventListener('resize', ()=>{positionDeskControls();if(fitMode)fit();else resize();});
 $('focus').onclick=()=>{document.body.classList.toggle('focus-mode');positionDeskControls();$('focus').textContent=document.body.classList.contains('focus-mode')?'Restaurar paneles ⛶':'Ampliar mesa ⛶';fit();};
 let spaceHeld=false,pan=null;
 window.addEventListener('keydown',e=>{if(e.code==='Space'&&!document.querySelector('dialog[open]')&&!['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName)){spaceHeld=true;e.preventDefault();}});
 window.addEventListener('keyup',e=>{if(e.code==='Space')spaceHeld=false;});window.addEventListener('blur',()=>{spaceHeld=false;pan=null;});
-$('viewport').addEventListener('pointerdown',e=>{if(e.button===1||(spaceHeld&&e.button===0)){e.preventDefault();e.stopPropagation();pan={x:e.clientX,y:e.clientY,left:$('viewport').scrollLeft,top:$('viewport').scrollTop};$('viewport').setPointerCapture(e.pointerId);}},true);
+$('viewport').addEventListener('pointerdown',e=>{if(e.button===1||((spaceHeld||mode==='hand')&&e.button===0)){$('viewport').classList.add('panning');e.preventDefault();e.stopPropagation();pan={x:e.clientX,y:e.clientY,left:$('viewport').scrollLeft,top:$('viewport').scrollTop};$('viewport').setPointerCapture(e.pointerId);}},true);
 $('viewport').addEventListener('pointermove',e=>{if(pan){$('viewport').scrollLeft=pan.left+pan.x-e.clientX;$('viewport').scrollTop=pan.top+pan.y-e.clientY;}});
-$('viewport').addEventListener('pointerup',()=>pan=null);$('viewport').addEventListener('pointercancel',()=>pan=null);
+$('viewport').addEventListener('pointerup',()=>{pan=null;$('viewport').classList.remove('panning');});$('viewport').addEventListener('pointercancel',()=>pan=null);
 $('showNotes').onclick=()=>document.body.classList.toggle('notes-open');$('closeNotes').onclick=()=>document.body.classList.remove('notes-open');
 $('assetPicker').onchange=()=>choose($('assetPicker').value);
 $('refresh').onclick=async()=>{try{await flushGeneral();await saveChain;const state=await api('/api/state');assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];await choose(current?.id||assets[0].id);toast('Versiones actualizadas');}catch(e){toast(e.message);}};
 document.body.dataset.density='compact'; /* one interface size (the user, 24/10: the compact one, no selector) */
-function setMode(value) { mode=value; $('draw').classList.toggle('active',value==='draw'); $('select').classList.toggle('active',value==='select'); $('overlay').classList.toggle('selecting',value==='select'); }
-$('draw').onclick = () => setMode('draw'); $('select').onclick = () => setMode('select');
+function setMode(value) {
+  if(historical&&(value==='draw'||value==='pen'||value==='eraser'))value='select';
+  mode=value;for(const k of ['draw','pen','eraser','hand','select'])$(k).classList.toggle('active',k===value);
+  $('overlay').classList.toggle('selecting',value==='select');$('overlay').dataset.mode=value;$('viewport').dataset.mode=value;
+  $('penTools').classList.toggle('on',value==='pen'||value==='eraser');
+  $('toolHint').textContent={draw:'Arrastra una zona para comentarla',pen:'Dibuja a mano alzada · Ctrl+Z deshace',eraser:'Pasa sobre un trazo para borrarlo',hand:'Arrastra para mover · doble clic: ajustar / 1:1',select:'Toca una nube para editarla'}[value]+' · rueda: zoom';
+}
+$('draw').onclick = () => setMode('draw'); $('select').onclick = () => setMode('select');$('pen').onclick=()=>setMode('pen');$('eraser').onclick=()=>setMode('eraser');$('hand').onclick=()=>setMode('hand');
+/* pen strokes over the image (the user, 24/10: like Windows' screenshot markup, eight colours): stored per version,
+   normalized points, the width in image pixels (the screen width chosen, at the zoom it was drawn) */
+let penColor='#e53935',penWidth=5,stroke=null,undoStack=[];
+try{penColor=localStorage.getItem('atlas-pen-color')||penColor;penWidth=Number(localStorage.getItem('atlas-pen-width'))||penWidth;}catch{}
+function remember(k,v){try{localStorage.setItem(k,v);}catch{}}
+function paintPen(){for(const b of document.querySelectorAll('.swatch'))b.classList.toggle('active',b.dataset.color===penColor);for(const b of document.querySelectorAll('[data-width]'))b.classList.toggle('active',Number(b.dataset.width)===penWidth);}
+for(const b of document.querySelectorAll('.swatch'))b.onclick=()=>{penColor=b.dataset.color;remember('atlas-pen-color',penColor);paintPen();if(mode!=='pen')setMode('pen');};
+for(const b of document.querySelectorAll('[data-width]'))b.onclick=()=>{penWidth=Number(b.dataset.width);remember('atlas-pen-width',penWidth);paintPen();if(mode!=='pen')setMode('pen');};
+paintPen();
+function strokePath(d){const w=current.width,h=current.height,p=d.points;if(p.length===1)return `M ${p[0][0]*w} ${p[0][1]*h} l 0.001 0`;let s=`M ${p[0][0]*w} ${p[0][1]*h}`;
+  for(let i=1;i<p.length-1;i++){const mx=(p[i][0]+p[i+1][0])/2*w,my=(p[i][1]+p[i+1][1])/2*h;s+=` Q ${p[i][0]*w} ${p[i][1]*h} ${mx} ${my}`;}
+  const l=p.at(-1);return s+` L ${l[0]*w} ${l[1]*h}`;}
+function eraseDoodle(id){const i=current.doodles.findIndex(d=>d.id===id);if(i<0)return;undoStack.push({erase:current.doodles[i],at:i});current.doodles.splice(i,1);renderNotes();persist();}
+function undoDoodle(){if(historical||!current)return;const u=undoStack.pop();if(!u)return;if(u.add)current.doodles=current.doodles.filter(d=>d.id!==u.add);else current.doodles.splice(Math.min(u.at,current.doodles.length),0,u.erase);renderNotes();persist();}
+$('undo').onclick=undoDoodle;
+$('clearDoodles').onclick=()=>{if(historical||!current?.doodles.length)return;if(!confirm('¿Borrar los '+current.doodles.length+' trazos de esta versión? (Ctrl+Z los recupera)'))return;for(let i=current.doodles.length-1;i>=0;i--)undoStack.push({erase:current.doodles[i],at:i});current.doodles=[];renderNotes();persist();};
 function point(e) { const r = $('overlay').getBoundingClientRect(); return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}; }
 function rectangle(a,b) { return {x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(a.x-b.x),h:Math.abs(a.y-b.y)}; }
 function pixels(n){return [Math.floor(n.x*current.width),Math.floor(n.y*current.height),Math.min(current.width,Math.ceil((n.x+n.w)*current.width)),Math.min(current.height,Math.ceil((n.y+n.h)*current.height))];}
@@ -148,6 +219,12 @@ function cloudPath(n) {
 }
 function renderClouds() {
   $('overlay').replaceChildren(); if(!current)return;
+  for(const d of [...(current.doodles||[]),...(stroke?[stroke]:[])]){
+    const path=svg('path',{d:strokePath(d),class:'doodle',stroke:d.color,'stroke-width':d.width});
+    if(d!==stroke){path.addEventListener('pointerdown',e=>{if(mode==='eraser'&&!historical){e.stopPropagation();eraseDoodle(d.id);}});
+      path.addEventListener('pointerenter',e=>{if(mode==='eraser'&&!historical&&e.buttons&1)eraseDoodle(d.id);});}
+    $('overlay').append(path);
+  }
   for(const [i,n] of [...current.annotations,...(draft?[draft]:[])].entries()) {
     const path=svg('path',{d:cloudPath(n),class:'cloud'+(n.id===selected?' selected':'')});
     if(n.id) {
@@ -163,14 +240,21 @@ function renderClouds() {
     }
   }
 }
-$('overlay').addEventListener('pointerdown', e => {if(!current||historical||mode!=='draw'||e.button!==0)return; start=point(e); $('overlay').setPointerCapture(e.pointerId);});
-$('overlay').addEventListener('pointermove', e => {if(!start)return; draft=rectangle(start,point(e));renderClouds();});
+$('overlay').addEventListener('pointerdown', e => {
+  if(!current||historical||e.button!==0||spaceHeld)return;
+  if(mode==='pen'){const p=point(e);stroke={id:crypto.randomUUID(),color:penColor,width:+(penWidth/scale).toFixed(3),points:[[p.x,p.y]]};$('overlay').setPointerCapture(e.pointerId);renderClouds();return;}
+  if(mode!=='draw')return; start=point(e); $('overlay').setPointerCapture(e.pointerId);});
+$('overlay').addEventListener('pointermove', e => {
+  if(stroke){const p=point(e),l=stroke.points.at(-1),r=$('overlay').getBoundingClientRect();if(Math.hypot((p.x-l[0])*r.width,(p.y-l[1])*r.height)<1.5)return;
+    if(stroke.points.length<5000)stroke.points.push([p.x,p.y]);renderClouds();return;}
+  if(!start)return; draft=rectangle(start,point(e));renderClouds();});
 $('overlay').addEventListener('pointerup', e => {
+  if(stroke){const d=stroke;stroke=null;d.points=d.points.map(([x,y])=>[+x.toFixed(5),+y.toFixed(5)]);current.doodles.push(d);undoStack.push({add:d.id});renderNotes();persist();return;}
   if(!start)return; const rect=rectangle(start,point(e));start=null;draft=null;renderClouds();
   if(rect.w*current.width*scale<12||rect.h*current.height*scale<12)return;
   editing={id:crypto.randomUUID(),...rect,comment:'',category:'general',priority:'normal',expected:'',lesson:''};openEditor(true);
 });
-$('overlay').addEventListener('pointercancel',()=>{start=null;draft=null;renderClouds();});
+$('overlay').addEventListener('pointercancel',()=>{start=null;draft=null;stroke=null;renderClouds();});
 function openNote(id) { selected=id;renderClouds();if(historical)return;editing=structuredClone(current.annotations.find(n=>n.id===id));openEditor(false); }
 function openEditor(isNew) {
   for(const k of ['comment','category','priority','expected','lesson']) $(k).value=editing[k];
@@ -192,7 +276,9 @@ function renderNotes() {
     const b=el('button','note'),top=el('div','note-top');top.append(el('span','number',String(i+1).padStart(2,'0')),el('span','',categories[n.category]||n.category));
     const [x0,y0,x1,y1]=pixels(n);b.append(top,el('p','',n.comment||'Sin comentario'),el('small','',`${x1-x0} × ${y1-y0} px · ${n.priority}`));
     b.onclick=()=>openNote(n.id);$('notes').append(b);
-  } renderClouds();
+  }
+  const nd=(current.doodles||[]).length;if(nd){const b=el('div','note doodles');b.append(el('div','note-top','✎ Trazos de lápiz'),el('p','',nd+' trazo(s) sobre la imagen: van en el envío (imagen con garabatos y sus cajas).'));$('notes').append(b);}
+  renderClouds();
 }
 function persist() {
   if(!current||historical)return Promise.resolve();
@@ -201,7 +287,7 @@ function persist() {
     const latest=assets.find(a=>a.id===snapshot.id);snapshot.revision=latest.revision;
     const saved=await api('/api/save',snapshot);assets[assets.findIndex(a=>a.id===saved.id)]=saved;
     if(current?.id===saved.id)current.revision=saved.revision;
-    changed=false;await updateRegistry();libraryTab=current.status==='honors'?'accepted':'pending';gallery();showRevisions();$('saved').textContent='Guardado en este PC';return saved;
+    changed=false;await updateRegistry();gallery();showRevisions();$('saved').textContent='Guardado en este PC';return saved;
   });
   saveChain=task;task.catch(e=>{$('saved').textContent='Error al guardar';toast(e.message+' No cierres esta página.');});return task;
 }
@@ -213,12 +299,13 @@ $('submit').onclick=async()=>{
   $('submit').disabled=true;
   try {
     await flushGeneral();await saveChain;
-    const dirty=assets.filter(a=>a.revision!==a.submitted_revision&&(a.annotations.length||a.general.trim()||a.status!=='pending'));
+    const dirty=assets.filter(a=>a.revision!==a.submitted_revision&&(hasFeedback(a)||a.status!=='pending'));
     if(!dirty.length)throw Error('No hay comentarios nuevos para enviar.');
     const result=await api('/api/submit',{ids:dirty.map(a=>a.id),revisions:Object.fromEntries(dirty.map(a=>[a.id,a.revision]))});
     lastPath=result.path;$('receiptPath').textContent=result.path;$('openTxt').href=result.url;$('receipt').showModal();
     if(!$('openMd')){const link=el('a','button','Ver resumen MD ↗');link.id='openMd';link.target='_blank';$('openTxt').after(link);}$('openMd').href=result.markdown_url;
     for(const a of dirty)a.submitted_revision=a.revision;
+    await updateRegistry();gallery();
   }catch(e){toast(e.message);}finally{$('submit').disabled=false;}
 };
 $('closeReceipt').onclick=()=>$('receipt').close();$('copyPath').onclick=async()=>{try{await navigator.clipboard.writeText(lastPath);$('copyPath').textContent='Ruta copiada';}catch{toast('Selecciona y copia la ruta mostrada.');}};
@@ -255,8 +342,8 @@ $('history').onclick=async()=>{
     for(const e of result.events){
       const b=el('button','history-entry'),r=e.review;b.append(el('strong','',new Date(e.at).toLocaleString('es-CL')+' · revisión '+r.revision),el('small','',labels[r.status]+' · '+r.annotations.length+' nubes'),el('p','',r.annotations.map(n=>n.comment).join(' / ')||r.general||'Imagen recién importada'));
       b.onclick=()=>{
-        current=structuredClone(r);historical=true;$('historyBanner').hidden=false;$('status').value=r.status;$('general').value=r.general;
-        for(const k of ['status','general','draw','submit','rate'])$(k).disabled=true;
+        current=structuredClone(r);if(!current.doodles)current.doodles=[];historical=true;$('historyBanner').hidden=false;$('status').value=r.status;$('general').value=r.general;
+        for(const k of ['status','general','draw','pen','eraser','submit','rate'])$(k).disabled=true;
         $('historyDialog').close();setMode('select');renderNotes();showApproval();
       };$('historyEntries').append(b);
     }$('historyDialog').showModal();
@@ -268,7 +355,7 @@ function latestDescendant(id, list=assets){
   while(grew){grew=false;for(const a of list)if(descendants.has(a.parent_id)&&!descendants.has(a.id)){descendants.add(a.id);grew=true;}}
   return list.filter(a=>descendants.has(a.id)).at(-1)?.id||id;
 }
-function safeToUpdate(){return !historical&&!changed&&!generalTimer&&!start&&!document.querySelector('dialog[open]')&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);}
+function safeToUpdate(){return !historical&&!changed&&!generalTimer&&!start&&!stroke&&!document.querySelector('dialog[open]')&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);}
 async function applyPendingUpdate(){
   if(!pendingUpdate)return;
   if(!safeToUpdate())return toast('Termina o guarda el comentario abierto; la actualización queda esperando.');
@@ -309,6 +396,6 @@ api('/api/state').then(state=>{
     const historicalView=params.get('view')==='history';
     id=params.get('latest')==='1'?(state.latest_delivery_id||assets.at(-1).id):(historicalView?id:latestDescendant(id));
     const fam=state.approvals?.find(f=>f.version_ids.includes(id)),chosen=assets.find(a=>a.id===id);
-    choose(id,{follow:!historicalView,tab:chosen?.status==='honors'||fam?.approved_version===id?'accepted':'pending'});
+    choose(id,{follow:!historicalView,tab:true});
   }else{$('empty').hidden=false;$('paper').hidden=true;$('saved').textContent='Listo para importar';}
 }).catch(e=>toast(e.message));

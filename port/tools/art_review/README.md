@@ -34,9 +34,18 @@ El botón no manda mensajes ni despierta agentes. Pedir «lee el último envío�
 
 La interfaz compacta reserva el espacio para el arte. `Ampliar mesa` oculta paneles;
 en ventanas estrechas hay selector de imagen y panel de comentarios desplegable.
-Zoom 5–800%, botones +/−, 1:1, ajustar y Ctrl+rueda alrededor del cursor. Las nubes
-conservan sus coordenadas en la imagen y un trazo/etiqueta legible en pantalla.
-`Interfaz` cambia la densidad sin cambiar las coordenadas del arte.
+Zoom de visor estándar: la rueda acerca/aleja hacia el cursor por escalones (5–3200 %;
+Mayús+rueda desplaza en horizontal, el pellizco del trackpad es continuo), −/＋, casilla de
+% con valores sugeridos, Ajustar (0), Ancho, 1:1 (1), teclas + y −, doble clic alterna
+ajustar/1:1 (con Mover o Elegir), y se arrastra con la herramienta Mover (H), Espacio o el
+botón central. Las nubes conservan sus coordenadas en la imagen y un trazo legible.
+
+Herramientas: Nube (N), Lápiz (P), Borrador (E), Mover (H), Elegir (V). El lápiz dibuja a
+mano alzada como el marcador de capturas de Windows, en 8 colores (rojo, naranja, amarillo,
+verde, celeste, azul, magenta, negro) y 3 grosores; Ctrl+Z deshace, `Limpiar` borra los
+trazos de la versión. Los trazos se guardan por versión (puntos normalizados, grosor en
+píxeles de la imagen) y el envío los incluye: `<id>-garabatos.png`, el mapa de zonas con
+ellos, y en el TXT/MD/JSON cada trazo con su color y su caja en píxeles.
 
 La valoración está en el botón situado junto al título. Se exporta incluso sin nubes.
 `Historial` permite abrir versiones anteriores y consultar sus revisiones en modo de
@@ -78,14 +87,14 @@ fuera del bloque original, comprueba los cinco frames y registra una propuesta h
 
 ## Catálogo y espacio de revisión
 
-Una tarjeta por pieza, no por versión. `Preliminares` muestra su última propuesta
-pendiente; `Ya aceptados` muestra la aprobación vigente (indicando honores cuando
-corresponde). Una familia puede figurar en ambas si se intenta mejorar una aceptada.
+Una tarjeta por pieza, no por versión, en una sola pestaña: `Pre` = la última propuesta
+espera tu revisión; `Rev` = ya enviaste nubes, trazos o comentario y se espera la versión
+nueva del agente (para no revisarla dos veces); `Aprobado`, con dos subpestañas:
+`Aprobados` (aprobación normal vigente) y `★ Honores` (la versión con honores para build).
 Todas las revisiones anteriores y sus comentarios siguen disponibles en Historial.
 
 En escritorio los controles se trasladan a la columna derecha para dedicar toda la
-altura a la imagen. Zoom 5–3200%, porcentaje editable, ajuste al ancho, Ctrl+rueda y
-espacio+arrastrar (o botón central) para desplazarse. En ventanas estrechas los tabs
+altura a la imagen. En ventanas estrechas los tabs
 y el selector aparecen sobre el lienzo.
 
 `sync_catalog.py --arenas <carpeta-v2-after>` cataloga las entregas V1 `ready` y V2,

@@ -45,6 +45,25 @@ class ReviewTest(unittest.TestCase):
         self.store.save(child)
         self.assertIn('honores', self.store.queue()[0]['todo'])
 
+    def test_doodles(self):
+        """pen strokes are kept, validated, drawn into the delivery and count as feedback for the queue"""
+        stroke = dict(id='t1', color='#FDD835', width=4, points=[[.1, .1], [.5, .5], [.9, .2]])
+        self.a['doodles'] = [stroke]
+        self.a = self.store.save(self.a)
+        self.assertEqual(self.store.get(self.a['id'])['doodles'][0]['color'], '#fdd835')
+        for bad in (dict(stroke, color='#123456'), dict(stroke, width=0), dict(stroke, points=[]),
+                    dict(stroke, points=[[0, 'x']])):
+            with self.assertRaises(ValueError):
+                self.store.save(dict(self.a, doodles=[bad]))
+        result = self.store.submit([self.a['id']], {self.a['id']: self.a['revision']})
+        folder = Path(result['path']).parent
+        asset = json.loads((folder / 'comentarios.json').read_text(encoding='utf-8'))['assets'][0]
+        self.assertEqual(asset['doodle_summary'][0]['color_name'], 'amarillo')
+        with Image.open(folder / asset['doodled']) as im:
+            self.assertEqual(im.convert('RGB').getpixel((50, 40)), (0xfd, 0xd8, 0x35))
+        self.assertIn('amarillo', Path(result['path']).read_text(encoding='utf-8'))
+        self.assertEqual(self.store.queue()[0]['turn'], 'agente')
+
     def test_persistence_batch_crop_hash_and_learning(self):
         self.a['annotations'] = [self.note(), dict(self.note(),id='nube-dos',x=.6,w=.2)]
         self.a['general'] = 'Criterio humano: ñ y acentos'
