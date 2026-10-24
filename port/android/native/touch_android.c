@@ -31,19 +31,21 @@ static void CenterLayout(int w,int h) {
 }
 #endif
 static const Button buttons[]={
-    {.13f,.34f,0x200,"L",0},{.87f,.34f,0x100,"R",0},
+    {.12f,.42f,0x200,"L",0},{.88f,.42f,0x100,"R",0},
     /* the face buttons in a diamond like a pad's: A right, B below, roll left, stock above (user 24/10); ox/oy in
        screen heights from the diamond's centre, so the spacing holds on any screen shape */
-    {.82f,.64f,1,"A",0,.135f,0},{.82f,.64f,2,"B",0,0,.135f},
-    {.82f,.64f,PORT_KEY_DODGE,"",1,-.135f,0},{.82f,.64f,PORT_KEY_STOCK,"",2,0,-.135f},
-    {.45f,.93f,4,"SELECT",0},{.55f,.93f,8,"START",0},
-    {.95f,.17f,12,"...",0}
+    {.86f,.72f,1,"A",0,.135f,0},{.86f,.72f,2,"B",0,0,.135f},
+    {.86f,.72f,PORT_KEY_DODGE,"",1,-.135f,0},{.86f,.72f,PORT_KEY_STOCK,"",2,0,-.135f},
+    {.44f,.94f,4,"SELECT",0},{.56f,.94f,8,"START",0},
+    {.95f,.08f,12,"...",0}
 };
 static uint16_t uiHeld;
 /* ---- where the controls are: each group at its place, moved by the player (gPortConfig.touchPos, the layout editor
-   below), in fractions of the 16:9 layout ---- */
+   below), in fractions of the 16:9 layout. Home is a current mobile game's layout (user 24/10): each thumb's cluster
+   low in its corner, the d-pad and the face diamond mirrored, L and R just above them where the thumb reaches, the
+   menu in the top corner ---- */
 enum { G_DPAD, G_L, G_R, G_FACE, G_SELECT, G_START, G_MENU, G_COUNT };
-static const float kGroupHome[G_COUNT][2]={{.13f,.73f},{.13f,.34f},{.87f,.34f},{.82f,.64f},{.45f,.93f},{.55f,.93f},{.95f,.17f}};
+static const float kGroupHome[G_COUNT][2]={{.13f,.74f},{.12f,.42f},{.88f,.42f},{.86f,.72f},{.44f,.94f},{.56f,.94f},{.95f,.08f}};
 static const uint8_t kButtonGroup[]={G_L,G_R,G_FACE,G_FACE,G_FACE,G_FACE,G_SELECT,G_START,G_MENU};
 static void GroupAt(int g,float* x,float* y) {
     *x=kGroupHome[g][0]+gPortConfig.touchPos[g][0]*.001f;
