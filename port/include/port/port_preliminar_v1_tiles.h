@@ -259,6 +259,21 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
          * isometric room separated by the back-wall diagonal. Repeat only
          * clean texture cells; BG1's table and BG3's fireplace/door stay put. */
         if (v[1]!=3) return 0;
+        /* the side walls go on to the edges along their diagonals (user
+         * 24/10): left, the carrot wallpaper and rail (columns 0..7, its
+         * motif repeats every 8 columns); right, a red pillar and its yellow
+         * lattice panel (columns 52..63); the floor below them as inside.
+         * The slanted checker above repeats every 8 rows on both walls, and
+         * both steps (8 and 12 columns) belong to its lattice. */
+        if (ox<0 || (oy<0 && ox<32)) {
+            sx=PortSceneTileMod(ox,8); sy=oy+(ox-sx)/2;
+            if (sy<0) sy=PortSceneTileMod(sy,8);
+            if (sy<h) { *x=sx; *y=sy; return 1; }
+        } else if (ox>=w || oy<0) {
+            sx=52+PortSceneTileMod(ox-52,12); sy=oy+(sx-ox)/2;
+            if (sy<0) sy=PortSceneTileMod(sy,8);
+            if (sy<h) { *x=sx; *y=sy; return 1; }
+        }
         {
             int diagonal=oy<0?0:oy>=h?128:ox<0?2*oy+ox:2*oy-(ox-w);
             if (diagonal<80) {
