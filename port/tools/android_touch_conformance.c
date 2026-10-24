@@ -33,6 +33,9 @@ int main(void) {
     finger(SDL_EVENT_FINGER_UP,13,0,0);
     finger(SDL_EVENT_FINGER_DOWN,13,.13f,.83f);assert(count==2 && received[1]==SDLK_DOWN);
     finger(SDL_EVENT_FINGER_UP,13,0,0);
+    /* a diagonal in a menu: only its main direction (down here), never down and right together */
+    {int before=count;finger(SDL_EVENT_FINGER_DOWN,15,.13f+.05f/aspect,.73f+.09f);
+     assert(count==before+1 && received[count-1]==SDLK_DOWN);finger(SDL_EVENT_FINGER_UP,15,0,0);}
     finger(SDL_EVENT_FINGER_DOWN,14,.91f,.62f);assert(received[count-1]==SDLK_RETURN);
     finger(SDL_EVENT_FINGER_UP,14,0,0);
     finger(SDL_EVENT_FINGER_DOWN,14,.83f,.79f);assert(received[count-1]==SDLK_ESCAPE);

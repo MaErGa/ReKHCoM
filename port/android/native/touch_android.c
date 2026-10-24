@@ -65,11 +65,15 @@ void PortAndroidTouchSettingsChanged(void) {
            !gPortConfig.hideTouchControls);
 #endif
 }
+static uint16_t TouchKeys(int menu);
 static void TouchUi(void) {
-    uint16_t keys=PortAndroidTouchKeys(), pressed=keys & ~uiHeld;
+    /* the menus take the d-pad's main direction only: a diagonal touch sent down and right together, so going down in
+       Options changed the resolution or opened Achievements by itself (user's report, 24/10) */
+    uint16_t keys=TouchKeys(1), pressed=keys & ~uiHeld;
     static const struct { uint16_t bit; SDL_Keycode key; } bindings[]={
         {0x40,SDLK_UP},{0x80,SDLK_DOWN},{0x20,SDLK_LEFT},{0x10,SDLK_RIGHT},
-        {1,SDLK_RETURN},{2,SDLK_ESCAPE},{4,SDLK_ESCAPE},{8,SDLK_ESCAPE}
+        {1,SDLK_RETURN},{2,SDLK_ESCAPE},{4,SDLK_ESCAPE},{8,SDLK_ESCAPE},
+        {0x200,SDLK_Q},{0x100,SDLK_E} /* L and R: the Achievements page's filter */
     };
     int i;
     uiHeld=keys;
@@ -116,7 +120,8 @@ void PortAndroidTouchEvent(const void* event) {
         TouchUi();
     }
 }
-uint16_t PortAndroidTouchKeys(void) {
+uint16_t PortAndroidTouchKeys(void) { return TouchKeys(0); }
+static uint16_t TouchKeys(int menu) {
 #ifdef __EMSCRIPTEN__
     if(!touchEnabled)return 0;
 #endif
@@ -131,6 +136,7 @@ uint16_t PortAndroidTouchKeys(void) {
 #endif
         float dx=(fx-.13f)*aspect,dy=fy-.73f;
         if(panels && SDL_fabsf(dx)<.17f && SDL_fabsf(dy)<.17f) {
+            if(menu) { if(SDL_fabsf(dx)>SDL_fabsf(dy)) dy=0; else dx=0; }
             if(dx<-.035f) keys|=0x20;
             if(dx>.035f) keys|=0x10;
             if(dy<-.035f) keys|=0x40;
