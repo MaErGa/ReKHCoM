@@ -93,6 +93,14 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
     }
     if (v[0]==44) {
         int diagonal=2*oy+ox;
+        if (v[1]==2) {
+            /* the town behind (user 24/10): to the left its low houses
+             * (columns 12..23), to the right the arcade (37..48) repeat;
+             * the facade's top piece at 15..19 floated over the red wall */
+            if (oy>=23 && oy<26 && ox>=12 && ox<20) return 0;
+            if (oy>=16 && oy<23 && ox<12) { *x=12+PortSceneTileMod(ox-12,12); *y=oy; return 1; }
+            if (oy>=16 && oy<24 && ox>=49) { *x=37+PortSceneTileMod(ox-37,12); *y=oy; return 1; }
+        }
         if (v[1]==3 && oy<21 && (ox<11 || ox>=56 || oy<0)) {
             *x=11+PortSceneTileMod(ox-11,8); *y=oy<0?0:oy; return 1;
         }
