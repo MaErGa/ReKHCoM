@@ -12,6 +12,14 @@ Reglas del usuario:
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
 
+## 24/10 ~04:30 (Claude, sesión nueva)
+
+- **v2.0-pre6 interna (PC, pedida por el usuario)**: main ac97b2c33, zip `KHCoMPC/ReKHCoM-v2.0-pre6-windows-x86.zip`
+  (sha cc740111...) y copia `jugar/ReKHCoM-v2.0-pre6` + `Probar ReKHCoM v2.0 pre6.bat` (partidas de la pre5, HD
+  enlazado). Humo oculto `build/smoke_pc.sh`: 9/9 sin fallos. No publicada.
+- En curso: temas de botones táctiles (aprobados; plan en "TRASPASO FINAL 24/10").
+- Batería Riku JP (2 copias duplicadas, no cortar) corriendo sin fallos; Riku US terminó limpia.
+
 ## TRASPASO 24/10 — app local de revisión humana (PR #48)
 
 - Herramientas en `codex/art-review-local`, PR #48 para Claude; integrar cuando corresponda, sin merge
