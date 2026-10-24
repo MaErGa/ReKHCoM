@@ -32,6 +32,23 @@ Reglas del usuario:
 - El usuario pidió cerrar lógica y PR; conservar pausado el resto del carril artístico hasta nuevas instrucciones.
 
 
+## TRASPASO FINAL 24/10 (Claude, sin tokens) — LEER PRIMERO
+
+**Cómo retomar:** main al día (último 8ed7afa6a+). Leer este bloque y el de abajo ("madrugada"). La app de revisión de
+arte: `Revisar preliminares.bat` (raíz KHCoMPC; código de khcom-claude-int, datos en khcom-codex/build/art-review);
+qué falta en arte: `khcom-codex/build/art-review/COLA_PARA_AGENTES.md`. Solo se integra al juego lo aprobado con
+honores en esa app. Codex lleva los artes y las Preliminares.
+
+**Espera al usuario:** (1) temas de botones táctiles Clear/Dark/Color (`pruebas/Botones tactiles - *.png`); al
+aprobar: implementarlos en `port/android/native/touch_android.c` (Sora de la ROM `gSor1ll67`, cuadros 2-4 como estela;
+acumular = diseño original stock.svg), opción "Tema de botones" en gris sin táctil; luego el editor para mover
+botones/HUD (fluido). (2) Darkside r3 (03, 05, 06, 07) en la app.
+
+**Siguiente, en orden:** Darkside 04 (dibujo sin espejar; Codex o a mano); ejemplos visuales en la elección de modo
+(port_ui.c WIZ_MODE, copia + aprobación); launchers de Android y web iguales al de PC; rehacer las expectativas
+viejas de `test_text_options.py`; calidad constante HD (`hd_quality_probe.py`); stable v2.0 solo con OK del usuario
+(`release_check.py`, todas las plataformas). Ir mirando issues (0 abiertos al cierre).
+
 ## TRASPASO 24/10 madrugada (Claude) — LEER PRIMERO
 
 **Hecho y en main:**
