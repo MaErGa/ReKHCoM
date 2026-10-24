@@ -11,6 +11,27 @@ Reglas del usuario:
 - Nunca borrar carpetas ReKHCoM-vX sin que el usuario lo pida.
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
+
+## TRASPASO 24/10 — app local de revisión humana (PR #48)
+
+- Herramientas en `codex/art-review-local`, PR #48 para Claude; integrar cuando corresponda, sin merge
+  automático ni incorporar la rama entera `codex/preliminar-v1` (contiene propuestas y WIP124).
+- Leer **HANDOFF_REVISION_APP.md** y `port/tools/art_review/README.md` antes de procesar arte o aprobaciones.
+- Un único BAT raíz `Revisar preliminares.bat` y servidor127.0.0.1:8766; launcher actualiza/reutiliza,
+  pestañas recargan y conservan el comentario en edición. Instalar el BAT con `install_launcher.py --root`.
+- Catálogo agrupado por pieza; tabs Preliminares/Ya aceptados, todas las revisiones seleccionables con
+  nubes previas e historial. Aprobar/filtrar no debe cambiar la pieza activa. Darkside03v2 es hija de03v1.
+- Leer `build/art-review/ULTIMO_ENVIO.txt`, MD/TXT/JSON, snapshots y recortes; comprobar SHA e IDs de nube.
+  Devolver cada mejora a la misma app con `parent_id` y ficha que vincule feedback, cambio, técnica y pruebas.
+- Una hija pendiente/rechazada conserva la anterior aprobada. Para build consultar `build_reference` y
+  `aprobaciones_build.json`: regla vigente de preliminares con **honores**. No activar arte desde la app.
+- Aprobación humana de Coliseo121 con honores (`1ee40e4e6`) registrada; integración aislada pendiente.
+  Darkside01 y03v2 están aprobados normalmente, no con honores;03 tiene nube posterior para ajustar altura.
+- Imágenes, ROM y comentarios privados no van en PR. La base local/paquetes se conservan en este PC.
+  El JSONL es memoria trazable de feedback y resultados; no afirmar entrenamiento neuronal automático.
+- El usuario pidió cerrar lógica y PR; conservar pausado el resto del carril artístico hasta nuevas instrucciones.
+
+
 ## TRASPASO 24/10 noche (Claude, sesión nueva) — LEER PRIMERO
 
 **Hecho (main 62ff8d10d, 004e4260d):** opciones que necesitan archivos (partes del mod HD, ROM japonesa del undub)
