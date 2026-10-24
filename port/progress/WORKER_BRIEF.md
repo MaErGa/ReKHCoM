@@ -35,3 +35,14 @@ Fricción conocida: en bash las rutas van como `/d/01Claude/...`, no `D:/...`. U
 Fricción ronda 3 (r3c): `import_image.py` exige `--title` y `--version`. En un worktree, `ninja -C build/pc-eu` falla: usar `ninja -f build/pc-eu/build.ninja` desde la raíz.
 Los hashes de una escena nueva salen de `inventory_preliminar_v1.py`; NO regenerar todo el `.inc` con `--generate` (cambia flags `ready` de otras escenas): insertar solo las filas de tu escena.
 057 y 061 están liberadas con diagnóstico (decisión de tile-map mayor): no las tomes con `next`; usa `next --prefix escena-08 --prefix escena-09 ...`.
+
+## REGLA 25/10 (usuario): intentar SIEMPRE antes de devolver
+Una pieza NO se libera por comentario vago, ambigua o difícil sin haber hecho un intento real. Mínimo por pieza:
+1. Partir de la base automática: la receta de la escena en `port/tools/preliminar_v1_recipes.py` (RECIPES, `READY`) y su perfil en
+   `port_preliminar_v1_tiles.h`; `python port/tools/preliminar_v1_recipes.py --generate` + `inventory_preliminar_v1.py` (hashes) dan la base
+   con la lógica ya aplicada (bandas con su período, bordes, voltear tiles). Mapa y rejilla: `build/preliminar-v1/inventory/eu/gEventBgNNN.png`.
+2. Capturar la base (`prelim_shot.sh NNN`), mirar la imagen, y mejorar SOLO lo que dicen las nubes (ajustar bandas, período, donante, cerrar borde).
+3. Subir el resultado a la app como hija (aunque sea parcial) con `--version` que diga qué hiciste y qué falta.
+Si queda una duda, NO hagas preguntas sin más: entrega tu mejor PROPUESTA (imagen) y en la versión escribe «Propuesta: asumí X; si no es así, dime Y».
+Solo se libera sin imagen si la pieza no es arte de escena (diario) o depende de otra aún no hecha.
+Las «CONSULTA — no entendí» subidas el 24/10 quedan sustituidas por tu hija con propuesta.
