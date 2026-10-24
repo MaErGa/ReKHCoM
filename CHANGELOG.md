@@ -26,6 +26,9 @@ HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes
   the d-pad, L, R, the face buttons, SELECT, START and the menu button where you want them (Android, web, Switch).
 - **Android**: the app opens on the same launcher as the PC's (home, enhancements, graphics, sound and controls,
   achievements, save editor), with the system's file pickers for dumps, saves and the PC's HD folder.
+- **Quick states are now off by default**, so a run plays as on the cartridge: turn them on in Options > Cheats
+  (only for testing or reproducing bugs). F5 saves, **F8 loads** (was F9), F6/F7 change the slot; no achievements
+  unlock while they are on.
 - First start: behind the mode question, how the screen will look with the mode you are on.
 - HD import on the graphics card, about twice as fast as before.
 

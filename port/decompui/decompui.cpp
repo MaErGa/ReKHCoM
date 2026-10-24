@@ -419,6 +419,7 @@ static const Setting kSettings[] = {
     { "cheat_unlock_riku", 0 },
     { "cheat_one_hit", 0 },
     { "cheat_infinite_hp", 0 },
+    { "cheat_savestates", 0 },
     { "debug_gba_map_logic", 0 },
     { "experimental_save_point_slot_select", 0 },
     { "experimental_hide_touch_controls", 0 },
@@ -2232,9 +2233,9 @@ static void PageControls() {
     ImGui::Spacing();
     ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
     ImGui::TextWrapped("%s", T("Fijos: Opciones F1 / Esc o Start + Select (en el inicio, solo Select), pantalla completa F11 o Alt+Enter, "
-                               "estados F5 / F9, zoom (vista Auto) + / - o Select + arriba / abajo en el mando.",
+                               "estados F5 / F8 (si se activan en Trucos), zoom (vista Auto) + / - o Select + arriba / abajo en el mando.",
                                "Fixed: options F1 / Esc or Start + Select (on the title screen, Select alone), fullscreen F11 or Alt+Enter, states "
-                               "F5 / F9, zoom (Auto view) + / - or Select + Up / Down on the gamepad."));
+                               "F5 / F8 (when turned on in Cheats), zoom (Auto view) + / - or Select + Up / Down on the gamepad."));
     ImGui::PopStyleColor();
     ImGui::EndChild();
     /* Issue #23: a Nintendo pad the system reports as an Xbox one (Steam Input, Lutris) */

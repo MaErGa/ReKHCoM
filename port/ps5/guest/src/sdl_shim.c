@@ -714,7 +714,7 @@ static void TouchpadHold(const HostPad* pads) {
 
 /* Save states, as F5 / F9 on the PC: the touchpad with L3 saves, the touchpad with R3 loads. */
 static void StateKeys(const HostPad* prev, const HostPad* now) {
-    static const struct { int bit; SDL_Keycode key; } keys[2] = { { 14, SDLK_F5 }, { 15, SDLK_F9 } };
+    static const struct { int bit; SDL_Keycode key; } keys[2] = { { 14, SDLK_F5 }, { 15, SDLK_F8 } };
     int i;
 
     if (!now->connected)
