@@ -2154,8 +2154,8 @@ static bool HdModCard() {
         ImGui::TextWrapped("%s", T("Fuente ocupa el máximo (el mod completo, unos 6,7 GB); Buena, unos 3,7 GB.",
                                    "Source takes the most space (the full mod, about 6.7 GB); Good, about 3.7 GB."));
     else
-        ImGui::TextWrapped("%s", T("Recodificar lleva unos minutos (el mod completo, 20-40 min según el equipo).",
-                                   "Re-encoding takes a few minutes (the full mod, 20-40 min depending on the machine)."));
+        ImGui::TextWrapped("%s", T("Recodificar lleva unos minutos (el mod completo, unos 10 min en un PC actual; más en uno antiguo).",
+                                   "Re-encoding takes a few minutes (the full mod, about 10 min on a current PC; more on an older one)."));
     ImGui::PopStyleColor();
     {
         char full[96];
