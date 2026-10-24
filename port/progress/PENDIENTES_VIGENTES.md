@@ -25,7 +25,11 @@ las tareas de Codex a **`claude-relevo`** (`recover-task`, con esa autorización
    con revisiones, exporta .tmj/.zip; rutas `/api/editor/*` en `server.py`). La interfaz no existe aún: solo las
    librerías en `khcom-resume/port/tools/art_review/web/vendor/` (Sortable, Fuse, hotkeys). Falta: editor.html/js/css
    (paleta de tiles y piezas, pintar, capas, voltear, deshacer, guardar), sprites (parámetro `sprites` sin usar).
-2. **Mod HD, selector de calidad al cargar:** ordenar por peso: Original (fuente) → Buena → Ahorro (la tipo Android).
+2. ~~Mod HD, selector ordenado por peso~~ hecho (#63): Original → Buena (sugerida) → Ahorro → básico; texto "~10 min".
+2b. **Savestates para la v2.0 (usuario 24/10, ANTES de publicar):** cargar pasa a **F8**; **desactivados por defecto**;
+   el interruptor va en **Trucos** con aviso al activarlos («solo para pruebas o replicar bugs; mientras estén activos
+   no se desbloquean logros»); con ellos activos el juego **no desbloquea logros** (ni oficiales offline ni RA). Objetivo:
+   lo más parecido a una partida oficial. Probar: tecla F8, aviso, logro bloqueado con la opción activa, launcher e ini.
 3. Verificar que todo lo aprobado con honores esté encendido para jugadores y sin fallos (lista en LOGICA_APROBADOS).
 4. Limpiar restos de pruebas en C: y D: (nunca carpetas ReKHCoM-vX; quitar enlaces antes de borrar).
 5. Cola de arte de la app (escenas 004/057/061/074 con la lógica corregida, 087 090 095 099 102 112 115-120, jefes).
