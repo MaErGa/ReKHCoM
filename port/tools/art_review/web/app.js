@@ -117,7 +117,7 @@ function showApproval(){
 async function updateRegistry(){const state=await api('/api/state');approvals=state.approvals||[];queue=state.queue||[];showApproval();}
 /* zoom like a standard image viewer (the user, 24/10): the wheel zooms toward the cursor in steps, − / ＋ and the
    keys + − 0 (fit) 1 (1:1), a % box with presets, double click toggles fit / 1:1, drag with the hand (or Space,
-   or the middle button) to move */
+   or the middle / right button) to move */
 const zoomSteps=[5,10,15,20,25,33,50,67,75,100,125,150,200,300,400,500,600,800,1000,1200,1600,2000,2400,3200];
 for(const v of zoomSteps){const o=el('option');o.value=v+'%';$('zoomSteps').append(o);}
 function resize() {
@@ -169,10 +169,33 @@ window.addEventListener('resize', ()=>{positionDeskControls();if(fitMode)fit();e
 $('focus').onclick=()=>{document.body.classList.toggle('focus-mode');positionDeskControls();$('focus').textContent=document.body.classList.contains('focus-mode')?'Restaurar paneles ⛶':'Ampliar mesa ⛶';fit();};
 let spaceHeld=false,pan=null;
 window.addEventListener('keydown',e=>{if(e.code==='Space'&&!document.querySelector('dialog[open]')&&!['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName)){spaceHeld=true;e.preventDefault();}});
-window.addEventListener('keyup',e=>{if(e.code==='Space')spaceHeld=false;});window.addEventListener('blur',()=>{spaceHeld=false;pan=null;});
-$('viewport').addEventListener('pointerdown',e=>{if(e.button===1||((spaceHeld||mode==='hand')&&e.button===0)){$('viewport').classList.add('panning');e.preventDefault();e.stopPropagation();pan={x:e.clientX,y:e.clientY,left:$('viewport').scrollLeft,top:$('viewport').scrollTop};$('viewport').setPointerCapture(e.pointerId);}},true);
-$('viewport').addEventListener('pointermove',e=>{if(pan){$('viewport').scrollLeft=pan.left+pan.x-e.clientX;$('viewport').scrollTop=pan.top+pan.y-e.clientY;}});
-$('viewport').addEventListener('pointerup',()=>{pan=null;$('viewport').classList.remove('panning');});$('viewport').addEventListener('pointercancel',()=>pan=null);
+const panViewport=$('viewport');
+function endPan(e){
+  if(!pan||(e?.pointerId!==undefined&&e.pointerId!==pan.pointerId))return;
+  const pointerId=pan.pointerId;pan=null;panViewport.classList.remove('panning');
+  if(panViewport.hasPointerCapture(pointerId))panViewport.releasePointerCapture(pointerId);
+}
+window.addEventListener('keyup',e=>{if(e.code==='Space')spaceHeld=false;});
+window.addEventListener('blur',()=>{spaceHeld=false;endPan();});
+panViewport.addEventListener('contextmenu',e=>e.preventDefault());
+panViewport.addEventListener('pointerdown',e=>{
+  if(pan||!(e.button===2||e.button===1||((spaceHeld||mode==='hand')&&e.button===0)))return;
+  e.preventDefault();e.stopPropagation();
+  pan={pointerId:e.pointerId,buttons:e.button===2?2:e.button===1?4:1,x:e.clientX,y:e.clientY,left:panViewport.scrollLeft,top:panViewport.scrollTop};
+  panViewport.classList.add('panning');panViewport.setPointerCapture(e.pointerId);
+},true);
+panViewport.addEventListener('pointermove',e=>{
+  if(!pan||e.pointerId!==pan.pointerId)return;
+  e.preventDefault();e.stopPropagation();
+  if(!(e.buttons&pan.buttons)){endPan(e);return;}
+  panViewport.scrollLeft=Math.max(0,Math.min(panViewport.scrollWidth-panViewport.clientWidth,pan.left+pan.x-e.clientX));
+  panViewport.scrollTop=Math.max(0,Math.min(panViewport.scrollHeight-panViewport.clientHeight,pan.top+pan.y-e.clientY));
+},true);
+for(const event of ['pointerup','pointercancel'])window.addEventListener(event,e=>{
+  if(!pan||e.pointerId!==pan.pointerId)return;
+  e.preventDefault();e.stopPropagation();endPan(e);
+},true);
+panViewport.addEventListener('lostpointercapture',endPan);
 $('showNotes').onclick=()=>document.body.classList.toggle('notes-open');$('closeNotes').onclick=()=>document.body.classList.remove('notes-open');
 $('assetPicker').onchange=()=>choose($('assetPicker').value);
 $('refresh').onclick=async()=>{try{await flushGeneral();await saveChain;const state=await api('/api/state');assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];await choose(current?.id||assets[0].id);toast('Versiones actualizadas');}catch(e){toast(e.message);}};
@@ -182,7 +205,7 @@ function setMode(value) {
   mode=value;for(const k of ['draw','pen','eraser','hand','select'])$(k).classList.toggle('active',k===value);
   $('overlay').classList.toggle('selecting',value==='select');$('overlay').dataset.mode=value;$('viewport').dataset.mode=value;
   $('penTools').classList.toggle('on',value==='pen'||value==='eraser');
-  $('toolHint').textContent={draw:'Arrastra una zona para comentarla',pen:'Dibuja a mano alzada · Ctrl+Z deshace',eraser:'Pasa sobre un trazo para borrarlo',hand:'Arrastra para mover · doble clic: ajustar / 1:1',select:'Toca una nube para editarla'}[value]+' · rueda: zoom';
+  $('toolHint').textContent={draw:'Arrastra una zona para comentarla',pen:'Dibuja a mano alzada · Ctrl+Z deshace',eraser:'Pasa sobre un trazo para borrarlo',hand:'Arrastra para mover · doble clic: ajustar / 1:1',select:'Toca una nube para editarla'}[value]+' · botón derecho: mover · rueda: zoom';
 }
 $('draw').onclick = () => setMode('draw'); $('select').onclick = () => setMode('select');$('pen').onclick=()=>setMode('pen');$('eraser').onclick=()=>setMode('eraser');$('hand').onclick=()=>setMode('hand');
 /* pen strokes over the image (the user, 24/10: like Windows' screenshot markup, eight colours): stored per version,
