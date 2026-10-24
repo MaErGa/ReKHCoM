@@ -94,6 +94,8 @@ Flujo del worker: WORKER_BRIEF.md (imagen a la app primero; `--sent` obligatorio
 
 ## 7. Cerrado en esta síntesis (ya no son pendientes)
 
+- 24/10 noche: lógica GBA «Mejorado» también desvanece a los voladores (MapEnm01/04), probado en arnés (7 fades sin crash). Windows: prioridad alta, timer 1 ms, sin EcoQoS y clase MMCSS «Games» contra tirones al cambiar de ventana (falta el reporte del usuario jugando).
+
 Cuelgue Guard Armor 008/010 (era del arnés, resuelto); calidad HD (se queda «Buena»); vía GPU del importador (en main);
 savestates en Trucos (#65); orden del mod HD (#63) y carga que conserva lo cargado (#66); launchers de Android y web
 iguales al de PC; `test_text_options.py`; repo autosuficiente; paneo con zoom (#61); catálogo histórico cargado (#57);
