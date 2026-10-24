@@ -42,6 +42,16 @@ partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
   terminada en la partida (`GAME_FLAG_SORA_CLEAR`, p. ej. una partida importada del PC). Comprobar en el emulador con
   instalación limpia que el título muestre solo la partida normal; si aparece Riku sin truco ni partida, es bug.
 
+- **Elegir modo al primer arranque** (usuario 24/10, visto en Android): ofrecía "Modo HD" sin tener los assets
+  importados. Sin el mod HD: no ofrecer el Modo HD (como mucho, el texto HD dentro de GBA mejorado); ofrecer siempre
+  "GBA mejorado" y "GBA original/clásico". Agregar a cada opción **esquemas/ejemplos breves** (cartelitos con una
+  captura chica: resolución y vista ancha vs GBA, mejoras) para que se entienda cada modo. Es visual: entregar copia
+  + .bat y esperar aprobación. Código: `port_ui.c` (WIZ_MODE, sModeDesc*, `PortUiNeedsModeChoice`).
+- **Calidad constante (hd_quality_probe.py, 24/10)**: en 4 escenas, RC=3 Q=70 por hardware pesa 23 % menos que Buena
+  (151 vs 197 MB) con VMAF 95,4-96,1 (Buena 96,9-98,5); por software sale mal (VMAF ~52, descartado). Siguiente:
+  probar Q 75/80/85 por hardware y elegir el que pese menos que Buena con su misma VMAF; la VMAF de ROP da 44 en
+  todo (comparación desalineada en ese video: revisar el filtro antes de usarla).
+
 **Hecho hoy (todo en main):**
 - v2.0-pre3 y pre4 internas (PC); issues #40 #42 #45 cerrados (0 abiertos).
 - Jafar APROBADO y encendido (`port_jafar.c`); Oogie y Marluxia en Preliminar V2 (`KHCOM_ARENAS_V2=1`), copia
