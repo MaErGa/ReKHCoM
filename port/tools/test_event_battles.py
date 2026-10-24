@@ -49,7 +49,9 @@ def env_for(event):
     # that can be hit falls to a real hit (bosskill: no battlewin, whose warp left boss parts behind), the player
     # unharmed
     mode = ','.join([f'60:{room}', f'120:eventplay:{event}'] + [f'{f}:bosskill' for f in range(1000, FRAMES, 150)] +
-                    [f'{f}:noharm' for f in range(700, FRAMES, 300)])
+                    [f'{f}:noharm' for f in range(700, FRAMES, 300)] +
+                    # the orbs come to the player (Draw): a boss's never time out and its battle closes only once taken
+                    [f'{f}:drawprizes' for f in range(1000, FRAMES, 50)])
     return {'KHCOM_MODE': mode, 'KHCOM_KEYS': keys}
 
 

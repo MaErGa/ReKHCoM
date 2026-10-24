@@ -40,8 +40,13 @@ las tareas de Codex a **`claude-relevo`** (`recover-task`, con esa autorización
    no se desbloquean logros»); con ellos activos el juego **no desbloquea logros** (ni oficiales offline ni RA). Objetivo:
    lo más parecido a una partida oficial. Probar: tecla F8, aviso, logro bloqueado con la opción activa, launcher e ini.
 3. Verificar que todo lo aprobado con honores esté encendido para jugadores y sin fallos (lista en LOGICA_APROBADOS).
-3b. **Cuelgue Guard Armor (008) con bosskill** (el único documentado sin resolver): la derrota espera
-   `BgFxIsActive()` (chara.c `CharaObjUpdateDefeat`); reproducir con revancha fila 0 + bosskill y decidir arnés o juego.
+3b. **Cuelgue Guard Armor (008): RESUELTO, era del arnés, no del juego** (24/10). El cierre de un combate espera
+   `prizeCount == 0` (battle_runtime.c, fin): los orbes de jefe no caducan y hay que pasar por encima; el bot de
+   `test_event_battles` se quedaba quieto. Revancha: también esperaba A en la pantalla de recompensas (el ejecutable
+   viejo cierra igual con A). El contador `enemyCount` 254/255 es inofensivo (el cierre no lo usa). Arreglo: modo del
+   arnés `drawprizes` (efecto Atraer del juego, HC_EFFECT_DRAW) cada 50 cuadros en la prueba; `btllog` muestra fase,
+   paso, flags, premios y BgFx. 008 pasa. **Falta: 010 Axel** se queda con 1 premio que Atraer no trae (otro tipo:
+   btl_premire / carta premio / carta amigo); identificarlo con `btllog` y correr las 34 cadenas EU/US/JP.
 4. Limpiar restos de pruebas en C: y D: (nunca carpetas ReKHCoM-vX; quitar enlaces antes de borrar).
 5. Cola de arte de la app (escenas 004/057/061/074 con la lógica corregida, 087 090 095 099 102 112 115-120, jefes).
 
