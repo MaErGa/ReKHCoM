@@ -123,10 +123,9 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
    `pruebas/Botones tactiles - implementados en el juego (Clear Dark Color).png` (build `build/pc-touch` =
    build/pc con `-DPORT_TOUCH` y touch_android.c; `KHCOM_SHOT_TOUCH=1` los pone en las capturas del arnés).
    test_android_touch y test_web_controls (parte táctil) ok. Falta verlos en el emulador Android y en la web.
-   `input_controls_conformance` (test_web_controls) no compila desde antes: port_input.c ahora incluye cabeceras
-   del juego (mode.h, text_types.h); darle sus includes o separar lo que prueba.
-2. **Integrar lo aprobado con honores en la app**: Coliseo121 (`1ee40e4e6`), integración aislada; consultar
-   `build_reference` / `aprobaciones_build.json`. Darkside 01 y 03v2 aprobados normal (no entran aún).
+   `input_controls_conformance` vuelve a compilar y pasa (83d174409).
+2. **Integrar lo aprobado con honores en la app**: hecho 121, 122, 055 (lista única en port_ppu.c). Darkside 01
+   espera "Darkside · arena y contexto" (en Rev, turno del agente).
 3. **Elección de modo al primer arranque**: ejemplos visuales en cada opción (port_ui.c WIZ_MODE, a la app de
    revisión) y probarla en Android (sin mod HD ya va directo a GBA mejorado / clásico).
 4. **Launchers de Android y web iguales al de PC** (diseño y funciones; plan en el historial, "TRASPASO 24/10 tarde"):
@@ -136,12 +135,13 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
    emulador con instalación limpia); "Logros pegado" (pedir `kh_com.log` si vuelve); rendimiento en gama baja (línea
    `timing:`, toques tomados una sola vez con el juego lento); tablets: artes/fondos con el encuadre nuevo
    (LOGICA_APROBADOS.md); Jafar en el emulador (`test_android_scenarios.py --groups bosses`).
-6. `test_text_options.py`: rehacer sus expectativas viejas (filas y claves de config).
+6. ~~`test_text_options.py`~~ hecho (9e8316f06): por nombre de fila, corrida base + ruta; 7/7 EU/US/JP.
 7. Mod HD: calidad constante por hardware (`hd_quality_probe.py`, probar Q 75/80/85 y elegir la que pese menos que
    Buena con su VMAF; la VMAF de ROP está desalineada); peso real de Ahorro en `kScenesSize` (hd_import.inc).
-   Opcional: decodificar por GPU en el importador (hoy decodifica la CPU, ~5 hilos por video).
-8. Repo autosuficiente: revisar que las herramientas de EMPEZAR_AQUI.md corran sin rutas de este PC (23 ya usan
-   `REKHCOM_WORK`); `git count-objects -vH`.
+   Vía GPU (decodificar y codificar en la tarjeta) en main (0a42bcedf): Buena 237 → 203 s en la muestra; MP4
+   revisado (H.264 1080p, duración completa, decodifica limpio, cuadro correcto); test_launcher 11/11.
+8. ~~Repo autosuficiente~~ hecho (9e8316f06): ninguna herramienta con rutas de este PC (build_switch usa
+   `REKHCOM_WORK`); `git count-objects` sin paquetes sueltos.
 9. Baterías pendientes (arriba) y `debug_kit.py report` sin sitios nuevos.
 10. **Lista de verificación antes de publicar** (abajo) y la **v2.0 estable solo con el OK del usuario**.
 
