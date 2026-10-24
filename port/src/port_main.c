@@ -2507,7 +2507,39 @@ static void ResimCycle(void) {
     PortRollbackBoundary(gPortInMainLoop);
 }
 
+/* One line a second in the log of where a frame's time goes: the game's logic (between two VBlanks), the PPU, the
+   presentation, the port's other per-frame work, and the frames skipped. Always on the consoles and Android 64
+   (PORT_GBA_RELOC: the logs players send are how their speed is measured, SWITCH_MOTOR.md); KHCOM_TIMING elsewhere. */
+static uint64_t sCycleEnd, sTimeLogic, sTimeWork, sTimePresent, sTimePpu;
+static int sTimeFrames, sTimeSkipped;
+static uint64_t sPresentTicks;
+
+static void TimingLine(int skip, uint64_t cycleStart, uint64_t workEnd) {
+#ifndef PORT_GBA_RELOC
+    const char* on;
+    PORT_ENV_ONCE(on, SDL_getenv, "KHCOM_TIMING");
+    if (!on)
+        return;
+#endif
+    if (sCycleEnd && cycleStart > sCycleEnd)
+        sTimeLogic += cycleStart - sCycleEnd;
+    sTimeWork += workEnd - cycleStart;
+    sTimePresent += skip ? 0 : sPresentTicks;
+    sTimePpu += skip ? 0 : sPpuTicks;
+    sTimeSkipped += skip;
+    if (++sTimeFrames == 60) {
+        double ms = 1000.0 / SDL_GetPerformanceFrequency() / 60;
+        double drawn = 60 - sTimeSkipped ? 60.0 / (60 - sTimeSkipped) : 0;
+        PortLog("timing: logic %.1f ms, ppu %.1f, present %.1f, port %.1f (a frame; ppu/present per drawn frame) | "
+                "skipped %d of 60 | canvas %dx%d", sTimeLogic * ms, sTimePpu * ms * drawn, sTimePresent * ms * drawn,
+                (sTimeWork - sTimePpu - sTimePresent) * ms, sTimeSkipped, gPortScreen.width, gPortScreen.height);
+        sTimeLogic = sTimeWork = sTimePresent = sTimePpu = 0;
+        sTimeFrames = sTimeSkipped = 0;
+    }
+}
+
 static void VBlankCycle(void) {
+    uint64_t cycleStart = SDL_GetPerformanceCounter();
     const char* frameLogPath = SDL_getenv("KHCOM_FRAMELOG");
     uint64_t frameLogStart = frameLogPath ? SDL_GetPerformanceCounter() : 0;
     uint64_t frameLogWork = 0;
@@ -2567,6 +2599,7 @@ static void VBlankCycle(void) {
         uint64_t p0 = SDL_GetPerformanceCounter();
         if (!skip)
             Present();
+        sPresentTicks = SDL_GetPerformanceCounter() - p0;
         {
             extern void PortMenuLatch(void);
             PortMenuLatch(); /* this frame's menu sprites show from the next one */
@@ -2644,7 +2677,9 @@ static void VBlankCycle(void) {
         PortRollbackBoundary(gPortInMainLoop); /* the network link: a wrong guess taken back, this frame kept */
     }
     if (frameLogStart) frameLogWork = SDL_GetPerformanceCounter();
+    TimingLine(skip, cycleStart, SDL_GetPerformanceCounter());
     Pace();
+    sCycleEnd = SDL_GetPerformanceCounter();
 
     if (++sFrameCount % 60 == 0)
         PortSramSyncIfDirty();

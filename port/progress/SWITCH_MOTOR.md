@@ -4,6 +4,12 @@ Pedido del usuario: Switch a velocidad completa (#35: 20-25 fps antes de present
 Referencia: ggdrn/KH_COM_VITA llega a 60 fps en Vita con la lógica en un núcleo y la PPU en otros dos (3-6 ms por
 cuadro), escala por GPU (vitaGL).
 
+## Publicación (decisión del usuario, 24/10)
+
+La **v2.0 estable sale sin Switch**. La Switch se queda en la última prerelease de la 2.0 (el motor actual). Vuelve a
+un release cuando el motor nuevo esté hecho y comprobado (medido en una Switch real). Al armar la v2.0: sacar el
+`.nro` de `stage_release.py` MAIN para esa publicación y decirlo en las notas.
+
 ## Cómo es hoy
 
 - El juego y toda la capa del port (PPU incluida) son una **imagen invitada** AArch64 de punteros de 32 bits

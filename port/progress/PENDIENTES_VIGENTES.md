@@ -11,6 +11,41 @@ Reglas del usuario:
 - Nunca borrar carpetas ReKHCoM-vX sin que el usuario lo pida.
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
+## TRASPASO 24/10 tarde (Claude; quedan pocos tokens) — LEER PRIMERO
+
+**Objetivo nuevo del usuario (24/10): el repo autosuficiente.** Cualquiera (otro modelo con la cuenta de GitHub del
+usuario, sin nada de este PC) debe poder clonar, poner su ROM y seguir los pendientes replicando todas las pruebas.
+Hacer: `port/progress/EMPEZAR_AQUI.md` corto (qué leer, cómo compilar, dónde van las ROMs, cómo correr cada batería y
+herramienta, qué se instala y de dónde: toolchain llvm-mingw, SDL3, emsdk, Android SDK, devkitA64/VitaSDK/OpenOrbis por
+Docker o VM). Instrucciones de las VMs/toolkit como texto (TOOLKIT_CONSOLAS.md), **nunca ISOs, discos de VM ni
+binarios grandes en git**; todo lo sintetizado < 50 MB. Las rutas de este PC (D:/01Claude, KHCoMPC/...) en los .md
+deben quedar como "carpeta de trabajo" con su equivalente relativo. Revisar el tamaño del repo (`git count-objects -vH`).
+
+**Hecho hoy (todo en main):**
+- v2.0-pre3 y pre4 internas (PC); issues #40 #42 #45 cerrados (0 abiertos).
+- Jafar APROBADO y encendido (`port_jafar.c`); Oogie y Marluxia en Preliminar V2 (`KHCOM_ARENAS_V2=1`), copia
+  `pruebas/Probar Preliminar V2 jefes.bat`: **espera comentarios del usuario** (Trickmaster, Oogie, Maléfica,
+  Úrsula, Marluxia; Darkside sus 7 poses).
+- "Cuelgue" 32:9 = getenv por píxel → `PORT_ENV_ONCE` en todo el port (DEBUG_WORKFLOW.md).
+- Launcher: "Comprimir lo instalado", sin 720p (ahorraba 6 %), adopta la instalación anterior, migra escenas al
+  iniciar; juego: actualizar desde antes de los modos conserva opciones con "GBA mejorado".
+- `test_update.py`: 7/7 desde 1.9.8..2.0-pre2 (incluidas las de Quiver). Quiver nos aceptó: **no borrar ningún
+  release**; v1.9.10 y v1.9.8 republicadas (mismo SHA). Originales en `KHCoMPC/respaldos/releases-*`.
+- README al día (v1.9.14). `scene_wide_review.py` arreglado.
+- `timing:` en el log (consolas siempre, PC con `KHCOM_TIMING`): fase 0 del motor de Switch (SWITCH_MOTOR.md).
+- **Switch fuera de la v2.0** (usuario): queda en la última pre; vuelve con el motor nuevo comprobado.
+
+**En curso / sin terminar al cortar:**
+- Pesos HD reales (`build/hd_sizes.sh`, en `build/hd_sizes.txt`): Fuente 6,7 GB, Buena 3,7 GB, Ahorro (q2) midiéndose;
+  q5 ya no hace falta (720p quitado): cortar si corre. Poner el peso de Ahorro en `kScenesSize` (hd_import.inc).
+- `hd_quality_probe.py` (calidad constante vs VBR, VMAF) corriendo: resultados en `build/hd_quality_probe.log` y
+  `D:/01Claude/ReKHCoM-build/hdprobe/results.json`; si baja peso sin perder VMAF, usarlo en Buena/Ahorro.
+- Batería #12 del port de Vita (`test_battles.py --stock`, EU): 136+ combates sin fallo; ver
+  `build/battletest-eu-stock.log` al terminar.
+- Dos baterías de combates JP duplicadas corrían (run_batteries.py): el usuario no dejó cortarlas.
+- Jafar en el emulador Android: pendiente (correr `test_android_scenarios.py --groups bosses` con el emulador libre).
+- Motor de Switch fase 1 (PPU en 3 núcleos del invitado): no empezado; plan en SWITCH_MOTOR.md.
+
 ## TRASPASO 24/10 (Claude, sesión nueva; usuario: "prerelease interna cerrando issues, limpiar pendientes, seguir
 hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v2.0") — LEER PRIMERO
 
@@ -557,6 +592,8 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
 5. Revisar issues abiertos al final, arreglar bugs, responder breve.
 
 ### Lista de verificación antes de publicar (no saltear)
+- **Sin Switch en la v2.0** (usuario 24/10): queda en la última prerelease de la 2.0; vuelve con el motor nuevo
+  comprobado (SWITCH_MOTOR.md). Sacar el `.nro` de la publicación de la v2.0.
 - Correr `port/tools/test_update.py` con el paquete nuevo contra `respaldos/releases-estables` y
   `--olds respaldos/releases-prueba` (las que Quiver tiene: v1.9.15-pre1 verificada, v2.0-pre2): todo ok antes de publicar.
 - **No se borra NINGÚN release ni archivo** (estables ni de prueba): Quiver nos aceptó el 24/10 y sus mantenedores dijeron
