@@ -130,9 +130,39 @@ void PortAchievementsRomLoaded(const uint8_t* rom, size_t size) {
 #endif
 }
 
+/* Issue #78: a paused session was only in kh_com.log, so players in Re:CoM mode thought achievements were
+   broken. The first time play starts paused, a toast says why (game language: en fr de it es ja). */
+static int sPauseNotice; /* 0 none, 1 Re:CoM mode, 2 cheats or other modifiers; -1 shown */
+
+static void PauseNoticeFrame(void) {
+    static const char* const kTitle[6] = { "Achievements paused", "Succès en pause", "Erfolge pausiert",
+        "Obiettivi in pausa", "Logros en pausa", "実績は一時停止中" };
+    static const char* const kRecom[6] = { "Turn off Re:CoM mode.",
+        "Désactivez le mode Re:CoM.",
+        "Schalte den Re:CoM-Modus aus.",
+        "Disattiva la modalità Re:CoM.",
+        "Apaga el modo Re:CoM.",
+        "Re:CoMモードをオフにしてください。" };
+    static const char* const kCheat[6] = { "Cheats or debug tools were used.",
+        "Astuces ou débogage utilisés.",
+        "Cheats oder Debug benutzt.",
+        "Usati trucchi o debug.",
+        "Se usaron trucos o depuración.",
+        "チートかデバッグが使われました。" };
+    int l = ACHIEVEMENT_TEXT_LANGUAGE;
+
+    if (sPauseNotice <= 0 || (gCurrentMode != &gModeMapFld && gCurrentMode != &gModeBattle)) return;
+    if (l < 0 || l > 5) l = 0;
+    PortAchievementToast(kTitle[l], sPauseNotice == 1 ? kRecom[l] : kCheat[l], "", -1);
+    sPauseNotice = -1;
+}
+
 void PortAchievementsInvalidate(const char* reason) {
     if (sInvalidated) return;
     sInvalidated = 1;
+    if (sPauseNotice == 0)
+        sPauseNotice = gPortConfig.ps2Mode && !gPortConfig.cheatOneHit && !gPortConfig.cheatInfiniteHp &&
+                       !gPortConfig.cheatUnlockRiku && !gPortConfig.cheatSaveStates ? 1 : 2;
     PortLog("achievements: session paused (%s)", reason);
 #ifdef PORT_RETROACHIEVEMENTS
     KhRaInvalidate(sRa, reason);
@@ -242,6 +272,7 @@ void PortAchievementsFrame(void) {
     if (gPortConfig.cheatOneHit || gPortConfig.cheatInfiniteHp || gPortConfig.cheatUnlockRiku || gPortConfig.cheatSaveStates ||
         gPortConfig.ps2Mode)
         PortAchievementsInvalidate("Gameplay modifiers enabled");
+    PauseNoticeFrame();
     if (gCurrentMode == &gModeTitle) sStarted = 0;
     if (gCurrentMode == &gModeMapFld || gCurrentMode == &gModeBattle) sStarted = 1;
     evaluate = !sInvalidated && (gCurrentMode == &gModeMapFld || gCurrentMode == &gModeBattle ||
