@@ -20,6 +20,7 @@ from revise_darkside_boundary import frame, extension
 from server import Store, now
 
 SEAM = 256
+R7_DROP = 11
 BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
 NATURAL_BG = '#e8e9df'
 
@@ -285,7 +286,15 @@ def main():
         inc = inc_path.read_text()
         original, palette = frame(args.source, slot)
         added = {pt: c for pt, c in extension(inc).items() if pt not in original}
-        if args.round == 'r6':
+        if args.round == 'r7':  # 06 only: r6's arm (23 px up) was "too high": the same drawing lower, seam redrawn
+            r6inc = (args.data / 'proposals/darkside-r6/darkside_body_punch_r6.inc').read_text()
+            arm = {pt: c for pt, c in shifted(extension(r6inc), 0, R7_DROP).items() if pt[0] >= SEAM and pt not in original}
+            for y in range(min(y for x, y in arm), max(y for x, y in arm)):  # the seam: the shoulder's colour carried one pixel
+                if (SEAM - 1, y) in original and (SEAM, y) not in arm and (SEAM + 1, y) in arm:
+                    arm[SEAM, y] = original[SEAM - 1, y]
+            new = arm
+            change = 'El brazo baja %d px respecto de la r6 (quedaba demasiado arriba), a medio camino entre el asiento anterior y el final del hombro; costura rehecha. Original intacto.' % R7_DROP
+        elif args.round == 'r6':
             right = {pt: c for pt, c in added.items() if pt[0] >= SEAM}
             dark = darkest(palette, set(original.values()))
             zones = [n['pixels_xyxy_exclusive'] for n in sent['annotations']]

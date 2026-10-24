@@ -35,6 +35,7 @@ def run(build, out, arena, aspect, v2=False):
                KHCOM_OUTPUT_SHOT=','.join(map(str, FRAMES)), KHCOM_QUIT=str(FRAMES[-1] + 10))
     if v2:
         env['KHCOM_ARENAS_V2'] = '1'  # the Preliminar V2's work, off until approved
+        env['KHCOM_DARKSIDE_BEACH'] = '1'  # Darkside's beach (port_darkside.c) is part of the arenas' V2 review
     subprocess.run([str(d / 'khcom.exe'), '--rom', str(ROOT / 'roms/B8CP.gba')], cwd=d, env=env,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600)
     return [d / f'out_{f:05d}.bmp' for f in FRAMES]
