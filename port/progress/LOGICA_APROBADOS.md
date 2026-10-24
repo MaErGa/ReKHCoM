@@ -214,6 +214,10 @@ no una tira que copie parte del trono ni cuatro columnas que produzcan escalones
 repite una ladera sin la silueta del castillo; el dibujo original dentro del mapa y el rectángulo GBA se conservan.
 Esta entrega es una propuesta pendiente de valoración; no hereda honores ni habilita arte nuevo para jugadores.
 
+## Escena 099: techo, propuesta de Codex (24/10)
+
+La nube bab8281c-e1c9-4e01-b894-a3a05e339e8b sobre d3e87dca65eb4e9fb10535b3e731419d pide mejorar el patrón superior y valora positivamente el suelo. No trasladar esa aprobación al techo ni cambiar el suelo. El friso mide 28 píxeles por casilla: usar una pareja completa de 56 píxeles, aunque no coincida con la rejilla de tiles, y conservar su fase en las dos uniones. Propuesta pendiente de valoración: completar arriba filas alternadas de casillas con el mismo donante; el mapa original queda intacto. No se habilita para jugadores sin honores de esta versión.
+
 ## Agrabah 107/108: subida del Genio (comentario posterior, 24/10)
 
 El usuario señala que, aunque la calle tiene honores, al aparecer el Genio la cámara sube y los pilares
