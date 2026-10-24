@@ -160,9 +160,11 @@ static bool NumberRow(const char* label, int value, int lo, int hi, int* out) {
     return changed;
 }
 
-static void PageEditor() {
+static void PageEditor(SDL_Window* window) {
     if (sEdVersion < 0)
         sEdVersion = sSelected;
+    SaveCard(window); /* the save manager: the save itself first, then the editor */
+    ImGui::Spacing();
     BeginCard("editor");
     Eyebrow(T("EDITOR DE PARTIDAS", "SAVE EDITOR"));
     if (!sEditorOn) {
