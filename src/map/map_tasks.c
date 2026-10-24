@@ -427,6 +427,8 @@ TaskDesc gTaskDescMapGmk00 = {
  */
 #ifdef PLATFORM_PC
 int PortGbaMapLogic(void);
+int PortGbaMapFade(void);
+#define MAP_ENM_FADE_FRAMES 24
 #define MAP_ENM_VIEW(view, gba) (PortGbaMapLogic() ? (gba) : (view))
 #else
 #define MAP_ENM_VIEW(view, gba) (gba)
@@ -441,6 +443,17 @@ s32 MapEnm00CheckOffscreen(MapEnmWork* work) {
 
     if (work->obj.fieldPosition.x < MAP_ENM_OFF_LEFT || work->obj.fieldPosition.x > MAP_ENM_OFF_RIGHT ||
         pos->y + pos->z < MAP_ENM_OFF_TOP || pos->y + pos->z > MAP_ENM_OFF_BOTTOM) {
+#ifdef PLATFORM_PC
+        /* GBA logic (Improved): it leaves at the cartridge's distance, but fades out first (MapEnmDraw). */
+        if (PortGbaMapFade() && work->unk_D2 < MAP_ENM_FADE_FRAMES) {
+            if (work->unk_D2 == 0) {
+                ColliderSetDisabled(&work->collider, TRUE);
+            }
+
+            work->unk_D2++;
+            return FALSE;
+        }
+#endif
         work->update = NULL;
         ColliderSetDisabled(&work->collider, TRUE);
         return TRUE;

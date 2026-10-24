@@ -537,6 +537,11 @@ static const char* const sOnOff[2][LANG_COUNT] = {
     { "Off", "Non", "Aus", "No", "No", "オフ" },
     { "On", "Oui", "An", "Sì", "Sí", "オン" },
 };
+static const char* const sGbaMapValue[3][LANG_COUNT] = {
+    { "No", "Non", "Nein", "No", "No", "いいえ" },
+    { "Yes", "Oui", "Ja", "Sì", "Sí", "はい" },
+    { "No (Improved)", "Non (Amélioré)", "Nein (Verbessert)", "No (Migliorato)", "No (Mejorado)", "いいえ(改良)" },
+};
 static const char* const sViews[PORT_VIEW_COUNT][LANG_COUNT] = {
     { "Original 240x160", "Originale 240x160", "Original 240x160", "Originale 240x160", "Original 240x160", "オリジナル 240x160" },
     { "Wide 284x160", "Large 284x160", "Breit 284x160", "Panoramica 284x160", "Panorámica 284x160", "ワイド 284x160" },
@@ -1050,7 +1055,7 @@ static void ValueText(int item, char* out, size_t size) {
             SDL_strlcpy(out, sOnOff[gPortConfig.cheatSaveStates != 0][l], size);
             break;
         case ITEM_CHEAT_GBA_MAP:
-            SDL_strlcpy(out, sOnOff[gPortConfig.gbaMapLogic != 0][l], size);
+            SDL_strlcpy(out, sGbaMapValue[SDL_clamp(gPortConfig.gbaMapLogic, 0, 2)][l], size);
             break;
         case ITEM_CHEAT_MAXLEVEL:
         case ITEM_CHEAT_MAPCARDS:
@@ -1335,7 +1340,7 @@ static void Change(int item, int dir) {
             ConfirmOpen(CONFIRM_STATES);
             return;
         case ITEM_CHEAT_GBA_MAP:
-            gPortConfig.gbaMapLogic = !gPortConfig.gbaMapLogic;
+            gPortConfig.gbaMapLogic = gPortConfig.gbaMapLogic == 1 ? 2 : gPortConfig.gbaMapLogic == 2 ? 0 : 1;
             break;
         case ITEM_CHEAT_MAXLEVEL:
         case ITEM_CHEAT_MAPCARDS:
@@ -2885,23 +2890,17 @@ static void DrawWizard(int l, int width, int height) {
    of each: the wide view, the GBA's 240x160 screen dashed inside it, and a
    field Heartless in the margin (kept by ReKHCoM, gone with the GBA logic). */
 static const char* const sGbaMapNote[LANG_COUNT] = {
-    "ReKHCoM keeps field Heartless active while the wide view shows them. On: the GBA logic is back and they "
-    "vanish once past the original 240x160 screen, so in the wide view they pop out of sight. For purists.",
-    "ReKHCoM garde les Heartless du terrain actifs tant que la vue large les montre. Activé : la logique GBA "
-    "revient et ils disparaissent hors de l'écran 240x160 d'origine ; dans la vue large, ils s'effacent d'un coup. Pour les puristes.",
-    "ReKHCoM lässt Herzlose auf dem Feld aktiv, solange die Breitbild-Ansicht sie zeigt. An: die GBA-Logik kehrt "
-    "zurück und sie verschwinden außerhalb des 240x160-Bildschirms, in der Breitbild-Ansicht schlagartig. Für Puristen.",
-    "ReKHCoM mantiene attivi gli Heartless sul campo finché la vista larga li mostra. Attivo: torna la logica GBA "
-    "e spariscono fuori dallo schermo 240x160 originale, quindi nella vista larga svaniscono di colpo. Per i puristi.",
-    "ReKHCoM mantiene activos a los sincorazón del campo mientras la vista ancha los muestra. Activado: vuelve la "
-    "lógica del GBA y desaparecen al salir de la pantalla original de 240x160, así que en la vista ancha se esfuman "
-    "de golpe. Para puristas.",
-    "ReKHCoMでは ワイド表示に見える間 フィールドのハートレスが 動き続けます。 オンにすると GBAのロジックに戻り "
-    "元の240x160画面の外で 消えるため ワイド表示では 突然消えて見えます。 こだわりたい人に。",
+    "ReKHCoM keeps field Heartless active while the wide view shows them. Yes: the GBA logic is back and they vanish once past the original 240x160 screen, so in the wide view they pop out of sight. No (Improved): same GBA logic and distance, but they fade out instead of popping. No: the wide view decides.",
+    "ReKHCoM garde les Heartless du terrain actifs tant que la vue large les montre. Oui : la logique GBA revient et ils disparaissent hors de l'écran 240x160 d'origine, d'un coup dans la vue large. Non (Amélioré) : même logique et même distance GBA, mais ils s'estompent au lieu de disparaître d'un coup. Non : la vue large décide.",
+    "ReKHCoM lässt Herzlose auf dem Feld aktiv, solange die Breitbild-Ansicht sie zeigt. Ja: die GBA-Logik kehrt zurück und sie verschwinden außerhalb des 240x160-Bildschirms, in der Breitbild-Ansicht schlagartig. Nein (Verbessert): gleiche GBA-Logik und Entfernung, aber sie blenden aus statt zu verschwinden. Nein: die Breitbild-Ansicht entscheidet.",
+    "ReKHCoM mantiene attivi gli Heartless sul campo finché la vista larga li mostra. Sì: torna la logica GBA e spariscono fuori dallo schermo 240x160 originale, di colpo nella vista larga. No (Migliorato): stessa logica e distanza GBA, ma svaniscono in dissolvenza invece di sparire di colpo. No: decide la vista larga.",
+    "ReKHCoM mantiene activos a los sincorazón del campo mientras la vista ancha los muestra. Sí: vuelve la lógica del GBA y desaparecen al salir de la pantalla original de 240x160, de golpe en la vista ancha. No (Mejorado): misma lógica y distancia del GBA, pero se desvanecen en vez de desaparecer de golpe. No: decide la vista ancha.",
+    "ReKHCoMでは ワイド表示に見える間 フィールドのハートレスが 動き続けます。 はい: GBAのロジックに戻り 元の240x160画面の外で 突然消えます。 いいえ(改良): GBAと同じ ロジックと距離で 突然消えず フェードアウトします。 いいえ: ワイド表示の範囲で決まります。",
 };
-static const char* const sGbaMapNoteCaption[2][LANG_COUNT] = {
+static const char* const sGbaMapNoteCaption[3][LANG_COUNT] = {
     { "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM" },
     { "GBA", "GBA", "GBA", "GBA", "GBA", "GBA" },
+    { "GBA+fade", "GBA+fade", "GBA+fade", "GBA+fade", "GBA+fade", "GBA+fade" },
 };
 
 /* A field Heartless, 5x7 drawn at 2x: black, two yellow eyes; only a faint
@@ -2914,14 +2913,17 @@ static void NoteHeartless(int x, int y, int gone) {
             char k = rows[r][c];
             if (k == ' ')
                 continue;
-            if (gone)
+            if (gone == 1)
                 Shade(x + c * 2, y + r * 2, 2, 2, 0xFFFFFFFFu, 120);
-            else
+            else if (gone == 2) {
+                Fill(x + c * 2, y + r * 2, 2, 2, k == 'o' ? 0xFFF8D020u : 0xFF181018u);
+                Shade(x + c * 2, y + r * 2, 2, 2, 0xFFC8A078u, 150);
+            } else
                 Fill(x + c * 2, y + r * 2, 2, 2, k == 'o' ? 0xFFF8D020u : 0xFF181018u);
         }
 }
 
-static void NoteDiagram(int x, int y, int w, int h, int gba, int l) {
+static void NoteDiagram(int x, int y, int w, int h, int gba, int l) { /* gba: 0 wide, 1 pop, 2 fade */
     int gw = w * 240 / 320, gh = h * 160 / 180, gx = x + (w - gw) / 2, gy = y + (h - gh) / 2, i;
     int hx = gx + gw + (x + w - gx - gw - 10) / 2, hy = gy + gh / 2 - 7;
     Fill(x - 1, y - 1, w + 2, h + 2, MENU_GREY);
@@ -2937,7 +2939,7 @@ static void NoteDiagram(int x, int y, int w, int h, int gba, int l) {
     }
     Fill(gx + gw / 2 - 3, gy + gh / 2 - 6, 6, 12, 0xFFC82818u); /* Sora */
     NoteHeartless(hx, hy, gba);
-    if (gba) { /* the pop: a small burst where it was */
+    if (gba == 1) { /* the pop: a small burst where it was */
         Fill(hx + 4, hy - 3, 2, 2, 0xFFFFFFFFu);
         Fill(hx - 3, hy + 6, 2, 2, 0xFFFFFFFFu);
         Fill(hx + 11, hy + 6, 2, 2, 0xFFFFFFFFu);
@@ -2954,7 +2956,7 @@ static void DrawGbaMapNote(int l, int width, int height, int left) {
     x0 = width - panelW - 6;
     textW = panelW - 16;
     lines = DrawWrapped(sGbaMapNote[l], 0, 0, textW, 0, 0);
-    dw = (panelW - 24) / 2;
+    dw = (panelW - 28) / 3;
     dh = dw * 9 / 16;
     h = 22 + lines * 11 + 8 + dh + 16;
     y0 = SDL_max(MENU_TOP, (height - h) / 2 - 6);
@@ -2964,7 +2966,8 @@ static void DrawGbaMapNote(int l, int width, int height, int left) {
     Fill(x0 + 8, y0 + 17, panelW - 16, 1, MENU_GREY);
     DrawWrapped(sGbaMapNote[l], x0 + 8, y0 + 21, textW, MENU_INK, 1);
     NoteDiagram(x0 + 8, y0 + 22 + lines * 11 + 8, dw, dh, 0, l);
-    NoteDiagram(x0 + panelW - 8 - dw, y0 + 22 + lines * 11 + 8, dw, dh, 1, l);
+    NoteDiagram(x0 + 8 + dw + 6, y0 + 22 + lines * 11 + 8, dw, dh, 1, l);
+    NoteDiagram(x0 + 8 + (dw + 6) * 2, y0 + 22 + lines * 11 + 8, dw, dh, 2, l);
 }
 /* Beside "Force Nintendo layout": what it changes (issue #23). */
 static const char* const sNintendoNote[LANG_COUNT] = {

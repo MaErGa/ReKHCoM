@@ -168,3 +168,8 @@ unsigned PortGameFlags(void) {
 int PortGbaMapLogic(void) {
     return gPortConfig.gbaMapLogic != 0;
 }
+
+/* Improved: the enemy still leaves at the cartridge's bounds, but it fades out instead of popping. */
+int PortGbaMapFade(void) {
+    return gPortConfig.gbaMapLogic == 2;
+}

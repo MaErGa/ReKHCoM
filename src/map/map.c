@@ -698,6 +698,20 @@ void MapEnmDraw(MapEnmWork* work) {
     x = (work->obj.fieldPosition.x >> 8) - (gFieldState->x >> 8);
     drawFlags = flags;
     y = pixelY + (obj->fieldPosition.z >> 8) - (gFieldState->y >> 8);
+#ifdef PLATFORM_PC
+    if (work->unk_D2 != 0) {
+        /* fading out (GBA logic, Improved): semi-transparent sprite over the background */
+        s32 eva = 16 - work->unk_D2 * 16 / 24;
+
+        if (eva < 0) {
+            eva = 0;
+        }
+
+        drawFlags |= SPRITE_FLAG_BLEND;
+        gBldCnt = BLDCNT_TGT2_BG0 | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_BD;
+        gBldAlpha = BLDALPHA_BLEND(eva, 16 - eva);
+    }
+#endif
     DrawSprite(x, y, work->gfx, work->tiles, work->palette, NULL, drawFlags, priority);
     TaskPoolDraw(&work->tasks);
 }
