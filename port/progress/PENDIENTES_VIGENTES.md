@@ -20,9 +20,19 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   Arreglado: un envío con solo comentario general o trazos se daba por respondido (lista de nubes vacía).
 - **Escena 055 con honores (48bef52c7):** lista única de escenas Preliminar V1 con honores (55, 121, 122) en
   port_ppu.c. El juego actual ya mostraba la imagen aprobada (banda morada continua): 0 píxeles cambian.
-- **EN CURSO: motor de Switch (pedido 24/10 ~06:20, "rebuildear el motor de switch antes de la 2.0 y hacer
-  pruebas"):** fase 1 de SWITCH_MOTOR.md sin tocar la lógica de la PPU: hilos del invitado + TLS de Mach-O
-  resuelto por el propio invitado (pila por hilo), mismo `PORT_PPU_THREADS` que PC.
+- **Motor de Switch hecho (72212d3a5, 5c214462d; detalle en SWITCH_MOTOR.md):** las 160 filas de la imagen GBA en
+  varios núcleos (copias por línea de registros/afín/paleta/OAM tras los eventos de línea), hilos reales en la imagen
+  (entrada del puente `thread`, pilas propias, TLS propio). PC: `build/inner_verify.sh` 60/60 sin diferencias
+  (EU/US/JP); VM ARM64 (host Linux, 3 núcleos): capturas idénticas a 1 núcleo, 0 diferencias en verificación, PPU
+  19 → 13 ms aun emulado. Arreglados: getenv/malloc del invitado con cerrojo, `SDL_expf/sqrtf` en el shim (Switch y
+  Android 64 no compilaban por los botones nuevos). Encendido solo en Switch; en PC `KHCOM_PPU_INNER=1`.
+  `.nro` compilándose al escribir (`build/switch/nro-build.log`). Switch sigue fuera de la v2.0 (decisión del
+  usuario): vuelve a un release cuando haya medida en consola real.
+- **Editor de posición de botones táctiles (2e613ab45):** Opciones > "Mover botones táctiles": juego en pausa,
+  se arrastra cada grupo, ✓ guarda (`touch_<grupo>_x/_y` en kh_com.ini), ↺ restablece. test_android_touch lo
+  recorre. Captura en la app de revisión (Pre). Falta verlo en el emulador Android y en la web (punto 5).
+- **Elección de modo con vista previa (5c214462d):** detrás de la ventana se ve cómo quedará la pantalla (amplia /
+  240x160 con borde). En la app (Pre); si no gusta, se quita el bloque `preview` en port_ui.c.
 
 ## Estado anterior (24/10 ~05:00, Claude)
 
