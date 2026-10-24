@@ -162,3 +162,31 @@ los demás. Las escenas hermanas que usaron estas recetas se revisan con estas r
 | Trickmaster arena / `bcf3aec4ee7f40748959a87960d4ed5d` | «solo debe haber una chimenea en el patrón como en la escena preliminar» | Pendiente de aclarar cuál se conserva (el mapa trae dos chimeneas por período de 256 px). |
 | Maléfica 01 / `25aa0ffe25b14be5855a107bd882b6f6` | «terminar de dibujar a Maléfica hasta la cola; ver si está en los archivos o dibujar como artista pixel art» | Pendiente (bloqueado, arte nuevo): buscar el resto del sprite en la ROM; si no existe, dibujar. |
 | Maléfica arena / `ae681fffa79a4feea3b4ea1ef137a512` | «arena bien» (aprobada); sprites se comentan por separado | Sin cambios: la arena de Maléfica queda tal cual. |
+
+## Medición: workers vs. trabajo solo (24-25/10/2026)
+
+| Modo | Agentes | Piezas de arte entregadas a la app | Aprobadas | Costo aprox. |
+|---|---|---|---|---|
+| Solo (Claude, 24/10 14:58-16:24, ~1,5 h) | 1 | 12 hijas (090, 044, 045, 053, 054, 087, 095, 098, 099, 102, 104, 110) | 044, 045, 053★, 054★, 098, 104 aprobadas | 1 contexto |
+| Ronda 1 workers | 3 | 1 (Darkside 06 + arena, #70) + 112/120 sin imagen (#71) | 0 aún | ~25 min de preparación cada uno |
+| Ronda 2 | 3 | 0 (murieron por límite de sesión) | 0 | todo perdido |
+| Ronda 3 + limpiador | 4 | 1 (004, #75) + imágenes de 112/120 | 0 aún | ~380 k tokens |
+| Ronda 4 (1 worker) | 1 | 1 (087, #76); 17 devueltas como pregunta sin intento | 0 | ~390 k tokens |
+| Ronda 5 | 1 | 0 (detenido) | 0 | — |
+
+Resultado: **11 agentes de worker → 3 piezas entregadas, 0 aprobadas**; solo → 12 entregadas y 6 aprobadas en ~1,5 h.
+Es una **regresión clara en tiempo y en esfuerzo** (≈1 pieza por ~250 k tokens contra ≈12 piezas en un contexto).
+
+Por qué:
+1. **Preparación repetida**: cada worker reconstruía worktree, ROMs y build (5-25 min) antes de tocar arte.
+2. **Contexto perdido**: el worker no tiene la lógica aprobada en la cabeza; lee el brief, ve un comentario «vago» y lo libera.
+   El agente que viene trabajando las escenas sí entiende «mejorar patrón superior» mirando la imagen.
+3. **Modelo y esfuerzo bajos** para un trabajo de criterio visual (Sonnet bajo): bueno para mecánica, malo para arte.
+4. **Fricción de herramientas** (rutas, `prelim_shot.sh` a `build/pc`, `next` en bucle, `--title`/`--version`, ninja `-f`) consumió
+   rondas enteras; se arreglaba entre rondas en vez de antes.
+5. **Límite de sesión**: muchos agentes a la vez agotaron el cupo y mataron la ronda 2 completa.
+6. **Sin obligación de intentar**: la regla de liberar «si es ambigua» se volvió la salida por defecto.
+
+Regla desde ahora: el arte lo hace el agente principal (con contexto), en serie, con la base del generador Python y su
+mejora propia; otros agentes (Codex) toman piezas en paralelo por la cola. Los workers solo para tareas mecánicas
+(capturas, baterías, limpieza), nunca para decidir arte.
