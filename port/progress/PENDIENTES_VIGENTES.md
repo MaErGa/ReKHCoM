@@ -37,7 +37,11 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   Darkside arena). Su WIP queda como está (no se toca su árbol).
 - **Darkside r6 en la app (3f5f7c235):** 03 el ala (mechones que siguen su pendiente y se difuminan), 06 el brazo nace
   en el hombro (23 px más arriba), costura redibujada. Responde los envíos 052330 y 054756.
-- **Calidad HD (punto 7):** midiendo Q 75/80/85 por GPU (`build/hdprobe-2410.txt`, hd_quality_probe.py a8aed0058).
+- **Calidad HD (punto 7) cerrado:** calidad constante por GPU vs "Buena" en 5 videos (`build/hdprobe-2410.txt`):
+  Buena 266,9 MB VMAF 97,4; Q75 243,9 MB (−9 %) 96,6; Q80 282,7 MB (+6 %) 97,2; Q85 344,9 MB 97,8. Ninguna gana:
+  se queda "Buena". Ahorro medido (751 MB en el 39 % del mod) ≈ 2 GB: coincide con `kScenesSize`.
+- **Web (build EU de prueba):** botones táctiles nuevos dibujados sobre el juego en tamaño móvil; las opciones
+  nuevas del launcher web se ven sin errores.
 - **Launcher de Android = el de PC (e7223a862):** decompui compilado para Android (LAUNCHER_ANDROID, liblauncher.so en
   LauncherActivity, que ahora es SDLActivity): mismas pestañas, horizontal, desplazamiento con el dedo; selectores del
   sistema por JNI (ROM con SHA-1, partidas, carpeta hd del PC), juego en su proceso. Probado en el emulador: páginas,
@@ -161,7 +165,7 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
    `timing:`, toques tomados una sola vez con el juego lento); tablets: artes/fondos con el encuadre nuevo
    (LOGICA_APROBADOS.md); Jafar en el emulador (`test_android_scenarios.py --groups bosses`).
 6. ~~`test_text_options.py`~~ hecho (9e8316f06): por nombre de fila, corrida base + ruta; 7/7 EU/US/JP.
-7. Mod HD: calidad constante por hardware (`hd_quality_probe.py`, probar Q 75/80/85 y elegir la que pese menos que
+7. ~~Mod HD: calidad constante por hardware~~ (cerrado 24/10: se queda Buena) (`hd_quality_probe.py`, probar Q 75/80/85 y elegir la que pese menos que
    Buena con su VMAF; la VMAF de ROP está desalineada); peso real de Ahorro en `kScenesSize` (hd_import.inc).
    Vía GPU (decodificar y codificar en la tarjeta) en main (0a42bcedf): Buena 237 → 203 s en la muestra; MP4
    revisado (H.264 1080p, duración completa, decodifica limpio, cuadro correcto); test_launcher 11/11.
