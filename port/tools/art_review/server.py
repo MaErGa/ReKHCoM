@@ -108,14 +108,18 @@ class Store:
                 if a.get('annotations') or str(a.get('general', '')).strip():
                     newest[a['id']] = dict(submission=payload['submission_id'], created=payload['created'],
                                            image_id=a['id'], version=a['version'], clouds=len(a['annotations']),
+                                           cloud_ids=[n['id'] for n in a['annotations']],
                                            status_then=a['status'],
                                            read=str(path.with_name('COMENTARIOS_PARA_CODEX.txt')))
+        # a cloud named in a later version's revision_info.response_to is answered, even if sent again afterwards
+        answered = {r.get('cloud_id') for a in assets for r in a.get('revision_info', {}).get('response_to', [])}
         rows = []
         for fam in self.approvals():
             versions = [by_id[i] for i in fam['version_ids'] if i in by_id]
             latest = versions[-1]
             unanswered = [n for i in fam['version_ids'] if (n := newest.get(i))
-                          and not any(c['created'] > n['created'] for c in children.get(i, []))]
+                          and not any(c['created'] > n['created'] for c in children.get(i, []))
+                          and not set(n['cloud_ids']) <= answered]
             if unanswered:
                 who, todo = 'agente', 'Responder cada envío con una versión hija (parent_id = image_id del envío) y su ficha'
             elif latest['status'] in ('pending', 'changes_requested'):
