@@ -14,10 +14,19 @@ Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola: COLA_COLABORATI
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release. Trabajar solo en KHCoMPC (C:) y D:/01Claude/ReKHCoM-build.
 - Cada PR de arte mejora LOGICA_APROBADOS.md. Toda falla o timeout de batería es un bug: reproducir.
 
+## TRASPASO (24/10 noche, claude-integrador)
+
+- Main verificado tras integrar todos los PR menos #71: build PC, combate, sala 10901, Jafar, launcher: sin fallos.
+- Cola online al día (12 piezas `integrado`); permiso de integrador liberado.
+- Issues: #78 logros (aviso «Logros en pausa», en main), #77 texto HD Linux (en main, falta confirmación del
+  reportero), #83 Jafar Android y espejo del genio en la vista ancha (rama `claude/jafar-genie-wip`, en curso), #49
+  Steam Deck (arreglo en main, respuesta espera OK).
+- Lógica GBA «Mejorado»: voladores también se desvanecen (en main). Windows: prioridad alta y anti-tirones (en main).
+- Seguir: Jafar (#83 + espejo), luego Android (táctiles, primer arranque), catálogo, limpieza.
+
 ## 1. Espera al usuario (decisión, revisión o OK)
 
-- **Revisar en la app y aprobar:** PR #70 (Darkside 06 r7 + arena V2), PR #75 (escena 004 con patrón a la derecha),
-  HUD HD (retratos y Contranaipe), 112/120 (hijas `a0dc114d…` y `63a8864f…`).
+- **Integrados 24/10 por orden del usuario** (sin aprobación en la app; quedan para comentar en la app si hace falta): #70, #75, #76, #79, #80, #81, #82, #84, #85, #86, #87. HUD HD y 112/120 siguen esperando revisión.
 - **PR #71 (112/120): NO integrar** hasta resolver: recuadro negro junto a la puerta, escalones en el muro, hueco marrón
   en 120, y enciende recetas 115-118 no aprobadas.
 - **Probar jugando la lógica GBA de 3 estados** (Sí / No (Mejorado) / No, ya en main): el fade de «Mejorado» no se
@@ -42,11 +51,7 @@ Flujo del worker: WORKER_BRIEF.md (imagen a la app primero; `--sent` obligatorio
 
 ## 3. Funciones y código abiertos
 
-- **Ajustes (`decompui.cpp`):** separadores con subtítulos por tarjeta (Imagen, Ventana, Otros, Volumen, Voces): hay un
-  cambio sin commit de la sesión anterior, sin compilar ni probar. Terminarlo, probarlo y subirlo.
-- **Editor de tiles y sprites (prioridad del usuario, «para armar yo mismo las escenas»):** backend sin commit en
-  `khcom-tile-backend` (`tile_editor.py`, rutas `/api/editor/*`); falta la interfaz (editor.html/js/css, paleta, pintar,
-  capas, voltear, deshacer, guardar) y sprites. Tareas `editor-tiles-*` de `claude-relevo`.
+- **Editor de tiles:** en main (app de revisión → «Editor de tiles»): escenas del cartucho, lápiz, cuentagotas, borrar, rellenar, bloques, voltear, capas, deshacer, guardar por revisión, exportar a Tiled. Falta: sprites.
 - **Catálogo histórico:** 12 huecos en ARTE_HISTORICO.md; regenerar casos factibles con fixtures actuales (tareas
   `catalogo-*` de `claude-relevo`).
 - **Botones táctiles:** falta verlos en el emulador Android y en la web (punto Android).
@@ -55,7 +60,7 @@ Flujo del worker: WORKER_BRIEF.md (imagen a la app primero; `--sent` obligatorio
 - **Android antes de la v2.0:** rendimiento en gama baja (línea `timing:`), tablets con el encuadre nuevo
   (LOGICA_APROBADOS), Jafar en el emulador (`test_android_scenarios.py --groups bosses`), «Logros pegado» (pedir
   `kh_com.log` si vuelve).
-- **Honores:** verificar que todo lo aprobado con honores esté encendido para jugadores y sin fallos.
+- Honores verificados 24/10: 53, 54, 55, 121, 122 (+ eventos 177/178) encendidos y GBA intacto en EU/US/JP (21/21).
 - **Baterías:** consultar `run_batteries.py --status` en `khcom-claude-int` (no relanzar). Faltan rooms eu, battles eu,
   monkey eu/us/jp, skip eu/us/jp y pasos android; luego `--hd`. `debug_kit.py report` sin sitios nuevos.
   Caso skip JP `1_039` (0xC0000135) fue de las copias duplicadas del coordinador, no del juego: repetirlo solo.

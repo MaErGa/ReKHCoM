@@ -61,6 +61,20 @@ Workflow completo (tiles, píxeles, pixel art, pruebas en x3 entero): WORKFLOW_A
 - Elegir como "pared lisa" una celda con marco de ventana: se ve media ventana
   flotando. La pared lisa se decide por tile y por frecuencia, en BG3.
 
+## Manejo de PR y de la cola (24/10, para no repetir errores)
+
+- **Integrar = merge + cola + verificación, siempre juntos.** Después de cada merge: build de PC desde main, combate de
+  prueba, una sala y el launcher; luego marcar la pieza `integrado` en la cola online con el número de PR y la
+  aprobación real. Un merge sin la cola actualizada deja la pieza como `pr_abierto` y otro agente la retoma.
+- **La aprobación se registra tal cual fue:** «aprobado en la app (versión …)» o «orden del usuario en el chat
+  (fecha): integrar todos los PR». Nunca inventar una aprobación en la app que no existió.
+- **PR frenado por el usuario** (p. ej. #71: recuadro negro, escalones, hueco marrón, recetas 115-118 sin aprobar) no
+  entra con un «integra todos» genérico: se pregunta una vez nombrándolo.
+- **Conflictos en LOGICA_APROBADOS.md** entre PR de arte: son secciones nuevas en el mismo lugar; se conservan las dos
+  y se vuelve a mezclar main si otro PR entró mientras tanto.
+- **Permiso de integrador de la cola** (`integrator-acquire`): guardar el token que devuelve SIN `--quiet` (con
+  `--quiet` no se ve); si se perdió, `recover-integrator` con el mismo dueño y volver a pedirlo; soltarlo al terminar.
+
 ## Aprobados
 
 - 17: borde superior de la sala de Riku (Hollow Bastion B1, sala 3): aprobado
