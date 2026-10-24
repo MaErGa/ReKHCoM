@@ -61,6 +61,7 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   el README en "How it runs"; (3) la retención del repositorio (#182 en tgeorgiadis/quiver-launcher) sigue abierta, sin
   respuesta de los mantenedores. Para la v2.0: no borrar más las estables (solo las de prueba), README al día, mismo
   nombre de zip de Windows siempre; preguntar en #182 si la retención sigue (publicar en el issue: con OK del usuario).
+  **Decidido (usuario 24/10): las estables se conservan siempre**; solo se borran las de prueba.
 - Siguiente: copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 
@@ -437,7 +438,7 @@ vida sin división por cero (#40); salto de cuadros (encendido en todo); Switch 
 - Falta: (1) ~~versión v2.0~~ hecho 22/10 (launcher, rc, web, CHANGELOG; tag **v2.0**: el actualizador de la PS5 lee
   "2.0" como 2.0.0 y `build_all.py`/`build_android.py` ya aceptan vX.Y); (2) builds de todas las plataformas desde el commit final;
   (3) la lista de verificación de abajo completa; (4) revisar issues (#40 abierto: arreglado, avisar al publicar);
-  (5) publicar v2.0 anunciando el mod HD, borrar releases viejos si el clasificador deja (si no, el usuario).
+  (5) publicar v2.0 anunciando el mod HD; **las estables se conservan** (usuario 24/10: Quiver las ofrece para elegir); borrar solo las de prueba (preN).
 - Copia del usuario: `Probar ReKHCoM v1.9.15 completo.bat` (actualizarla con cada build de Windows).
 
 ### Estado 22/10 mañana (Claude, sesión principal; el usuario durmiendo, /goal: pendientes + v2.0)
@@ -545,6 +546,7 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
 5. Revisar issues abiertos al final, arreglar bugs, responder breve.
 
 ### Lista de verificación antes de publicar (no saltear)
+- Las estables anteriores NO se borran (Quiver deja elegirlas); solo las de prueba (preN). README con la versión nueva.
 - `release_check.py v2.0` antes y `--post` después (versión en launcher, rc, CHANGELOG, web, paquetes, Quiver).
 - `check_sources.py` (lo corre build_android y release_check): constantes del shim de consolas.
 - Builds: Windows, Linux, Android, PS4, Switch, Vita, PS5 (VM), web — desde el commit final; ningún paquete viejo
@@ -574,7 +576,7 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
     Decisión de tamaño/diseño para el usuario. Consolas (sceAvPlayer, nvdec): sin hardware para verificar.
   - I'. PS4 a la GPU (Piglet): sin PS4 ni emulador para verificar; el rasterizador por software sigue, y el salto de
     cuadros ya mantiene la velocidad si no llega.
-  - Borrar releases v1.9.12/v1.9.13-pre2 y quitar los worktrees viejos: el clasificador lo bloquea (lo hace el usuario).
+  - Borrar la de prueba v1.9.13-pre2 y quitar los worktrees viejos (v1.9.12 es estable: se conserva desde el 24/10).
 - **C. Videos HD en Android: hecho** (RGB por defecto, verificado en el emulador; HD_MOD.md). Rama en main.
 - **F. Discord en Linux: hecho.** VM Debian con un socket falso: handshake y SET_ACTIVITY (mundo, piso, nivel, combate).
 - #34 cerrado (confirmado). #39 (recortar relleno) respondido: idea, no bug.
