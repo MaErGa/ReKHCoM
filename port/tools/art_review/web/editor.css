@@ -1,0 +1,35 @@
+:root { --bg: #f4f2ee; --panel: #fff; --ink: #1d1b1a; --muted: #6d6863; --line: #d9d4cd; --accent: #c8281a; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161514; --panel: #211f1d; --ink: #ece8e3; --muted: #9a948d; --line: #39352f; --accent: #ff5a48; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--ink); height: 100vh; display: flex; flex-direction: column; }
+header { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 16px; margin: 0 8px 0 0; }
+.back { color: var(--muted); text-decoration: none; }
+button, select, input { font: inherit; color: inherit; }
+button { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+button.on { border-color: var(--accent); box-shadow: inset 0 -2px var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+select { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 3px; max-width: 320px; }
+#status { color: var(--muted); }
+#status.err { color: var(--accent); }
+main { flex: 1; display: grid; grid-template-columns: 210px 1fr 300px; min-height: 0; }
+aside { background: var(--panel); padding: 10px 12px; overflow: auto; border-right: 1px solid var(--line); }
+#right { border-right: 0; border-left: 1px solid var(--line); }
+aside h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+aside label { display: block; margin: 6px 0; }
+.tools { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+#layers { list-style: none; padding: 0; margin: 0; }
+#layers li { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 4px; cursor: pointer; }
+#layers li.active { background: var(--bg); outline: 1px solid var(--accent); }
+#mapWrap { position: relative; overflow: auto; background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 16px 16px; }
+#map, #palette, #brush { image-rendering: pixelated; display: block; }
+#map { cursor: crosshair; }
+#empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+#empty[hidden] { display: none; }
+#paletteWrap { overflow: auto; max-height: calc(100vh - 160px); background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 16px 16px; }
+#palette { cursor: pointer; }
+#brush { background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 16px 16px; border: 1px solid var(--line); }
+.hint { color: var(--muted); font-size: 12px; }
+@media (max-width: 800px) { main { grid-template-columns: 1fr; } aside { border: 0; } }

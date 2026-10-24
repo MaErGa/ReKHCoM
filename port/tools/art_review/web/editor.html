@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de tiles · ReKHCoM</title>
+<link rel="stylesheet" href="/editor.css">
+</head>
+<body>
+<header>
+  <a class="back" href="/">← Revisión</a>
+  <h1>Editor de tiles</h1>
+  <label>Escena <select id="scene"></select></label>
+  <button id="new">Nuevo proyecto</button>
+  <label>Proyecto <select id="project"><option value="">—</option></select></label>
+  <button id="save" disabled>Guardar</button>
+  <button id="export" disabled>Exportar .zip</button>
+  <span id="status"></span>
+</header>
+<main>
+  <aside id="left">
+    <h2>Herramientas</h2>
+    <div class="tools">
+      <button data-tool="pencil" class="on" title="Pintar (B)">Lápiz</button>
+      <button data-tool="pick" title="Tomar tile del mapa (I)">Cuentagotas</button>
+      <button data-tool="erase" title="Borrar (E)">Borrar</button>
+      <button data-tool="fill" title="Rellenar área igual (G)">Rellenar</button>
+    </div>
+    <div class="tools">
+      <button id="flipH" title="Voltear horizontal (X)">Voltear ↔</button>
+      <button id="flipV" title="Voltear vertical (Y)">Voltear ↕</button>
+    </div>
+    <div class="tools">
+      <button id="undo" title="Deshacer (Ctrl+Z)">Deshacer</button>
+      <button id="redo" title="Rehacer (Ctrl+Y)">Rehacer</button>
+    </div>
+    <label>Zoom <input id="zoom" type="range" min="1" max="6" value="2"></label>
+    <label><input id="grid" type="checkbox"> Cuadrícula</label>
+    <h2>Capas</h2>
+    <ul id="layers"></ul>
+    <h2>Pincel</h2>
+    <canvas id="brush" width="64" height="64"></canvas>
+    <p class="hint">En la paleta, arrastrá para tomar un bloque de varios tiles.</p>
+  </aside>
+  <section id="mapWrap"><canvas id="map"></canvas><div id="empty">Elegí una escena y creá o abrí un proyecto.</div></section>
+  <aside id="right">
+    <h2>Paleta <small id="tsName"></small></h2>
+    <div id="paletteWrap"><canvas id="palette"></canvas></div>
+    <p id="cursor" class="hint"></p>
+  </aside>
+</main>
+<script src="/editor.js"></script>
+</body>
+</html>
