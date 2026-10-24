@@ -142,21 +142,27 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         if (v[1]!=3) return 0;
         {
             int diagonal=2*oy+ox;
-            if (oy<24 || (ox<0 && diagonal<72)) {
-                if (ox<0) {
-                    int phase=PortSceneTileMod(-ox-1,52);
-                    sx=phase<26?phase:51-phase;
-                } else if (ox>=w) {
-                    int phase=PortSceneTileMod(ox-w,16);
-                    sx=56+(phase<8?7-phase:phase-8);
-                }
+            if (ox>=w && oy>=16 && oy<28) {
+                /* right: the wall and its whole railing (posts down to the
+                 * masonry's foot, row 27) repeat unmirrored (user 24/10) */
+                sx=60+PortSceneTileMod(ox-60,4);
+                sy=oy<27?oy:26; /* row 27 holds a grave's top */
+            } else if (ox<0 && oy>=16 && diagonal<64) {
+                /* left, under the hills and above the railing: one solid
+                 * colour of the night band, no stretched gradient (user 24/10) */
+                sx=PortSceneTileMod(ox,8);
+                sy=20;
+            } else if (oy<16 || (ox>=w && oy<24)) {
+                /* the distant hills only: the band below them carries the
+                 * railing's tips, which mirrored into blocks (user 24/10) */
+                /* the hills come every ~10.6 tiles: 32 columns are three of
+                   them, so columns 0..31 (no moon) repeat seamlessly both
+                   ways; mirroring without flipping the tiles stepped them */
+                sx=PortSceneTileMod(ox,32);
                 sy=oy<0?PortSceneTileMod(oy,8):oy;
-                if (oy>=24) {
-                    sy=(diagonal-sx)/2;
-                    if (sy<0) sy=0;
-                    if (sy>=24) sy=23;
-                }
-            } else if (diagonal>=84 && diagonal<104) {
+            } else if (diagonal>=64 && diagonal<104) {
+                /* the railing over the wall and the wall: the railing's posts
+                 * reach up to 2y+x=64 (they were cut at 84, user 24/10) */
                 sx=8+PortSceneTileMod(ox-8,16);
                 sy=(diagonal-sx)/2;
                 if (sy<0 || sy>=h) return 0;
