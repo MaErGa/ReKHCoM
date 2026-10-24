@@ -758,9 +758,29 @@ void Task_MapEnm00_3(MapEnmWork* work) {
     MapEnmDestroy(work);
 }
 
+#ifdef PLATFORM_PC
+/* A fading flyer holds still, without a collider, until the fade ends; then it leaves as on the GBA. */
+static s32 MapEnmFlyerFade(MapEnmWork* work) {
+    if (++work->unk_D2 >= MAP_ENM_FADE_FRAMES) {
+        work->update = NULL;
+        return 0;
+    }
+
+    return 1;
+}
+#endif
+
 void MapEnm01CheckOffscreen(MapEnm01Work* work) {
     if (work->enm.obj.fieldPosition.x < MAP_ENM_OFF_LEFT || work->enm.obj.fieldPosition.x > MAP_ENM_OFF_RIGHT) {
         if (work->wasOnScreen) {
+#ifdef PLATFORM_PC
+            /* GBA logic (Improved): fade out first; Task_MapEnm01_1 finishes it (MapEnmFlyerFade). */
+            if (PortGbaMapFade()) {
+                work->enm.unk_D2 = 1;
+                ColliderSetDisabled(&work->enm.collider, TRUE);
+                return;
+            }
+#endif
             work->enm.update = NULL;
         }
     } else if (!work->wasOnScreen) {
@@ -1006,6 +1026,12 @@ s32 Task_MapEnm01_1(MapEnmWork* work) {
     if ((gMapRoomState->flags & ROOM_FLAG_ENEMY_STRUCK) && work->update != MapEnm01Hit) {
         return 1;
     }
+
+#ifdef PLATFORM_PC
+    if (work->unk_D2 != 0) {
+        return MapEnmFlyerFade(work);
+    }
+#endif
 
     if (work->update != NULL) {
         (work->update)(enm);
@@ -1317,6 +1343,14 @@ void Task_MapEnm03_3(MapEnmWork* work) {
 void MapEnm04CheckOffscreen(MapEnm01Work* work) {
     if (work->enm.obj.fieldPosition.x < MAP_ENM_OFF_LEFT || work->enm.obj.fieldPosition.x > MAP_ENM_OFF_RIGHT) {
         if (work->wasOnScreen) {
+#ifdef PLATFORM_PC
+            /* GBA logic (Improved): fade out first; Task_MapEnm04_1 finishes it (MapEnmFlyerFade). */
+            if (PortGbaMapFade()) {
+                work->enm.unk_D2 = 1;
+                ColliderSetDisabled(&work->enm.collider, TRUE);
+                return;
+            }
+#endif
             work->enm.update = NULL;
         }
     } else if (!work->wasOnScreen) {
@@ -1564,6 +1598,12 @@ s32 Task_MapEnm04_1(MapEnmWork* work) {
     if ((gMapRoomState->flags & ROOM_FLAG_ENEMY_STRUCK) && work->update != MapEnm04Hit) {
         return 1;
     }
+
+#ifdef PLATFORM_PC
+    if (work->unk_D2 != 0) {
+        return MapEnmFlyerFade(work);
+    }
+#endif
 
     if (work->update != NULL) {
         (work->update)(enm);
