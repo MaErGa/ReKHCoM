@@ -2,7 +2,8 @@
 import re, struct, sys
 from pathlib import Path
 from PIL import Image, ImageDraw
-REPO = Path(sys.argv[1]); OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("D:/01Claude/ReKHCoM-build/hdhud")
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
+REPO = Path(sys.argv[1]); OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else (WORK_DIR / 'hdhud')
 rom = (REPO / "roms/B8CP.gba").read_bytes()
 syms = dict(re.findall(r"\.set _(\w+), (0x[0-9a-f]+)", (REPO / "build/eu/pc/rom_symbols.s").read_text()))
 SHAPES = {(0,0):(8,8),(0,1):(16,16),(0,2):(32,32),(0,3):(64,64),(1,0):(16,8),(1,1):(32,8),(1,2):(32,16),(1,3):(64,32),(2,0):(8,16),(2,1):(8,32),(2,2):(16,32),(2,3):(32,64)}

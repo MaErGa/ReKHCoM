@@ -10,7 +10,7 @@ sha1 by the decomp's own build; only the maps leave the VM.
     python port/tools/build_gba_maps_vm.py            # -> build/gba-maps/com_{eu,us,jp}.{map,elf}
 
 Needs: a clean tree (the source is HEAD), roms/B8CP.gba, B8CE.gba and B8CJ.gba,
-the VM image D:/01Claude/ReKHCoM-build/ps5/ps5env.qcow2 (network for the first run:
+the VM image <work>/ps5/ps5env.qcow2 (network for the first run:
 apt packages, agbcc, binutils 2.10, gbagfx; they persist on the VM disk).
 """
 import argparse
@@ -20,10 +20,11 @@ import subprocess
 import sys
 import tarfile
 from pathlib import Path
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
-IMAGE = Path('D:/01Claude/ReKHCoM-build/ps5/ps5env.qcow2')
-SHARE = Path('D:/01Claude/ReKHCoM-build/ps5/share-gba')
+IMAGE = (WORK_DIR / 'ps5/ps5env.qcow2')
+SHARE = (WORK_DIR / 'ps5/share-gba')
 AGBCC_REVISION = 'da598c1d918402c42c0c0d7128ba14567f3175e9'
 
 SCRIPT = r'''#!/bin/bash

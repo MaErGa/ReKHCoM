@@ -5,7 +5,7 @@ cartridge has (assets/eu/text/msg_localized_text.txt, gEvent<NNN>Text<MM><Langua
 are averaged over the languages the movie has. The Re:CoM script rewrites lines,
 so each subtitle line counts by its best similarity to any line of the event.
 
-    python port/tools/match_hd_scenes.py --subs D:/01Claude/ReKHCoM-build/hd-completo/subs [--check]
+    python port/tools/match_hd_scenes.py --subs <work>/hd-completo/subs [--check]
 
 --check compares the result with port/src/port_hdscenes.inc. Prints, per movie, the best events and their scores.
 """

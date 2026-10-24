@@ -3,7 +3,7 @@
 textures (DDS/PNG, the "remastered entries" of each asset), for the HD HUD / HD cards research (HUD_HD_RECOM.md).
 Names: OpenKh's OpenKh.Egs/resources/recom.txt. Output stays outside the repo (never committed or shipped).
 
-    python port/tools/khhd_textures.py "<install>/Image/dt/Recom.hed" D:/01Claude/ReKHCoM-build/hdhud/cards CARD/0001/CA0001.RTM ...
+    python port/tools/khhd_textures.py "<install>/Image/dt/Recom.hed" <work>/hdhud/cards CARD/0001/CA0001.RTM ...
 """
 import hashlib
 import sys

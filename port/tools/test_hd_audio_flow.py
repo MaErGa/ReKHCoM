@@ -14,7 +14,7 @@ HdLog). Reported per scenario:
   heard      with numpy/soundfile (run through: uv run --with numpy --with soundfile): the output is matched against
              each HD track it played, block by block; a change of the track's offset in the output is a jump heard
 
-    python port/tools/test_hd_audio_flow.py --hd D:/01Claude/ReKHCoM-build/hd-completo [--build build/pc-eu] [--only title]
+    python port/tools/test_hd_audio_flow.py --hd <work>/hd-completo [--build build/pc-eu] [--only title]
 """
 import argparse
 import os

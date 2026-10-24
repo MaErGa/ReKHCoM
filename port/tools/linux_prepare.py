@@ -19,12 +19,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TC = ROOT.parent / 'toolchain'
-BASE = Path('D:/01Claude/ReKHCoM-build/linux')
+BASE = (WORK_DIR / 'linux')
 TRIPLES = {'i386': ('i686', 'i686-linux-gnu', ''),
            'armhf': ('armv7', 'arm-linux-gnueabihf', '-march=armv7-a -mfpu=neon -mfloat-abi=hard -mthumb')}
 
 PKGCONFIG = r'''"""Minimal pkg-config for cross builds: reads .pc files under PKG_SYSROOT."""
 import os, re, sys
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 root = os.environ['PKG_SYSROOT']
 dirs = [os.path.join(root, d) for d in ('usr/lib/i386-linux-gnu/pkgconfig', 'usr/lib/arm-linux-gnueabihf/pkgconfig',
         'usr/share/pkgconfig', 'usr/lib/pkgconfig')]

@@ -46,6 +46,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import case_bin
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / 'port/tools'
@@ -300,13 +301,13 @@ def main():
                     help='skip the suites that already finished (a run killed from outside leaves no .done mark)')
     ap.add_argument('--hd', action='store_true',
                     help='the HD mod on (cards, title, text; KHCOM_CONFIG, KHCOM_HD_SPRITES from $KHCOM_HD_SOURCE or '
-                         'D:/01Claude/ReKHCoM-build/hd-completo/sprites); results in build/debugkit-hd')
+                         '<work>/hd-completo/sprites); results in build/debugkit-hd')
     args = ap.parse_args()
     global OUT
     if args.hd:
         OUT = ROOT / 'build/debugkit-hd'
         os.environ['KHCOM_CONFIG'] = 'hd_cards=1;hd_title=1;hd_text=1'
-        os.environ['KHCOM_HD_SPRITES'] = os.environ.get('KHCOM_HD_SOURCE', 'D:/01Claude/ReKHCoM-build/hd-completo/sprites')
+        os.environ['KHCOM_HD_SPRITES'] = os.environ.get('KHCOM_HD_SOURCE', str(WORK_DIR / 'hd-completo/sprites'))
     if args.command == 'run':
         versions = [v for v in args.versions.split(',') if v]
         env = dict(os.environ, PATH=str(ROOT.parent / 'toolchain/bin') + os.pathsep + os.environ.get('PATH', ''))

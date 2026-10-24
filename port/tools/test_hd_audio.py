@@ -15,6 +15,7 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
 PRESSES = ','.join(f'{f}-{f + 3}:{k}' for f, k in zip(range(150, 1400, 25),
@@ -38,7 +39,7 @@ SCENARIOS = {
 }
 # the HD music must really play in a case, or nothing was checked (22/10: the cases ran without it and passed, #44)
 SILENT_OK = {'deck', 'status'}
-HD_MUSIC = os.environ.get('KHCOM_HD_MUSIC', 'D:/01Claude/ReKHCoM-build/hd-completo/music')
+HD_MUSIC = os.environ.get('KHCOM_HD_MUSIC', str(WORK_DIR / 'hd-completo/music'))
 
 
 def run(exe_dir, name):

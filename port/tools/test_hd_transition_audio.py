@@ -4,7 +4,7 @@ would be heard, float32 stereo 48 kHz). Prints the loudness every 50 ms and the 
 pop), the field's music left under the movie or a skip without its fade shows up. Also saves the presented frames
 (KHCOM_PRESENTSHOTS) to check the picture's fades.
 
-    uv run --with numpy python port/tools/test_hd_transition_audio.py --hd D:/01Claude/ReKHCoM-build/hd-completo \
+    uv run --with numpy python port/tools/test_hd_transition_audio.py --hd <work>/hd-completo \
         [--build build/pc-eu] [--event 0:16] [--seconds 3] [--pause 2]
 """
 import argparse

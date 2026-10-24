@@ -5,7 +5,7 @@ python port/tools/build_all.py --package --release-version v1.8.3
 python port/tools/build_all.py --platform all --package --release-version v1.9.9
 
 --platform all runs windows, linux, android and web in turn (web uses the
-D:/01Claude/ReKHCoM-build folders unless --emsdk/--web-sdl-build/--web-work are given).
+<work> folders unless --emsdk/--web-sdl-build/--web-work are given).
 Linux needs the sysroots prepared once (port/progress/LINUX.md). PS5 requires
 a native Linux host and the three original ROMs; run --platform ps5 there.
 """
@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import sys
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -43,7 +44,7 @@ def main():
     if args.platform == 'all':
         rest = [a for a in sys.argv[1:] if a not in ('all',)]
         rest = [a for i, a in enumerate(rest) if not (a == '--platform')]
-        cache = Path('D:/01Claude/ReKHCoM-build')
+        cache = WORK_DIR
         for plat in ('windows', 'linux', 'android', 'web'):
             extra = []
             if plat == 'web':
@@ -64,11 +65,11 @@ def main():
             command = [sys.executable, __file__, '--platform', 'ps5', *rest]
             print('== ps5', flush=True)
             subprocess.run(command, cwd=ROOT, check=True)
-        elif Path('D:/01Claude/ReKHCoM-build/ps5/ps5env.qcow2').is_file() and '--package' in rest and '--dry-run' not in rest:
+        elif (WORK_DIR / 'ps5/ps5env.qcow2').is_file() and '--package' in rest and '--dry-run' not in rest:
             print('== ps5 (Debian VM)', flush=True)
             subprocess.run([sys.executable, 'port/tools/build_ps5_vm.py'], cwd=ROOT, check=True)
         else:
-            print('PS5 skipped: needs a native Linux host, or the prepared VM image (D:/01Claude/ReKHCoM-build/ps5) with --package.', flush=True)
+            print('PS5 skipped: needs a native Linux host, or the prepared VM image (<work>/ps5) with --package.', flush=True)
         return
     if args.platform == 'ps5':
         command = [sys.executable, 'port/ps5/build_ps5.py', 'all', '--jobs', str(args.jobs)]

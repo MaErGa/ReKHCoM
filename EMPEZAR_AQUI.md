@@ -26,7 +26,9 @@ la cola. Nada de este archivo pide archivos del PC del autor. Idioma de trabajo 
 | ffmpeg (VMAF) | PATH | solo para `hd_quality_probe.py` |
 
 Las rutas `D:/01Claude/ReKHCoM-build/...` de los .md son la **carpeta de trabajo pesada** del autor (builds de
-consolas, emulador, pruebas grandes): en otra máquina usa cualquier carpeta con espacio. `KHCoMPC/jugar` y
+consolas, emulador, pruebas grandes): en otra máquina usa cualquier carpeta con espacio y ponla en la variable
+`REKHCOM_WORK` (sin ella, las herramientas usan `ReKHCoM-build` junto al checkout; `port/tools/workdir.py`; en los
+.md y en la ayuda de las herramientas aparece como `<work>`). `KHCoMPC/jugar` y
 `KHCoMPC/pruebas` son copias locales del usuario para probar: tampoco están en git.
 
 ## 3. Compilar (Windows)

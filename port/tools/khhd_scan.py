@@ -3,7 +3,7 @@
 without decompressing anything: one TSV row per HD texture (asset name, texture name, size in bytes). The base for
 the HD inventory in HUD_HD_RECOM.md. Output stays outside the repo (it names the player's game files).
 
-    python port/tools/khhd_scan.py "<install>/Image/dt/Recom.hed" recom.txt D:/01Claude/ReKHCoM-build/hdhud/scan.tsv
+    python port/tools/khhd_scan.py "<install>/Image/dt/Recom.hed" recom.txt <work>/hdhud/scan.tsv
 """
 import struct
 import sys

@@ -3,7 +3,7 @@
 settings, then each one's size and VMAF against its source (ffmpeg with libvmaf). For choosing the presets' settings
 (HD_MOD.md "Calidad de los videos").
 
-    py -3 port/tools/hd_quality_probe.py --source D:/01Claude/ReKHCoM-build/hd-completo/movies
+    py -3 port/tools/hd_quality_probe.py --source <work>/hd-completo/movies
 """
 import argparse
 import json
@@ -12,9 +12,10 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
-WORK = Path('D:/01Claude/ReKHCoM-build/hdprobe')
+WORK = (WORK_DIR / 'hdprobe')
 # name: (quality preset, extra environment)
 CONFIGS = {
     'actual-buena': (1, {}),

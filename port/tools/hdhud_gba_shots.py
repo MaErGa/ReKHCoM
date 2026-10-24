@@ -1,7 +1,8 @@
 """GBA-view captures of the battle HUD and the deck menu (zoom x4) to compare with Re:CoM's textures."""
 import os, subprocess, shutil, sys
 from pathlib import Path
-REPO = Path(sys.argv[1]); OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("D:/01Claude/ReKHCoM-build/hdhud") / "gba"
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
+REPO = Path(sys.argv[1]); OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else (WORK_DIR / 'hdhud') / "gba"
 CASES = {"battle": {"KHCOM_BATTLE": "0:1:0", "KHCOM_KEYS": "150-153:A"},
          "boss": {"KHCOM_BATTLE": "10:4:0", "KHCOM_KEYS": "150-153:A"},
          "deck": {"KHCOM_MODE": "60:Mode_Deck", "KHCOM_KEYS": "200-203:A,260-263:RIGHT,300-303:A"}}

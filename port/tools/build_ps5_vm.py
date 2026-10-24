@@ -2,7 +2,7 @@
 """Build the PS5 package (PPSA98511.zip) from Windows, inside the prepared Debian VM.
 
 The PS5 app needs a native Linux host. On this machine the VM image is
-D:/01Claude/ReKHCoM-build/ps5/ps5env.qcow2 (dependencies already installed); this script
+<work>/ps5/ps5env.qcow2 (dependencies already installed); this script
 packs the committed source (git archive HEAD) and the ROMs, boots it through
 port/tools/linux_vm_test.py, runs build_all.py --platform ps5 --package inside
 and fetches the zip.
@@ -23,10 +23,11 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
-IMAGE = Path('D:/01Claude/ReKHCoM-build/ps5/ps5env.qcow2')
-SHARE = Path('D:/01Claude/ReKHCoM-build/ps5/share-release')
+IMAGE = (WORK_DIR / 'ps5/ps5env.qcow2')
+SHARE = (WORK_DIR / 'ps5/share-release')
 
 
 def main():

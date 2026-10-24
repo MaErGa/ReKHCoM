@@ -6,7 +6,7 @@ with --fetch as a tar archive onto a raw "outbox" disk, which is read back here
 and saved to --out (the serial console is read a byte at a time: a 28 MB PS5
 package in base64 through it took hours).
 
-    python port/tools/linux_vm_test.py --share D:/01Claude/ReKHCoM-build/linux/vmshare \
+    python port/tools/linux_vm_test.py --share <work>/linux/vmshare \
         --run "cd /root/share/ReKHCoM && KHCOM_FAST=1 ./ReKHCoM.sh" --fetch /root/share/ReKHCoM/kh_com.log
 """
 import argparse
@@ -17,11 +17,12 @@ import sys
 import threading
 import time
 from pathlib import Path
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
-QEMU = Path('D:/01Claude/ReKHCoM-build/toolchain/qemu/runtime')
+QEMU = (WORK_DIR / 'toolchain/qemu/runtime')
 IMAGES = {
-    'x86_64': Path('D:/01Claude/ReKHCoM-build/linux/vm/debian-12-nocloud-amd64.qcow2'),
-    'aarch64': Path('D:/01Claude/ReKHCoM-build/linux/vm/debian-12-nocloud-arm64.qcow2'),
+    'x86_64': (WORK_DIR / 'linux/vm/debian-12-nocloud-amd64.qcow2'),
+    'aarch64': (WORK_DIR / 'linux/vm/debian-12-nocloud-arm64.qcow2'),
 }
 
 

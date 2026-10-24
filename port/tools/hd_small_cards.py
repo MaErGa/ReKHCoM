@@ -20,11 +20,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import khhd_pkg  # noqa: E402
 from hd_menu_titles import frame_pixels  # noqa: E402
 from khhd_sprites import decode  # noqa: E402
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
 TSV = ROOT / 'port/data/hd_sprites.tsv'
 CATALOG = ROOT / 'src/card/card_catalog.c'
-NAMES = 'D:/01Claude/ReKHCoM-build/refs/OpenKh/OpenKh.Egs/resources/recom.txt'
+NAMES = str(WORK_DIR / 'refs/OpenKh/OpenKh.Egs/resources/recom.txt')
 K = 8
 WIN = (1, 16, 15, 31)  # the picture window in the sprite's box (corners, GBA pixels)
 # the value's black notch, in window pixels (x0, y0, x1, y1), stepped as the cartridge draws it

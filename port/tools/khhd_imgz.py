@@ -3,7 +3,7 @@
 entries every IMGD carries 32-bit RGBA pixels (its PS2 header is kept, the palette is empty). Writes one PNG per
 image, for the HD inventory (HUD_HD_RECOM.md). Output stays outside the repo.
 
-    python port/tools/khhd_imgz.py <file.imz>... --out D:/01Claude/ReKHCoM-build/hdhud/png
+    python port/tools/khhd_imgz.py <file.imz>... --out <work>/hdhud/png
 """
 import argparse
 import struct

@@ -12,11 +12,12 @@ import shutil
 import subprocess
 import zipfile
 from pathlib import Path
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
 KHCOMPC = ROOT.parent
 OLDS = KHCOMPC / 'respaldos/releases-estables'
-WORK = Path('D:/01Claude/ReKHCoM-build/updtest')
+WORK = (WORK_DIR / 'updtest')
 HIDDEN = dict(os.environ, SDL_VIDEO_DRIVER='offscreen', SDL_AUDIO_DRIVER='dummy', KHCOM_FAST='1')
 
 

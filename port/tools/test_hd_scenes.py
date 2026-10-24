@@ -8,7 +8,7 @@ KHCOM_HDMOVIE_SECONDS. With --recom the Re:CoM-only scenes (kHdSceneExtras) must
 without it they must not. With --movies-only (hd_movies on, hd_scenes off) only the endings' scenes (IsEnding in
 port_hdmovie.c, issue #42) may play, and they must.
 
-    python port/tools/test_hd_scenes.py --hd D:/01Claude/ReKHCoM-build/hd-completo [--build build/pc-eu] [--recom] [--jobs 6]
+    python port/tools/test_hd_scenes.py --hd <work>/hd-completo [--build build/pc-eu] [--recom] [--jobs 6]
 """
 import argparse
 import json

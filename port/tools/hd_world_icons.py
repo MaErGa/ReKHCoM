@@ -18,11 +18,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import khhd_pkg  # noqa: E402
 from hd_menu_titles import frame_pixels  # noqa: E402
 from khhd_sprites import decode  # noqa: E402
+from workdir import WORK_DIR  # the heavy work folder (REKHCOM_WORK)
 
 ROOT = Path(__file__).resolve().parents[2]
 TSV = ROOT / 'port/data/hd_sprites.tsv'
 K = 8
-NAMES = 'D:/01Claude/ReKHCoM-build/refs/OpenKh/OpenKh.Egs/resources/recom.txt'
+NAMES = str(WORK_DIR / 'refs/OpenKh/OpenKh.Egs/resources/recom.txt')
 # cartridge world, Re:CoM's form; 100 Acre Wood's picture also holds a page beside the book: only the book
 WORLDS = [('TraverseTown', 150), ('Agrabah', 151), ('OlympusColiseum', 152), ('Wonderland', 153), ('Monstro', 154),
           ('HalloweenTown', 155), ('Atlantica', 156), ('NeverLand', 157), ('HollowBastion', 158),
