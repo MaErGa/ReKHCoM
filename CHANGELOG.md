@@ -31,6 +31,9 @@ HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes
   unlock while they are on.
 - First start: behind the mode question, how the screen will look with the mode you are on.
 - HD import on the graphics card, about twice as fast as before.
+- HD import keeps what is already loaded: loading again only does the movies that are missing, broken or at
+  another quality (seconds instead of minutes), and with everything loaded the launcher says so instead of offering
+  the big load button.
 
 - HD scenes: smooth in and out of each scene (no flash of the event's picture when it ends), skipping a scene or
   movie fades the picture and its sound out instead of cutting them, the field's music fades out before a scene
