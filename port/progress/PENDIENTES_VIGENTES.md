@@ -27,6 +27,15 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   cerrar y retomar / cerrar y borrar); el 1.5+2.5 se busca en Steam (registro, bibliotecas), Epic (manifiestos,
   LauncherInstalled.dat), Heroic/Legendary, programas instalados de Windows y carpetas habituales de cada disco.
   Probado: corte a mitad + `--resume` (ROP conservado, RRE/RSE completos, ffprobe ok), test_launcher 11/11.
+- **TRASPASO (en curso al escribir, ~05:30):** (a) medición de la carga HD viejo (pre6) vs nuevo en los 3 modos:
+  `sh build/hdbench.sh old=<exe> new=<exe> [gpu=<exe>]` sobre `D:/01Claude/ReKHCoM-build/hdbench/src` (33 videos
+  enlazados con enlaces duros = 2,63 GB, el 39 % del mod; solo videos) → `build/hdbench.txt`; tabla para el usuario
+  con lo medido y extrapolado al mod entero. (b) **Vía GPU del importador** (`TranscodeBest`/`Gpu` en hd_import.inc:
+  D3D11 + DXGI device manager para decodificar y codificar en la tarjeta, como HandBrake/OBS/ejemplos de MF; vuelve
+  sola a la CPU si falla, `KHCOM_ENC_GPU=0` la apaga): compilada en build/pc, **sin commitear ni medir**; medirla
+  con hdbench (`gpu=`), revisar el MP4 (ffprobe, una mirada a un cuadro) y subir los workers si la CPU queda libre.
+  Ideas siguientes: audio AAC copiado sin recodificar; leer el video del juego sin la copia previa (IStream que
+  des-XORea la cabecera) para no escribir 6,7 GB de más.
 - **Baterías:** todos los cuelgues conocidos cerrados (ver historial). Riku JP corre (2 copias duplicadas: el usuario
   no deja cortarlas), 0 fallos hasta ~100. Faltan (`run_batteries.py --status`): rooms eu, battles eu, monkey
   eu/us/jp, skip eu/us/jp y los pasos android; luego `run_batteries.py --hd`. Toda falla o timeout = bug: reproducir.
