@@ -1,0 +1,584 @@
+{
+  "schema": "rekhcom.art-history/1",
+  "created": "2026-10-24T16:29:23.594454+00:00",
+  "source_scope": "Capturas nativas históricas verificables de worktrees conservados; no captura vigente ni reconstrucción de todas las versiones.",
+  "entries": [
+    {
+      "key": "history-ui-menu",
+      "title": "Menú START · cabecera y márgenes",
+      "source": "khcom-claude-int/build/hdm_menu_es/out_01700.bmp",
+      "source_sha256": "604adada0237014f86afaf468626e186c9282343e26ca68f9c3f588e43666ed6",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01700. Carpeta histórica conservada: khcom-claude-int/build/hdm_menu_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_menu_es/kh_com.log",
+          "sha256": "f1150ac386a7f734af40e8446b13cd842abc3e592fc335b922474f1aa4f8e9b6"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_menu_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_menu_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_menu_de/out_01700.bmp",
+        "khcom-claude-int/build/hdm_menu_en/out_01700.bmp",
+        "khcom-claude-int/build/hdm_menu_fr/out_01700.bmp",
+        "khcom-claude-int/build/hdm_menu_it/out_01700.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-deck",
+      "title": "Ver barajas · cartas, textos y cabecera",
+      "source": "khcom-claude-int/build/hdm_deck_es/out_01940.bmp",
+      "source_sha256": "37d1899f40daa0505f9f72f0766c41e1d65dd9e3ee2f827455726eab622b0ce3",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 7736c4ef040c · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01940. Carpeta histórica conservada: khcom-claude-int/build/hdm_deck_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_deck_es/kh_com.log",
+          "sha256": "dc458fe4ffaa42fc9cc2827abcfc3440bd257253aae9c6e2ea755b5c020079b7"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_deck_es/khcom.exe",
+          "sha256": "7736c4ef040cafbae61e3cf9acc3bc48292c186bee4041a6549012eab33b300d"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_deck_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_deck_de/out_01940.bmp",
+        "khcom-claude-int/build/hdm_deck_en/out_01940.bmp",
+        "khcom-claude-int/build/hdm_deck_fr/out_01940.bmp",
+        "khcom-claude-int/build/hdm_deck_it/out_01940.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-mapcards",
+      "title": "Naipes mapa · cartas y cabecera",
+      "source": "khcom-claude-int/build/hdm_mapcards_es/out_01980.bmp",
+      "source_sha256": "9bc9b03c4d64a25969f50bddc71526e7247001a341696fb64e05055681f33595",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01980. Carpeta histórica conservada: khcom-claude-int/build/hdm_mapcards_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_mapcards_es/kh_com.log",
+          "sha256": "3f09cfc05e0eaff7b3936714ca8a9b446f18d8e8e44d03dcc2981a6a4b1caebc"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_mapcards_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_mapcards_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_mapcards_de/out_01980.bmp",
+        "khcom-claude-int/build/hdm_mapcards_en/out_01980.bmp",
+        "khcom-claude-int/build/hdm_mapcards_fr/out_01980.bmp",
+        "khcom-claude-int/build/hdm_mapcards_it/out_01980.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-mapamundi",
+      "title": "Mapamundi · panel, mundos y cabecera",
+      "source": "khcom-claude-int/build/hdm_worldcards_es/out_02000.bmp",
+      "source_sha256": "9239b9480669978a4feabd1ce819c1db1337323fffedb6b0531b069f2cc82db8",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 7736c4ef040c · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 02000. Carpeta histórica conservada: khcom-claude-int/build/hdm_worldcards_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente. Identidad confirmada mirando la captura: el caso del arnés se llama worldcards, pero la pantalla visible es MAPAMUNDI.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_worldcards_es/kh_com.log",
+          "sha256": "6088559b16b649fc0569204077b5b4628c141c823ff5c833abd1a8e9a240faf3"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_worldcards_es/khcom.exe",
+          "sha256": "7736c4ef040cafbae61e3cf9acc3bc48292c186bee4041a6549012eab33b300d"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_worldcards_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_worldcards_de/out_02000.bmp",
+        "khcom-claude-int/build/hdm_worldcards_en/out_02000.bmp",
+        "khcom-claude-int/build/hdm_worldcards_fr/out_02000.bmp",
+        "khcom-claude-int/build/hdm_worldcards_it/out_02000.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-status",
+      "title": "Estado · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_status_es/out_02020.bmp",
+      "source_sha256": "ecae68de7247c1dc7c502c3c8325cba880bdf961949402493b895f565063aa76",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 02020. Carpeta histórica conservada: khcom-claude-int/build/hdm_status_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_status_es/kh_com.log",
+          "sha256": "fa5a32406c26dddae9dc48bdd1db8f8ac6efe5d2b010bf63b64b5241d1272a5d"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_status_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_status_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_status_de/out_02020.bmp",
+        "khcom-claude-int/build/hdm_status_en/out_02020.bmp",
+        "khcom-claude-int/build/hdm_status_fr/out_02020.bmp",
+        "khcom-claude-int/build/hdm_status_it/out_02020.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-journal",
+      "title": "Diario · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_journal_es/out_02040.bmp",
+      "source_sha256": "f38db680105904bc06f04c90871f2947b6d988afebfc2d0d9d382fb0d5d581a0",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 02040. Carpeta histórica conservada: khcom-claude-int/build/hdm_journal_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_journal_es/kh_com.log",
+          "sha256": "086a4bf0cb9f32b35c223e9645c2ee5c25c74af1cd7e548a9fb3e29283122399"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_journal_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_journal_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_journal_en/out_02040.bmp",
+        "khcom-claude-int/build/hdm_journal_fr/out_02040.bmp",
+        "khcom-claude-int/build/hdm_journal_it/out_02040.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-load",
+      "title": "Cargar partida · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_load_es/out_00760.bmp",
+      "source_sha256": "c93b7d6db6cc67fbfb926872fa57c0ecc8b4bd0a095bd9dcb7c5fd9da3ced1cb",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 00760. Carpeta histórica conservada: khcom-claude-int/build/hdm_load_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_load_es/kh_com.log",
+          "sha256": "a1cc8f5b17fd152c0f3bf3c5037a532859ff5b0453a7b8a9852fc572bad8e0fa"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_load_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_load_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_load_de/out_00760.bmp",
+        "khcom-claude-int/build/hdm_load_en/out_00760.bmp",
+        "khcom-claude-int/build/hdm_load_fr/out_00760.bmp",
+        "khcom-claude-int/build/hdm_load_it/out_00760.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-save",
+      "title": "Guardar · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_save_es/out_01760.bmp",
+      "source_sha256": "084f21d609808cf671ba2686e6f82821e1f50869b15955f8a4258b4c23c6b4af",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01760. Carpeta histórica conservada: khcom-claude-int/build/hdm_save_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_save_es/kh_com.log",
+          "sha256": "97f0a8396bf80233b426059dac2a8dc11b5b7ddbb6efea84f8b7e7108453449e"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_save_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_save_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_save_de/out_01760.bmp",
+        "khcom-claude-int/build/hdm_save_en/out_01760.bmp",
+        "khcom-claude-int/build/hdm_save_fr/out_01760.bmp",
+        "khcom-claude-int/build/hdm_save_it/out_01760.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-worldselect",
+      "title": "Elige un mundo · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_worldselect_es/out_01900.bmp",
+      "source_sha256": "4614412e2b055d22813a4ef12397cbf4bee44e908a0c5de198e8eb8feb0eb5d0",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01900. Carpeta histórica conservada: khcom-claude-int/build/hdm_worldselect_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_worldselect_es/kh_com.log",
+          "sha256": "2d4af836972d4fdf891bb34c68057644f2f87fa4d2376caf13647896152b01aa"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_worldselect_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_worldselect_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_worldselect_de/out_01900.bmp",
+        "khcom-claude-int/build/hdm_worldselect_en/out_01900.bmp",
+        "khcom-claude-int/build/hdm_worldselect_fr/out_01900.bmp",
+        "khcom-claude-int/build/hdm_worldselect_it/out_01900.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-worldwarp",
+      "title": "Vórtice · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_worldwarp_es/out_01760.bmp",
+      "source_sha256": "d32dfa25124399e91f5060956f55f825887917fd96a79c32da42b92e30aa450b",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 7736c4ef040c · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01760. Carpeta histórica conservada: khcom-claude-int/build/hdm_worldwarp_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_worldwarp_es/kh_com.log",
+          "sha256": "1c03545ac53b66f33af22bc43d505036c3feb2fb5f50e2a5df5108390fc59c46"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_worldwarp_es/khcom.exe",
+          "sha256": "7736c4ef040cafbae61e3cf9acc3bc48292c186bee4041a6549012eab33b300d"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_worldwarp_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_worldwarp_de/out_01760.bmp",
+        "khcom-claude-int/build/hdm_worldwarp_en/out_01760.bmp",
+        "khcom-claude-int/build/hdm_worldwarp_it/out_01760.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-shop",
+      "title": "Tienda moguri · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_shop_es/out_01900.bmp",
+      "source_sha256": "08c5aa1972e114e18722af4713daa46ed16a6acbd86243348284f79acf0b13df",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01900. Carpeta histórica conservada: khcom-claude-int/build/hdm_shop_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_shop_es/kh_com.log",
+          "sha256": "46c6f010ece99c1b8643a607706ea8952bf87589b06a00abc1c8faf63288cf89"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_shop_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_shop_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_shop_de/out_01900.bmp",
+        "khcom-claude-int/build/hdm_shop_en/out_01900.bmp",
+        "khcom-claude-int/build/hdm_shop_it/out_01900.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-rikudeck",
+      "title": "Baraja de Riku · cartas y cabecera",
+      "source": "khcom-claude-int/build/hdm_rikudeck_es/out_01100.bmp",
+      "source_sha256": "b5f8ea0368a7701f151996e09e92120cecfe3a0b3b94c4ce7bac372f63b46272",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 8955a8de334a · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01100. Carpeta histórica conservada: khcom-claude-int/build/hdm_rikudeck_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_rikudeck_es/kh_com.log",
+          "sha256": "2957d47a18dc1f807c6895a566e4f8e8e749f5e96ab14e7cfd1686ea344b01ca"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_rikudeck_es/khcom.exe",
+          "sha256": "8955a8de334a7fdf75c56ebe1c9c0fdad2bb75c1ca6b7e0a96664c3ca48c2847"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_rikudeck_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_rikudeck_de/out_01100.bmp",
+        "khcom-claude-int/build/hdm_rikudeck_en/out_01100.bmp",
+        "khcom-claude-int/build/hdm_rikudeck_fr/out_01100.bmp",
+        "khcom-claude-int/build/hdm_rikudeck_it/out_01100.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-premire",
+      "title": "Bonus élite · cartas y cabecera",
+      "source": "khcom-claude-int/build/hdm_premire_es/out_02000.bmp",
+      "source_sha256": "2a26cd533511995e0f24e942698e62753eed956ec310bfa3b1a631d258f55077",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 8955a8de334a · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 02000. Carpeta histórica conservada: khcom-claude-int/build/hdm_premire_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_premire_es/kh_com.log",
+          "sha256": "09bb3e7a561e5dd85b9650e2b057ec99e90f81ae965b5e110b8495f1e78f4079"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_premire_es/khcom.exe",
+          "sha256": "8955a8de334a7fdf75c56ebe1c9c0fdad2bb75c1ca6b7e0a96664c3ca48c2847"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_premire_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_premire_de/out_02000.bmp",
+        "khcom-claude-int/build/hdm_premire_en/out_02000.bmp",
+        "khcom-claude-int/build/hdm_premire_fr/out_02000.bmp",
+        "khcom-claude-int/build/hdm_premire_it/out_02000.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-levelup",
+      "title": "Subida de nivel · panel y cabecera",
+      "source": "khcom-claude-int/build/hdm_levelup_es/out_01000.bmp",
+      "source_sha256": "d93cc920284a742dfb94f98fbdc5841a6f9dc39468e79cb0cf7e9b3737f744d3",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 01000. Carpeta histórica conservada: khcom-claude-int/build/hdm_levelup_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_levelup_es/kh_com.log",
+          "sha256": "f04a0190a1babd4efda2132c9a427a2a2fae0b3b2e13a8c6ff0e44cb9d724b40"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_levelup_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_levelup_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_levelup_de/out_01000.bmp",
+        "khcom-claude-int/build/hdm_levelup_en/out_01000.bmp",
+        "khcom-claude-int/build/hdm_levelup_fr/out_01000.bmp",
+        "khcom-claude-int/build/hdm_levelup_it/out_01000.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-synthesis",
+      "title": "Síntesis de estancias · cartas y cabecera",
+      "source": "khcom-claude-int/build/hdm_synthesis_es/out_00470.bmp",
+      "source_sha256": "7c8f5b0f1c5919e202a1ec45b86de67edb00e2f67a1c5edb915fc6ff19562251",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 36efd3032767 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 00470. Carpeta histórica conservada: khcom-claude-int/build/hdm_synthesis_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_synthesis_es/kh_com.log",
+          "sha256": "1a362fee1adace1f555bfb8d41e9c6e25ac201b850f086a8d8e1da327459a572"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_synthesis_es/khcom.exe",
+          "sha256": "36efd3032767390057af0fb573f377f8e06a6bdb74b743f02b7b1caf3b875aad"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_synthesis_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_synthesis_de/out_00470.bmp",
+        "khcom-claude-int/build/hdm_synthesis_en/out_00470.bmp",
+        "khcom-claude-int/build/hdm_synthesis_fr/out_00470.bmp",
+        "khcom-claude-int/build/hdm_synthesis_it/out_00470.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-battle-hud",
+      "title": "HUD de combate · cartas y medidores HD",
+      "source": "khcom-claude-int/build/hdm_gauge50_es/out_00700.bmp",
+      "source_sha256": "50c102956b9d18c4f03976ead1830f4035b3514adeeacce5109584b581bb7bd5",
+      "status": "pending",
+      "version": "Histórica · v2.0 (built Oct 23 2026) · exe 6ba75f27d6e9 · ES",
+      "provenance": "Captura nativa sin montaje del arnés test_hd_menus.py, frame 00700. Carpeta histórica conservada: khcom-claude-int/build/hdm_gauge50_es. Log/configuración/binario identificados por SHA-256 en el manifiesto. Se entrega para revisión; no certifica la build vigente.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/hdm_gauge50_es/kh_com.log",
+          "sha256": "de9faca3838cdcbb0da277f363bf2a46f4d9953a6b7ef2585e9f046959f56640"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_gauge50_es/khcom.exe",
+          "sha256": "6ba75f27d6e9838adf4e341d16c8b4de1b44ad93284db8ea97da71ef3c83e7c2"
+        },
+        {
+          "path": "khcom-claude-int/build/hdm_gauge50_es/kh_com.ini",
+          "sha256": "abec393c29631ea5dfc85022d896e4dd87214d555c27d6dcbd4a22bc0de05091"
+        }
+      ],
+      "evidence_views": [
+        "khcom-claude-int/build/hdm_gauge100_es/out_00700.bmp",
+        "khcom-claude-int/build/hdm_gauge10_es/out_00700.bmp",
+        "khcom-claude-int/build/hdm_gauge25_es/out_00700.bmp",
+        "khcom-claude-int/build/hdm_gauge3_es/out_00700.bmp",
+        "khcom-claude-int/build/hdm_gauge75_es/out_00700.bmp"
+      ],
+      "limitations": "No hay aprobación humana enlazada a los píxeles de esta captura HD. El log identifica la versión cuando está presente; el SHA identifica el binario conservado, sin atribuirle un commit no demostrado. Variantes de idioma/vida quedan como vistas de evidencia sin crear tarjetas duplicadas."
+    },
+    {
+      "key": "history-ui-title",
+      "title": "Título · logo HD y barras",
+      "source": "khcom-claude-int/build/titlehd/present_01700.bmp",
+      "source_sha256": "abfede35b32090002c3a7fee1a4c772335252cf4ca979cfda3f924651938b83e",
+      "version": "Histórica · título HD · exe a0194c30c55a",
+      "status": "pending",
+      "provenance": "Captura nativa present_01700.bmp de titlehd; binario, log y configuración conservados. No es la evidencia antigua de title60-regression aprobada el 18/10: incluye modificaciones HD posteriores.",
+      "evidence_files": [
+        {
+          "path": "khcom-claude-int/build/titlehd/kh_com.log",
+          "sha256": "0d53870cbdbd2651a8fab3d78fd2e92a51273277fec7a87420d5cdbd3fa72561"
+        },
+        {
+          "path": "khcom-claude-int/build/titlehd/khcom.exe",
+          "sha256": "a0194c30c55a116766a0ef966fbac0c823555a22838d9dbdf418e79f6d3ad466"
+        },
+        {
+          "path": "khcom-claude-int/build/titlehd/kh_com.ini",
+          "sha256": "c400fe1b4315d7d28ea7b37a015709f84fac789bfea4eef538958b317173b478"
+        }
+      ],
+      "evidence_views": [],
+      "limitations": "La aprobación de las barras originales no se traslada a este logo/captura HD posterior. Commit de origen no demostrado."
+    }
+  ],
+  "backlog": [
+    {
+      "key": "worldcards",
+      "piece": "Naipes mundo · selección de carta",
+      "reason": "El archivo hdm_worldcards_es muestra MAPAMUNDI al verlo, no la selección de Naipes mundo. Mapamundi sí se recuperó como captura nativa; falta localizar/capturar Naipes mundo y no trasladar etiquetas del arnés a ciegas.",
+      "evidence": "REPARTO.md; PENDIENTES_HISTORIAL_2026-10.md"
+    },
+    {
+      "key": "portrait59",
+      "piece": "Retratos de diálogo · recorte/entrada y salida de Sora/Riku",
+      "reason": "Aprobación documentada18/10; no se encontraron build/portrait59-output ni portrait59-regression en los worktrees inspeccionados. Reproducir o recuperar esos archivos antes de asignar la aprobación a píxeles concretos.",
+      "evidence": "port/progress/RETRATOS_59_LOGICA.md"
+    },
+    {
+      "key": "title60",
+      "piece": "Título original · barras aprobadas18/10",
+      "reason": "La captura encontrada es de título HD posterior. Falta build/title60-regression; conservar aprobación textual sin inventar equivalencia con el logoHD.",
+      "evidence": "port/progress/TITULO_60_LOGICA.md"
+    },
+    {
+      "key": "room17",
+      "piece": "Cierre superior Hollow Bastion · borde natural",
+      "reason": "La captura v2 conocida es un recorte sin binario/log enlazados en esa carpeta. Falta evidencia nativa completa del caso exacto aprobado.",
+      "evidence": "port/progress/LOGICA_APROBADOS.md; khcom-claude-int/build/evidence/top_edge_plain_wall_v2_17.png"
+    },
+    {
+      "key": "language-copyright",
+      "piece": "Idioma y copyright · márgenes",
+      "reason": "No se localizó captura nativa con procedencia suficiente en los conjuntos inspeccionados; no sustituir por una pantalla de título.",
+      "evidence": "port/progress/REPARTO.md (17 ventanas)"
+    },
+    {
+      "key": "menu-deck-subpages",
+      "piece": "Añadir/quitar naipes · subpáginas de Ver barajas",
+      "reason": "Hay recortes/hojas/archivos .last que apuntan a carpetas ya ausentes; falta captura nativa del menú completo con binario/log.",
+      "evidence": "khcom-claude-int/build/menucap; CHANGELOG.md v1.8.3"
+    },
+    {
+      "key": "field-maps",
+      "piece": "Mapas de campo y HUD/minimapa · todas las salas",
+      "reason": "roomtest_eu/rooms.png es hoja de contacto. Faltan capturas individuales conservadas con caso/build para revisar cada sala; una sola escena no cubre todos los mapas.",
+      "evidence": "CHANGELOG.md v0.1–v0.8; port/progress/REPARTO.md"
+    },
+    {
+      "key": "battle-original",
+      "piece": "HUD y arenas originales · anclaje/entrada/salida",
+      "reason": "Las familias de jefes existentes conservan sus entregas; falta catálogo separado de transiciones, arenas comunes y todas las fases originales. La captura HD importada no demuestra esa matriz.",
+      "evidence": "CHANGELOG.md v0.1–v1.9.2; port/progress/BATTLE_SCENERY_AUDIT.md"
+    },
+    {
+      "key": "movies-hdscenes",
+      "piece": "Películas y fondos HD · encuadre/transiciones",
+      "reason": "Los logs de prueba no bastan como entrega visual; recuperar capturas nativas por caso y versión sin incorporar assets del juego a git.",
+      "evidence": "CHANGELOG.md v0.2–v2.0"
+    },
+    {
+      "key": "hud-experiments",
+      "piece": "HUD HD piloto / HD-2D / números y marcos anteriores",
+      "reason": "Se localizaron atlas, crops y composiciones de diseño; no representan una captura completa verificable de cada entrega histórica. No confundir con el HUD Re:CoM capturado el23/10.",
+      "evidence": "CHANGELOG.md v0.8–v1.8; port/progress/HUD_HD_EXPERIMENTAL.md"
+    },
+    {
+      "key": "launchers-options",
+      "piece": "Launchers, Opciones, logros y controles · plataformas",
+      "reason": "Hay capturas sueltas históricas, pero falta manifiesto uniforme de binario/log/caso y revisión visual por plataforma. Botones táctiles/primer arranque ya tienen familia viva y se preservan.",
+      "evidence": "CHANGELOG.md; port/progress/PENDIENTES_VIGENTES.md"
+    },
+    {
+      "key": "historical-version-series",
+      "piece": "Todas las revisiones visuales entre primera build y hoy",
+      "reason": "El changelog registra0.1(12/10)–v2.0. No se conservaron capturas nativas de cada versión. Este catálogo recupera evidencia disponible; no declara reconstruido todo el historial ni traslada aprobaciones entre builds.",
+      "evidence": "CHANGELOG.md"
+    }
+  ]
+}

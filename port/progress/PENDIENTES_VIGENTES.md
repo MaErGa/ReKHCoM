@@ -1,5 +1,18 @@
 # Cola vigente hacia la v2.0 (actualizada 24/10/2026)
 
+## Recuperación del catálogo histórico — 24/10, carril `catalogo-historico`
+
+- **Cargadas 17 familias históricas reales a la mesa compartida**: 15 pantallas de menús (incluido Mapamundi),
+  HUD de combate y título HD. Versiones identificadas por log/binario SHA, sin montar imágenes. Se revisaron
+  visualmente los 17 frames; `hdm_worldcards_es` muestra Mapamundi, no Naipes mundo.
+- Las 77 versiones que ya había en la mesa permanecieron idénticas al comparar antes/después; sus aprobados,
+  honores, comentarios y parentescos se conservaron. Segunda carga: 17 preservadas, cero duplicados.
+  Las nuevas van a Pre como «Histórica»: no hay aprobación exacta de esas capturas HD posteriores.
+- Inventario, procedencia y 12 huecos explícitos en [ARTE_HISTORICO.md](ARTE_HISTORICO.md); manifiesto verificable
+  en `ARTE_HISTORICO.json`, importador `port/tools/art_review/catalog_history.py`. No se declara reconstruido
+  todo el historial desde v0.1. Siguiente tanda: regenerar los casos factibles con fixtures actuales, registrados
+  como capturas actuales, sin heredar aprobación antigua. Tomar cada pieza antes en la cola remota.
+
 Única cola de trabajo. Lo terminado sale de aquí (queda en git y en CHANGELOG.md); los traspasos y estados viejos
 están en **PENDIENTES_HISTORIAL_2026-10.md** (evidencia, comandos, hallazgos). Método de depuración: DEBUG_WORKFLOW.md.
 
