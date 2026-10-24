@@ -270,3 +270,8 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   Android), `test_launcher.py` (sin `SDL_VIDEO_DRIVER=offscreen`: el launcher necesita GL; ventana oculta igual).
 - Copia de prueba para el usuario + `.bat`; notas cortas que anuncien el mod HD; nunca decir en público que algo no
   se probó en hardware.
+
+## Carril Escena 110 — PR listo para revisión
+
+- art_110 tomó Escena110 el 24/10/2026 a las 13:17 Chile. Rama codex/art-110-clouds; base origin/main 951d11777; worktree khcom-lane-110. Resolver nubes, verificar y entregar por PR; integración reservada al integrador único.
+- 24/10 13:28 Chile: 110 entregada como hija `179b6da22e5c4bd39181d5ab14d7b9d3`, responde ambas nubes del envío `20261024-054123-fb2267`. Pilares completos y terraza horizontal. EU 24/24 (110/111, cuatro anchos x3, cuadros 100/300/1000), GBA idéntica. Solo preliminar; falta valoración humana. Detalle en AGRABAH_110_REVISION.md.

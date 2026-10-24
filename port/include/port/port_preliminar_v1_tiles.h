@@ -429,6 +429,47 @@ static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==110 && (wx<0 || wx>=512 || wy<0 || wy>=512)) {
+        /* Agrabah's terrace turns at x=80 and x=208 inside the map. Beyond
+         * the left edge it is horizontal (y=208..335), not a staircase of
+         * eight-tile donor strips. Keep the authored corners and urns unique.
+         * The two shafts cut by y=0 continue using their own plain tops. */
+        if (p->v[1]==2) {
+            *sx=504; *sy=504; /* empty BG2 cell */
+            if (wy<0 && ((wx>=0 && wx<48) || (wx>=112 && wx<160))) {
+                *sx=wx; *sy=PortSceneTileMod(wy,16);
+            }
+        } else if (p->v[1]==3) {
+            if (wy>=512) {
+                *sx=256+PortSceneTileMod(wx-256,128);
+                *sy=384+PortSceneTileMod(wy-384,128);
+            } else if (wx<0) {
+                if (wy<208) {
+                    *sx=48+PortSceneTileMod(wx-48,32);
+                    *sy=80+PortSceneTileMod(wy-80,64);
+                } else if (wy<336) {
+                    *sx=PortSceneTileMod(wx,64); *sy=wy;
+                } else {
+                    *sx=256+PortSceneTileMod(wx-256,128);
+                    *sy=384+PortSceneTileMod(wy-384,128);
+                }
+            } else if (wy<0) {
+                if (wx<160) {
+                    *sx=wx; *sy=PortSceneTileMod(wy,16);
+                    /* Above the purple corner, sample the same wall plane. */
+                    if (wx>=48 && wx<112) *sy=0;
+                } else {
+                    *sx=192+PortSceneTileMod(wx-192,192);
+                    *sy=PortSceneTileMod(wy,64);
+                }
+            } else {
+                *sx=wy>=144 && wy<264?320+PortSceneTileMod(wx-320,160):320+PortSceneTileMod(wx-320,192);
+                *sy=wy;
+            }
+        } else return 0;
+        return 1;
+    }
+
     if (p && p->v[0]==104 && p->v[1]==2 && wy<0) {
         /* the kelp cut by the map's top goes on up its 6-row cycle and ends
          * in its own bottom tip, reflected (user 24/10); each at its height */
