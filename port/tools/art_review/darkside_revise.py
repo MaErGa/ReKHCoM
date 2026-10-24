@@ -183,6 +183,43 @@ POSES = {  # image title prefix -> (.inc name, define, ROM frame slot)
 }
 
 
+def faded_bottom(added, rows):
+    """the added part also thins into shadow over its last rows"""
+    if not added:
+        return added
+    bottom = max(y for x, y in added)
+    out = {}
+    for (x, y), c in added.items():
+        level = min(1.0, (bottom - y) / max(1, rows))
+        if level * 16 > BAYER[y % 4][(x + 2) % 4]:
+            out[x, y] = c
+    return out
+
+
+def study_to_frame(original, added, zone):
+    """a cloud's pixel box on the study (draw(): the second pane at x2) back to the frame's pixels"""
+    pts = list(original) + list(added)
+    box = (max(0, min(x for x, y in pts) - 8), max(0, min(y for x, y in pts) - 8))
+    w = (min(384, max(x for x, y in pts) + 9) - box[0]) * 2
+    left = max(420, w) + 48
+    x0, y0, x1, y1 = zone
+    return (box[0] + (x0 - left) // 2, box[1] + (y0 - 84) // 2, box[0] + (x1 - left) // 2 + 1, box[1] + (y1 - 84) // 2 + 1)
+
+
+def tail_rows(original, palette, rows, length):
+    """thin strands (a bit of wing) cut at x255 in the given rows: go on a few pixels and dissolve, like shadow_tail"""
+    dark = darkest(palette, set(original.values()))
+    out = {}
+    for y, c in edge_rows(original).items():
+        if not rows[0] <= y < rows[1]:
+            continue
+        for k in range(length):
+            level = 1.0 - k / length
+            if level * 16 > BAYER[y % 4][(SEAM + k) % 4]:
+                out[SEAM + k, y] = c if k < length // 3 else dark
+    return out
+
+
 def faded_from(added, start, width):
     """like faded, but whole up to start columns past the seam, then thinning over width (ordered dither)"""
     out = {}
@@ -214,7 +251,25 @@ def main():
         inc = inc_path.read_text()
         original, palette = frame(args.source, slot)
         added = {pt: c for pt, c in extension(inc).items() if pt not in original}
-        if args.round == 'r4':
+        if args.round == 'r5':
+            right = {pt: c for pt, c in added.items() if pt[0] >= SEAM}
+            if key == '04':  # r4 faded from too far left: whole longer, then thinning; and thinning at the bottom too
+                new = faded_bottom(faded_from(right, 14, 18), 16)
+                change = 'Difuminado más corto (empieza más a la derecha) y también hacia abajo, como pediste. Original intacto.'
+            elif key == '05':  # r4 (the elbow) plus the bit of wing cut at the seam, dissolving
+                elbow = faded_from(outline(rounded_back(original, added, 24), darkest(palette, set(original.values()))), 2, 12)
+                zone = sent['annotations'][-1]['pixels_xyxy_exclusive']
+                fx0, fy0, fx1, fy1 = study_to_frame(original, elbow, zone)
+                wing = tail_rows(original, palette, (fy0 - 2, fy1 + 2), 14)
+                new = {**elbow, **wing}
+                change = 'El codo de la r4 y el pedacito de ala cortado en el borde: sigue unos píxeles y se difumina. Original intacto.'
+            else:  # 06: the user's sketch: the arm hugs the body, its top at the shoulder, ending higher; drawn whole
+                arm = {pt: c for pt, c in shifted({pt: c for pt, c in added.items() if pt[0] >= SEAM - 16}, -8, -2).items()
+                       if pt[0] >= SEAM and pt not in original}
+                reach = max((x for x, y in arm), default=SEAM) - SEAM
+                new = faded_bottom(faded_from(arm, int(reach * .8), max(4, int(reach * .2))), 6)
+                change = 'Brazo según tu boceto: más pegado al cuerpo y más arriba (2 px), entero y visible; solo la punta se adelgaza. Original intacto.'
+        elif args.round == 'r4':
             right = {pt: c for pt, c in added.items() if pt[0] >= SEAM}
             if key == '03':  # the generated side, then only a bit of torso by the seam stays and fades out
                 new = faded_from({pt: c for pt, c in shifted(right, 0, -6).items() if pt not in original}, 4, 22)
@@ -256,7 +311,7 @@ def main():
         title = '%s  DARKSIDE · %s · revisión siguiente' % (key, reviewed['title'].split('·')[1].strip())
         lines = ['Respuesta a: «%s»' % sent['annotations'][-1]['comment'].strip()[:110], 'Cambio: ' + change,
                  'Original intacto; añadidos solo desde x256. Pendiente de tu revisión; no integrado en el juego.']
-        if args.round == 'r4':
+        if args.round in ('r4', 'r5'):
             lines[0] = 'Respuesta a: «%s»' % sent['annotations'][-1]['comment'].strip()[:110]
         if key == '07':  # the original alone, as asked
             alone = Image.new('RGB', (384, 256), NATURAL_BG)

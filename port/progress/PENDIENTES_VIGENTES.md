@@ -66,6 +66,12 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
      el codo. Falta (pedido): **mejorar el dibujo de lo generado debajo del tramado** con los comentarios previos (en
      03/04 se ve como franja vertical: lo generado es un bloque); hacerlo a mano por píxel (paleta 4bpp del juego) y
      entregar r5 hijas.
+  6c. **Hecho ~06:40: r5 de Darkside 04/05/06** (`--round r5`; 32d663, cb75a0, f28d6b): 04 difuminado más corto y
+     también abajo; 05 el codo + un pedacito de ala cortado en el borde que se difumina (apenas se ve: agrandar si la
+     nube lo pide); 06 brazo según el boceto del usuario (más pegado al cuerpo, 2 px arriba; boceto: el brazo baja
+     pegado al costado desde el hombro, con el antebrazo junto al corte), entero, solo la punta tramada.
+     **Carga HD medida (33 videos, 2,63 GB = 39 %):** Original 4 s → 6 s; Buena 413 → 237 s (1,74x); Ahorro 452 →
+     247 s (1,83x); mod completo Buena ~17,6 → ~10 min, Ahorro ~19,3 → ~10,5 min. Vía GPU: medición corriendo.
   7. App 0.4.2: cada pieza en UNA pestaña (con una propuesta nueva pendiente queda solo en Preliminares, conservando
      la aprobación anterior a la vista); las nubes se ven aunque el envío no se haya procesado (pedido del usuario).
   8. Coliseo 121 integrado aislado en el árbol (sin commitear al escribir): receta 121 de 1ee40e4e6 en
