@@ -1463,6 +1463,14 @@ static int Agrabah109DecorPixel(const BgLatch* l, const uint8_t* chars,
     return 0;
 }
 
+/* the boss arenas' Preliminar V2 (BATTLE_SCENERY_AUDIT.md): on in the review copy only until approved */
+static int PortArenasV2(void) {
+    static int on = -1;
+    if (on < 0)
+        on = getenv("KHCOM_ARENAS_V2") && *getenv("KHCOM_ARENAS_V2") == '1';
+    return on;
+}
+
 static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
     uint16_t cnt = IO16(0x08 + bg * 2);
     int hofs = IO16(0x10 + bg * 4) & 0x1FF;
@@ -1484,6 +1492,10 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
     int guardPatio = bg == 0 && sBgLatch[bg].valid &&
         PortGuardArmorBackdropMatches((const void* const*)sBgLatch[bg].map) &&
         !getenv("KHCOM_NO_GUARD_PATIO"); /* isolated before/after harness */
+    /* Trickmaster's chessboard below the map (the wide view's bottom band): the Preliminar V2 of the boss arenas,
+       waiting for the user's approval (KHCOM_ARENAS_V2=1, the review copy) */
+    int tmBoard = sBgLatch[bg].valid && PortTrickmasterBackdropMatches((const void* const*)sBgLatch[bg].map) &&
+        PortArenasV2();
 
     (void)dispcnt;
     if (mosV > 1)
@@ -1529,6 +1541,13 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
             int wx = l->x + gx + (hofs - l->hofs);
             int wy = l->y + gy + (vofs - l->vofs);
             if (PortGuardArmorBackdropPixel(wx, wy, &out[x])) {
+                sInWorld[x] = 1;
+                continue;
+            }
+        }
+        if (tmBoard && gy >= GBA_SCREEN_H) { /* below the picture only: above it the map goes on as it is */
+            const BgLatch* l = &sBgLatch[bg];
+            if (PortTrickmasterBackdropPixel(l->x + gx + (hofs - l->hofs), l->y + gy + (vofs - l->vofs), &out[x])) {
                 sInWorld[x] = 1;
                 continue;
             }

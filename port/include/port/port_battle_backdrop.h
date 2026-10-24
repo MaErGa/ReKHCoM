@@ -8,6 +8,10 @@
 int PortGuardArmorBackdropMatches(const void* const* maps);
 int PortGuardArmorBackdropPixel(int x, int y, uint16_t* color);
 
+/* Trickmaster's room (port_trickmaster.c): its chessboard goes on below the map, in its perspective */
+int PortTrickmasterBackdropMatches(const void* const* maps);
+int PortTrickmasterBackdropPixel(int x, int y, uint16_t* color);
+
 /* Darkside's beach (port_darkside.c): 1 the beach layer, 2 Darkside's body, 0 neither. */
 int PortDarksideLayer(const void* const* maps);
 /* cx, cy: the map tile at the middle of the original picture (the body's single copy is the one nearest it) */
