@@ -1,5 +1,20 @@
 # Cola vigente hacia la v2.0 (actualizada 24/10/2026)
 
+## Cola limpiada 24/10 ~17:40 (limpiador de cola)
+
+- **Dueños muertos por límite de sesión (16:55):** r2a/r2b/r2c. Sus worktrees (`wt-r2a/b/c`) están limpios y sin commits sobre
+  origin/main; no había nada que recuperar. Sus piezas ya estaban liberadas por el coordinador (escena-004 la retomó r3c).
+- **Enviado:** PR #71 (112/120, worker w2): se generaron antes/después EU 3440x1440 zoom 6 y se enviaron a la app como hijas
+  (112: `a0dc114d1c424b9ab74895c195f5d5ca`, 120: `63a8864f45d64772bcad287fb139e4f9`), marcadas «PENDIENTE DE PR #71».
+  Piezas pr_abierto con `--sent`. **No integrar #71**: el después de 112 deja un recuadro negro junto a la puerta y escalones
+  en el muro, 120 conserva el hueco marrón y la estructura sin resolver, y enciende recetas 115/116/117/118 no aprobadas.
+  Solo atiende nube 1 de 112 y parte de la nube 2 de 120. Falta (pendiente): patrón, parte alta de puerta, pilar/muro (112);
+  estructura y patrón de muro (120). Se trabó porque w2 abrió el PR sin imagen y murió/cerró la ronda.
+- **Liberado:** nada nuevo (las r2 ya estaban liberadas).
+- **Sin tocar:** r3a (escena-057), r3c (escena-004); 9 tareas `claude-relevo` en_curso (editor-tiles-*, catalogo-*) son código/docs
+  del traspaso, no arte, con evidencia de WIP conservado, sin trabajo en worktree que enviar; `botones-tactiles` bloqueado es
+  duplicado de `botones-editor` (integrado); `integrar-darkside-01` espera darkside-arena (PR #70).
+
 ## TRASPASO 24/10 ~14:15 (Chile, Claude — integrador y relevo de Codex)
 
 Codex se apagó (usuario: «seguir con sus pendientes», «ve integrando y pusheando tú»). En la cola online
