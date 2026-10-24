@@ -5,8 +5,27 @@
 /* Street shared by events 107/108. Coordinates are original 8x8 tiles.
  * Side donors contain no windows, pots, market stalls or building corners.
  * Keep the two independent diagonals: street NE/SW, roof fronts NW/SE. */
-static inline int PortAgrabahTileSource(int bg, int* x, int* y) {
+static inline int PortAgrabahTileSource(int bg, int* x, int* y, int topPreview) {
     int ox = *x, oy = *y, sx, sy;
+    /* The Genie pans the shared 107/108 backdrop above its authored top.
+     * Continue each existing pilaster in its own column, not as plain yellow
+     * facade. Complete the one window cropped at the source top, using the
+     * intact matching window eight columns to its left and four rows below.
+     * This sampler is called only outside the native GBA viewport. */
+    if (topPreview && oy < 0 && ox >= 0 && ox < 64) {
+        if (bg == 2) {
+            if ((ox >= 16 && ox < 20) || (ox >= 40 && ox < 44)) {
+                *y = 4 + PortSceneTileMod(oy, 4); return 1;
+            }
+            if (ox >= 52 && ox < 56 && oy >= -4) {
+                *x = ox - 8; *y = oy + 4; return 1;
+            }
+            return 0;
+        }
+        if (bg == 3 && ox >= 16 && ox < 20) {
+            *y = 4 + PortSceneTileMod(oy, 4); return 1;
+        }
+    }
     if (ox >= 0 && ox < 64 && oy >= 0 && oy < 64) return 1;
     if (ox < 0) {
         sx = PortSceneTileMod(ox, 4);

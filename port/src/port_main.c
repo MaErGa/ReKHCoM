@@ -2814,6 +2814,44 @@ void PortSoftReset(void) {
     longjmp(sResetJmp, 1);
 }
 
+#ifdef _WIN32
+/* Keep the frame rate steady when the window loses focus or another app is busy: high process priority,
+   the 1 ms system timer, no Windows 11 power throttling (EcoQoS slows timers and the CPU of background
+   windows), and the "Games" multimedia class for the main thread. Everything is looked up at run time so
+   older Windows simply skips what it lacks. */
+typedef struct PortPowerThrottling { ULONG Version, ControlMask, StateMask; } PortPowerThrottling;
+
+static void PortWindowsPerformance(void) {
+    HMODULE kernel = GetModuleHandleA("kernel32.dll");
+    HMODULE winmm = LoadLibraryA("winmm.dll");
+    HMODULE avrt = LoadLibraryA("avrt.dll");
+
+    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    if (winmm) {
+        UINT(WINAPI * beginPeriod)(UINT) = (UINT(WINAPI*)(UINT))(void*)GetProcAddress(winmm, "timeBeginPeriod");
+        if (beginPeriod)
+            beginPeriod(1);
+    }
+    if (kernel) {
+        BOOL(WINAPI * setInfo)(HANDLE, int, LPVOID, DWORD) =
+            (BOOL(WINAPI*)(HANDLE, int, LPVOID, DWORD))(void*)GetProcAddress(kernel, "SetProcessInformation");
+        if (setInfo) {
+            /* ProcessPowerThrottling = 4; execution speed (1) and timer resolution (4) never throttled */
+            PortPowerThrottling state = { 1, 0x1 | 0x4, 0 };
+            setInfo(GetCurrentProcess(), 4, &state, sizeof(state));
+        }
+    }
+    if (avrt) {
+        HANDLE(WINAPI * setTask)(LPCWSTR, LPDWORD) =
+            (HANDLE(WINAPI*)(LPCWSTR, LPDWORD))(void*)GetProcAddress(avrt, "AvSetMmThreadCharacteristicsW");
+        DWORD index = 0;
+        if (setTask)
+            setTask(L"Games", &index);
+    }
+    PortLog("Windows: high priority, 1 ms timer, no power throttling");
+}
+#endif
+
 int main(int argc, char** argv) {
     int winW, winH;
 
@@ -2869,6 +2907,9 @@ int main(int argc, char** argv) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
         PortFatal("SDL_Init failed: %s", SDL_GetError());
     PortConfigLoad();
+#ifdef _WIN32
+    PortWindowsPerformance();
+#endif
     PortAchievementsInit();
     PortLog("KHCoM PC - SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
 

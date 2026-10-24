@@ -163,6 +163,16 @@ los demás. Las escenas hermanas que usaron estas recetas se revisan con estas r
 | Maléfica 01 / `25aa0ffe25b14be5855a107bd882b6f6` | «terminar de dibujar a Maléfica hasta la cola; ver si está en los archivos o dibujar como artista pixel art» | Pendiente (bloqueado, arte nuevo): buscar el resto del sprite en la ROM; si no existe, dibujar. |
 | Maléfica arena / `ae681fffa79a4feea3b4ea1ef137a512` | «arena bien» (aprobada); sprites se comentan por separado | Sin cambios: la arena de Maléfica queda tal cual. |
 
+## Escena 090: reja recta y montañas completas (respuesta Codex, 24/10)
+
+Referencia humana: `0551fbab97804de9802ed1b48160e278`, envio `20261024-130932-cd374d`.
+Las nubes 1/2 piden la reja recta del propio fondo; 3/5 completar montañas; 4 señala el patron correcto.
+Correccion: no repetir la esquina diagonal; usar un poste completo horizontal (columnas 40..43),
+sin el remate unico del porton ni estela lunar, y mamposteria separada sin lapidas (46..47).
+Montañas: tres crestas en 32 columnas, incluyendo todas sus sombras y excluyendo remates del porton.
+El lado izquierdo conserva su diagonal; luna y puerta siguen unicas. Hija `37a6f9b61f0e427988c96890ce9b4f09`.
+Propuesta preliminar pendiente de valoracion: no hereda honores. Evidencia en ESCENA090_REVISION_CODEX.md.
+
 ## Medición: workers vs. trabajo solo (24-25/10/2026)
 
 | Modo | Agentes | Piezas de arte entregadas a la app | Aprobadas | Costo aprox. |
@@ -194,3 +204,12 @@ mejora propia; otros agentes (Codex) toman piezas en paralelo por la cola. Los w
 ## Escena 099: techo, propuesta de Codex (24/10)
 
 La nube bab8281c-e1c9-4e01-b894-a3a05e339e8b sobre d3e87dca65eb4e9fb10535b3e731419d pide mejorar el patrón superior y valora positivamente el suelo. No trasladar esa aprobación al techo ni cambiar el suelo. El friso mide 28 píxeles por casilla: usar una pareja completa de 56 píxeles, aunque no coincida con la rejilla de tiles, y conservar su fase en las dos uniones. Propuesta pendiente de valoración: completar arriba filas alternadas de casillas con el mismo donante; el mapa original queda intacto. No se habilita para jugadores sin honores de esta versión.
+
+## Agrabah 107/108: subida del Genio (comentario posterior, 24/10)
+
+El usuario señala que, aunque la calle tiene honores, al aparecer el Genio la cámara sube y los pilares
+rosas y la ventana superior terminan en un corte. Esa aprobación no certifica el margen vertical.
+Regla corregida: verificar los extremos de la cámara del evento compartido, continuar cada pilar en
+su propia columna con su período vertical (4 filas), y completar únicamente la ventana que ya queda
+cortada, con su donante entero, sin repetir otras ventanas. Rectángulo GBA intacto.
+La propuesta se ve con KHCOM_PRELIMINAR_V1=1 y espera valoración propia; no hereda honores.
