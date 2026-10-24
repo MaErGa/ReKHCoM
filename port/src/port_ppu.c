@@ -1970,7 +1970,7 @@ static void DrawStraightAffine(int bg, int gy, uint16_t cnt, int32_t refX, int32
     static PPU_TLS int16_t columns[2][PORT_MAX_W];
     int key[14], a = bg - 2, w = gPortScreen.width;
     int size = 128 << (cnt >> 14), tiles = size >> 3, wrap = (cnt >> 13) & 1;
-    int py = refY >> 8, ornaments, single, x, i, lastTile = -1;
+    int py = refY >> 8, ornaments, single, edge, x, i, lastTile = -1;
     uint16_t colors[8];
     uint16_t* out = sBgLine[bg];
     const uint8_t* chars = VRAM8 + ((cnt >> 2) & 3) * 0x4000;
@@ -1981,7 +1981,12 @@ static void DrawStraightAffine(int bg, int gy, uint16_t cnt, int32_t refX, int32
         py = size - 1;
     ornaments = sBattleView && sArenaBands[1] && size >= 512 &&
                 ((cnt >> 2) & 3) == 0 && ((cnt >> 8) & 31) == 12 && py >= 0 && py < size;
+    /* Jafar: his full-screen flashes are a 256x256 affine layer that does not wrap; beside the picture its edge goes on,
+       so the flash covers the margins instead of showing the GBA box (user, 24/10) */
+    edge = sJafarFight && !wrap;
     if (wrap) py &= size - 1;
+    else if (edge && (gy < 0 || gy >= GBA_SCREEN_H) && (py < 0 || py >= size))
+        py = py < 0 ? 0 : size - 1;
     else if (py < 0 || py >= size) {
         for (x = 0; x < w; x++) out[x] = TRANSPARENT;
         return;
@@ -1989,7 +1994,7 @@ static void DrawStraightAffine(int bg, int gy, uint16_t cnt, int32_t refX, int32
     key[0] = refX; key[1] = w; key[2] = gPortScreen.originX;
     key[3] = sLeft; key[4] = sRight; key[5] = cnt;
     single = AffineSingleCopy(bg);
-    key[6] = sBattleView; key[7] = ornaments | single << 1;
+    key[6] = sBattleView; key[7] = ornaments | single << 1 | edge << 2;
     for (i = 0; i < 6; i++) key[8 + i] = sArenaBands[i];
     if (!valid[a] || memcmp(keys[a], key, sizeof(key))) {
         for (x = 0; x < w; x++) {
@@ -2009,6 +2014,8 @@ static void DrawStraightAffine(int bg, int gy, uint16_t cnt, int32_t refX, int32
             }
             if (wrap || ((px < 0 || px >= size) && size >= 512 && (gx < 0 || gx >= GBA_SCREEN_W)))
                 px &= size - 1;
+            if (edge && (gx < 0 || gx >= GBA_SCREEN_W))
+                px = px < 0 ? 0 : px >= size ? size - 1 : px;
             columns[a][x] = (px >= 0 && px < size) ? (int16_t)px : -1;
         }
         memcpy(keys[a], key, sizeof(key)); valid[a] = 1;
@@ -3464,6 +3471,21 @@ void PortPpuBeginFrame(void) {
             if (p->src == (const void*)gMapGmkAgrabah01Palette) sAgrabah109ShopPal[1] = p->index;
         }
     }
+    /* Jafar's fight, held for the whole battle: a frame of his flashes (mode 1, a small affine layer, the room not
+       latched) showed the bare GBA box for a moment (user, 24/10); the wide view stays on */
+    {
+        int jb, seen = 0;
+        if (PortJafarWide())
+            for (jb = 0; jb < 4; jb++)
+                if (sBgLatch[jb].valid && PortJafarLayer((const void* const*)sBgLatch[jb].map) == 1)
+                    seen = 1;
+        if (seen)
+            sJafarFight = 1;
+        else if (!sBattleView)
+            sJafarFight = 0;
+        if (sJafarFight)
+            any = 1;
+    }
     /* Marluxia's last fight: the wide view all along (not only while its effect layer is on) */
     if (PortMarluxiaFieldOn())
         any = 1;
@@ -3492,13 +3514,6 @@ void PortPpuBeginFrame(void) {
                 IO16(0x0C), IO16(0x0E), gPortScreen.wide, sSceneNarrow);
     sHudLayer = gPortScreen.wide && gPortHudScale > 0 && gPortHudW >= GBA_SCREEN_W;
     sHdText = gPortConfig.hdText;
-    sJafarFight = 0;
-    if (PortJafarWide()) {
-        int jb;
-        for (jb = 0; jb < 4; jb++)
-            if (sBgLatch[jb].valid && PortJafarLayer((const void* const*)sBgLatch[jb].map) == 1)
-                sJafarFight = 1;
-    }
 #if defined(__ANDROID__) || defined(PORT_LINUX)
     sHdText = sHdText && PortPortableHdReady();
 #endif
