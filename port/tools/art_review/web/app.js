@@ -38,7 +38,10 @@ function gallery() {
   const byId=new Map(assets.map(a=>[a.id,a])),groups=new Map();
   for(const a of assets){let root=a;const seen=new Set();while(root.parent_id&&byId.has(root.parent_id)&&!seen.has(root.id)){seen.add(root.id);root=byId.get(root.parent_id);}if(!groups.has(root.id))groups.set(root.id,{root,versions:[]});groups.get(root.id).versions.push(a);}
   const search=$('searchPieces').value.trim().toLocaleLowerCase('es');let total=0,counts={pending:0,accepted:0};
-  const pick=(tab,versions,family)=>tab==='accepted'?byId.get(family?.approved_version):(family?.build_version?null:versions.at(-1));
+  /* Preliminares: the newest version while it still waits for a verdict; approved ones go straight to Ya aceptados
+     (and come back here only when a newer proposal of the piece arrives) */
+  const accepted=a=>a&&(a.status==='approved'||a.status==='honors');
+  const pick=(tab,versions,family)=>tab==='accepted'?byId.get(family?.approved_version)||versions.filter(accepted).at(-1):(accepted(versions.at(-1))?null:versions.at(-1));
   for (const {root,versions} of groups.values()) {
     const family=approvals.find(f=>f.family_id===root.id);
     for(const tab of ['pending','accepted'])if(pick(tab,versions,family))counts[tab]++;
@@ -63,7 +66,11 @@ $('tabPending').onclick=()=>setLibraryTab('pending');$('tabAccepted').onclick=()
 async function choose(id, options={}) {
   try { await flushGeneral(); await saveChain; } catch(e) { return toast(e.message); }
   current = assets.find(a => a.id === id); selected = null;
-  libraryTab=current.status==='honors'?'accepted':'pending';
+  /* the tab stays the one the reviewer is on (moving between revisions of an accepted piece used to jump to
+     Preliminares); only the first load picks it from the piece */
+  if(options.tab)libraryTab=options.tab;
+  /* an update notice was for the piece shown before: it must not take this one elsewhere */
+  if(pendingUpdate&&pendingUpdate.kind==='image'&&pendingUpdate.forId!==id){pendingUpdate=null;$('updates').hidden=true;}
   followLatest=options.follow===true;
   const address=new URL(location.href);address.searchParams.set('image',id);address.searchParams.delete('latest');history.replaceState(null,'',address);
   if(followLatest)address.searchParams.delete('view');else address.searchParams.set('view','history');history.replaceState(null,'',address);
@@ -118,8 +125,7 @@ $('viewport').addEventListener('pointerup',()=>pan=null);$('viewport').addEventL
 $('showNotes').onclick=()=>document.body.classList.toggle('notes-open');$('closeNotes').onclick=()=>document.body.classList.remove('notes-open');
 $('assetPicker').onchange=()=>choose($('assetPicker').value);
 $('refresh').onclick=async()=>{try{await flushGeneral();await saveChain;const state=await api('/api/state');assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];await choose(current?.id||assets[0].id);toast('Versiones actualizadas');}catch(e){toast(e.message);}};
-$('density').value=localStorage.getItem('atlas-density')||'compact';document.body.dataset.density=$('density').value;
-$('density').onchange=()=>{document.body.dataset.density=$('density').value;localStorage.setItem('atlas-density',$('density').value);if(fitMode)fit();};
+document.body.dataset.density='compact'; /* one interface size (the user, 24/10: the compact one, no selector) */
 function setMode(value) { mode=value; $('draw').classList.toggle('active',value==='draw'); $('select').classList.toggle('active',value==='select'); $('overlay').classList.toggle('selecting',value==='select'); }
 $('draw').onclick = () => setMode('draw'); $('select').onclick = () => setMode('select');
 function point(e) { const r = $('overlay').getBoundingClientRect(); return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}; }
@@ -266,6 +272,7 @@ async function applyPendingUpdate(){
   if(!safeToUpdate())return toast('Termina o guarda el comentario abierto; la actualización queda esperando.');
   const update=pendingUpdate;pendingUpdate=null;$('updates').hidden=true;
   if(update.kind==='app')return location.reload();
+  if(update.forId!==current?.id)return; /* stale: computed for another piece */
   const address=new URL(location.href);address.searchParams.set('image',update.id);address.searchParams.set('delivery',update.id);address.searchParams.delete('view');location.replace(address.href);
 }
 $('applyUpdate').onclick=applyPendingUpdate;
@@ -280,12 +287,11 @@ async function checkUpdates(){
     }
     const latest=latestDescendant(current.id,state.assets);
     if(latest!==current.id){
-      pendingUpdate={kind:'image',id:latest,state};$('updateMessage').textContent='Hay una propuesta más reciente de esta pieza. La anterior sigue en el historial.';
+      pendingUpdate={kind:'image',id:latest,forId:current.id,state};$('updateMessage').textContent='Hay una propuesta más reciente de esta pieza. La anterior sigue en el historial.';
       $('applyUpdate').textContent='Mostrar nueva versión';$('updates').hidden=false;
       if(followLatest&&safeToUpdate())await applyPendingUpdate();
     }else if(safeToUpdate()&&(state.assets.length!==assets.length||state.assets.some(a=>{const old=assets.find(x=>x.id===a.id);return old&&(old.revision!==a.revision||old.status!==a.status);}))) {
       const previousStatus=current.status;assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];current=assets.find(a=>a.id===current.id)||current;
-      if(current.status!==previousStatus)libraryTab=current.status==='honors'?'accepted':'pending';
       $('status').value=current.status;$('general').value=current.general;gallery();renderNotes();showApproval();showRevisions();
     }
   }catch{/* A launcher restart can briefly make the server unavailable. Retry without touching edits. */}
@@ -300,6 +306,7 @@ api('/api/state').then(state=>{
     let id=assets.find(a=>a.id===(requested||remembered))?.id||assets.at(-1).id;
     const historicalView=params.get('view')==='history';
     id=params.get('latest')==='1'?(state.latest_delivery_id||assets.at(-1).id):(historicalView?id:latestDescendant(id));
-    choose(id,{follow:!historicalView});
+    const fam=state.approvals?.find(f=>f.version_ids.includes(id)),chosen=assets.find(a=>a.id===id);
+    choose(id,{follow:!historicalView,tab:chosen?.status==='honors'||fam?.approved_version===id?'accepted':'pending'});
   }else{$('empty').hidden=false;$('paper').hidden=true;$('saved').textContent='Listo para importar';}
 }).catch(e=>toast(e.message));

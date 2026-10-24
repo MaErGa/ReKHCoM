@@ -395,7 +395,7 @@ def handler(store):
                 assets=store.all()
                 delivered=[a for a in assets if not a.get('revision_info',{}).get('catalog_key')]
                 return self.reply(200, dict(assets=store.all(), approvals=store.approvals(), queue=store.queue(), data_dir=str(store.root), code_dir=str(Path(__file__).resolve().parent),
-                    app_version='0.4.0', app_build=RUNNING_BUILD, disk_build=build_id(), auto_restart=True,
+                    app_version='0.4.1', app_build=RUNNING_BUILD, disk_build=build_id(), auto_restart=True,
                     latest_delivery_id=(delivered or assets)[-1]['id'] if assets else None))
             if route == '/api/queue':
                 return self.reply(200, dict(pieces=store.queue()))

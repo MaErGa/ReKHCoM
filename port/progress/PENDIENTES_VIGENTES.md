@@ -36,6 +36,23 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   con hdbench (`gpu=`), revisar el MP4 (ffprobe, una mirada a un cuadro) y subir los workers si la CPU queda libre.
   Ideas siguientes: audio AAC copiado sin recodificar; leer el video del juego sin la copia previa (IStream que
   des-XORea la cabecera) para no escribir 6,7 GB de más.
+- **TRASPASO ~05:45 (Claude, pocos tokens) — SEGUIR AQUÍ, en orden:**
+  1. **App de revisión 0.4.1 (hecho, en main):** el aviso "hay nueva versión" ya no lleva a otra pieza (era el aviso
+     de la pieza anterior: ahora se borra al cambiar y se comprueba `forId`); la pestaña no salta a Preliminares al
+     moverse entre revisiones de una aceptada; los aprobados pasan al instante a "Ya aceptados" (vuelven a
+     Preliminares solo con una propuesta más nueva); sin selector de densidad (queda la compacta). Verificar en la
+     app abierta con el usuario. Pendiente pedido: que lo aprobado quede "en la cola listo para cargar al enviar
+     comentarios" (hoy va en `aprobaciones_build.json` de cada envío: confirmar que el agente lo integra desde ahí).
+  2. **Aprobaciones del usuario 24/10 05:03-05:05 (llegaron):** Darkside 01 CON HONORES (b7b683, integrar al
+     juego), Darkside 02 aprobado, Darkside 07 r3 aprobado (24a9a9). Coliseo121 con honores (9917b6) sigue sin integrar.
+  3. **Comentario del usuario (envío 20261024-050724-3c4f44):** Darkside 05 r3 (0e9183), nube 1 zona [742,138,858,422):
+     "aún dibuja un brazo a la derecha; debe ser solo su codo; entender el dibujo y la perspectiva". Hacer r4 hija
+     con `import_image.py --parent 0e918387...` (darkside_revise.py; arte = carril de Codex si está activo).
+  4. **Carga HD:** terminar la medición (`build/hdbench.txt`; viejo Original 2,63 GB = 4 s) y medir la vía GPU
+     (`gpu=build/pc/ReKHCoM.exe` en hdbench.sh, sin commitear todavía: hd_import.inc `TranscodeBest`); tabla para el
+     usuario: modo × antes/ahora/GPU, extrapolada al mod (subset = 39 %). Si la GPU rinde y el MP4 está bien
+     (ffprobe + un cuadro), commitear, subir workers, rehacer zip (pre8) y humo 9/9.
+  5. Pedidos del usuario anotados en la cola de abajo: editor de posición de botones; ver botones en emulador/web.
 - **Baterías:** todos los cuelgues conocidos cerrados (ver historial). Riku JP corre (2 copias duplicadas: el usuario
   no deja cortarlas), 0 fallos hasta ~100. Faltan (`run_batteries.py --status`): rooms eu, battles eu, monkey
   eu/us/jp, skip eu/us/jp y los pasos android; luego `run_batteries.py --hd`. Toda falla o timeout = bug: reproducir.
