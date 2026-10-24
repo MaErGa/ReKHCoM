@@ -1467,6 +1467,36 @@ static void JournalAdd(const std::string& relative) {
         std::ofstream(sJournal, std::ios::app) << relative << "\n";
 }
 
+/* ---- what is already installed, movie by movie --------------------------------------------------------------
+   hd/import.list: one line per finished movie ("movies/ROP.mp4 1 123456": where, its quality, its size). A new
+   import keeps every movie already there whole at the quality asked and does only the missing, broken or other
+   quality ones (the user, 24/10: loading again started from zero). Installs from before the list are judged by
+   hd/quality, a whole MP4 and a size that fits (a re-encoding is smaller than the game's file, a copy the same). */
+static std::map<std::string, std::pair<int, uintmax_t>> sInstalled; /* from hd/import.list */
+
+static fs::path InstalledListPath(const fs::path& data) { return data / "hd" / "import.list"; }
+
+static void ReadInstalledList(const fs::path& data) {
+    std::lock_guard<std::mutex> g(sJournalLock);
+    sInstalled.clear();
+    std::ifstream in(InstalledListPath(data));
+    std::string line;
+    while (std::getline(in, line)) {
+        char name[512] = {};
+        int q = -1;
+        unsigned long long size = 0;
+        if (sscanf(line.c_str(), "%511s %d %llu", name, &q, &size) == 3)
+            sInstalled[name] = { q, (uintmax_t)size };
+    }
+}
+
+/* a movie finished at that quality (relative to hd/) */
+static void InstalledAdd(const fs::path& data, const std::string& relative, int quality, uintmax_t size) {
+    std::lock_guard<std::mutex> g(sJournalLock);
+    sInstalled[relative] = { quality, size };
+    std::ofstream(InstalledListPath(data), std::ios::app) << relative << " " << quality << " " << size << "\n";
+}
+
 /* the .part files an import or a compression left half-written */
 static void RemoveParts(const fs::path& data) {
     std::error_code ec;
@@ -1646,6 +1676,32 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
         std::string rel = f.parent_path().filename().u8string() + "/" + f.filename().u8string();
         return std::find(previous.files.begin(), previous.files.end(), rel) != previous.files.end() && Mp4Ok(f);
     };
+    ReadInstalledList(data);
+    int installedQuality = -1; /* an install from before import.list: the quality it was made at */
+    if (!fs::exists(InstalledListPath(data), ec))
+        std::ifstream(data / "hd" / "quality") >> installedQuality;
+    auto kept = [&](const fs::path& src, const fs::path& dst) { /* already there, whole, at the quality asked */
+        std::error_code ec2;
+        if (!fs::exists(dst, ec2) || !Mp4Ok(dst))
+            return false;
+        uintmax_t have = fs::file_size(dst, ec2), game = fs::file_size(src, ec2);
+        if (ec2)
+            return false;
+        std::string rel = dst.parent_path().filename().u8string() + "/" + dst.filename().u8string();
+        std::pair<int, uintmax_t> known(-1, 0);
+        {
+            std::lock_guard<std::mutex> g(sJournalLock);
+            auto it = sInstalled.find(rel);
+            if (it != sInstalled.end())
+                known = it->second;
+        }
+        bool fits = quality == 0 ? have == game : have < game;
+        bool keep = known.first >= 0 ? known.first == quality && known.second == have
+                                     : installedQuality == quality && fits;
+        if (keep && known.first < 0)
+            InstalledAdd(data, rel, quality, have); /* recorded now, so the next time knows it */
+        return keep;
+    };
     HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     bool mf = SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_LITE));
     if (!mf)
@@ -1685,8 +1741,16 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
             sJob.Say(std::string(quality ? T("Recodificando ", "Re-encoding ") : T("Copiando ", "Copying ")) + f.filename().string() +
                      (workers > 1 ? " (" + std::to_string(workers) + T(" a la vez)", " at once)") : std::string()));
             fs::path dst = (f.filename().string().rfind("zz_event_", 0) == 0 ? outScenes : outMovies) / f.filename();
-            if (finished(dst) || ImportMovie(f, dst, quality))
+            if (kept(f, dst)) { /* nothing to do for this one */
                 movieCount++;
+                return;
+            }
+            if (finished(dst) || ImportMovie(f, dst, quality)) {
+                movieCount++;
+                std::error_code ec2;
+                InstalledAdd(data, dst.parent_path().filename().u8string() + "/" + dst.filename().u8string(), quality,
+                             fs::file_size(dst, ec2));
+            }
         });
         imported += movieCount;
         sJob.Finish(PART_MOVIES);
@@ -1857,6 +1921,8 @@ static void Compress(fs::path data, int quality) {
         if (!ec && TranscodeBest(plain, f, q) && fs::file_size(f, ec) < size) {
             fs::remove(plain, ec);
             compressed++;
+            InstalledAdd(data, f.parent_path().filename().u8string() + "/" + f.filename().u8string(), quality,
+                         fs::file_size(f, ec));
         } else { /* failed, or not smaller: the movie as it was */
             fs::remove(f, ec);
             fs::rename(plain, f, ec);
@@ -2123,6 +2189,14 @@ static bool HdModCard() {
         if (!p.empty())
             source = p;
     }
+    /* everything loaded (movies, scenes, music and HUD, no import cut short): no big load button to press by mistake
+       (the user, 24/10), only "already loaded" and a small button that opens the load again, to change the quality
+       or fill what is missing (a load keeps every movie already right) */
+    static bool sReload;
+    bool loaded = haveBase && haveScenes > 0 && haveTracks > 0 && haveSprites > 0 && !hd::sJob.running &&
+                  !fs::exists(sRoot / "hd" / "import.journal", ec);
+    if (!loaded)
+        sReload = false;
     /* the movies' quality, kept in hd/quality (the launcher's own: the game plays whatever was imported): the
        compression (0 source, 1 good, 2 saving); good by default */
     static int quality = -1;
@@ -2134,6 +2208,30 @@ static bool HdModCard() {
     int compression = quality;
     const char* const kCompressionNames[3] = { T("Fuente", "Source"), T("Buena (sugerido)", "Good (suggested)"),
                                                T("Ahorro", "Saving") };
+    if (loaded && !sReload) {
+        static uintmax_t bytes = (uintmax_t)-1;
+        if (bytes == (uintmax_t)-1)
+            bytes = hd::InstalledMovieBytes(sRoot);
+        char done[160];
+        snprintf(done, sizeof(done), "%s  ·  %s  ·  %.1f GB", T("DATOS YA CARGADOS", "ALREADY LOADED"), kCompressionNames[quality],
+                 bytes / 1073741824.0);
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        ImVec2 a = ImGui::GetCursorScreenPos(), b(a.x + ImGui::GetContentRegionAvail().x, a.y + Px(44));
+        dl->AddRectFilled(a, b, ImGui::GetColorU32(kPanel), Px(6));
+        dl->AddRect(a, b, ImGui::GetColorU32(kAccent), Px(6), 0, Px(2));
+        GameSquare(dl, ImVec2(a.x + Px(18), a.y + Px(22)), Px(12), true);
+        dl->AddText(ImVec2(a.x + Px(34), a.y + Px(13)), ImGui::GetColorU32(kText), done);
+        ImGui::Dummy(ImVec2(b.x - a.x, b.y - a.y));
+        if (ImGui::SmallButton(T("Volver a cargar o cambiar la calidad...", "Load again or change the quality...")))
+            sReload = true;
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
+        ImGui::TextWrapped("%s", T("Solo hace lo que falte, esté roto o tenga otra calidad.",
+                                   "Only does what is missing, broken or at another quality."));
+        ImGui::PopStyleColor();
+    } else {
+    if (loaded && ImGui::SmallButton(T("Cancelar", "Cancel")))
+        sReload = false;
     /* the full mod measured (24/10, hd_sizes): source 6.7 GB, good 3.7 GB */
     static const char* const kScenesSize[3] = { "~6.7 GB", "~3.7 GB", "~2 GB" };
     bool pick = CycleRow(T("Compresión de los videos", "Movie compression"),
@@ -2161,8 +2259,10 @@ static bool HdModCard() {
         char full[96];
         snprintf(full, sizeof(full), "%s  %s", T("CARGAR TODO DESDE EL JUEGO", "LOAD EVERYTHING FROM THE GAME"),
                  kScenesSize[quality]);
-        if (PlayButton(full, ImVec2(ImGui::GetContentRegionAvail().x, Px(52)), !source.empty() && !hd::sJob.running))
+        if (PlayButton(full, ImVec2(ImGui::GetContentRegionAvail().x, Px(52)), !source.empty() && !hd::sJob.running)) {
             hd::Start(source, sRoot, true, true, true, true, quality);
+            sReload = false;
+        }
         ImGui::BeginDisabled(source.empty());
         if (ImGui::Button(T("Solo lo básico: intros, música y HUD (~0,6 GB)", "Just the basics: intros, music and HUD (~0.6 GB)")))
             hd::Start(source, sRoot, true, false, true, true, quality);
@@ -2192,6 +2292,7 @@ static bool HdModCard() {
         if (!ImGui::IsItemHovered() && !ImGui::IsItemActive() && confirm && ImGui::IsMouseClicked(0))
             confirm = false;
     }
+    } /* loaded */
 #endif
     ImGui::EndDisabled();
     if (hd::sJob.running || !hd::sJob.Status().empty()) {
