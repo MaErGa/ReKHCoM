@@ -1332,6 +1332,132 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
     sJob.running = false;
 }
 
+/* The movie's height and bits a second (its own figure, or its size over its length); false when unreadable. */
+static bool MovieRate(const fs::path& f, UINT32& height, double& bitrate) {
+    IMFSourceReader* reader = nullptr;
+    IMFMediaType* native = nullptr;
+    PROPVARIANT var;
+    UINT32 w = 0;
+    std::error_code ec;
+    height = 0;
+    bitrate = 0;
+    if (FAILED(MFCreateSourceReaderFromURL(f.wstring().c_str(), nullptr, &reader)))
+        return false;
+    if (SUCCEEDED(reader->GetNativeMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, &native))) {
+        MFGetAttributeSize(native, MF_MT_FRAME_SIZE, &w, &height);
+        bitrate = MFGetAttributeUINT32(native, MF_MT_AVG_BITRATE, 0);
+        Release(native);
+    }
+    PropVariantInit(&var);
+    if (!bitrate && SUCCEEDED(reader->GetPresentationAttribute((DWORD)MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &var)) &&
+        var.uhVal.QuadPart > 0)
+        bitrate = (double)fs::file_size(f, ec) * 8.0 / ((double)var.uhVal.QuadPart / 1e7);
+    PropVariantClear(&var);
+    Release(reader);
+    return height > 0;
+}
+
+/* A movie already at or under the quality asked: left alone (encoding it again would only lose detail). */
+static bool AtOrUnder(const fs::path& f, int quality) {
+    UINT32 h;
+    double bitrate;
+    if (!MovieRate(f, h, bitrate))
+        return true; /* unreadable: never touched */
+    UINT32 outH = quality >= 3 && h > 720 ? 720 : h;
+    double target = (outH >= 1080 ? kBitrate1080 : kBitrate720)[quality % 3];
+    return outH == h && bitrate <= target * 1.1;
+}
+
+/* A compression stopped half way (the launcher closed) leaves name.source.mp4: it goes back to its name. */
+static void RestoreLeftovers(const fs::path& folder) {
+    std::error_code ec;
+    for (const auto& f : fs::directory_iterator(folder, ec)) {
+        std::string name = f.path().filename().string();
+        size_t at = name.rfind(".source.mp4");
+        if (at == std::string::npos || at + 11 != name.size())
+            continue;
+        fs::path back = folder / (name.substr(0, at) + ".mp4");
+        fs::remove(back, ec); /* a half-written re-encoding */
+        fs::rename(f.path(), back, ec);
+    }
+}
+
+/* The movies and scenes already installed, re-encoded in place to a smaller quality (1..5): for a full mod imported at
+   source quality, without the game's installation. Each file is kept as it was when its re-encoding fails. */
+static void Compress(fs::path data, int quality) {
+    std::error_code ec;
+    HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    bool mf = SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_LITE));
+    std::vector<fs::path> list;
+    uintmax_t before = 0, after = 0;
+    int changed = 0;
+    for (const char* sub : { "movies", "scenes" }) {
+        fs::path folder = data / "hd" / sub;
+        RestoreLeftovers(folder);
+        for (const auto& f : fs::directory_iterator(folder, ec))
+            if (f.path().extension() == ".mp4")
+                list.push_back(f.path());
+    }
+    sJob.total += (int)list.size();
+    Quality q = { quality >= 3 ? 720 : 0, quality % 3 };
+    for (const fs::path& f : list) {
+        uintmax_t size = fs::file_size(f, ec);
+        before += size;
+        if (!mf || quality <= 0 || quality > 5 || AtOrUnder(f, quality)) {
+            after += size;
+            sJob.done++;
+            continue;
+        }
+        sJob.Say(std::string(T("Comprimiendo ", "Compressing ")) + f.filename().string());
+        fs::path plain = fs::path(f).replace_extension(".source.mp4");
+        sJob.part = 0;
+        fs::rename(f, plain, ec);
+        if (!ec && Transcode(plain, f, q) && fs::file_size(f, ec) < size) {
+            fs::remove(plain, ec);
+            changed++;
+        } else { /* failed, or not smaller: the movie as it was */
+            fs::remove(f, ec);
+            fs::rename(plain, f, ec);
+        }
+        after += fs::file_size(f, ec);
+        sJob.part = 0;
+        sJob.done++;
+    }
+    if (changed)
+        std::ofstream(data / "hd" / "quality") << quality << "\n";
+    char msg[160];
+    snprintf(msg, sizeof(msg), T("Listo: %d videos comprimidos, %.1f GB -> %.1f GB.", "Done: %d movies compressed, %.1f GB -> %.1f GB."),
+             changed, before / 1073741824.0, after / 1073741824.0);
+    sJob.Say(mf ? std::string(msg) : std::string(T("Media Foundation no está disponible: no se comprimió nada.",
+                                                     "Media Foundation is not available: nothing was compressed.")));
+    if (mf)
+        MFShutdown();
+    if (SUCCEEDED(com))
+        CoUninitialize();
+    sJob.running = false;
+}
+
+static void StartCompress(const fs::path& data, int quality) {
+    if (sJob.running)
+        return;
+    sJob.running = true;
+    sJob.done = 0;
+    sJob.total = 0;
+    sJob.Say(T("Comprimiendo...", "Compressing..."));
+    std::thread(Compress, data, quality).detach();
+}
+
+/* The size of the installed movies and scenes, in bytes. */
+static uintmax_t InstalledMovieBytes(const fs::path& data) {
+    std::error_code ec;
+    uintmax_t n = 0;
+    for (const char* sub : { "movies", "scenes" })
+        for (const auto& f : fs::directory_iterator(data / "hd" / sub, ec))
+            if (f.path().extension() == ".mp4")
+                n += fs::file_size(f.path(), ec);
+    return n;
+}
+
 static void Start(const fs::path& source, const fs::path& data, bool movies, bool scenes, bool music, bool sprites,
                   int quality) {
     if (sJob.running)
@@ -1439,9 +1565,11 @@ static bool HdModCard() {
                          size, 2, kSizeNames);
     pick |= CycleRow(T("Compresión de los videos", "Movie compression"),
                      T("Fuente: tal cual. Buena: la mitad de espacio, casi sin diferencia visible. Ahorro: un cuarto "
-                       "del espacio, se nota algo en escenas con mucho movimiento. Se aplica al importar.",
+                       "del espacio, se nota algo en escenas con mucho movimiento. Se aplica al importar, o a lo ya instalado con "
+                       "\"Comprimir lo instalado\".",
                        "Source: as it is. Good: half the space, hardly a visible difference. Saving: a quarter of the "
-                       "space, somewhat visible in busy scenes. Applied when importing."),
+                       "space, somewhat visible in busy scenes. Applied when importing, or to what is installed with "
+                       "\"Compress what is installed\"."),
                      compression, 3, kCompressionNames);
     if (pick) {
         quality = size * 3 + compression;
@@ -1468,6 +1596,30 @@ static bool HdModCard() {
     if (ImGui::Button(scenesLabel))
         hd::Start(source, sRoot, false, true, false, false, quality);
     ImGui::EndDisabled();
+    /* what is already installed (a full mod imported at source quality, say), re-encoded here to the quality above:
+       no need for the game's installation; a second click confirms, since the larger files are replaced */
+    {
+        static bool confirm;
+        static uintmax_t installed = (uintmax_t)-1;
+        if (installed == (uintmax_t)-1 || hd::sJob.running)
+            installed = hd::InstalledMovieBytes(sRoot);
+        ImGui::BeginDisabled(haveMovies <= 0 || quality == 0);
+        char label[160];
+        if (confirm)
+            snprintf(label, sizeof(label), "%s", T("¿Seguro? Reemplaza tus videos por los más livianos (pulsa de nuevo)",
+                                                   "Sure? Replaces your movies with the lighter ones (click again)"));
+        else
+            snprintf(label, sizeof(label), "%s (%.1f GB %s)", T("Comprimir lo instalado a esta calidad", "Compress what is installed to this quality"),
+                     installed / 1073741824.0, T("ahora", "now"));
+        if (ImGui::Button(label)) {
+            if (confirm)
+                hd::StartCompress(sRoot, quality);
+            confirm = !confirm;
+        }
+        ImGui::EndDisabled();
+        if (!ImGui::IsItemHovered() && !ImGui::IsItemActive() && confirm && ImGui::IsMouseClicked(0))
+            confirm = false;
+    }
     ImGui::EndDisabled();
     if (hd::sJob.running || !hd::sJob.Status().empty()) {
         int total = hd::sJob.total, done = hd::sJob.done;

@@ -149,5 +149,12 @@ calidad 100, encoder de hardware; AAC 128 kb/s. `ReKHCoM.exe --hd-import <origen
 | 720p Buena (sugerido Android) | 36 MB, 90,5 | 29 MB, 97,1 | ~3 GB |
 | 720p Ahorro | 18 MB, 82,5 | 15 MB, 91,4 | ~1,5 GB |
 
+**Comprimir lo instalado (24/10, pedido del usuario):** botón del launcher (Sonido → Mod HD) y
+`ReKHCoM.exe --hd-compress --quality N`: recodifica en el lugar los videos y escenas ya instalados (p. ej. un mod
+completo importado en Fuente) a la calidad elegida, sin la instalación de Re:CoM. Deja tal cual lo que ya está a esa
+calidad o menos (comparando altura y bitrate; recodificar otra vez solo pierde detalle) y lo que no queda más chico;
+cada archivo pasa por `nombre.source.mp4`, que vuelve a su nombre si el launcher se cerró a mitad. Probado: ROP
+140 MB → 69 MB (Buena) → 41 MB (Ahorro); repetir la misma calidad no toca nada; un corte a mitad se recupera.
+
 VMAF contra la fuente a su tamaño (el 720p de la apertura escalado a 1080p: cuenta la pérdida de resolución).
 Probado: Main/CBR 96,8 y el encoder de software 94,2 contra 97,1 del elegido a igual peso.

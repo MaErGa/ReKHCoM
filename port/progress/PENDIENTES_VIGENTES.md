@@ -48,6 +48,14 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   BG2), el fondo de pantalla envuelve como en el hardware en sus 4 modos, el cuerpo (BG1) una sola copia y entero
   (el mapa antes de que el juego borre sus filas fuera de pantalla). GBA idéntico 6/6 (`build/arena/mx_check.sh`,
   `KHCOM_NO_MARLUXIA_FIELD`).
+- **Launcher: "Comprimir lo instalado"** (pedido del usuario 24/10) hecho: HD_MOD.md "Comprimir lo instalado".
+- **Pesos reales del mod HD por calidad**: `build/hd_sizes.sh` corre la importación completa en 1, 4, 2, 5 (resultados
+  en `build/hd_sizes.txt`); pasar la tabla real al usuario y a HD_MOD.md / kScenesSize del launcher.
+- **720p casi no ahorra** (pregunta del usuario): las escenas ya son 720p; solo cambian los 6 videos 1080p. Probar
+  calidad constante (Media Foundation, modo Quality) con VMAF; HEVC solo como opción con comprobación.
+- **Migración al actualizar** (usuario 24/10): el launcher debe reacomodar todo lo que cambió de lugar entre versiones
+  (hoy solo escenas hd/movies → hd/scenes): auditar desde v0.1 y probar actualizando copias viejas.
+- **Quiver** (usuario 24/10): "no me deja elegir cuál versión probé"; revisar por qué las versiones no entran bien.
 - Siguiente: copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 

@@ -2639,6 +2639,18 @@ int main(int argc, char** argv) {
     ApplyUiLanguage();
     /* ReKHCoM.exe --hd-import [<source folder>] [--scenes] [--sprites-only] [--quality 0|1|2]: the HD mod import without the window
        (power users, tests); without a folder the installed game is looked for */
+    /* ReKHCoM.exe --hd-compress --quality 1..5: the installed movies and scenes re-encoded in place, without the window */
+    for (int i = 1; i < argc; i++)
+        if (strcmp(argv[i], "--hd-compress") == 0) {
+            int quality = 1;
+            for (int j = 1; j < argc; j++)
+                if (strcmp(argv[j], "--quality") == 0 && j + 1 < argc)
+                    quality = atoi(argv[j + 1]);
+            hd::sJob.running = true;
+            hd::Compress(sRoot, quality);
+            fprintf(stderr, "%s\n", hd::sJob.Status().c_str());
+            return 0;
+        }
     for (int i = 1; i < argc; i++)
         if (strcmp(argv[i], "--hd-import") == 0) {
             fs::path source = i + 1 < argc && argv[i + 1][0] != '-' ? fs::u8path(argv[i + 1]) : hd::FindInstall();
