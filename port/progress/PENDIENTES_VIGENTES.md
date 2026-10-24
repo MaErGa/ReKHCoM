@@ -58,6 +58,14 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
      Darkside 04 ("no espejar: completar el lado derecho imaginándolo, a pixel art"), Darkside 05 r3 (solo el codo a
      la derecha, perspectiva), Darkside 06 r3 ("mejorando pero no tan bien"). Las reglas automáticas de
      `gen_darkside_pose.py`/`darkside_revise.py` no alcanzan: dibujar a mano por píxel (paleta e índices del juego).
+  6b. **Hecho ~06:20: r4 de Darkside 03/04/05/06 en la app** (`darkside_revise.py --round r4`, ids 3628d7, db369c,
+     60f8f0, 429c00), respondiendo los envíos. **Regla del usuario (24/10):** se GENERA lo que falta y el tramado a
+     sombra se aplica SOLO a lo añadido; el pixel art del cartucho queda 100 % igual (la técnica aprobada en 07 r3).
+     Aplicarlo solo a 03, 04, 05 y un poco a 06 (06: el brazo debe verse bien dibujado). **01 y 02 quedan completos
+     como están** (usuario: "queda bien"). 03: no un tercer brazo adelante: un poco de torso que se difumina; 05: solo
+     el codo. Falta (pedido): **mejorar el dibujo de lo generado debajo del tramado** con los comentarios previos (en
+     03/04 se ve como franja vertical: lo generado es un bloque); hacerlo a mano por píxel (paleta 4bpp del juego) y
+     entregar r5 hijas.
   7. App 0.4.2: cada pieza en UNA pestaña (con una propuesta nueva pendiente queda solo en Preliminares, conservando
      la aprobación anterior a la vista); las nubes se ven aunque el envío no se haya procesado (pedido del usuario).
   8. Coliseo 121 integrado aislado en el árbol (sin commitear al escribir): receta 121 de 1ee40e4e6 en

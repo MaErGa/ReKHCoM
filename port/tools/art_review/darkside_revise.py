@@ -4,7 +4,9 @@ written next to the study for a later integration, only once approved with honou
 
 Learned rules applied to every pose (from the clouds): additions only from x256 rightwards (03); no mirrored halves
 (04); the added part must follow the sprite's own logic, never a second copy of a limb already drawn (05); fitted to the
-original at the seam (03 v2, 06).
+original at the seam (03 v2, 06). r4 (user 24/10): generate what is missing, then dither ONLY the added part into shadow
+(the technique approved on 07 r3); the cartridge's pixel art stays 100% as it is. 03: a bit of torso fading out, not a
+third arm in front; 05: only the elbow; 06: the arm must show, well drawn (only its far end thins).
 
     python port/tools/art_review/darkside_revise.py --source D:/01Claude/arenas-wt --data <review data> [--only 03,06]
 """
@@ -177,7 +179,18 @@ POSES = {  # image title prefix -> (.inc name, define, ROM frame slot)
     '05': ('lean', 'DARKSIDE_LEAN_TOP', 8),
     '06': ('punch', 'DARKSIDE_PUNCH_TOP', 13),
     '07': ('reach', 'DARKSIDE_REACH_TOP', 10),
+    '04': ('claw', 'DARKSIDE_CLAW_TOP', 9),
 }
+
+
+def faded_from(added, start, width):
+    """like faded, but whole up to start columns past the seam, then thinning over width (ordered dither)"""
+    out = {}
+    for (x, y), c in added.items():
+        level = max(0.0, min(1.0, 1.0 - (x - SEAM - start) / max(1, width)))
+        if level * 16 > BAYER[y % 4][x % 4]:
+            out[x, y] = c
+    return out
 
 
 def main():
@@ -185,10 +198,11 @@ def main():
     p.add_argument('--source', type=Path, required=True)
     p.add_argument('--data', type=Path, required=True)
     p.add_argument('--only', default='03,05,06,07')
+    p.add_argument('--round', default='r3')
     args = p.parse_args()
     store = Store(args.data)
     assets = store.all()
-    out = args.data / 'proposals' / 'darkside-r3'
+    out = args.data / 'proposals' / ('darkside-' + args.round)
     out.mkdir(parents=True, exist_ok=True)
     made = []
     for key in args.only.split(','):
@@ -200,7 +214,24 @@ def main():
         inc = inc_path.read_text()
         original, palette = frame(args.source, slot)
         added = {pt: c for pt, c in extension(inc).items() if pt not in original}
-        if key == '03':  # v2 already kept x>=256 only; the cloud: a little higher/lower so the drawing fits
+        if args.round == 'r4':
+            right = {pt: c for pt, c in added.items() if pt[0] >= SEAM}
+            if key == '03':  # the generated side, then only a bit of torso by the seam stays and fades out
+                new = faded_from({pt: c for pt, c in shifted(right, 0, -6).items() if pt not in original}, 4, 22)
+                change = 'Lo generado del lado derecho, tramado a sombra desde el corte: queda un poco de torso que se difumina; sin un tercer brazo adelante. Original 100 % intacto.'
+            elif key == '05':  # the closed back of r3, reduced to the elbow by the seam, fading
+                new = faded_from(outline(rounded_back(original, added, 24), darkest(palette, set(original.values()))), 2, 12)
+                change = 'Solo el codo junto al corte, y lo añadido se disuelve en sombra (tramado); nada que parezca otro brazo. Original 100 % intacto.'
+            elif key == '04':  # what the generator made (no new mirror), then dithered into shadow
+                new = faded_from(right, 6, 22)
+                change = 'Lo generado del lado derecho, tramado a sombra para no mostrar la mitad espejada; el original queda intacto.'
+            else:  # 06: the arm must show, well drawn: r3's fit, only its far end thins
+                arm = {pt: c for pt, c in shifted({pt: c for pt, c in added.items() if pt[0] >= SEAM - 16}, -6, 6).items()
+                       if pt[0] >= SEAM and pt not in original}
+                reach = max((x for x, y in arm), default=SEAM) - SEAM
+                new = faded_from(arm, int(reach * .7), max(6, int(reach * .3)))
+                change = 'El brazo de la r3 entero y visible; solo su último 30 % se adelgaza en sombra (tramado) para que no corte en seco. Original intacto.'
+        elif key == '03':  # v2 already kept x>=256 only; the cloud: a little higher/lower so the drawing fits
             base = {pt: c for pt, c in added.items() if pt[0] >= SEAM}
             # chosen by eye among -16..0 (the seam score could not tell them apart): the shoulder meets the chest
             dy = -6
@@ -220,11 +251,13 @@ def main():
             change = 'Sin cuerpo añadido: es el brazo atacando; donde el original se corta, sigue unos píxeles y se disuelve en sombra (tramado).'
         new = {pt: c for pt, c in new.items() if pt not in original and pt[0] >= SEAM}
         assert all(pt[0] >= SEAM for pt in new)
-        study = out / ('darkside-%s-r3.png' % key)
+        study = out / ('darkside-%s-%s.png' % (key, args.round))
         extra = None
         title = '%s  DARKSIDE · %s · revisión siguiente' % (key, reviewed['title'].split('·')[1].strip())
         lines = ['Respuesta a: «%s»' % sent['annotations'][-1]['comment'].strip()[:110], 'Cambio: ' + change,
                  'Original intacto; añadidos solo desde x256. Pendiente de tu revisión; no integrado en el juego.']
+        if args.round == 'r4':
+            lines[0] = 'Respuesta a: «%s»' % sent['annotations'][-1]['comment'].strip()[:110]
         if key == '07':  # the original alone, as asked
             alone = Image.new('RGB', (384, 256), NATURAL_BG)
             for (x, y), c in original.items():
@@ -235,14 +268,15 @@ def main():
             lines[2] = 'Tercera imagen: el pixel art original solo (fotograma EU 10). ' + lines[2]
         draw(study, title, lines, original, new, palette, extra)
         proposal = pack_inc(inc, name, new, define)
-        (out / ('darkside_body_%s_r3.inc' % name)).write_text(proposal, encoding='utf-8')
+        (out / ('darkside_body_%s_%s.inc' % (name, args.round))).write_text(proposal, encoding='utf-8')
         info = dict(created=now(), response_to=[dict(submission=payload['submission_id'], image_id=sent['id'],
                     cloud_id=n['id'], reviewed_image_sha256=sent['sha256']) for n in sent['annotations']],
                     change=change, technique='Índices 4bpp nativos sobre el fotograma de la ROM; reglas aprendidas de las nubes.',
                     source_inc_sha256=hashlib.sha256(inc.encode()).hexdigest(),
-                    proposal_inc=str(out / ('darkside_body_%s_r3.inc' % name)), subsequent_human_verdict=None)
-        item = store.add(study.read_bytes(), reviewed['title'].split(' · v')[0] + ' · r3',
-                         'Revisión 3 · ' + change[:120], 'Respuesta a ' + ', '.join(n['id'] for n in sent['annotations']) +
+                    proposal_inc=str(out / ('darkside_body_%s_%s.inc' % (name, args.round))), subsequent_human_verdict=None)
+        n = args.round[1:]
+        item = store.add(study.read_bytes(), reviewed['title'].split(' · v')[0].split(' · r')[0] + ' · ' + args.round,
+                         'Revisión %s · ' % n + change[:120], 'Respuesta a ' + ', '.join(n['id'] for n in sent['annotations']) +
                          '. Azul original, naranja añadido. Propuesta privada; no integrada.',
                          parent_id=reviewed['id'], revision_info=info)
         made.append(dict(pose=key, id=item['id'], study=str(study), change=change))
