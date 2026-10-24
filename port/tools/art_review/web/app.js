@@ -41,7 +41,9 @@ function gallery() {
   /* Preliminares: the newest version while it still waits for a verdict; approved ones go straight to Ya aceptados
      (and come back here only when a newer proposal of the piece arrives) */
   const accepted=a=>a&&(a.status==='approved'||a.status==='honors');
-  const pick=(tab,versions,family)=>tab==='accepted'?byId.get(family?.approved_version)||versions.filter(accepted).at(-1):(accepted(versions.at(-1))?null:versions.at(-1));
+  /* each piece in ONE tab (the user, 24/10): a newer proposal waiting keeps it in Preliminares only (its approval
+     stays and is shown there); Ya aceptados has the pieces with nothing pending */
+  const pick=(tab,versions,family)=>accepted(versions.at(-1))?(tab==='accepted'?byId.get(family?.approved_version)||versions.at(-1):null):(tab==='pending'?versions.at(-1):null);
   for (const {root,versions} of groups.values()) {
     const family=approvals.find(f=>f.family_id===root.id);
     for(const tab of ['pending','accepted'])if(pick(tab,versions,family))counts[tab]++;

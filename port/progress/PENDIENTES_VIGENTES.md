@@ -52,6 +52,19 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
      (`gpu=build/pc/ReKHCoM.exe` en hdbench.sh, en la rama `claude/hd-gpu` a73f81340, sin probar; build/pc/ReKHCoM.exe ya la trae); tabla para el
      usuario: modo × antes/ahora/GPU, extrapolada al mod (subset = 39 %). Si la GPU rinde y el MP4 está bien
      (ffprobe + un cuadro), commitear, subir workers, rehacer zip (pre8) y humo 9/9.
+  6. **Regla del usuario (24/10): siempre que haya cola en la app (`COLA_PARA_AGENTES.md`, turno "agente"), procesarla**
+     respondiendo cada envío con una versión hija. Cola al ~06:00: Darkside 03 r3 ("no cambió nada entre versiones":
+     solo subió 6 px; el brazo añadido es una mancha, hacer pixel art de verdad con el flujo de WORKFLOW_ARTE_AMPLIO),
+     Darkside 04 ("no espejar: completar el lado derecho imaginándolo, a pixel art"), Darkside 05 r3 (solo el codo a
+     la derecha, perspectiva), Darkside 06 r3 ("mejorando pero no tan bien"). Las reglas automáticas de
+     `gen_darkside_pose.py`/`darkside_revise.py` no alcanzan: dibujar a mano por píxel (paleta e índices del juego).
+  7. App 0.4.2: cada pieza en UNA pestaña (con una propuesta nueva pendiente queda solo en Preliminares, conservando
+     la aprobación anterior a la vista); las nubes se ven aunque el envío no se haya procesado (pedido del usuario).
+  8. Coliseo 121 integrado aislado en el árbol (sin commitear al escribir): receta 121 de 1ee40e4e6 en
+     port_preliminar_v1_tiles.h/_data.inc + port_ppu.c (`sPreliminarApprovedOnly`, `KHCOM_SCENE121_WIDE=0` lo
+     apaga). Comprobar con `sh build/scene121_check.sh` (evento 0:120, teclas A del selector, cuadro 1000): GBA
+     idéntico y márgenes distintos en EU/US/JP antes de commitear. Darkside 01: la receta aprobada ya es la de main
+     (SHA bf8bd681); llega a jugadores cuando se apruebe "Darkside · arena y contexto".
   5. Pedidos del usuario anotados en la cola de abajo: editor de posición de botones; ver botones en emulador/web.
 - **Baterías:** todos los cuelgues conocidos cerrados (ver historial). Riku JP corre (2 copias duplicadas: el usuario
   no deja cortarlas), 0 fallos hasta ~100. Faltan (`run_batteries.py --status`): rooms eu, battles eu, monkey
