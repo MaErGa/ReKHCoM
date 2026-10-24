@@ -23,7 +23,8 @@ aviso. Prueba: `port/tools/test_asset_options.py` (notice, notice_many, newgame,
 title_last). Humo del zip v2.0 Windows: 9/9 limpio. JP: `check_jp_glyphs.py` ok.
 
 **Pedidos del usuario (24/10 noche), en orden:**
-1. **v2.0-pre5** (Windows + Linux) con todo lo de hasta hoy: en curso al escribir esto.
+1. **v2.0-pre5 PUBLICADA** (prerelease, tag en 6446aad36): Windows zip + Linux tar.gz + SHA256SUMS; humo del zip 9/9.
+   Copia del usuario `jugar/Probar ReKHCoM v2.0 pre5.bat` (partidas de la pre4, HD enlazado).
 2. **Botón de rodar (táctil)**: proponer mejoras al PNG; probar un vector y meter **el sprite de Sora rodando en gris**
    con el mismo estilo de botón, **generado al cargar la ROM** (nada del juego en el repo). Mostrarle la tentativa
    (copia + imagen) y esperar aprobación.
