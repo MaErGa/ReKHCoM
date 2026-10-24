@@ -37,6 +37,11 @@ partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
   Táctil: botones grandes, desplazamiento con el dedo (ImGui con eventos táctiles de SDL). Probar en el emulador
   (capturas con `screencap`, flujo ROM → jugar → volver) y en el arnés de PC (`DECOMPUI_SHOT`).
 
+- **Android: "Nueva partida Riku" en el título** (usuario 24/10, en su teléfono). En el código solo aparece con el
+  truco `cheat_unlock_riku` (apagado por defecto, nada lo enciende en Android/APK/launcher) o con la historia de Sora
+  terminada en la partida (`GAME_FLAG_SORA_CLEAR`, p. ej. una partida importada del PC). Comprobar en el emulador con
+  instalación limpia que el título muestre solo la partida normal; si aparece Riku sin truco ni partida, es bug.
+
 **Hecho hoy (todo en main):**
 - v2.0-pre3 y pre4 internas (PC); issues #40 #42 #45 cerrados (0 abiertos).
 - Jafar APROBADO y encendido (`port_jafar.c`); Oogie y Marluxia en Preliminar V2 (`KHCOM_ARENAS_V2=1`), copia
