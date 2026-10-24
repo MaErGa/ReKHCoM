@@ -2224,6 +2224,13 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
        mirrored in the margin, user 24/10); his fight's sprites live in the 512 columns around the picture */
     int objLeft = sJafarFight ? SDL_max(sLeft, GBA_SCREEN_W / 2 - 256) : sLeft;
     int objRight = sJafarFight ? SDL_min(sRight, GBA_SCREEN_W / 2 + 256) : sRight;
+    /* Same rule for Preliminar V1 scenes whose actors wait beyond the camera (user 24/10: 112 Aladdin, 120 Pepito) */
+    if (gPortScreen.wide && !sEnvActorFrameOff) {
+        int pb;
+        for (pb = 1; pb < 4; pb++)
+            if (sPreliminarRecipe[pb] && (sPreliminarRecipe[pb]->v[0] == 112 || sPreliminarRecipe[pb]->v[0] == 120))
+                sceneActorFrame = 1;
+    }
     int mapping1d = (dispcnt >> 6) & 1;
     int bitmapMode = (dispcnt & 7) >= 3;
     uint16_t mosaic = IO16(0x4C);

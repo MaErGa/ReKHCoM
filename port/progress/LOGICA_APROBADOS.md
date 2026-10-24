@@ -240,3 +240,15 @@ Regla corregida: verificar los extremos de la cámara del evento compartido, con
 su propia columna con su período vertical (4 filas), y completar únicamente la ventana que ya queda
 cortada, con su donante entero, sin repetir otras ventanas. Rectángulo GBA intacto.
 La propuesta se ve con KHCOM_PRELIMINAR_V1=1 y espera valoración propia; no hereda honores.
+
+## Comentarios nuevos 24/10 (112, 120; sin valorar)
+
+- 112 y 120 (usuario): los personajes que esperan fuera de la cámara GBA (Aladdin, Pepito) no deben verse en el margen
+  hasta entrar en el rectángulo original. Es la regla de la escena 097 (`sceneActorFrame`), ahora también para las
+  recetas Preliminar V1 de 112 y 120. Las demás nubes (patrón/pilares/puerta de 112, estructura y muro de 120) siguen
+  abiertas: requieren estudio de tiles por escena.
+- Cierre del PR #71 (24/10): entra la regla de actores y la vista previa de 112 y 120 (`ready=1`); 115-118
+  vuelven a `ready=0` hasta tener su propia revisión. Los defectos de 112/120 (recuadro negro junto a la puerta,
+  escalones en el muro, hueco marrón en 120) quedan en la cola de arte; nada de esto llega a jugadores sin aprobación.
+- Comprobar que `port_preliminar_v1_data.inc` lleva `ready=1` en la escena: con `ready=0` la receta no se aplica ni
+  con `KHCOM_PRELIMINAR_V1` y la captura sale sin extensión.
