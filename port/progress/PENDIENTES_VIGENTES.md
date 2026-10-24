@@ -52,8 +52,9 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
 - **Peso real medido: 1080p Buena = 3,7 GB** (escenas 3,1 GB, videos 0,5, música 82 MB, sprites 24 MB; 21 min).
 - **Pesos reales del mod HD por calidad**: `build/hd_sizes.sh` corre la importación completa en 1, 4, 2, 5 (resultados
   en `build/hd_sizes.txt`); pasar la tabla real al usuario y a HD_MOD.md / kScenesSize del launcher.
-- **720p casi no ahorra** (pregunta del usuario): las escenas ya son 720p; solo cambian los 6 videos 1080p. Probar
-  calidad constante (Media Foundation, modo Quality) con VMAF; HEVC solo como opción con comprobación.
+- **720p quitado del launcher** (usuario 24/10: ahorraba 6 %, menos del 20 % pedido): quedan Fuente / Buena / Ahorro a la
+  resolución de origen; calidades viejas 3..5 valen como 0..2. Sigue: calidad constante (`hd_quality_probe.py`, VMAF)
+  para bajar el peso de Buena/Ahorro sin perder calidad; medir Ahorro real (hd_sizes q2) y poner su peso en kScenesSize.
 - **Migración al actualizar: hecha (24/10)**. `port/tools/test_update.py --new <paquete> [--olds <zips>]` instala cada
   estable vieja (y la v2.0-pre2, la que da Quiver) con ROM, partida, una opción cambiada y el HD en la estructura vieja,
   actualiza como un jugador o Quiver (que extrae y mezcla encima, sin borrar: leído en su código) y comprueba partida,

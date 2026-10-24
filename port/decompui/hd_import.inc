@@ -1004,8 +1004,9 @@ static bool CopyMovie(const fs::path& src, const fs::path& dst) {
     return (bool)out;
 }
 
-/* The movies' quality (hd/quality, the launcher's own): a size, 1080p (the source's: the opening, credits and endings
-   are 1080p ~10 Mb/s, the story scenes 720p ~5 Mb/s) or 720p, and a compression, source (as it is), good or saving.
+/* The movies' quality (hd/quality, the launcher's own): a compression, source (as it is), good or saving, at the
+   source's size (the opening, credits and endings are 1080p ~10 Mb/s, the story scenes 720p ~5 Mb/s). A 720p choice
+   was dropped on 24/10: the scenes are 720p already, so it saved 6% of the full mod (3.5 GB against 3.7 GB).
    Re-encoded here with Windows' own Media Foundation into H.264 + AAC, which every player of the port takes. The
    bitrates were measured with VMAF against the source (23/10, HD_MOD.md): good ~95 (hardly told apart), saving ~88. */
 struct Quality {
@@ -1015,6 +1016,13 @@ struct Quality {
 /* bits a second at 1080p and at 720p, per compression (the source's own at 0) */
 static const unsigned kBitrate1080[3] = { 10000000, 5000000, 2500000 };
 static const unsigned kBitrate720[3] = { 5000000, 2500000, 1200000 };
+
+/* hd/quality and --quality from before 24/10 counted 0..5 (3..5 the 720p ones): the same compression now */
+static int Compression(int quality) {
+    if (quality >= 3 && quality <= 5)
+        quality -= 3;
+    return quality < 0 || quality > 2 ? 1 : quality;
+}
 
 template <class T> static void Release(T*& p) {
     if (p)
@@ -1218,11 +1226,11 @@ static void MoveScenes(const fs::path& hdDir) {
 
 /* One movie into dst: copied as it is (quality 0), or re-encoded from a plain copy beside it (the copy is kept when
    the re-encoding fails). */
-/* quality: 0..5, the size (0..2 1080p, 3..5 720p) times the compression (source, good, saving) */
+/* quality: the compression, 0 source, 1 good, 2 saving */
 static bool ImportMovie(const fs::path& src, const fs::path& dst, int quality) {
     std::error_code ec;
-    Quality q = { quality >= 3 ? 720 : 0, quality % 3 };
-    if (quality <= 0 || quality > 5)
+    Quality q = { 0, quality };
+    if (quality <= 0 || quality > 2)
         return CopyMovie(src, dst);
     fs::path plain = fs::path(dst).replace_extension(".source.mp4");
     if (!CopyMovie(src, plain))
@@ -1239,6 +1247,7 @@ static bool ImportMovie(const fs::path& src, const fs::path& dst, int quality) {
 
 static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool music, bool sprites, int quality) {
     std::error_code ec;
+    quality = Compression(quality);
     HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     bool mf = SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_LITE));
     if (!mf)
@@ -1366,9 +1375,8 @@ static bool AtOrUnder(const fs::path& f, int quality) {
     double bitrate;
     if (!MovieRate(f, h, bitrate))
         return true; /* unreadable: never touched */
-    UINT32 outH = quality >= 3 && h > 720 ? 720 : h;
-    double target = (outH >= 1080 ? kBitrate1080 : kBitrate720)[quality % 3];
-    return outH == h && bitrate <= target * 1.1;
+    double target = (h >= 1080 ? kBitrate1080 : kBitrate720)[quality];
+    return bitrate <= target * 1.1;
 }
 
 /* A compression stopped half way (the launcher closed) leaves name.source.mp4: it goes back to its name. */
@@ -1385,7 +1393,7 @@ static void RestoreLeftovers(const fs::path& folder) {
     }
 }
 
-/* The movies and scenes already installed, re-encoded in place to a smaller quality (1..5): for a full mod imported at
+/* The movies and scenes already installed, re-encoded in place to a smaller quality (1, 2): for a full mod imported at
    source quality, without the game's installation. Each file is kept as it was when its re-encoding fails. */
 static void Compress(fs::path data, int quality) {
     std::error_code ec;
@@ -1402,11 +1410,12 @@ static void Compress(fs::path data, int quality) {
                 list.push_back(f.path());
     }
     sJob.total += (int)list.size();
-    Quality q = { quality >= 3 ? 720 : 0, quality % 3 };
+    quality = Compression(quality);
+    Quality q = { 0, quality };
     for (const fs::path& f : list) {
         uintmax_t size = fs::file_size(f, ec);
         before += size;
-        if (!mf || quality <= 0 || quality > 5 || AtOrUnder(f, quality)) {
+        if (!mf || quality <= 0 || AtOrUnder(f, quality)) {
             after += size;
             sJob.done++;
             continue;
@@ -1548,25 +1557,20 @@ static bool HdModCard() {
         if (!p.empty())
             source = p;
     }
-    /* the movies' quality, kept in hd/quality (the launcher's own: the game plays whatever was imported): 0..5, the
-       size (0..2 1080p, 3..5 720p) times the compression; 1080p good by default */
+    /* the movies' quality, kept in hd/quality (the launcher's own: the game plays whatever was imported): the
+       compression (0 source, 1 good, 2 saving); good by default */
     static int quality = -1;
     if (quality < 0) {
         quality = 1;
         std::ifstream(sRoot / "hd" / "quality") >> quality;
-        quality = quality < 0 || quality > 5 ? 1 : quality;
+        quality = hd::Compression(quality);
     }
-    int size = quality / 3, compression = quality % 3;
-    const char* const kSizeNames[2] = { T("1080p (original, sugerido en PC)", "1080p (original, suggested on PC)"),
-                                        T("720p (sugerido en Android)", "720p (suggested on Android)") };
+    int compression = quality;
     const char* const kCompressionNames[3] = { T("Fuente", "Source"), T("Buena (sugerido)", "Good (suggested)"),
                                                T("Ahorro", "Saving") };
-    static const char* const kScenesSize[6] = { "~7 GB", "~3.3 GB", "~1.6 GB", "~6 GB", "~3 GB", "~1.5 GB" };
-    bool pick = CycleRow(T("Resolución de los videos", "Movie resolution"),
-                         T("La apertura, los créditos y los finales son 1080p; las escenas de historia ya son 720p.",
-                           "The opening, credits and endings are 1080p; the story scenes are 720p already."),
-                         size, 2, kSizeNames);
-    pick |= CycleRow(T("Compresión de los videos", "Movie compression"),
+    /* the full mod measured (24/10, hd_sizes): source 6.7 GB, good 3.7 GB */
+    static const char* const kScenesSize[3] = { "~6.7 GB", "~3.7 GB", "~2 GB" };
+    bool pick = CycleRow(T("Compresión de los videos", "Movie compression"),
                      T("Fuente: tal cual. Buena: la mitad de espacio, casi sin diferencia visible. Ahorro: un cuarto "
                        "del espacio, se nota algo en escenas con mucho movimiento. Se aplica al importar, o a lo ya instalado con "
                        "\"Comprimir lo instalado\".",
@@ -1575,16 +1579,14 @@ static bool HdModCard() {
                        "\"Compress what is installed\"."),
                      compression, 3, kCompressionNames);
     if (pick) {
-        quality = size * 3 + compression;
+        quality = compression;
         fs::create_directories(sRoot / "hd", ec);
         std::ofstream(sRoot / "hd" / "quality") << quality << "\n";
     }
     ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
     if (quality == 0)
-        ImGui::TextWrapped("%s", T("Fuente a 1080p ocupa el máximo; en móviles o equipos modestos puede ir más lento o "
-                                   "a saltos: allí conviene 720p.",
-                                   "Source at 1080p takes the most space; on phones or modest machines it may run slower "
-                                   "or stutter: 720p suits them better."));
+        ImGui::TextWrapped("%s", T("Fuente ocupa el máximo (el mod completo, unos 6,7 GB); Buena, unos 3,7 GB.",
+                                   "Source takes the most space (the full mod, about 6.7 GB); Good, about 3.7 GB."));
     else
         ImGui::TextWrapped("%s", T("Recodificar lleva unos minutos (el mod completo, 20-40 min según el equipo).",
                                    "Re-encoding takes a few minutes (the full mod, 20-40 min depending on the machine)."));

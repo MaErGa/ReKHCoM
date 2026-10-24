@@ -149,6 +149,11 @@ calidad 100, encoder de hardware; AAC 128 kb/s. `ReKHCoM.exe --hd-import <origen
 | 720p Buena (sugerido Android) | 36 MB, 90,5 | 29 MB, 97,1 | ~3 GB |
 | 720p Ahorro | 18 MB, 82,5 | 15 MB, 91,4 | ~1,5 GB |
 
+**Sin 720p (usuario 24/10):** la opción de resolución se quitó: las escenas ya vienen en 720p, así que 720p
+Buena pesaba 3,5 GB contra 3,7 GB de 1080p Buena (6 %; el usuario pidió quitarla si no ahorraba al menos 20 %).
+Quedan tres compresiones a la resolución de origen: Fuente (6,7 GB, medido), Buena (3,7 GB, medido), Ahorro.
+`hd/quality` y `--quality` viejos (3..5) valen como 0..2.
+
 **Comprimir lo instalado (24/10, pedido del usuario):** botón del launcher (Sonido → Mod HD) y
 `ReKHCoM.exe --hd-compress --quality N`: recodifica en el lugar los videos y escenas ya instalados (p. ej. un mod
 completo importado en Fuente) a la calidad elegida, sin la instalación de Re:CoM. Deja tal cual lo que ya está a esa
