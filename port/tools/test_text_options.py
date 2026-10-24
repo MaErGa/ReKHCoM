@@ -16,11 +16,29 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 
 
+# The rows below were written for the options' old order (picture first); 24/10 the game's rows moved first. They are
+# translated by name, so the route still exercises the same settings.
+OLD_ORDER = ['VIEW', 'ASPECT', 'ZOOM', 'INTZOOM', 'SCALE', 'HUD', 'NARROW', 'FILTER', 'FULLSCREEN', 'FS_RES', 'VSYNC',
+             'SCANLINES', 'LCD', 'CARDS', 'FPS', 'DISCORD', 'DODGE', 'STOCK', 'SAVEBANK', 'UNDUB', 'MUSIC', 'SFX', 'MASTER']
+
+
+def item_numbers():
+    src = (ROOT / 'port/src/port_ui.c').read_text(encoding='utf-8')
+    body = src[src.index('enum {\n    /* the game'):]
+    body = body[:body.index('};')]
+    return {m: i for i, m in enumerate(re.findall(r'^\s*ITEM_(\w+)\s*[,=]', body, re.M))}
+
+
+NEW = item_numbers()
+TO_NEW = {old: NEW[name] for old, name in enumerate(OLD_ORDER)}
+TO_OLD = {new: old for old, new in TO_NEW.items()}
+
+
 def route():
     actions = []
     def change(row, count=1, direction=1):
         for _ in range(count):
-            actions.append((len(actions) * 3 + 3, row, direction))
+            actions.append((len(actions) * 3 + 3, TO_NEW.get(row, row), direction))
     # Auto zoom, then disabled scaling; original scaling, then disabled zoom.
     change(1, 3)
     change(1, 3, -1)
@@ -78,10 +96,10 @@ def main():
                 code = 'timeout'
             log = (work / 'kh_com.log').read_text(errors='replace')
             found = re.findall(r'options-test: tick=(\d+) item=(\d+) enabled=(\d+) before=\[(.*?)\] after=\[(.*?)\]', log)
-            rows = {int(item) for _, item, _, _, _ in found}
+            rows = {TO_OLD.get(int(item), int(item)) for _, item, _, _, _ in found}
             pics = list(work.glob('options_*.bmp'))
             expected_rows = set(range(24)) - {20}
-            disabled = {(int(row), enabled) for _, row, enabled, before, after in found if before == after}
+            disabled = {(TO_OLD.get(int(row), int(row)), enabled) for _, row, enabled, before, after in found if before == after}
             passed = code == 0 and 'CRASH' not in log and len(found) == len(actions) and len(pics) == len(actions)
             passed &= rows == expected_rows and (1, '0') in disabled and (2, '0') in disabled
             passed &= (work / 'out_00175.bmp').exists()

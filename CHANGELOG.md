@@ -64,6 +64,8 @@ HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes
 - Launcher: "Install ROM..." first installs whatever you left in the roms folder (dumps under any name, zips with a
   dump or the HD mod's folders, an hd folder) by moving it, and sends leftovers to the Recycle Bin; a zip with other
   files (a backup) is kept.
+- Options: the game's settings first (roll, stock, volumes, save bank, undub), the picture's after.
+- No more crash going fullscreen with the "smooth" filter on PCs without a GPU (SDL's software renderer).
 - Touch controls in menus take the d-pad's main direction only: going down in Options no longer changed a value or
   opened Achievements by itself.
 - Options: "Return to title screen" is now the last row and "Reset to a mode's defaults" asks which mode; both ask
