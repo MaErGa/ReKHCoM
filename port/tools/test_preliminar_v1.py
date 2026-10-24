@@ -90,8 +90,13 @@ def capture(c,a,out):
    pair=[]
    for enabled in [False,True]:
     replay=dict(env,KHCOM_WINDOW=f'{width}x{height}',KHCOM_LOADSTATE=f'frame{f}.khst',KHCOM_QUIT='14',KHCOM_SHOTS='12',KHCOM_OUTPUT_SHOT='12')
-    if enabled or subject is not None:replay['KHCOM_PRELIMINAR_V1']='1'
-    if not enabled and subject is not None:replay['KHCOM_PRELIMINAR_SKIP']=str(subject)
+    if a.approved:
+     # Exercise the players' default path: a preview flag would hide a missing approval.
+     if subject is None:raise ValueError('--approved requires a scene fixture or --subject')
+     if not enabled:replay[f'KHCOM_SCENE{subject:03d}_WIDE']='0'
+    else:
+     if enabled or subject is not None:replay['KHCOM_PRELIMINAR_V1']='1'
+     if not enabled and subject is not None:replay['KHCOM_PRELIMINAR_SKIP']=str(subject)
     run(exe,d,replay,rom)
     with Image.open(d/'shot_00012.bmp') as im:
      pair.append(im.convert('RGB'))
@@ -128,7 +133,7 @@ def gallery(out,rows):
   sheet.save(out/f'revision-{start//6+1}.png')
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--build',default='build/agrabah109-eu');p.add_argument('--out',default='build/preliminar-v1/eu');p.add_argument('--region',default='eu',choices=['eu','us','jp']);p.add_argument('--only');p.add_argument('--quick',action='store_true');p.add_argument('--original',action='store_true');p.add_argument('--subject',type=int);a=p.parse_args();out=ROOT/a.out;out.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser();p.add_argument('--build',default='build/agrabah109-eu');p.add_argument('--out',default='build/preliminar-v1/eu');p.add_argument('--region',default='eu',choices=['eu','us','jp']);p.add_argument('--only');p.add_argument('--quick',action='store_true');p.add_argument('--original',action='store_true');p.add_argument('--subject',type=int);p.add_argument('--approved',action='store_true',help='compare default approved art against its =0 switch, without preview flags');a=p.parse_args();out=ROOT/a.out;out.mkdir(parents=True,exist_ok=True)
  rows=[]
  for c in fixtures():
   if a.only and c['name'] not in a.only.split(','):continue

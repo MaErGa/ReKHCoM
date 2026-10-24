@@ -11,6 +11,21 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
 - La validación en hardware real no es pendiente: llega como reporte. Publicar (releases, comentarios) solo con OK.
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release (Quiver nos aceptó el 24/10).
 
+## Aprobaciones nuevas 24/10 13:12–13:17 (Codex)
+
+- **053 con honores integrada para todos**: referencia `553e59d173b14e00bc61c1d513188719`, receta de
+  `26396b610`, lista única `kPreliminarApproved`. `KHCOM_SCENE053_WIDE=0` la apaga; no pide bandera preliminar.
+  `test_preliminar_v1.py --approved --build build/pc --out build/approved-053
+  --only escena-053,evento-177-escena-053 --subject 53`: **24/24 EU**, cuatro anchos × tres cuadros × ambos
+  eventos, GBA idéntico, márgenes distintos. `check_sources.py`: ok. El modo `--approved` comprueba el camino
+  por defecto del jugador para no confundir una receta de prueba con una integración real.
+- **054 con honores** recibida (`18f40e19e5814241a966b3348a542977`): siguiente integración.
+- Aprobaciones sin honores recibidas: 044, 045, 098, 104 y Darkside 03 r6. Recetas ya subidas a main;
+  se conservan las valoraciones por versión. Criterios y referencias guardados en `LOGICA_APROBADOS.md`.
+- Nuevos comentarios a las hijas 087, 090, 095, 099 y 102 y al primer arranque: están en la cola de la app;
+  no contarlas como cerradas por haber enviado una revisión anterior. Después de las integraciones, leer esos
+  envíos junto a la cola restante (110 y siguientes).
+
 ## TRASPASO 24/10 13:14 (Chile, Codex — retoma tras cierre de Claude)
 
 - Base recuperada: main `bfaa5e76c`; 098, 099 y 102 ya respondidas en la app (faltaban en el resumen).
@@ -21,7 +36,7 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   Brillos/arcos completos desde columnas 40..43, algas cerradas con sus puntas; suelo y borde delantero
   prolongados en diagonal, sin tomar la fila vacía 31 ni el rectángulo inferior que generaba cortes negros.
   Activadas las dos filas 104 de la tabla **solo para Preliminar V1**: estaban apagadas y las últimas capturas
-  de Claude eran iguales con/sin receta. No se añade 104 a la lista de honores: espera valoración humana.
+  de Claude eran iguales con/sin receta. 104 aprobada sin honores a las 13:12: no se añade a la lista de honores.
   Prueba EU: `python port/tools/test_preliminar_v1.py --build build/pc --out build/resume-104-verified
   --only escena-104,evento-106-escena-104 --subject 104`: 2 eventos × 4 anchos × 3 cuadros = **24/24**, GBA idéntico,
   márgenes distintos, 0 CRASH. Revisión visual a x3 de la captura 3440x1440. `check_sources.py`: ok.

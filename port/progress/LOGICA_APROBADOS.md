@@ -107,3 +107,22 @@ Workflow completo (tiles, píxeles, pixel art, pruebas en x3 entero): WORKFLOW_A
 
 En pantallas más altas que 16:9 la vista Auto usa las filas de una pantalla 16:9 del mismo ancho (`PortConfigAutoView`,
 port_config.c): más grande, sin franja negra sobre el fondo, el HUD cerca de la acción. `KHCOM_TALL_FIT=0` lo apaga.
+
+## Revisiones valoradas el 24/10 (app, 13:06–13:12 Chile)
+
+La valoración se conserva por versión; una aprobación anterior no aprueba una hija nueva.
+Las recetas ya están en main. La activación para jugadores sigue la referencia con honores de la app.
+
+| Pieza / versión | Valoración humana | Criterio que sí quedó aceptado |
+|---|---|---|
+| 044 / `0ac326ad582f4214b308a5d0c1bc6629` | Aprobada | Continuar las casas y la arcada; conservar una sola torre del reloj y quitar la tira suelta de fachada. |
+| 045 / `2f0e9dee739642468bded660684f5355` | Aprobada | Césped de la extensión con el tono de la sombra del bosque; completar el pino cortado con su otra mitad. |
+| 053 / `553e59d173b14e00bc61c1d513188719` | Con honores | Colocar matas completas del propio mapa sobre hierba lisa, separadas y con densidad parecida; ninguna mata partida por el donante. |
+| 054 / `18f40e19e5814241a966b3348a542977` | Con honores | Prolongar el muelle por su diagonal hacia abajo a la izquierda, repitiendo dos pilotes completos por tramo. |
+| 098 / `de7e4e0b84f346c3a5cb9fd905010b50` | Aprobada | Cada muro y el ajedrezado superior siguen su propia diagonal: papel y barandilla a la izquierda, pilar y celosía a la derecha. |
+| 104 / `52df9ff43f4e48b4a722240c723bc2f8` | Aprobada | Donantes con los brillos enteros; algas prolongadas y cerradas; suelo y borde continuos sin repetir el jarrón. |
+| Darkside 03 r6 / `2938cbbb50a345088e08d0365dd0b9f3` | Aprobada | Continuar torso y mechones/ala cortados; tramado solo en lo añadido y píxeles originales intactos. |
+
+Aplicación al siguiente caso: medir el período y dirección de cada estructura; comprobar que el donante contiene
+la pieza entera, también encima del corte y en la última fila ocupada. No trasladar las coordenadas de un fondo
+a otro. Estas valoraciones documentan casos aceptados, no una aprobación automática de recetas futuras.
