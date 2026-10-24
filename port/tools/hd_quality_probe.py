@@ -22,6 +22,9 @@ CONFIGS = {
     'cq70-sw': (1, {'KHCOM_ENC_RC': '3', 'KHCOM_ENC_Q': '70', 'KHCOM_ENC_HW': '0'}),
     'cq80-sw': (1, {'KHCOM_ENC_RC': '3', 'KHCOM_ENC_Q': '80', 'KHCOM_ENC_HW': '0'}),
     'cq70-hw': (1, {'KHCOM_ENC_RC': '3', 'KHCOM_ENC_Q': '70'}),
+    'cq75-hw': (1, {'KHCOM_ENC_RC': '3', 'KHCOM_ENC_Q': '75'}),
+    'cq80-hw': (1, {'KHCOM_ENC_RC': '3', 'KHCOM_ENC_Q': '80'}),
+    'cq85-hw': (1, {'KHCOM_ENC_RC': '3', 'KHCOM_ENC_Q': '85'}),
     'actual-ahorro': (2, {}),
 }
 
@@ -42,7 +45,7 @@ def main():
     src = Path(args.source)
     scenes = sorted(src.glob('zz_event_*.mp4'), key=lambda p: p.stat().st_size)
     picks = [src / 'ROP.mp4', scenes[0], scenes[len(scenes) // 2], scenes[-1], scenes[len(scenes) * 3 // 4]]
-    exe = ROOT / 'build/pc-eu/ReKHCoM.exe'
+    exe = ROOT / 'build/pc/ReKHCoM.exe'  # the current launcher (its graphics card path included)
     results = {}
     for name, (quality, extra) in CONFIGS.items():
         if args.only and name not in args.only.split(','):
@@ -53,7 +56,7 @@ def main():
         for p in picks:
             shutil.copy2(p, d / 'hd/movies' / p.name)
         shutil.copy2(exe, d / 'ReKHCoM.exe')
-        shutil.copy2(ROOT / 'build/pc-eu/SDL3.dll', d / 'SDL3.dll')
+        shutil.copy2(ROOT / 'build/pc/SDL3.dll', d / 'SDL3.dll')
         env = dict(os.environ, SDL_VIDEO_DRIVER='offscreen', **extra)
         subprocess.run([str(d / 'ReKHCoM.exe'), '--hd-compress', '--quality', str(quality)], cwd=d, env=env,
                        capture_output=True, timeout=3600)
@@ -64,11 +67,13 @@ def main():
                             'vmaf': vmaf(out, p)}
         results[name] = rows
         total = sum(r['MB'] for r in rows.values())
-        mean = sum(r['vmaf'] or 0 for r in rows.values()) / len(rows)
+        scenes = [r for k, r in rows.items() if k != 'ROP.mp4']  # ROP's VMAF is off for every setting (misaligned)
+        mean = sum(r['vmaf'] or 0 for r in scenes) / len(scenes)
         print(f"{name:14} total {total:7.1f} MB  vmaf mean {mean:5.1f}  " +
               ' '.join(f"{k.replace('zz_event_', 'e').replace('.mp4', '')}={v['MB']}MB/{v['vmaf']:.1f}" if v['vmaf'] else f"{k}=?"
                        for k, v in rows.items()), flush=True)
-    (WORK / 'results.json').write_text(json.dumps(results, indent=1))
+    old = json.loads((WORK / 'results.json').read_text()) if (WORK / 'results.json').exists() else {}
+    (WORK / 'results.json').write_text(json.dumps({**old, **results}, indent=1))
 
 
 if __name__ == '__main__':
