@@ -1464,7 +1464,7 @@ static int Agrabah109DecorPixel(const BgLatch* l, const uint8_t* chars,
 }
 
 /* the boss arenas' Preliminar V2 (BATTLE_SCENERY_AUDIT.md): on in the review copy only until approved */
-static int PortArenasV2(void) {
+int PortArenasV2(void) {
     static int on = -1;
     if (on < 0)
         on = getenv("KHCOM_ARENAS_V2") && *getenv("KHCOM_ARENAS_V2") == '1';
@@ -1496,6 +1496,8 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
        waiting for the user's approval (KHCOM_ARENAS_V2=1, the review copy) */
     int tmBoard = sBgLatch[bg].valid && PortTrickmasterBackdropMatches((const void* const*)sBgLatch[bg].map) &&
         PortArenasV2();
+    /* Ursula's cave (1) goes on below its floor; her own layer (2) shows one Ursula */
+    int ursLayer = PortArenasV2() && sBgLatch[bg].valid ? PortUrsulaLayer((const void* const*)sBgLatch[bg].map) : 0;
     /* Maleficent's hall (1) goes on by its bays; her dragon's layer (2) shows one dragon */
     int mdLayer = 0;
     if (PortArenasV2() && sBgLatch[bg].valid) {
@@ -1553,6 +1555,19 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
             int wy = l->y + gy + (vofs - l->vofs);
             if (PortGuardArmorBackdropPixel(wx, wy, &out[x])) {
                 sInWorld[x] = 1;
+                continue;
+            }
+        }
+        if (ursLayer && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
+            const BgLatch* l = &sBgLatch[bg];
+            int wx = l->x + gx + (hofs - l->hofs), wy = l->y + gy + (vofs - l->vofs);
+            int cx = l->x + GBA_SCREEN_W / 2 + (hofs - l->hofs), cy = l->y + GBA_SCREEN_H / 2 + (vofs - l->vofs);
+            if (ursLayer == 1 && gy >= GBA_SCREEN_H && PortUrsulaFloorPixel(wx, wy, cy, &out[x])) {
+                sInWorld[x] = 1;
+                continue;
+            }
+            if (ursLayer == 2 && !PortMaleficentDragonVisible(wx, wy, cx, cy)) { /* the nearest copy only */
+                out[x] = TRANSPARENT;
                 continue;
             }
         }
