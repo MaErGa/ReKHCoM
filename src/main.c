@@ -15,6 +15,7 @@
 #include "battle_work.h"
 #include "battle_actor.h"
 #include "card.h"
+#include "card_label_data.h"
 #include "taskpool.h"
 #include "listpool.h"
 #include "pallet.h"
@@ -531,6 +532,16 @@ int PortHarnessMode(const char* name, int arg) {
             gBtlWork->actor->invincibleTimer = 0x7FFF;
         return 1;
     }
+    /* drawprizes: the orbs come to the player, as with the game's own Draw (attract) effect; a boss's orbs never
+       time out and its battle closes only once they are taken, which the harness, standing still, never did
+       (Guard Armor's chain seemed to hang) */
+    if (strcmp(name, "drawprizes") == 0) {
+        if (gBtlWork != NULL)
+            gBtlWork->hcEffect = HC_EFFECT_DRAW;
+        if (gRikuBtlWork != NULL)
+            gRikuBtlWork->hcEffect = HC_EFFECT_DRAW;
+        return 1;
+    }
     /* battleid:ID|WORLD<<8 - any battle in a given world, as PortRematchBegin
        starts one (official achievement validation, ra_battle_dryrun.py) */
     if (strcmp(name, "battleid") == 0) {
@@ -724,7 +735,9 @@ int PortHarnessMode(const char* name, int arg) {
        what keeps a battle open (test_event_battles.py) */
     if (strcmp(name, "btllog") == 0 && gBtlWork != NULL) {
         BtlObj* obj = ListPoolFirst(&gBtlWork->pool);
-        PortLog("btllog: enemies %d pending %d", gBtlWork->enemyCount, gBtlWork->pendingEnemies);
+        PortLog("btllog: enemies %d pending %d phase %d step %d flags %08x prizes %d bgfx %d", gBtlWork->enemyCount,
+                gBtlWork->pendingEnemies, gBtlWork->phase, gBtlWork->phaseStep, (unsigned)gBtlWork->flags,
+                gBtlWork->prizeCount, BgFxIsActive());
         while (obj != NULL) {
             PortLog("btllog: kind %d hp %d/%d flags %08x%08x kindFlags %04x self %d parent %d at %d,%d,%d", obj->kind,
                     obj->hp, obj->maxHp, (unsigned)(obj->flags >> 32), (unsigned)obj->flags, obj->kindFlags,
