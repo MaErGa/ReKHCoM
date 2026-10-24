@@ -29,6 +29,13 @@ int PortUrsulaFloorPixel(int x, int y, int cy, uint16_t* color);
 int PortOogieLayer(const void* const* maps);
 int PortOogieHallPixel(int x, int y, int cx, int cy, uint16_t* color);
 
+/* Jafar's lava room (port_jafar.c): 1 the room (goes on by its tile periods), 2 the genie's layer (drawn once) */
+int PortJafarWide(void);
+int PortJafarLayer(const void* const* maps);
+int PortJafarMapBuffer(const void* block);
+int PortJafarHallPixel(int x, int y, int cx, int cy, uint16_t* color);
+int PortJafarGenieCleared(int x, int y);
+
 /* Darkside's beach (port_darkside.c): 1 the beach layer, 2 Darkside's body, 0 neither. */
 int PortDarksideLayer(const void* const* maps);
 /* cx, cy: the map tile at the middle of the original picture (the body's single copy is the one nearest it) */

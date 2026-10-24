@@ -25,7 +25,14 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   dientes ni los contadores fuera de la bahía del combate; ladrillos y columnas hacia arriba; delante el campo verde
   en bloques espejados y corridos; abajo el camino sigue sus líneas y el antebrazo. Rectángulo GBA idéntico 6/6
   (16:9 y 32:9, `arena_before_shots.py --only oogie [--v2]`). Lógica en BATTLE_SCENERY_TECHNIQUE.md 9-11.
-- Siguiente: Jafar y Marluxia, copia jugable de la V2 y esperar los comentarios del usuario
+- **Jafar hecho y APROBADO** (usuario 24/10: "se veía genial"): `port/src/port_jafar.c`, encendido para todos
+  (`KHCOM_JAFAR_WIDE=0` lo apaga). Antes no tenía vista ancha (búfer de pilares = global nativo en PC). GBA idéntico
+  6/6 (16:9 y 32:9, `build/arena/jf_check.sh`). LOGICA_APROBADOS.md y BATTLE_SCENERY_TECHNIQUE.md 12.
+- **"Cuelgue" de Jafar 32:9 resuelto**: era `getenv` por píxel (un cuadro por segundo). Patrón cazado en todo el
+  port: `PORT_ENV_ONCE` (port.h) en DrawObjs (por fila, todas las escenas), patio de Guard Armor, bandas del título,
+  HUD HD (por píxel), sprites HD, audio, daño, toast. Las 7 arenas en 16:9 y 32:9 terminan normal (242 s).
+  DEBUG_WORKFLOW.md: clases nuevas (getenv caliente, búfer nativo, envoltura vertical).
+- Siguiente: Marluxia, copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 
 ## TRASPASO 23/10 noche (Claude; /goal del usuario: "acabar y depurar todos los pendientes hasta llegar a la 2.0") — LEER PRIMERO

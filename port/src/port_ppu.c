@@ -87,6 +87,9 @@ static int sBgIsoLatched[4];
 static int sEventBackdropProfile = -1; /* derived at frame start, not saved */
 static int sUseSceneProfiles;
 static int sPreliminarV1;
+/* harness switches, read once per frame on the main thread: getenv in the per-row/per-pixel drawing is slow on
+   Windows (a frame a second at 32:9) and not safe to call while the cores draw */
+static int sEnvNoGuardPatio, sEnvTitleBandsOff, sEnvActorFrameOff, sEnvHudLayoutFrame = -1;
 /* Approved wide art is on; its variable set to 0 turns it off for before/after tests (WORKFLOW_ARTE_AMPLIO.md). */
 static int PortArtOn(const char* var) {
     const char* v = getenv(var);
@@ -1093,8 +1096,9 @@ static int WorldEntry(const BgLatch* l, int wx, int wy) {
     if (l->map == NULL || wx < 0 || wy < 0 || wx >= l->width * 256 || wy >= l->height * 256)
         return -1;
     block = (const uint16_t*)l->map[(wy >> 8) * l->width + (wx >> 8)];
-    /* Blocks live in work RAM or the ROM; anything else is not a world map. */
-    if (!PORT_GBA_MAP_MEMORY(block))
+    /* Blocks live in work RAM or the ROM; anything else is not a world map. Jafar's room and genie keep a block in
+       a work RAM buffer, a native global in the PC build (without it his fight had no wide view) */
+    if (!PORT_GBA_MAP_MEMORY(block) && !(PortJafarWide() && PortJafarMapBuffer(block)))
         return -1;
     return block[((wy & 255) >> 3) * 32 + ((wx & 255) >> 3)];
 }
@@ -1491,13 +1495,15 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
     /* also in the event before the fight (008), where the armour falls and assembles on the same patio */
     int guardPatio = bg == 0 && sBgLatch[bg].valid &&
         PortGuardArmorBackdropMatches((const void* const*)sBgLatch[bg].map) &&
-        !getenv("KHCOM_NO_GUARD_PATIO"); /* isolated before/after harness */
+        !sEnvNoGuardPatio; /* isolated before/after harness */
     /* Trickmaster's chessboard below the map (the wide view's bottom band): the Preliminar V2 of the boss arenas,
        waiting for the user's approval (KHCOM_ARENAS_V2=1, the review copy) */
     int tmBoard = sBgLatch[bg].valid && PortTrickmasterBackdropMatches((const void* const*)sBgLatch[bg].map) &&
         PortArenasV2();
     /* Ursula's cave (1) goes on below its floor; her own layer (2) shows one Ursula */
     int ursLayer = PortArenasV2() && sBgLatch[bg].valid ? PortUrsulaLayer((const void* const*)sBgLatch[bg].map) : 0;
+    /* Jafar's room (1) goes on by its periods; the genie's layer (2) shows one genie */
+    int jfLayer = PortJafarWide() && sBgLatch[bg].valid ? PortJafarLayer((const void* const*)sBgLatch[bg].map) : 0;
     /* Oogie's room goes on as one bay of a long hall */
     int oogieHall = PortArenasV2() && sBgLatch[bg].valid && PortOogieLayer((const void* const*)sBgLatch[bg].map);
     /* Maleficent's hall (1) goes on by its bays; her dragon's layer (2) shows one dragon */
@@ -1582,6 +1588,19 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
                 continue;
             }
             if (mdLayer == 2 && !PortMaleficentDragonVisible(wx, wy, cx, cy)) {
+                out[x] = TRANSPARENT;
+                continue;
+            }
+        }
+        if (jfLayer && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
+            const BgLatch* l = &sBgLatch[bg];
+            int wx = l->x + gx + (hofs - l->hofs), wy = l->y + gy + (vofs - l->vofs);
+            int cx = l->x + GBA_SCREEN_W / 2 + (hofs - l->hofs), cy = l->y + GBA_SCREEN_H / 2 + (vofs - l->vofs);
+            if (jfLayer == 1 && PortJafarHallPixel(wx, wy, cx, cy, &out[x])) {
+                sInWorld[x] = 1;
+                continue;
+            }
+            if (jfLayer == 2 && (!PortMaleficentDragonVisible(wx, wy, cx, cy) || PortJafarGenieCleared(wx, wy))) {
                 out[x] = TRANSPARENT;
                 continue;
             }
@@ -2126,9 +2145,7 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
     /* Event 097 stages characters just beyond the cartridge's
        240x160 camera. Keep the extended backgrounds, but let those actors
        enter and leave through the original frame as authored. */
-    const char* actorFrameOverride = getenv("KHCOM_SCENE_ACTOR_FRAME");
-    int sceneActorFrame = gPortScreen.wide && sEventBackdropProfile == 97 &&
-                          (!actorFrameOverride || strcmp(actorFrameOverride, "off") != 0);
+    int sceneActorFrame = gPortScreen.wide && sEventBackdropProfile == 97 && !sEnvActorFrameOff;
     int mapping1d = (dispcnt >> 6) & 1;
     int bitmapMode = (dispcnt & 7) >= 3;
     uint16_t mosaic = IO16(0x4C);
@@ -2734,7 +2751,7 @@ static void ComposeOverlayLine(int gy, uint16_t dispcnt, const int* bgOn, const 
    hardware alpha and palette effects; the title margin is palette white. */
 static void BuildTitleBands(int gy, const int* bgOn) {
     int side;
-    if (!sTitleBands || gy < 0 || gy >= GBA_SCREEN_H || getenv("KHCOM_TITLE_BANDS_OFF")) return;
+    if (!sTitleBands || gy < 0 || gy >= GBA_SCREEN_H || sEnvTitleBandsOff) return;
     for (side = 0; side < 2; side++) {
         int edge = gPortScreen.originX + (side ? GBA_SCREEN_W - 1 : 0);
         int step = side ? -1 : 1, k, layer = -1;
@@ -3250,6 +3267,14 @@ void PortPpuBeginFrame(void) {
     sBgTextCount = 0;
     sEventBackdropProfile = PortEventBackdropProfile();
     sUseSceneProfiles = getenv("KHCOM_NO_SCENE_PROFILES") == NULL;
+    {
+        const char* v = getenv("KHCOM_SCENE_ACTOR_FRAME");
+        sEnvActorFrameOff = v && strcmp(v, "off") == 0;
+        v = getenv("KHCOM_HUD_LAYOUT");
+        sEnvHudLayoutFrame = v ? atoi(v) : -1;
+        sEnvNoGuardPatio = getenv("KHCOM_NO_GUARD_PATIO") != NULL;
+        sEnvTitleBandsOff = getenv("KHCOM_TITLE_BANDS_OFF") != NULL;
+    }
     sPreliminarV1 = getenv("KHCOM_PRELIMINAR_V1") != NULL;
     sSinglePanelBg = PortEventBackdropPanel();
 
@@ -4483,8 +4508,7 @@ void PortPpuRenderHud(uint32_t* buf) {
             hdSprite = PortHdHudSpriteRegister(rawHud, ow, oh, i, hx, hy,
                 ((a1 & 0x1000) ? 1 : 0) | ((a1 & 0x2000) ? 2 : 0), mode == 1 ? 0xA0 : 255);
         {
-            const char* frame = getenv("KHCOM_HUD_LAYOUT");
-            if (frame && (uint32_t)atoi(frame) == PortFrameCount())
+            if (sEnvHudLayoutFrame >= 0 && (uint32_t)sEnvHudLayoutFrame == PortFrameCount())
                 PortLog("hud-layout: frame=%u slot=%d x=%d y=%d w=%d h=%d tile=%d palette=%d part=%d affine=%d",
                     PortFrameCount(), i, hx, hy, bw, bh, a2 & 1023, a2 >> 12, tag->hdHudPart, affine);
         }

@@ -99,3 +99,9 @@ Comprobación de cada arena: el rectángulo GBA idéntico píxel a píxel antes/
     exteriores, 29 pegada a 0 como en el mapa), uno sí uno no en espejo y cada banda corrida 4 tiles, se lee como
     un estampado. Debajo del camino: sus líneas siguen su pendiente medida (filas 408..470) y los dientes negros del
     rojo van pegados a su línea; el antebrazo del esqueleto sigue hacia abajo con su última fila.
+12. **Jafar** (24/10, aprobado por el usuario: "se veía genial", encendido para todos, `KHCOM_JAFAR_WIDE=0` lo
+    apaga): no tenía vista ancha porque el bloque de sus pilares (y el del genio) es un búfer de RAM que en PC es un
+    global nativo. La sala (48 x 48 tiles, x 448..831 envolviendo) se arma con períodos cortos: pared 2 tiles,
+    columnas cada 31 alternando su espejo, orilla 7, lava 7 x 6 que cada 6 filas se corre 2 tiles. Fuera de la sala
+    nunca se lee de las columnas de los pilares móviles (son de la pelea). El genio, uno solo (la copia más cercana) y
+    sin las filas que el juego vacía al hundirse (entrada 0 = tile opaco, en la GBA quedan bajo la pantalla).

@@ -13,6 +13,12 @@
 
 #include "m4a.h"
 #include "port/port.h"
+
+static int AudioLog(void) {
+    const char* v;
+    PORT_ENV_ONCE(v, SDL_getenv, "KHCOM_AUDIOLOG");
+    return v != NULL;
+}
 #include "port/port_audio.h"
 #include "port/port_state.h"
 
@@ -327,7 +333,9 @@ static void PsgRender(int n, int rate) {
             if (sPsg[ch].on)
                 nr52 |= 1 << ch;
         IO8(0x84) = nr52;
-        if ((nr51 & ((nr52 & 15) * 0x11)) && SDL_getenv("KHCOM_PSGLOG")) {
+        const char* psgLog;
+        PORT_ENV_ONCE(psgLog, SDL_getenv, "KHCOM_PSGLOG");
+        if ((nr51 & ((nr52 & 15) * 0x11)) && psgLog) {
             static int sLogged;
             if (sLogged++ < 20)
                 PortLog("psg: channels %x nr50 %02x nr51 %02x", nr52 & 15, nr50, nr51);
@@ -501,7 +509,7 @@ static void Queue(int n, int rate) {
                 return;
             SDL_ResumeAudioStreamDevice(sStream);
             sStreamPriming = 0;
-            if (SDL_getenv("KHCOM_AUDIOLOG"))
+            if (AudioLog())
                 PortLog("audio: playback primed with %.0f samples at %d Hz", queued, rate);
         }
         if (sQueuedAvg < 0)
@@ -517,7 +525,7 @@ static void Queue(int n, int rate) {
         else
             ratio = 1.0f;
         SDL_SetAudioStreamFrequencyRatio(sStream, ratio);
-        if (SDL_getenv("KHCOM_AUDIOLOG")) {
+        if (AudioLog()) {
             static int sTick;
             if (++sTick % 60 == 0) {
                 SDL_AudioSpec src, dst;

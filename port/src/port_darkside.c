@@ -33,7 +33,8 @@ static int sPrepared;
 
 int PortDarksideBeachOn(void) {
     /* KHCOM_DARKSIDE_BEACH=1 shows it until the user approves it; then on by default (=0 turns it off) */
-    const char* v = getenv("KHCOM_DARKSIDE_BEACH");
+    const char* v;
+    PORT_ENV_ONCE(v, getenv, "KHCOM_DARKSIDE_BEACH");
     return v != NULL && atoi(v) != 0;
 }
 

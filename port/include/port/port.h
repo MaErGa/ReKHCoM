@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include "port/port_zoom.h"
 
 #include "../../../include/gba/gba_space.h"
@@ -41,6 +42,21 @@ unsigned int GbaSpaceBusAddress(const void* p);
 #else
 #define PORT_GBA_MAP_MEMORY(p) ((uintptr_t)(p) - 0x02000000u < 0x08000000u)
 #endif
+
+/* A test/log switch (KHCOM_...) read once: getenv is slow on Windows (it locks and walks the environment) and some
+   switches sit in per-row, per-pixel or audio paths; read there each time it slowed a 32:9 frame to a second. The
+   environment never changes while the game runs. A core that races the first read just sees the switch unset.
+   getter: the call the site used before (getenv or SDL_getenv: on Android they can differ). */
+#define PORT_ENV_ONCE(out, getter, name)           \
+    do {                                           \
+        static const char* volatile portEnvValue_; \
+        static volatile int portEnvRead_;          \
+        if (!portEnvRead_) {                       \
+            portEnvValue_ = getter(name);          \
+            portEnvRead_ = 1;                      \
+        }                                          \
+        (out) = portEnvValue_;                     \
+    } while (0)
 
 #define GBA_SCREEN_W 240
 #define GBA_SCREEN_H 160

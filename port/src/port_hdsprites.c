@@ -313,7 +313,9 @@ static void Quad(SDL_Texture* t, const HdSpriteDraw* q, float ox, float oy, floa
         v[1].position.x += 0.01f;
         v[1].position.y += 0.01f;
     }
-    if (SDL_getenv("KHCOM_HDSPRITES_LOG"))
+    const char* spriteLog;
+    PORT_ENV_ONCE(spriteLog, SDL_getenv, "KHCOM_HDSPRITES_LOG");
+    if (spriteLog)
         PortLog("hdsprite f=%u %s (%.1f,%.1f) (%.1f,%.1f) (%.1f,%.1f) (%.1f,%.1f) uv %.3f,%.3f-%.3f,%.3f", PortFrameCount(),
                 kHdSprites[q->id].name, v[0].position.x, v[0].position.y, v[1].position.x, v[1].position.y,
                 v[2].position.x, v[2].position.y, v[3].position.x, v[3].position.y, q->u0, q->v0, q->u1, q->v1);
