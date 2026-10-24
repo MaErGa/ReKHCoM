@@ -3,6 +3,7 @@
 #include "port/port.h"
 #include "port/port_android.h"
 #include "port/port_ui.h"
+#include "touch_letters.inc"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 static int touchEnabled;
@@ -15,7 +16,7 @@ EMSCRIPTEN_KEEPALIVE void PortWebTouchPersist(void) { PortConfigSave(); }
 #endif
 
 typedef struct Finger { SDL_FingerID id; float x,y; int active; } Finger;
-typedef struct Button { float x,y; uint16_t bits; const char* text; int icon; } Button;
+typedef struct Button { float x,y; uint16_t bits; const char* text; int icon; float ox,oy; } Button;
 static Finger fingers[10];
 static float aspect=16.0f/9.0f;
 #if defined(__EMSCRIPTEN__) || defined(PORT_TOUCH_CENTERED_LAYOUT)
@@ -31,8 +32,10 @@ static void CenterLayout(int w,int h) {
 #endif
 static const Button buttons[]={
     {.13f,.34f,0x200,"L",0},{.87f,.34f,0x100,"R",0},
-    {.91f,.62f,1,"A",0},{.83f,.79f,2,"B",0},
-    {.73f,.71f,PORT_KEY_DODGE,"",1},{.81f,.49f,PORT_KEY_STOCK,"",2},
+    /* the face buttons in a diamond like a pad's: A right, B below, roll left, stock above (user 24/10); ox/oy in
+       screen heights from the diamond's centre, so the spacing holds on any screen shape */
+    {.82f,.64f,1,"A",0,.135f,0},{.82f,.64f,2,"B",0,0,.135f},
+    {.82f,.64f,PORT_KEY_DODGE,"",1,-.135f,0},{.82f,.64f,PORT_KEY_STOCK,"",2,0,-.135f},
     {.45f,.93f,4,"SELECT",0},{.55f,.93f,8,"START",0},
     {.95f,.17f,12,"...",0}
 };
@@ -144,7 +147,7 @@ static uint16_t TouchKeys(int menu) {
         }
         for(b=0;b<(int)SDL_arraysize(buttons);b++) {
             if(!panels && b!=(int)SDL_arraysize(buttons)-1) continue;
-            float x=(fx-buttons[b].x)*aspect,y=fy-buttons[b].y;
+            float x=(fx-buttons[b].x)*aspect-buttons[b].ox,y=fy-buttons[b].y-buttons[b].oy;
             float radius=b==6 || b==7 ? .055f : .075f;
             if(x*x+y*y<=radius*radius) { keys|=buttons[b].bits; break; }
             /* L/R and SELECT/START are pills now: their whole width counts */
@@ -227,51 +230,38 @@ static void Glass(Canvas* c,const Shape* s,const Theme* t,const Rgb* accent,int 
 static void Stamp(Canvas* dst,const Canvas* src,float cx,float cy,float scale,float alpha) {
     float w=src->w*scale,h=src->h*scale;
     int x0=(int)SDL_floorf(cx-w*.5f),y0=(int)SDL_floorf(cy-h*.5f),x1=(int)SDL_ceilf(cx+w*.5f),y1=(int)SDL_ceilf(cy+h*.5f),x,y,i,j;
+    int n=SDL_clamp((int)SDL_ceilf(3/scale),3,8); /* samples a side: enough to cover every source pixel shrunk */
     for(y=SDL_max(y0,0);y<SDL_min(y1,dst->h);y++) for(x=SDL_max(x0,0);x<SDL_min(x1,dst->w);x++) {
         float acc[4]={0,0,0,0},*d=dst->px+((size_t)y*dst->w+x)*4;
-        for(j=0;j<3;j++) for(i=0;i<3;i++) {
-            int sx=(int)SDL_floorf((x+(i+.5f)/3-(cx-w*.5f))/scale),sy=(int)SDL_floorf((y+(j+.5f)/3-(cy-h*.5f))/scale);
+        for(j=0;j<n;j++) for(i=0;i<n;i++) {
+            int sx=(int)SDL_floorf((x+(i+.5f)/n-(cx-w*.5f))/scale),sy=(int)SDL_floorf((y+(j+.5f)/n-(cy-h*.5f))/scale);
             if(sx<0||sy<0||sx>=src->w||sy>=src->h)continue;
             const float* s=src->px+((size_t)sy*src->w+sx)*4;
             acc[0]+=s[0];acc[1]+=s[1];acc[2]+=s[2];acc[3]+=s[3];
         }
-        for(i=0;i<4;i++) acc[i]*=alpha/9;
+        for(i=0;i<4;i++) acc[i]*=alpha/(n*n);
         for(i=0;i<3;i++) d[i]=acc[i]+d[i]*(1-acc[3]);
         d[3]=acc[3]+d[3]*(1-acc[3]);
     }
 }
-/* text in the game's font, centred, its capitals cap pixels tall, with the mock's dark shadow */
+/* text in the HD text's font (KHMenu.otf, port/tools/gen_touch_letters.py), centred, its capitals cap pixels tall,
+   with the mock's dark shadow; scaled down smoothly from the big letters */
 static void Text(Canvas* c,const char* text,float cx,float cy,float cap,const Theme* t,float k) {
-    enum { TW=128, TH=14 };
-    static uint32_t line[TW*TH];
-    const uint32_t face=0xFF00FF00u;
-    int x,y,minX=TW,maxX=-1,minY=TH,maxY=-1;
-    Canvas g;
-    PortUiRenderTextLine(line,TW,TH,text,face);
-    for(y=0;y<TH;y++) for(x=0;x<TW;x++) if(line[y*TW+x]==face) {
-        minX=SDL_min(minX,x);maxX=SDL_max(maxX,x);minY=SDL_min(minY,y);maxY=SDL_max(maxY,y);
+    const TouchLetters* l=NULL;
+    Canvas shadow,ink;
+    size_t i,n;
+    for(i=0;i<SDL_arraysize(kTouchLetters);i++) if(!SDL_strcmp(kTouchLetters[i].text,text)) l=&kTouchLetters[i];
+    if(!l || !NewCanvas(&shadow,l->w,l->h))return;
+    if(!NewCanvas(&ink,l->w,l->h)) { SDL_free(shadow.px); return; }
+    n=(size_t)l->w*l->h;
+    for(i=0;i<n;i++) {
+        float a=l->a[i]/255.0f;
+        shadow.px[i*4]=t->rim.r*a;shadow.px[i*4+1]=t->rim.g*a;shadow.px[i*4+2]=t->rim.b*a;shadow.px[i*4+3]=a;
+        ink.px[i*4]=t->ink.r*a;ink.px[i*4+1]=t->ink.g*a;ink.px[i*4+2]=t->ink.b*a;ink.px[i*4+3]=a;
     }
-    if(maxX<0 || !NewCanvas(&g,maxX-minX+1,maxY-minY+1))return;
-    for(y=0;y<g.h;y++) for(x=0;x<g.w;x++) if(line[(y+minY)*TW+x+minX]==face) {
-        float* p=g.px+((size_t)y*g.w+x)*4; p[0]=p[1]=p[2]=p[3]=1;
-    }
-    {
-        float scale=cap/g.h;
-        Canvas shadow=g,ink=g;
-        size_t i,n=(size_t)g.w*g.h;
-        shadow.px=SDL_malloc(n*4*sizeof(float));ink.px=SDL_malloc(n*4*sizeof(float));
-        if(shadow.px && ink.px) {
-            for(i=0;i<n;i++) {
-                float a=g.px[i*4+3];
-                shadow.px[i*4]=t->rim.r*a;shadow.px[i*4+1]=t->rim.g*a;shadow.px[i*4+2]=t->rim.b*a;shadow.px[i*4+3]=a;
-                ink.px[i*4]=t->ink.r*a;ink.px[i*4+1]=t->ink.g*a;ink.px[i*4+2]=t->ink.b*a;ink.px[i*4+3]=a;
-            }
-            Stamp(c,&shadow,cx+k,cy+2*k,scale,170/255.0f);
-            Stamp(c,&ink,cx,cy,scale,235/255.0f);
-        }
-        SDL_free(shadow.px);SDL_free(ink.px);
-    }
-    SDL_free(g.px);
+    Stamp(c,&shadow,cx+k,cy+2*k,cap/l->h,170/255.0f);
+    Stamp(c,&ink,cx,cy,cap/l->h,235/255.0f);
+    SDL_free(shadow.px);SDL_free(ink.px);
 }
 /* one frame of Sora's roll (gSor1ll67, anim 53 of the battle) from the cartridge, cropped, in RGBA */
 static int SoraFrame(int index,Canvas* out) {
@@ -461,7 +451,7 @@ static void BuildSkins(SDL_Renderer* r,float U) {
                     float dx=x+.5f-c.w*.5f,dy=y+.5f-c.h*.5f,d=SDL_fabsf(SDL_sqrtf(dx*dx+dy*dy)-11*k);
                     Over(c.px+((size_t)y*c.w+x)*4,kWhite,Clamp01(.5f*k+.5f-d)*55/255.0f);
                 }
-            } else Text(&c,buttons[b].text,c.w*.5f,c.h*.5f,(b<=1?.055f:b<=3?.06f:.034f)*U*.72f,t,k);
+            } else Text(&c,buttons[b].text,c.w*.5f,c.h*.5f,(b<=1?.055f:b<=3?.06f:.034f)*U*.70f,t,k);
             skins[b].tex[p]=Upload(r,&c);skins[b].w=c.w;skins[b].h=c.h;
             SDL_free(c.px);
         }
@@ -528,7 +518,7 @@ void PortAndroidTouchDraw(SDL_Renderer* r) {
     for(b=0;b<(int)SDL_arraysize(buttons);b++) {
         int on=(keys&buttons[b].bits)==buttons[b].bits;
         if(gPortConfig.hideTouchControls && !PortUiActive() && b!=(int)SDL_arraysize(buttons)-1) continue;
-        Place(buttons[b].x,buttons[b].y,w,h,&px,&py);
+        Place(buttons[b].x+buttons[b].ox/aspect,buttons[b].y+buttons[b].oy,w,h,&px,&py);
         Blit(r,skins[b].tex[on],skins[b].w,skins[b].h,px,py,w,h);
     }
     if(gPortConfig.hideTouchControls && !PortUiActive()) return;

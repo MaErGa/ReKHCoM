@@ -24,7 +24,7 @@ static void finger(SDL_EventType type,int id,float x,float y) {
 }
 int main(void) {
     finger(SDL_EVENT_FINGER_DOWN,10,.07f,.73f);
-    finger(SDL_EVENT_FINGER_DOWN,11,.91f,.62f);
+    finger(SDL_EVENT_FINGER_DOWN,11,.896f,.64f);
     assert(PortAndroidTouchKeys()==(0x20|1));
     finger(SDL_EVENT_FINGER_MOTION,10,.07f,.63f);
     assert(PortAndroidTouchKeys()==(0x20|0x40|1));
@@ -43,9 +43,9 @@ int main(void) {
     /* a diagonal in a menu: only its main direction (down here), never down and right together */
     {int before=count;finger(SDL_EVENT_FINGER_DOWN,15,.13f+.05f/aspect,.73f+.09f);
      assert(count==before+1 && received[count-1]==SDLK_DOWN);finger(SDL_EVENT_FINGER_UP,15,0,0);}
-    finger(SDL_EVENT_FINGER_DOWN,14,.91f,.62f);assert(received[count-1]==SDLK_RETURN);
+    finger(SDL_EVENT_FINGER_DOWN,14,.896f,.64f);assert(received[count-1]==SDLK_RETURN);
     finger(SDL_EVENT_FINGER_UP,14,0,0);
-    finger(SDL_EVENT_FINGER_DOWN,14,.83f,.79f);assert(received[count-1]==SDLK_ESCAPE);
+    finger(SDL_EVENT_FINGER_DOWN,14,.82f,.775f);assert(received[count-1]==SDLK_ESCAPE);
     SDL_Event e={0};e.type=SDL_EVENT_WINDOW_FOCUS_LOST;PortAndroidTouchEvent(&e);
     assert(!PortAndroidTouchKeys());
     ui=0;
@@ -54,16 +54,16 @@ int main(void) {
     assert(opened==2 && !PortAndroidTouchKeys());
     /* Disable held inputs, ignore hidden gameplay buttons, retain settings. */
     ui=0;PortAndroidTouchClear();
-    finger(SDL_EVENT_FINGER_DOWN,30,.91f,.62f);assert(PortAndroidTouchKeys()==1);
+    finger(SDL_EVENT_FINGER_DOWN,30,.896f,.64f);assert(PortAndroidTouchKeys()==1);
     gPortConfig.hideTouchControls=1;PortAndroidTouchSettingsChanged();
     assert(!PortAndroidTouchKeys());
-    finger(SDL_EVENT_FINGER_DOWN,31,.91f,.62f);assert(!PortAndroidTouchKeys());
+    finger(SDL_EVENT_FINGER_DOWN,31,.896f,.64f);assert(!PortAndroidTouchKeys());
     finger(SDL_EVENT_FINGER_DOWN,32,.07f,.73f);assert(!PortAndroidTouchKeys());
     finger(SDL_EVENT_FINGER_DOWN,33,.95f,.17f);assert(ui && opened==3);
     finger(SDL_EVENT_FINGER_UP,33,0,0);
     finger(SDL_EVENT_FINGER_DOWN,34,.13f,.83f);assert(received[count-1]==SDLK_DOWN);
     gPortConfig.hideTouchControls=0;PortAndroidTouchSettingsChanged();ui=0;
-    finger(SDL_EVENT_FINGER_DOWN,35,.91f,.62f);assert(PortAndroidTouchKeys()==1);
+    finger(SDL_EVENT_FINGER_DOWN,35,.896f,.64f);assert(PortAndroidTouchKeys()==1);
     puts("Touch: multi-finger, UI, hide/restore, held-key clearing and settings recovery passed");
     return 0;
 }

@@ -33,15 +33,15 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
 
 ## Cola hacia la v2.0 (en orden)
 
-1. **Temas de botones táctiles Clear/Dark/Color (APROBADOS, en curso)**: `pruebas/Botones tactiles - *.png`, maqueta
-   `build/touchmock/themes.py` (colores, anillos, alfas exactos). Hecho sin commitear (en el árbol de
-   khcom-claude-int): `touch_theme` en kh_com.ini y fila "Tema de botones" junto a "Ocultar controles táctiles" (gris
-   si están ocultos). Falta: dibujarlos en `port/android/native/touch_android.c` (Android 64, Switch y web): texturas
-   hechas por software al crear (vidrio azul marino, anillo plateado con bisel, rojo KH al pulsar, cruceta de una
-   pieza con flechas aparte por dirección, L/R y Start/Select en píldoras; letras con la fuente del juego
-   `PortUiRenderTextLine`; rodar = Sora de `gSor1ll67Frames/Tiles` + `gSoraPalette` cuadros 1-3 como estela; acumular
-   = stock.svg; Color con acentos). Recortar los rectángulos al lienzo (renderer por software). Probar con
-   `test_android_touch.py` + captura web/Switch. Después: **editor de posición** de botones y HUD (arrastrar, fluido).
+1. **Botones táctiles: editor de posición** de botones y HUD (arrastrar, fluido, guardado en kh_com.ini).
+   Hecho 24/10 (11be88cb9 y siguiente): los 3 temas aprobados dibujados en `touch_android.c` (Android, web, Switch),
+   fila "Tema de botones" en Opciones, letras con la fuente del texto HD (`gen_touch_letters.py` →
+   `touch_letters.inc`, sin pixelado), A/B/rodar/acumular en rombo como un mando (pedido del usuario); capturas
+   `pruebas/Botones tactiles - implementados en el juego (Clear Dark Color).png` (build `build/pc-touch` =
+   build/pc con `-DPORT_TOUCH` y touch_android.c; `KHCOM_SHOT_TOUCH=1` los pone en las capturas del arnés).
+   test_android_touch y test_web_controls (parte táctil) ok. Falta verlos en el emulador Android y en la web.
+   `input_controls_conformance` (test_web_controls) no compila desde antes: port_input.c ahora incluye cabeceras
+   del juego (mode.h, text_types.h); darle sus includes o separar lo que prueba.
 2. **Integrar lo aprobado con honores en la app**: Coliseo121 (`1ee40e4e6`), integración aislada; consultar
    `build_reference` / `aprobaciones_build.json`. Darkside 01 y 03v2 aprobados normal (no entran aún).
 3. **Elección de modo al primer arranque**: ejemplos visuales en cada opción (port_ui.c WIZ_MODE, a la app de
