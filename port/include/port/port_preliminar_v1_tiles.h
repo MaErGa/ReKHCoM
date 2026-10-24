@@ -208,24 +208,29 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         if (v[1]!=3) return 0;
         {
             int diagonal=2*oy+ox;
-            if (ox>=w && oy>=16 && oy<28) {
-                /* right: the wall and its whole railing (posts down to the
-                 * masonry's foot, row 27) repeat unmirrored (user 24/10) */
-                sx=60+PortSceneTileMod(ox-60,4);
-                sy=oy<27?oy:26; /* row 27 holds a grave's top */
-            } else if (ox<0 && oy>=16 && diagonal<64) {
-                /* left, under the hills and above the railing: one solid
-                 * colour of the night band, no stretched gradient (user 24/10) */
-                sx=PortSceneTileMod(ox,8);
-                sy=20;
-            } else if (oy<16 || (ox>=w && oy<24)) {
-                /* the distant hills only: the band below them carries the
-                 * railing's tips, which mirrored into blocks (user 24/10) */
-                /* the hills come every ~10.6 tiles: 32 columns are three of
-                   them, so columns 0..31 (no moon) repeat seamlessly both
-                   ways; mirroring without flipping the tiles stepped them */
+            if (oy<20) {
+                /* Three complete distant hills occupy 32 columns. Include
+                 * all shadow rows: clipping at row 16 flattened the left
+                 * skyline and substituted fence fragments on the right. */
                 sx=PortSceneTileMod(ox,32);
                 sy=oy<0?PortSceneTileMod(oy,8):oy;
+                if (oy>=18 && sx>=30) { sx=0; sy=20; } /* no gate finial */
+            } else if (ox>=w && oy<29) {
+                /* A horizontal railing, not the diagonal corner repeated
+                 * into saw teeth. Columns 40..43 hold a complete post, clear of the moon trail.
+                 * Align their tips with the authored right corner (row 22),
+                 * then use clean masonry without any grave or gate. */
+                if (oy<22) { sx=0; sy=20; }
+                else if (oy<25) {
+                    sx=40+PortSceneTileMod(ox-64,4); sy=oy-4;
+                } else {
+                    sx=46+PortSceneTileMod(ox-64,2); sy=oy-4;
+                }
+            } else if (ox>=w) {
+                sx=48+PortSceneTileMod(ox-48,16);
+                sy=48+PortSceneTileMod(oy-48,16);
+            } else if (ox<0 && diagonal<64) {
+                sx=PortSceneTileMod(ox,8); sy=20;
             } else if (diagonal>=64 && diagonal<104) {
                 /* the railing over the wall and the wall: the railing's posts
                  * reach up to 2y+x=64 (they were cut at 84, user 24/10) */
