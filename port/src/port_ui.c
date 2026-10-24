@@ -2895,7 +2895,7 @@ static const char* const sGbaMapNote[LANG_COUNT] = {
     "ReKHCoM lässt Herzlose auf dem Feld aktiv, solange die Breitbild-Ansicht sie zeigt. Ja: die GBA-Logik kehrt zurück und sie verschwinden außerhalb des 240x160-Bildschirms, in der Breitbild-Ansicht schlagartig. Nein (Verbessert): gleiche GBA-Logik und Entfernung, aber sie blenden aus statt zu verschwinden. Nein: die Breitbild-Ansicht entscheidet.",
     "ReKHCoM mantiene attivi gli Heartless sul campo finché la vista larga li mostra. Sì: torna la logica GBA e spariscono fuori dallo schermo 240x160 originale, di colpo nella vista larga. No (Migliorato): stessa logica e distanza GBA, ma svaniscono in dissolvenza invece di sparire di colpo. No: decide la vista larga.",
     "ReKHCoM mantiene activos a los sincorazón del campo mientras la vista ancha los muestra. Sí: vuelve la lógica del GBA y desaparecen al salir de la pantalla original de 240x160, de golpe en la vista ancha. No (Mejorado): misma lógica y distancia del GBA, pero se desvanecen en vez de desaparecer de golpe. No: decide la vista ancha.",
-    "ReKHCoMでは ワイド表示に見える間 フィールドのハートレスが 動き続けます。 はい: GBAのロジックに戻り 元の240x160画面の外で 突然消えます。 いいえ(改良): GBAと同じ ロジックと距離で 突然消えず フェードアウトします。 いいえ: ワイド表示の範囲で決まります。",
+    "ReKHCoMでは ワイド表示に見える間 フィールドのハートレスが 動き続けます。 はい: GBAのロジックに戻り 元の240x160画面の外で 突然消えます。 いいえ(改良): GBAと同じ ロジックで 同じ場所で 消えますが 突然ではなく フェードアウトします。 いいえ: ワイド表示で決まります。",
 };
 static const char* const sGbaMapNoteCaption[3][LANG_COUNT] = {
     { "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM" },
