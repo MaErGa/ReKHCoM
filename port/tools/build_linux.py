@@ -194,10 +194,9 @@ def bundle(arch, base, versions, dest):
     # Window icon (set by the game) and a launcher entry for desktops/Steam Deck.
     shutil.copyfile(ROOT / 'port/assets/icon.bmp', dest / 'assets/icon.bmp')
     shutil.copyfile(ROOT / 'port/assets/icon.png', dest / 'ReKHCoM.png')
-    desktop = ['[Desktop Entry]', 'Type=Application', 'Name=ReKHCoM',
-               'Comment=Kingdom Hearts: Chain of Memories (PC port)', 'Exec=sh ReKHCoM.sh',
-               'Icon=ReKHCoM.png', 'Terminal=false', 'Categories=Game;']
-    (dest / 'ReKHCoM.desktop').write_bytes((chr(10).join(desktop) + chr(10)).encode())
+    # Installation paths are only known after extraction. ReKHCoM.sh
+    # --install-desktop creates the application entry there, using /bin/sh and
+    # escaped absolute script, working-directory and icon paths (issue #49).
     for name in ('README.md', 'CHANGELOG.md', 'LICENSE.md'):
         shutil.copyfile(ROOT / name, dest / name)
     (dest / 'licenses').mkdir()

@@ -33,10 +33,62 @@ Same program, set to fullscreen from the first launch.
 
 1. In Desktop Mode, extract the archive into a folder of its own (for example
    `~/Games/ReKHCoM`) and copy your ROM into its `roms/` folder.
-2. Steam > Games > *Add a Non-Steam Game to My Library* > Browse, show all
-   file types, pick `ReKHCoM.sh`.
-3. Back in Game Mode, start it from the library. The default *Gamepad* Steam
-   Input layout works; the touchscreen is not used.
+2. Open a terminal in that folder and run:
+
+       sh ./ReKHCoM.sh --install-desktop
+
+   This registers **ReKHCoM** in your application menu. It needs no ROM to
+   install, does not start the game and does not edit Steam. The entry uses
+   `/bin/sh` and absolute paths to the script, working folder and icon.
+3. In the Steam client, choose Games > **Add a Non-Steam Game to My Library**,
+   select **ReKHCoM** from the installed applications and add it. Do not use
+   the file manager's **Add to Steam** action on the `.sh` file: some Deck
+   versions reject shell scripts with "Unsupported file type" (issue #49).
+4. In the shortcut's Properties > Compatibility, leave **Force the use of a
+   specific Steam Play compatibility tool** unchecked for this native Linux
+   package. Return to Gaming Mode and launch the shortcut. The default
+   **Gamepad** Steam Input layout works; the touchscreen is not used.
+
+If ReKHCoM does not appear in the installed-applications list, or an older
+shortcut already fails, run `sh ./ReKHCoM.sh --steam-help`. In that shortcut's
+Properties > Shortcut, use the exact Target, Start In and Launch Options it
+prints. The target is `/bin/sh` (you can Browse to that executable), and the
+launch options start with the **quoted absolute path** to `ReKHCoM.sh`.
+For the example folder above:
+
+    Target:         /bin/sh
+    Start In:       "/home/deck/Games/ReKHCoM"
+    Launch Options: "/home/deck/Games/ReKHCoM/ReKHCoM.sh"
+
+Keep the quotes, including when the install path contains spaces. Optional
+arguments go **after** the quoted script path, for example `--region us`.
+Keep using the wrapper: `bin/khcom_eu` alone needs the bundled loader and
+libraries and is not the Steam target. The wrapper enters the game folder
+and passes `--data-dir`, so saves and settings stay there even if Steam starts
+from another directory. Script executable permissions are not required when
+using `/bin/sh`.
+
+After moving the game folder, run `--install-desktop` again and update the
+Steam shortcut from `--steam-help`; Steam's existing shortcuts are not changed
+automatically. Older packages' root-level `ReKHCoM.desktop` used relative
+paths; use the newly installed application entry instead.
+
+### Native Linux and Windows through Proton
+
+These are different launch paths. This archive's `.sh`, `bin/` and `lib/`
+are native Linux. Proton is for the **Windows** package's `ReKHCoM.exe`; do
+not force it on `/bin/sh` or on this native wrapper. Adding the Linux app and
+using the absolute wrapper path fixes the shortcut setup; it does not prove
+that a separate Windows/Proton problem has been fixed.
+
+If a native shortcut still fails, attach `ReKHCoM.log` (wrapper output) and
+`kh_com.log` (game output) from the install folder to your report, together
+with the release, SteamOS version, Target/Start In/Launch Options and whether
+Compatibility is forced. If `ReKHCoM.log` was not created or its date did not
+change, the wrapper did not run far enough to open its log: check the target
+and script path first. For the Windows package through Proton, include its
+`kh_com.log` and the selected Proton version; an earlier report only working
+with Proton Experimental remains unverified without those runtime details.
 
 Not reviewed by Valve: there is no Deck Verified status.
 
