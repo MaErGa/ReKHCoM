@@ -87,6 +87,8 @@ static int sBgIsoLatched[4];
 static int sEventBackdropProfile = -1; /* derived at frame start, not saved */
 static int sUseSceneProfiles;
 static int sPreliminarV1;
+static int sPreliminarApprovedOnly; /* only the Preliminar V1 scenes approved with honours (121, 122), for everyone */
+static int sScene121On, sScene122On; /* KHCOM_SCENE121_WIDE / KHCOM_SCENE122_WIDE=0 turn each off */
 /* harness switches, read once per frame on the main thread: getenv in the per-row/per-pixel drawing is slow on
    Windows (a frame a second at 32:9) and not safe to call while the cores draw */
 static int sEnvNoGuardPatio, sEnvTitleBandsOff, sEnvActorFrameOff, sEnvHudLayoutFrame = -1;
@@ -1666,8 +1668,9 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
             const BgWorld* wd = &sBgWorldLatched[bg];
             int wx = l->valid ? l->x + gx + (hofs - l->hofs) : wd->x + gx + (hofs - wd->hofs);
             int wy = l->valid ? l->y + gy + (vofs - l->vofs) : wd->y + gy + (vofs - wd->vofs);
-            if (sPreliminarRecipe[bg] && bg==2 &&
-                (sPreliminarRecipe[bg]->v[0]==44 || sPreliminarRecipe[bg]->v[0]==45)) {
+            if (sPreliminarRecipe[bg] &&
+                ((bg==2 && (sPreliminarRecipe[bg]->v[0]==44 || sPreliminarRecipe[bg]->v[0]==45)) ||
+                 sPreliminarRecipe[bg]->v[0]==121 || sPreliminarRecipe[bg]->v[0]==122)) {
                 int sx,sy;
                 if (sPreliminarRecipe[bg]->v[0]==45 && PreliminarFirPixel(wx,wy,&out[x])) {
                     sInWorld[x]=1;
@@ -3310,7 +3313,11 @@ void PortPpuBeginFrame(void) {
      * Preview is opt-in until visually approved. */
     memset(sAgrabahLayer, 0, sizeof(sAgrabahLayer));
     memset(sPreliminarRecipe, 0, sizeof(sPreliminarRecipe));
-    if (sPreliminarV1 && !sBattleView) {
+    /* Preliminar V1 is opt-in until approved; scenes approved with honours are on for everyone (=0 turns one off) */
+    sPreliminarApprovedOnly = !sPreliminarV1;
+    sScene121On = PortArtOn("KHCOM_SCENE121_WIDE");
+    sScene122On = PortArtOn("KHCOM_SCENE122_WIDE");
+    if ((sPreliminarV1 || sScene121On || sScene122On) && !sBattleView) {
         const char* skipValue=getenv("KHCOM_PRELIMINAR_SKIP");
         int skip=skipValue?atoi(skipValue):-1;
         for (b=1; b<4; b++) {
@@ -3326,6 +3333,9 @@ void PortPpuBeginFrame(void) {
                     PortLog("preliminar bg%d %dx%d hash=%08x scene=%d",b,l->width,l->height,hash,
                             sPreliminarRecipe[b]?sPreliminarRecipe[b]->v[0]:-1);
                 if (sPreliminarRecipe[b] && sPreliminarRecipe[b]->v[0]==skip)
+                    sPreliminarRecipe[b]=NULL;
+                if (sPreliminarApprovedOnly && sPreliminarRecipe[b] &&
+                    !((sPreliminarRecipe[b]->v[0]==121 && sScene121On) || (sPreliminarRecipe[b]->v[0]==122 && sScene122On)))
                     sPreliminarRecipe[b]=NULL;
             }
         }

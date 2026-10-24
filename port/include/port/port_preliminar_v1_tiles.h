@@ -291,6 +291,102 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    /* Coliseum 122, approved with honours (user 24/10, Codex c62c7d8ee) */
+    if (p && p->v[0]==122 && (wx<0 || wx>=440 || wy<0 || wy>=336)) {
+        /* Three original wall planes: the central face spans x=184..311.
+         * Side walls follow 2*y-x, with their own intercepts. Translate in
+         * pixels to retain the four-pixel phase of each 8-pixel column. */
+        if (p->v[1]==2) {
+            *sx=504; *sy=504; /* transparent: never clone the heraldic reliefs */
+            if (wx<0 || (wx<184 && wy<0)) {
+                int x=24+PortSceneTileMod(wx-24,16), y=wy+(x-wx)/2;
+                if (y>=0 && y<32) { *sx=x; *sy=y; }
+            } else if (wx>=440) {
+                int x=384+PortSceneTileMod(wx-384,16), y=wy+(x-wx)/2;
+                if (y>=112 && y<144) { *sx=x; *sy=y; }
+            }
+            /* Complete only the original panels cut by y=0 or x=440.
+             * The intact diagonal panel at (312,16)..(376,112) is the donor;
+             * no new heraldry is placed in the empty extended walls. */
+            if (wy<0 && wx>=56 && wx<120) { *sx=wx+256; *sy=wy+64; }
+            else if (wy<0 && wx>=120 && wx<184) { *sx=wx+192; *sy=wy+32; }
+            else if (wx>=440 && wx<472 && wy-48>=16 && wy-48<112) {
+                *sx=wx-96; *sy=wy-48;
+            }
+            if (*sy<0) { *sx=504; *sy=504; }
+            if ((wx<184 && 2*wy-wx>=32) ||
+                (wx>=184 && wx<312 && wy>=112) ||
+                (wx>=312 && 2*wy-wx>=-96)) {
+                *sx=PortSceneTileMod(wx,128);
+                *sy=160+PortSceneTileMod(wy-160,128);
+            }
+        } else if (p->v[1]==3) {
+            if (wx<184) {
+                *sx=128+PortSceneTileMod(wx-128,32);
+                *sy=wy+(*sx-wx)/2;
+                if (*sy<0) *sy=PortSceneTileMod(*sy,32);
+            } else if (wx>=312) {
+                *sx=320+PortSceneTileMod(wx-320,32);
+                *sy=wy+(*sx-wx)/2;
+                if (*sy<0) *sy=PortSceneTileMod(*sy,32);
+            } else {
+                *sx=wx; *sy=PortSceneTileMod(wy,64);
+            }
+            /* Past the wall contact, extend an intact pavement module.
+             * Original BG2 accents stay within the authored floor. */
+            if ((wx<184 && 2*wy-wx>=-24) ||
+                (wx>=184 && wx<312 && wy>=96) ||
+                (wx>=312 && 2*wy-wx>=-152)) {
+                *sx=PortSceneTileMod(wx,64);
+                *sy=160+PortSceneTileMod(wy-160,64);
+            }
+        } else return 0;
+        return 1;
+    }
+    /* Coliseum 121, approved with honours (user 24/10, Codex 1ee40e4e6): only this scene of Preliminar V1 */
+    if (p && p->v[0]==121 && (wx<0 || wx>=384 || wy<0 || wy>=256)) {
+        if (p->v[1]==2) {
+            *sx=504; *sy=248; /* empty map cell, not the emblem */
+            if (wx<0) {
+                int x=PortSceneTileMod(wx,16), y=wy+(wx-x)/2;
+                if (y>=128 && y<160) { *sx=x; *sy=y; }
+            } else if (wx>=224) {
+                int x=240+PortSceneTileMod(wx-240,16), y=wy+(wx-x)/2;
+                if (y>=40 && y<64) { *sx=x; *sy=y; }
+            }
+            /* The original corner shaft crosses y=0. Continue that shaft,
+             * and complete the two existing windows from the intact first
+             * window; do not place windows at any new positions. */
+            if (wy<0 && wx>=214 && wx<234) {
+                *sx=wx; *sy=PortSceneTileMod(wy,32);
+            } else if (wy<0 && wx>=284 && wx<292 && wy>=-10) {
+                *sx=wx-20; *sy=wy+10;
+            } else if (wy<0 && wx>=304 && wx<312 && wy>=-20) {
+                *sx=wx-40; *sy=wy+20;
+            }
+        } else if (p->v[1]==3) {
+            int floor;
+            if (wx<192) {
+                *sx=PortSceneTileMod(wx,32);
+                *sy=wy+(wx-*sx)/2;
+                if (*sy<0) *sy=PortSceneTileMod(*sy,64);
+                floor=2*wy+wx>=272;
+            } else if (wx>=224) {
+                *sx=224+PortSceneTileMod(wx-224,32);
+                *sy=wy+(wx-*sx)/2;
+                if (*sy<0) *sy=PortSceneTileMod(*sy,32);
+                floor=2*wy+wx>=336;
+            } else {
+                *sx=wx; *sy=PortSceneTileMod(wy,32);
+                floor=2*wy-wx>=-112;
+            }
+            if (floor) {
+                *sx=PortSceneTileMod(wx,128);
+                *sy=160+PortSceneTileMod(wy-160,64);
+            }
+        } else return 0;
+        return 1;
+    }
     if (p && p->v[0]==44 && p->v[1]==2 && wx<64 &&
         2*wy+wx>=114*8 && 2*wy+wx<124*8) {
         /* Clean curb at x=120..127, between the original flower boxes.
