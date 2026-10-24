@@ -547,6 +547,8 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
 
 ### Lista de verificación antes de publicar (no saltear)
 - Las estables anteriores NO se borran (Quiver deja elegirlas); solo las de prueba (preN). README con la versión nueva.
+- Copiar los archivos de la estable publicada a `KHCoMPC/respaldos/releases-estables` (originales, mismo SHA).
+  24/10: v1.9.10 y v1.9.8 republicadas desde ahí (hash verificado igual al original), Latest sigue v1.9.14.
 - `release_check.py v2.0` antes y `--post` después (versión en launcher, rc, CHANGELOG, web, paquetes, Quiver).
 - `check_sources.py` (lo corre build_android y release_check): constantes del shim de consolas.
 - Builds: Windows, Linux, Android, PS4, Switch, Vita, PS5 (VM), web — desde el commit final; ningún paquete viejo
