@@ -1521,11 +1521,13 @@ int PortUiNeedsModeChoice(void) {
     return !(SDL_getenv("KHCOM_FAST") || SDL_getenv("KHCOM_BOT")) || SDL_getenv("KHCOM_MODE_CHOICE");
 }
 
+static int sModeNoHd; /* nothing of the HD mod imported: the HD mode is not offered (24/10, seen on Android) */
 void PortUiOpenModeChoice(void) {
     PortUiOpenOptions();
     sOpenSound = 0;
     sPage = PAGE_NEWGAME;
-    sWizStep = WIZ_MODE;
+    sModeNoHd = !(ItemVisible(ITEM_HD_CARDS) || ItemVisible(ITEM_HD_MOVIES) || ItemVisible(ITEM_HD_MUSIC));
+    sWizStep = sModeNoHd ? WIZ_MODE_GBA : WIZ_MODE;
     sWizCursor = 0;
 }
 
@@ -2316,7 +2318,7 @@ static void WizKey(int key) {
         case 0: sWizCursor = (sWizCursor + rows - 1) % rows; return;
         case 1: sWizCursor = (sWizCursor + 1) % rows; return;
         case 4:
-            if (sWizStep == WIZ_MODE_GBA) {
+            if (sWizStep == WIZ_MODE_GBA && !sModeNoHd) {
                 sWizStep = WIZ_MODE;
                 sWizCursor = 1;
             }

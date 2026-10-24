@@ -47,6 +47,14 @@ partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
   "GBA mejorado" y "GBA original/clásico". Agregar a cada opción **esquemas/ejemplos breves** (cartelitos con una
   captura chica: resolución y vista ancha vs GBA, mejoras) para que se entienda cada modo. Es visual: entregar copia
   + .bat y esperar aprobación. Código: `port_ui.c` (WIZ_MODE, sModeDesc*, `PortUiNeedsModeChoice`).
+  **Hecho en parte (24/10):** sin nada del mod HD importado, la ventana va directo a "GBA mejorado / GBA clásico"
+  y no deja volver a la que ofrece HD (`sModeNoHd`, port_ui.c). Falta: los ejemplos visuales y probarlo en Android.
+- **Android, bugs del usuario (24/10), reproducir y arreglar antes de la v2.0:**
+  1. Eligió iniciar **con textos HD** y al empezar **se desactivaron** (el asistente de partida nueva o el modo los
+     pisa: revisar `PortApplyGraphicsMode` / asistente con hdText).
+  2. Al abrir Opciones (**Start + Select**) y **bajar**, **la resolución cambió sola**: las primeras filas de
+     Opciones (resolución/zoom) cambian con izquierda/derecha y el táctil o el stick las mueve sin querer. Pedido:
+     **no poner las opciones de resolución al principio** de Opciones (moverlas más abajo o pedir confirmación).
 - **Calidad constante (hd_quality_probe.py, 24/10)**: en 4 escenas, RC=3 Q=70 por hardware pesa 23 % menos que Buena
   (151 vs 197 MB) con VMAF 95,4-96,1 (Buena 96,9-98,5); por software sale mal (VMAF ~52, descartado). Siguiente:
   probar Q 75/80/85 por hardware y elegir el que pese menos que Buena con su misma VMAF; la VMAF de ROP da 44 en
