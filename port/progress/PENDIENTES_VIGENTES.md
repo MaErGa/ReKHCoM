@@ -1,5 +1,35 @@
 # Cola vigente hacia la v2.0 (actualizada 24/10/2026)
 
+## TRASPASO 24/10 ~14:15 (Chile, Claude — integrador y relevo de Codex)
+
+Codex se apagó (usuario: «seguir con sus pendientes», «ve integrando y pusheando tú»). En la cola online
+(`coordination/art-queue`) el lock de integrador pasó de `root` a **`claude-integrador`** (`recover-integrator`) y
+las tareas de Codex a **`claude-relevo`** (`recover-task`, con esa autorización como evidencia). Su WIP sigue intacto.
+
+- **Integrado a main (bf97529cb):** #54 LOGICA_APROBADOS (004/057/061/074 aprobadas antes de tiempo: reglas
+  corregidas; cada PR de arte trae su mejora de la lógica), #57 catálogo histórico (Codex, 4/4), #58 lanzador
+  Linux/Steam Deck #49 (Codex, 4/4 con `--shell` de Git), #59 botones táctiles en disposición de juego móvil, #60
+  primer arranque con fondo panorámico en todas las proporciones, #61 paneo de la app con zoom alejado (margen
+  de vacío del 12 %). EU/US/JP compilan, `check_sources` ok.
+- **v2.0-pre9 interna (no publicada):** `KHCoMPC/ReKHCoM-v2.0-pre9-windows-x86.zip` (sha c9135b16…), copia
+  `jugar/ReKHCoM-v2.0-pre9` + `Probar ReKHCoM v2.0 pre9.bat` (partidas de la pre8, HD enlazado). Humo 9/9 sin fallos.
+- **Issue #49 (Steam Deck, modo Juego):** sin respuesta; el arreglo está en main pero no publicado. Borrador de
+  respuesta esperando OK del usuario.
+- **Batería skip JP:** caso `1_039` salió 0xC0000135 (falta DLL al arrancar, 13:33): las dos copias duplicadas del
+  coordinador comparten carpeta y una limpia el SDL3.dll de la otra. No es del juego; repetir ese caso solo.
+
+### Siguiente (en orden)
+
+1. **Editor de tiles y sprites (Codex, prioridad del usuario: «para armar yo mismo las escenas»):** backend sin
+   commitear en `khcom-tile-backend` (`tile_editor.py` lee los fondos nativos de la ROM a mapas de Tiled, proyectos
+   con revisiones, exporta .tmj/.zip; rutas `/api/editor/*` en `server.py`). La interfaz no existe aún: solo las
+   librerías en `khcom-resume/port/tools/art_review/web/vendor/` (Sortable, Fuse, hotkeys). Falta: editor.html/js/css
+   (paleta de tiles y piezas, pintar, capas, voltear, deshacer, guardar), sprites (parámetro `sprites` sin usar).
+2. **Mod HD, selector de calidad al cargar:** ordenar por peso: Original (fuente) → Buena → Ahorro (la tipo Android).
+3. Verificar que todo lo aprobado con honores esté encendido para jugadores y sin fallos (lista en LOGICA_APROBADOS).
+4. Limpiar restos de pruebas en C: y D: (nunca carpetas ReKHCoM-vX; quitar enlaces antes de borrar).
+5. Cola de arte de la app (escenas 004/057/061/074 con la lógica corregida, 087 090 095 099 102 112 115-120, jefes).
+
 ## Recuperación del catálogo histórico — 24/10, carril `catalogo-historico`
 
 - **Cargadas 17 familias históricas reales a la mesa compartida**: 15 pantallas de menús (incluido Mapamundi),
