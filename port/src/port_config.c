@@ -122,7 +122,7 @@ static const Key sKeys[] = {
     { "scale_mode", &gPortConfig.scaleMode, 0, PORT_SCALE_COUNT - 1 },
     { "filter", &gPortConfig.filter, 0, PORT_FILTER_COUNT - 1 },
     { "fullscreen", &gPortConfig.fullscreen, 0, 1 },
-    { "vsync", &gPortConfig.vsync, 0, 1 },
+    { "vsync", &gPortConfig.vsync, 0, 2 },
     { "hud_size", &gPortConfig.hudSize, 0, 2 },
     { "narrow_fit", &gPortConfig.narrowFit, 0, 1 },
     { "scanlines", &gPortConfig.scanlines, 0, 100 },
