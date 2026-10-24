@@ -45,8 +45,12 @@ las tareas de Codex a **`claude-relevo`** (`recover-task`, con esa autorización
    `test_event_battles` se quedaba quieto. Revancha: también esperaba A en la pantalla de recompensas (el ejecutable
    viejo cierra igual con A). El contador `enemyCount` 254/255 es inofensivo (el cierre no lo usa). Arreglo: modo del
    arnés `drawprizes` (efecto Atraer del juego, HC_EFFECT_DRAW) cada 50 cuadros en la prueba; `btllog` muestra fase,
-   paso, flags, premios y BgFx. 008 pasa. **Falta: 010 Axel** se queda con 1 premio que Atraer no trae (otro tipo:
-   btl_premire / carta premio / carta amigo); identificarlo con `btllog` y correr las 34 cadenas EU/US/JP.
+   paso, flags, premios y BgFx. 008 pasa. **010 Axel:** esperaba la carta de premio del jefe (`PrizeBoss`,
+   card_reload_children.c), que no se atrae: hay que tocarla. Modo `takeprize` (solo PC/arnés) la deja a los pies del
+   jugador y la toma el colisionador del juego. 008 y 010 pasan. **Por qué falla ahora y no antes:** hasta el 22/10
+   las cadenas ganaban con `battlewin` (los enemigos se van: sin derrota, sin orbes ni carta); el 23/10 pasaron a
+   `bosskill` (derrota real) y desde entonces los jefes sueltan premios que el bot nunca recogía. Correr las 34
+   cadenas EU/US/JP con esto (en curso al escribir).
 4. Limpiar restos de pruebas en C: y D: (nunca carpetas ReKHCoM-vX; quitar enlaces antes de borrar).
 5. Cola de arte de la app (escenas 004/057/061/074 con la lógica corregida, 087 090 095 099 102 112 115-120, jefes).
 

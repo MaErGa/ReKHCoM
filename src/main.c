@@ -287,6 +287,8 @@ const char* PortHarnessModeName(void) {
     return gCurrentMode != NULL ? gCurrentMode->name : "none";
 }
 
+u8 gPortHarnessTakePrize; /* takeprize below */
+
 int PortHarnessMode(const char* name, int arg) {
     extern Mode gModeTitle, gModeMsShop, gModeMsCharge, gModeContinue, gModeWLogo, gModeEventselect,
         gModeRikuDeckTutorial, gModeVsbattle, gModeSioBattle;
@@ -540,6 +542,12 @@ int PortHarnessMode(const char* name, int arg) {
             gBtlWork->hcEffect = HC_EFFECT_DRAW;
         if (gRikuBtlWork != NULL)
             gRikuBtlWork->hcEffect = HC_EFFECT_DRAW;
+        return 1;
+    }
+    /* takeprize: a boss's prize card goes to the player's feet (card_reload_children.c), who takes it as when
+       walking up to it; the harness never walks, and the battle waits for the card */
+    if (strcmp(name, "takeprize") == 0) {
+        gPortHarnessTakePrize = 1;
         return 1;
     }
     /* battleid:ID|WORLD<<8 - any battle in a given world, as PortRematchBegin
