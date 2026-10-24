@@ -295,7 +295,9 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         if (ox<0 || ox>=w) {
             int distance=ox<0?-ox-1:ox-w;
             if (oy<3) {
-                sx=PortSceneTileMod(ox,w);
+                /* the ceiling frieze's stripes come every 7 columns, the
+                 * right half mirrored (user 24/10: seams every 32) */
+                sx=ox<0?PortSceneTileMod(ox,7):25+PortSceneTileMod(ox-25,7);
             } else if (distance<8) {
                 sx=ox<0?distance:w-1-distance;
             } else {
@@ -369,7 +371,41 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
     }
 }
 
+/* Scene 099's checker floor in one-point perspective (user 24/10: "as Guard
+ * Armor"): measured on the map, its cells are w(y)=0.1269*(y-33.8) wide,
+ * one centred on x=128, and its rows end where 1/(y-33.8) steps by 0.000567
+ * (y=181,195,211,231,256). Each pixel takes the map pixel at the same place
+ * in its cell pair: in its own row beside the map, in the nearest pair of
+ * rows (211..255) below it, from the left of the row clear of the fireplace. */
+static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
+    double w=0.1269*(wy-33.8), u=(wx-128)/w+0.5, y=wy, sw;
+    int m;
+    if (wy<160 || (wx>=0 && wx<256 && wy<256)) return 0;
+    u-=2.0*(int)(u/2.0); if (u<0) u+=2.0; /* the place within the pair */
+    if (wy>=256) {
+        double v=2.0-(1.0/(wy-33.8)-0.005647)/0.000567;
+        int iv=(int)v; double fv=v-iv;
+        if (v<0) { iv-=1; fv+=1.0; }
+        v=fv+((iv&1)?3.0:2.0);
+        y=33.8+1.0/(0.005647-0.000567*(v-2.0));
+        if (y>255.0) y=255.0;
+    }
+    sw=0.1269*(y-33.8);
+    m=(int)((128.0/sw-0.5)/2.0);
+    *sx=(int)(128.0+(u-2.0*m-0.5)*sw);
+    *sy=(int)y;
+    if (*sx<0) *sx=0;
+    return 1;
+}
+
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==99 && p->v[1]==3 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
+        int tx=wx>>3, ty=wy>>3;
+        if (PortPreliminar099Floor(wx,wy,sx,sy)) return 1;
+        if (!PortPreliminarTileSource(p,&tx,&ty)) return 0;
+        *sx=tx*8+(wx&7); *sy=ty*8+(wy&7);
+        return 1;
+    }
     if (p && p->v[0]==45 && p->v[1]==2 && wx<0 && wx>=-24 && wy>=54*8 && wy<64*8) {
         /* the pine cut by the map's left edge (its axis at x=20): its missing
          * half is its right half reflected, below row 54 where the next pine
