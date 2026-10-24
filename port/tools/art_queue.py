@@ -140,7 +140,8 @@ def mutate(state, a):
     else:
         require(task["owner"] == a.owner, "Only the task owner can update it")
         status = a.status
-        require(status in TRANSITIONS.get(task["status"], set()), "Invalid state transition")
+        require(status == task["status"] or status in TRANSITIONS.get(task["status"], set()),
+                "Invalid state transition")
         if status in ("listo_pr", "pr_abierto", "integrado"):
             require(a.approval or task["approval"], "Approval reference required")
         if status in ("pr_abierto", "integrado"):

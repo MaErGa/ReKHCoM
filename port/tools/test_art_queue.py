@@ -112,6 +112,22 @@ class QueueTests(unittest.TestCase):
             aq.mutate(state, args("update", status=status, **update))
         self.assertEqual(state["tasks"]["scene-054"]["status"], "integrado")
 
+    def test_owner_can_update_metadata_without_changing_state(self):
+        state = self.q.read()
+        aq.mutate(state, args("claim", id="scene-054", owner="claude"))
+        update = dict(id="scene-054", owner="claude", status="en_curso", branch="art/054",
+                      reference="review/054", pr=None, approval=None, evidence=None,
+                      token=None, integrator_owner=None)
+        aq.mutate(state, args("update", **update))
+        task = state["tasks"]["scene-054"]
+        self.assertEqual((task["branch"], task["reference"], task["status"]),
+                         ("art/054", "review/054", "en_curso"))
+        with self.assertRaisesRegex(ValueError, "already claimed"):
+            aq.mutate(state, args("claim", id="scene-054", owner="codex"))
+        update["owner"] = "codex"
+        with self.assertRaisesRegex(ValueError, "Only the task owner"):
+            aq.mutate(state, args("update", **update))
+
     def test_cli_preserves_worktree(self):
         import subprocess
         import sys
