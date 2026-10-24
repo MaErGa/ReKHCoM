@@ -27,6 +27,12 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   cerrar y retomar / cerrar y borrar); el 1.5+2.5 se busca en Steam (registro, bibliotecas), Epic (manifiestos,
   LauncherInstalled.dat), Heroic/Legendary, programas instalados de Windows y carpetas habituales de cada disco.
   Probado: corte a mitad + `--resume` (ROP conservado, RRE/RSE completos, ffprobe ok), test_launcher 11/11.
+- **v2.0-pre8 interna (PC, pedida por el usuario 24/10 ~07:20):** main 2ebb71501 (pre7 + Coliseo 121/122 con
+  honores + app 0.4.2 + botones táctiles nuevos, que en PC no se ven), launcher SIN la vía GPU (está en
+  `claude/hd-gpu`, sin probar). Zip `KHCoMPC/ReKHCoM-v2.0-pre8-windows-x86.zip` (sha 7bacc516...), copia
+  `jugar/ReKHCoM-v2.0-pre8` + `Probar ReKHCoM v2.0 pre8.bat` (partidas de la pre7, HD enlazado). Humo oculto y
+  test_launcher: corriendo al anotar (ver `build/smoke-pc`); si algo falla, es bug: reproducir y arreglar antes
+  de darla por buena. No publicada.
 - **TRASPASO (en curso al escribir, ~05:30):** (a) medición de la carga HD viejo (pre6) vs nuevo en los 3 modos:
   `sh build/hdbench.sh old=<exe> new=<exe> [gpu=<exe>]` sobre `D:/01Claude/ReKHCoM-build/hdbench/src` (33 videos
   enlazados con enlaces duros = 2,63 GB, el 39 % del mod; solo videos) → `build/hdbench.txt`; tabla para el usuario
