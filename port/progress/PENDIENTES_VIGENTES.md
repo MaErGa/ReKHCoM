@@ -49,7 +49,7 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
      "aún dibuja un brazo a la derecha; debe ser solo su codo; entender el dibujo y la perspectiva". Hacer r4 hija
      con `import_image.py --parent 0e918387...` (darkside_revise.py; arte = carril de Codex si está activo).
   4. **Carga HD:** terminar la medición (`build/hdbench.txt`; viejo Original 2,63 GB = 4 s) y medir la vía GPU
-     (`gpu=build/pc/ReKHCoM.exe` en hdbench.sh, sin commitear todavía: hd_import.inc `TranscodeBest`); tabla para el
+     (`gpu=build/pc/ReKHCoM.exe` en hdbench.sh, en la rama `claude/hd-gpu` a73f81340, sin probar; build/pc/ReKHCoM.exe ya la trae); tabla para el
      usuario: modo × antes/ahora/GPU, extrapolada al mod (subset = 39 %). Si la GPU rinde y el MP4 está bien
      (ffprobe + un cuadro), commitear, subir workers, rehacer zip (pre8) y humo 9/9.
   5. Pedidos del usuario anotados en la cola de abajo: editor de posición de botones; ver botones en emulador/web.
