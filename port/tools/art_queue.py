@@ -161,6 +161,11 @@ def mutate(state, a):
             require(a.approval or task["approval"], "Approval reference required")
         if status in ("pr_abierto", "integrado"):
             require(a.pr or task["pr"], "PR reference required")
+        if status == "pr_abierto" and task["status"] != "pr_abierto":
+            # Round 2: a worker opened a PR for 112/120 and never sent the image to the review app, so the user
+            # was told "3 ready" and only 2 arrived. The image goes to the app first; the PR carries the code.
+            require(getattr(a, "sent", None) or getattr(a, "no_image", False),
+                    "Send the image to the review app first (--sent <image id>), or pass --no-image if the piece has none")
         if status == "integrado":
             lock = state["integrator"]
             require(lock and lock["owner"] == (a.integrator_owner or a.owner)
@@ -170,6 +175,8 @@ def mutate(state, a):
         for name in ("branch", "pr", "approval", "reference"):
             if getattr(a, name):
                 task[name] = getattr(a, name)
+        if getattr(a, "sent", None):
+            task["sent"] = a.sent
         task["status"] = status
         if a.evidence:
             task["evidence"].append(dict(at=stamp, owner=a.owner, detail=a.evidence))
@@ -206,8 +213,9 @@ def parser():
         s.add_argument("--owner", required=True)
         if command == "update":
             s.add_argument("--status", choices=STATES, required=True)
-            for name in ("branch", "pr", "approval", "reference", "evidence", "token", "integrator-owner"):
+            for name in ("branch", "pr", "approval", "reference", "evidence", "token", "integrator-owner", "sent"):
                 s.add_argument("--" + name)
+            s.add_argument("--no-image", action="store_true")
     for command in ("integrator-acquire", "integrator-touch", "integrator-release"):
         s = sub.add_parser(command)
         s.add_argument("--owner", required=True)

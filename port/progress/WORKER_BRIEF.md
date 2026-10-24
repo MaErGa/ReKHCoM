@@ -13,7 +13,10 @@ Ronda 1 (24/10): tres workers tardaron ~25 min en prepararse y casi no entregaro
 5. **Responder en la app directo (sin PR):** `import_image.py <png> --parent <id> --revision-info <json>` con el
    `cloud_id` de cada nube atendida. `answer_scene.py` marca TODAS las nubes: solo si se atendieron todas.
    Si el cambio necesita código aún no integrado, el texto de la hija dice «PENDIENTE DE PR #N».
-6. **Código por PR, chico, por pieza:** commit en la rama del worker, `gh pr create --head <rama>` (el repo por
+6. **Primero la imagen a la app, después el PR** (ronda 2: 112/120 quedaron en un PR sin imagen y al usuario le llegaron 2 de 3).
+   `update --status pr_abierto` ahora exige `--sent <id de la hija>` (o `--no-image` si la pieza no tiene imagen). Enviar apenas
+   esté lista, sin esperar al resto de las piezas.
+   **Código por PR, chico, por pieza:** commit en la rama del worker, `gh pr create --head <rama>` (el repo por
    defecto ya es MatyMeatBoy/ReKHCoM), `art_queue.py --quiet update <id> --owner <nombre> --status pr_abierto --pr URL`.
    Si mejora una regla, el PR toca también LOGICA_APROBADOS.md. Nunca merge ni push a main: integra el coordinador.
 7. **No se puede terminar** (decisión visual grande, comentario ambiguo): `art_queue.py --quiet release <id>
@@ -23,3 +26,7 @@ Ronda 1 (24/10): tres workers tardaron ~25 min en prepararse y casi no entregaro
 
 Siempre: sin ventanas ni sonido (`SDL_VIDEO_DRIVER=dummy`, `SDL_AUDIO_DRIVER=dummy`), nada de baterías ni
 repeticiones US/JP salvo que la pieza lo pida, no tocar `jugar/`, `ReKHCoM-vX` ni QuiverLauncher.
+
+
+Fricción conocida: en bash las rutas van como `/d/01Claude/...`, no `D:/...`. Un worker que muere por límite de sesión deja la pieza
+`en_curso`: el coordinador la libera con `release <id> --owner <el que la tenía>` y la relanza.

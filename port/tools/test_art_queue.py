@@ -105,6 +105,9 @@ class QueueTests(unittest.TestCase):
                     aq.mutate(state, args("update", status=status, **update))
             if status == "pr_abierto":
                 update["pr"] = "https://example.test/pull/1"
+                with self.assertRaises(ValueError):  # image must reach the app before the PR is announced
+                    aq.mutate(state, args("update", status=status, **update))
+                update["sent"] = "imgid123"
             if status == "integrado":
                 aq.mutate(state, args("integrator-acquire", owner="codex"))
                 update["token"] = state["integrator"]["token"]
