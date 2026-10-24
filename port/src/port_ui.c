@@ -2332,6 +2332,15 @@ static const char* const sModeLater[LANG_COUNT] = {
     "Später in den Optionen oder im Launcher änderbar.", "Puoi cambiarlo poi nelle Opzioni o nel launcher.",
     "Puedes cambiarlo luego en Opciones o en el launcher.", "あとでオプションやランチャーで変更できます。",
 };
+/* under the version choice (user 24/10): it is only about gameplay */
+static const char* const sVersionNote[LANG_COUNT] = {
+    "This choice only changes gameplay. Both versions get every improvement: QoL, undub, HD scenes and the rest.",
+    "Ce choix ne change que le gameplay. Les deux versions ont toutes les améliorations : confort, undub, scènes HD, etc.",
+    "Diese Wahl ändert nur das Gameplay. Beide Versionen haben alle Verbesserungen: Komfort, Undub, HD-Szenen usw.",
+    "Questa scelta cambia solo il gameplay. Entrambe le versioni hanno tutti i miglioramenti: comodità, undub, scene HD e altro.",
+    "Esta elección solo cambia la jugabilidad. Ambas versiones tienen todas las mejoras: QoL, undub, escenas HD y demás.",
+    "この選択で変わるのはゲームプレイだけです。どちらでも快適機能・オリジナル音声・HDシーンなど全ての改良を使えます。",
+};
 static const char* const sWizConfirm[LANG_COUNT] = { "Confirm", "Confirmer", "Bestätigen", "Conferma", "Confirmar",
     "決定" };
 static const char* const sWizHelp[LANG_COUNT] = {
@@ -2803,7 +2812,8 @@ static void DrawWizard(int l, int width, int height) {
     textW = panelW - 30;
     /* measure, then a white window in the middle of a darkened screen; on the GBA's 160 lines (Original view) a
        window too tall shows only the chosen row's description */
-    later = sWizStep >= WIZ_MODE ? DrawWrapped(sModeLater[l], 0, 0, panelW - 16, 0, 0) * 11 + 2 : 0;
+    later = sWizStep >= WIZ_MODE ? DrawWrapped(sModeLater[l], 0, 0, panelW - 16, 0, 0) * 11 + 2
+          : sWizStep == WIZ_VERSION ? DrawWrapped(sVersionNote[l], 0, 0, panelW - 16, 0, 0) * 11 + 2 : 0;
     for (compact = 0; compact < 2; compact++) {
         h = 22;
         for (i = 0; i < rows; i++)
@@ -2880,8 +2890,9 @@ static void DrawWizard(int l, int width, int height) {
         if (!compact || sel)
             y += DrawWrapped(subs[i], x0 + 24, y, textW, sel && !dim[i] ? MENU_INK : MENU_DIM, 1) * 11 + 4;
     }
-    if (sWizStep >= WIZ_MODE)
-        DrawWrapped(sModeLater[l], x0 + 8, y0 + h - 14 - later, panelW - 16, MENU_DIM, 1);
+    if (sWizStep >= WIZ_MODE || sWizStep == WIZ_VERSION)
+        DrawWrapped(sWizStep == WIZ_VERSION ? sVersionNote[l] : sModeLater[l], x0 + 8, y0 + h - 14 - later, panelW - 16,
+                    MENU_DIM, 1);
     DrawText(sWizStep == WIZ_VERSION || sWizStep == WIZ_MODE || sWizStep == WIZ_ASSETS ? sWizHelpFirst[l] : sWizHelp[l],
              x0 + 8, y0 + h - 12,
              MENU_DIM, 0xFFFFFFFFu);
