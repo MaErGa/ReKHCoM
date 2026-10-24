@@ -34,11 +34,16 @@ LLD = os.environ.get('LLD', str(LLVM / 'ld.lld.exe') if WINDOWS else 'ld.lld-18'
 TARGET = '--target=arm64_32-apple-watchos'
 CPU = '-mcpu=cortex-a57'  # the Switch's CPU (ARMv8.0): without it clang targets Apple's and emits ARMv8.3 (xpaci)
 BASE = 0x10000000
-VM_DISK = Path('D:/01Claude/ReKHCoM-build/ps5/ps5env.qcow2')  # the consoles build VM (port/progress/TOOLKIT_CONSOLAS.md)
 sys.path.insert(0, str(PS5))
+sys.path.insert(0, str(ROOT / 'port/tools'))
+from workdir import WORK_DIR  # noqa: E402  (the heavy work folder, REKHCOM_WORK)
+VM_DISK = WORK_DIR / 'ps5/ps5env.qcow2'  # the consoles build VM (port/progress/TOOLKIT_CONSOLAS.md)
 import build_ps5  # noqa: E402  (its PORT_PATCHES and PORT_EXCLUDED are shared)
 
 GUEST_SKIP = {'crt0', 'stubs'}  # x86-64 assembly: port/switch/guest has the AArch64 ones
+# the PPU on several cores (port_ppu.c, SWITCH_MOTOR.md): the host's threads and the image's own thread-local blocks
+# (switch/guest/stubs_a64.c); the Android 64-bit build, which reuses this guest, turns it off
+PPU_THREADS = True
 
 
 def run(cmd, **kw):
@@ -110,7 +115,7 @@ def build_guest(region, jobs):
                   f'-DVERSION_{upper}', *includes]
     port_flags = [*common_flags(), '-w', '-std=gnu11', '-DSTBI_NO_THREAD_LOCALS', f'-I{PS5 / "third_party/stb"}',
                   f'-I{ROOT / "port/src"}', f'-I{ROOT / "port/android/native"}', '-DPLATFORM_PC', f'-DVERSION_{upper}',
-                  '-DPORT_TOUCH', *includes]
+                  '-DPORT_TOUCH', *(['-DPORT_PPU_THREADS'] if PPU_THREADS else []), *includes]
     units = []
     for src in sorted((ROOT / 'src').rglob('*.c')):
         units.append((src, out / 'game' / src.relative_to(ROOT / 'src').with_suffix('.o'), game_flags))
@@ -195,7 +200,7 @@ def build_host(regions):
     (assets / 'achievements').mkdir()
     shutil.copy2(ROOT / 'port/assets/achievements/badges.png', assets / 'achievements/badges.png')
     (share / 'src').mkdir()
-    for src in (HERE / 'host/switch_host.c', PS5 / 'shared/bridge.h', PS5 / 'shared/bridge_list.h', PS5 / 'shared/hd_music_host.h', PS5 / 'shared/udp_host.h',
+    for src in (HERE / 'host/switch_host.c', PS5 / 'shared/bridge.h', PS5 / 'shared/bridge_list.h', PS5 / 'shared/hd_music_host.h', PS5 / 'shared/udp_host.h', PS5 / 'shared/thread_host.h',
                 ROOT / 'port/third_party/stb/stb_vorbis.c'):
         shutil.copy2(src, share / 'src' / src.name)
     Image.open(PS5 / 'sce_sys/icon0.png').convert('RGB').resize((256, 256), Image.LANCZOS).save(share / 'icon.jpg', quality=92)

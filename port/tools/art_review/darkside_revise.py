@@ -8,7 +8,7 @@ original at the seam (03 v2, 06). r4 (user 24/10): generate what is missing, the
 (the technique approved on 07 r3); the cartridge's pixel art stays 100% as it is. 03: a bit of torso fading out, not a
 third arm in front; 05: only the elbow; 06: the arm must show, well drawn (only its far end thins).
 
-    python port/tools/art_review/darkside_revise.py --source D:/01Claude/arenas-wt --data <review data> [--only 03,06]
+    python port/tools/art_review/darkside_revise.py --source <arenas worktree> --data <review data> [--only 03,06]
 """
 import argparse
 import hashlib
