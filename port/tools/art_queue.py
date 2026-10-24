@@ -4,17 +4,20 @@ import argparse
 import datetime as dt
 import json
 import os
+import random
 from pathlib import Path
 import secrets
 import subprocess
 import sys
 import tempfile
+import time
 
 REF = "refs/heads/coordination/art-queue"
 STATES = ("pendiente", "en_curso", "en_revision", "listo_pr", "pr_abierto", "integrado", "bloqueado")
 TRANSITIONS = {
-    "en_curso": {"en_revision", "listo_pr", "bloqueado"},
-    "en_revision": {"en_curso", "listo_pr", "bloqueado"},
+    # a worker opens its PR straight from work or review; the user's approval is needed only to integrate
+    "en_curso": {"en_revision", "listo_pr", "pr_abierto", "bloqueado"},
+    "en_revision": {"en_curso", "listo_pr", "pr_abierto", "bloqueado"},
     "listo_pr": {"en_curso", "pr_abierto", "bloqueado"},
     "pr_abierto": {"en_curso", "integrado", "bloqueado"},
     "bloqueado": {"en_curso"},
@@ -132,17 +135,29 @@ def mutate(state, a):
             else:
                 lock["updated_at"] = stamp
         return
+    if a.command == "next":
+        free = [t for t in state["tasks"].values() if t["status"] == "pendiente" and t["owner"] is None
+                and any(t["id"].startswith(prefix) for prefix in (a.prefix or [""]))]
+        require(free, "No pending piece" + (" with prefix " + ", ".join(a.prefix) if a.prefix else ""))
+        a.id = free[0]["id"]
+        a.command = "claim"
     require(a.id in state["tasks"], "Unknown task")
     task = state["tasks"][a.id]
     if a.command == "claim":
         require(task["status"] == "pendiente" and task["owner"] is None, "Task already claimed")
         task.update(owner=a.owner, status="en_curso", claimed_at=stamp)
+    elif a.command == "release":
+        # the owner hands an unfinished piece back (pull model: take one, deliver or release, take the next)
+        require(task["owner"] == a.owner, "Only the task owner can release it")
+        require(task["status"] in ("en_curso", "en_revision", "bloqueado"), "Only unfinished work can be released")
+        task.update(owner=None, status="pendiente")
+        task["evidence"].append(dict(at=stamp, owner=a.owner, detail="released: " + (a.evidence or "")))
     else:
         require(task["owner"] == a.owner, "Only the task owner can update it")
         status = a.status
         require(status == task["status"] or status in TRANSITIONS.get(task["status"], set()),
                 "Invalid state transition")
-        if status in ("listo_pr", "pr_abierto", "integrado"):
+        if status == "integrado":
             require(a.approval or task["approval"], "Approval reference required")
         if status in ("pr_abierto", "integrado"):
             require(a.pr or task["pr"], "PR reference required")
@@ -163,7 +178,10 @@ def mutate(state, a):
 
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--repo", default=".", help="Working repository (only reads its remote URL)")
+    p.add_argument("--repo", default=str(Path(__file__).resolve().parents[2]),
+                   help="Working repository (only reads its remote URL); default: this script's checkout")
+    p.add_argument("--retries", type=int, default=8, help="Re-read and retry when another lane published first")
+    p.add_argument("--quiet", action="store_true", help="Print only ok, commit and the task touched (list: one line each)")
     p.add_argument("--remote", default="origin", help="Remote name, URL or absolute local bare repository")
     p.add_argument("--state-dir", help="Dedicated bare cache; default is a temporary repository per invocation")
     p.add_argument("--snapshot", help="Also write Markdown snapshot to this local file after success")
@@ -175,6 +193,13 @@ def parser():
     add.add_argument("--piece", required=True)
     add.add_argument("--approval")
     add.add_argument("--reference")
+    nxt = sub.add_parser("next", help="Claim the first pending piece (optionally only ids with these prefixes)")
+    nxt.add_argument("--owner", required=True)
+    nxt.add_argument("--prefix", action="append")
+    rel = sub.add_parser("release", help="Hand an unfinished piece back to pendiente")
+    rel.add_argument("id")
+    rel.add_argument("--owner", required=True)
+    rel.add_argument("--evidence")
     for command in ("claim", "update"):
         s = sub.add_parser(command)
         s.add_argument("id")
@@ -198,7 +223,28 @@ def parser():
     return p
 
 
+def quiet(result, a):
+    if not result.get("ok") or "state" not in result:
+        return result
+    tasks = result["state"]["tasks"]
+    if a.command == "list":
+        return dict(ok=True, commit=result["commit"], tasks=[" | ".join(str(t.get(k) or "-") for k in
+                    ("id", "status", "owner", "pr")) for t in tasks.values()],
+                    integrator=(result["state"]["integrator"] or {}).get("owner"))
+    out = dict(ok=True, commit=result["commit"])
+    if getattr(a, "id", None) in tasks:
+        task = tasks[a.id]
+        out["task"] = {k: task.get(k) for k in ("id", "piece", "status", "owner", "branch", "pr", "approval")}
+    if a.command == "integrator-acquire":
+        out["token"] = result["state"]["integrator"]["token"]
+    return out
+
+
 def main():
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")  # a Windows console's code page cannot print every piece name
+    except (AttributeError, ValueError):
+        pass
     a = parser().parse_args()
     try:
         remote_result = git(a.repo, "remote", "get-url", a.remote, check=False)
@@ -208,18 +254,29 @@ def main():
             remote = str((Path(a.repo) / remote).resolve())
         with tempfile.TemporaryDirectory(prefix="art-queue-") as temporary:
             queue = Queue(remote, a.state_dir or temporary)
-            state = queue.read()
-            if a.command == "init":
-                require(state is None, "Queue already initialized")
-                state = dict(version=1, tasks={}, integrator=None, updated_at=now())
-            else:
-                require(state is not None, "Queue does not exist; run init first")
-                if a.command != "list":
-                    if a.command.startswith("recover-"):
-                        require(a.expected_commit == queue.sha, "Recovery commit changed; review current state first")
-                    mutate(state, a)
-            if a.command != "list":
-                queue.publish(state)
+            command = a.command
+            for attempt in range(max(1, a.retries)):
+                a.command = command  # next turns into claim once it has picked a piece
+                state = queue.read()
+                if a.command == "init":
+                    require(state is None, "Queue already initialized")
+                    state = dict(version=1, tasks={}, integrator=None, updated_at=now())
+                else:
+                    require(state is not None, "Queue does not exist; run init first")
+                    if a.command != "list":
+                        if a.command.startswith("recover-"):
+                            require(a.expected_commit == queue.sha, "Recovery commit changed; review current state first")
+                        mutate(state, a)  # validated again on every attempt against the state just read
+                if a.command == "list":
+                    break
+                try:
+                    queue.publish(state)
+                    break
+                except ValueError:
+                    # another lane published first: never retry recoveries (they name the commit they saw)
+                    if command.startswith("recover-") or attempt + 1 >= max(1, a.retries):
+                        raise
+                    time.sleep(0.3 + random.random() * 0.7 * (attempt + 1))
             result = dict(ok=True, commit=queue.sha, state=state)
             if a.snapshot:
                 try:
@@ -227,7 +284,7 @@ def main():
                 except OSError as error:
                     # Remote publication already succeeded; do not imply it rolled back.
                     result["snapshot_error"] = str(error)
-            print(json.dumps(result, ensure_ascii=False))
+            print(json.dumps(quiet(result, a) if a.quiet else result, ensure_ascii=False))
         return 0
     except (ValueError, OSError, KeyError) as error:
         print(json.dumps(dict(ok=False, error=str(error)), ensure_ascii=False))

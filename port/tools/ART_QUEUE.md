@@ -25,13 +25,22 @@ python port/tools/art_queue.py update escena-054 --owner claude-carril-1 --statu
 python port/tools/art_queue.py update escena-054 --owner claude-carril-1 --status pr_abierto --pr https://github.com/OWNER/REPO/pull/123
 ```
 
+**Workers (24/10, flujo rápido):** tomar de a UNA pieza con
+`python port/tools/art_queue.py --quiet next --owner W [--prefix escena-]`, entregar y recién
+entonces tomar la siguiente; lo que no se pueda terminar se devuelve con
+`release <id> --owner W --evidence "por qué"` para que otro carril lo tome. Cada operación
+reintenta sola si otro carril publicó antes (`--retries`, 8 por defecto), funciona desde
+cualquier carpeta y `--quiet` imprime solo la tarea tocada. Un PR puede abrirse directo desde
+`en_curso` (`update <id> --status pr_abierto --pr URL`); la aprobación del usuario se exige al
+integrar, no antes.
+
 `init` solo crea la rama si no existe. Añadir piezas pendientes no implica su
 aprobación: registrar la referencia antes de `listo_pr`. Tomar con `claim` y
 comprobar `ok: true` **antes de editar una pieza**. No iniciar trabajo si falla.
 El claim no permite volver a tomar una tarea ya tomada, aunque sea del mismo
 owner. Elegir owners estables y únicos por carril. El estado no caduca.
 
-Estados: `pendiente → en_curso → en_revision → listo_pr → pr_abierto → integrado`.
+Estados: `pendiente → en_curso → en_revision → (listo_pr) → pr_abierto → integrado`.
 Se permite pasar de en_curso a listo_pr y volver de revisión/PR a en_curso.
 Se puede marcar `bloqueado` y reanudar como en_curso por el mismo owner.
 Toda actualización de tarea exige su owner. Cada tarea conserva timestamps,
