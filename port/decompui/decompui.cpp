@@ -1073,11 +1073,21 @@ static void Eyebrow(const char* text) {
     ImGui::Spacing();
 }
 
+/* A group of a page in its own card, as Experimental's is (the user, 24/10): closes the open card, opens the next */
+static void NextCard(const char* id, const char* title);
+
 static bool BeginCard(const char* id, ImVec2 size = ImVec2(0, 0)) {
     ImGuiChildFlags flags = ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding;
     if (size.y == 0)
         flags |= ImGuiChildFlags_AutoResizeY;
     return ImGui::BeginChild(id, size, flags);
+}
+
+static void NextCard(const char* id, const char* title) {
+    ImGui::EndChild();
+    ImGui::Spacing();
+    BeginCard(id);
+    Eyebrow(title);
 }
 
 /* The primary action: glow, accent gradient and a play triangle. */
@@ -1791,6 +1801,7 @@ static void PageGraphics() {
                        T("Escala de píxeles: x4 amplía cada píxel cuatro veces. Menos aumento muestra más mundo y exige más al PC.",
                          "Pixel scale: x4 enlarges each pixel four times. Lower scales show more world and cost more CPU."),
                        Ini("zoom"), false);
+    NextCard("picture", T("IMAGEN", "PICTURE"));
 #ifdef REKHCOM_SHOW_EXTRA_OPTIONS /* filter: an internal setting */
     changed |= CycleRow(T("Filtro", "Filter"), nullptr, Ini("filter"), 3, filters);
 #endif
@@ -1844,6 +1855,7 @@ static void PageGraphics() {
         Ini("scanlines") = sc * 25;
         changed = true;
     }
+    NextCard("other", T("OTROS", "OTHER"));
     changed |= CycleRow(T("Colores LCD GBA", "GBA LCD colours"), nullptr, Ini("color_correction"), 2, onoff);
     changed |= CycleRow(T("Mostrar FPS", "Show FPS"), nullptr, Ini("show_fps"), 2, onoff);
 #ifndef LAUNCHER_ANDROID
@@ -1867,7 +1879,7 @@ static void PageSound() {
     changed |= SliderRow(T("Volumen general", "Master volume"), Ini("master_volume"), 0, 100, "%d%%");
     changed |= SliderRow(T("Volumen música", "Music volume"), Ini("music_volume"), 0, 100, "%d%%");
     changed |= SliderRow(T("Volumen efectos", "Effects volume"), Ini("sfx_volume"), 0, 100, "%d%%");
-    ImGui::Separator();
+    NextCard("voices", T("VOCES Y HD", "VOICES AND HD"));
     changed |= GatedToggle(T("Undub (voces japonesas)", "Undub (Japanese voices)"),
                          T("Requiere la ROM japonesa original verificada en roms/B8CJ.gba. Se aplica al iniciar el juego; conserva los textos europeos o ingleses.",
                            "Requires the verified original Japanese ROM in roms/B8CJ.gba. Applied when starting the game; keeps European or English text."), Ini("undub"), sState[2].installed);

@@ -41,3 +41,5 @@ body.side-controls .pen-tools{flex-wrap:wrap}
 
 /* Keep the zoomed paper inside the scroll viewport rather than growing the grid row. */
 .workspace{min-height:0}
+
+.workspace-top #version{font-size:15px;line-height:1.45;letter-spacing:0;font-weight:600;color:#3b2c0c;background:#fff3d6;border:1px solid #e0b860;border-left:6px solid #c36d36;border-radius:5px;padding:9px 12px;margin:0 0 8px;max-width:100%;white-space:normal;overflow-wrap:anywhere}.workspace-top #version:empty{display:none}.side-controls .workspace-top #version{font-size:14px}body[data-density=large] .workspace-top #version{font-size:17px}
