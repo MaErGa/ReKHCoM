@@ -56,6 +56,16 @@ HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes
   by the graphics modes or the launcher either.
 - Something new loaded since the last start (an HD part, the undub's ROM): the game says so on the title ("Undub
   loaded!") and offers to turn it on; several at once get a switch each.
+- Launcher: tabs Home, Enhancements, Settings (Graphics, Sound and Controls inside), Achievements, Save editor. The HD
+  mod is now at the top of Enhancements, with what is loaded at a glance and one button that loads everything from
+  KINGDOM HEARTS HD 1.5+2.5 (Steam or Epic, found by itself) at the size you choose, or from a folder you pick; when
+  the game is installed and nothing is loaded yet, the launcher offers it. Home shows "1.5 HD mode" and the undub,
+  greyed out with a link to what they need until it is there.
+- Launcher: "Install ROM..." first installs whatever you left in the roms folder (dumps under any name, zips with a
+  dump or the HD mod's folders, an hd folder) by moving it, and sends leftovers to the Recycle Bin; a zip with other
+  files (a backup) is kept.
+- Touch controls in menus take the d-pad's main direction only: going down in Options no longer changed a value or
+  opened Achievements by itself.
 - Options: "Return to title screen" is now the last row and "Reset to a mode's defaults" asks which mode; both ask
   twice in a window with a warning, as skipping a scene does.
 

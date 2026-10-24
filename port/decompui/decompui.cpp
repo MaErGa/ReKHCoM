@@ -485,11 +485,14 @@ static void ApplyUiLanguage() {
     sSpanish = sUiLanguage == 1;
 }
 
+static bool sHdOfferDeclined; /* "Don't ask again" on the HD mod's offer (rom_folder.inc) */
 static void LoadLauncherState() {
     std::ifstream f(sRoot / "decompui.ini");
     std::string line;
     while (std::getline(f, line)) {
-        if (line.rfind("version=", 0) == 0) {
+        if (line == "hd_offer=0") {
+            sHdOfferDeclined = true;
+        } else if (line.rfind("version=", 0) == 0) {
             for (int v = 0; v < kVersionCount; v++)
                 if (line.substr(8) == kVersions[v].id)
                     sSelected = v;
@@ -512,6 +515,8 @@ static void SaveLauncherState() {
     std::ofstream f(sRoot / "decompui.ini", std::ios::trunc);
     f << "version=" << kVersions[sSelected].id << "\n";
     f << "ui_language=" << sUiLanguage << "\n";
+    if (sHdOfferDeclined)
+        f << "hd_offer=0\n"; /* "Don't ask again" on the HD mod's offer */
 }
 
 /* ---- saves -------------------------------------------------------------------- */
@@ -926,6 +931,17 @@ static bool CycleRow(const char* label, const char* hint, int& value, int count,
     return changed;
 }
 
+static bool ToggleRow(const char* label, const char* description, int& value);
+static bool GatedToggle(const char* label, const char* description, int& value, bool available) {
+    if (available)
+        return ToggleRow(label, description, value);
+    int off = 0;
+    ImGui::BeginDisabled();
+    ToggleRow(label, description, off);
+    ImGui::EndDisabled();
+    return false;
+}
+
 static bool ToggleRow(const char* label, const char* description, int& value) {
     bool changed = false;
     float w = ImGui::GetContentRegionAvail().x;
@@ -984,7 +1000,10 @@ static bool SliderRow(const char* label, int& value, int lo, int hi, const char*
 
 /* ---- pages ------------------------------------------------------------------- */
 
-enum Page { PAGE_HOME, PAGE_GRAPHICS, PAGE_SOUND, PAGE_EXTRAS, PAGE_CONTROLS, PAGE_EDITOR, PAGE_ACHIEVEMENTS, PAGE_COUNT };
+/* One view per screen (the harness shoots each); the bar groups Graphics, Sound and Controls under Settings, with its
+   own tabs (user, 24/10: Home, Enhancements, Settings, Achievements, Save editor). */
+enum Page { PAGE_HOME, PAGE_EXTRAS, PAGE_GRAPHICS, PAGE_SOUND, PAGE_CONTROLS, PAGE_ACHIEVEMENTS, PAGE_EDITOR, PAGE_COUNT };
+static bool SettingsPage(int page) { return page == PAGE_GRAPHICS || page == PAGE_SOUND || page == PAGE_CONTROLS; }
 
 static int sPage;
 static GLuint sBoxArt;
@@ -1061,6 +1080,26 @@ static void AddToSteam();
 static void InstallElsewhereRow();
 static void ReportProblemRow();
 
+static void ApplyGraphicsMode(int mode);
+static void PickRom(SDL_Window* window);
+static void StartRomFolderScan(bool pick);
+namespace romdir { static bool Busy(); }
+
+/* A switch on Home for an enhancement that needs files (the HD mod, the Japanese ROM): always shown so players
+   know it exists, greyed until its files are there, with a link to where they are loaded (24/10). */
+static bool HomeFeatureRow(const char* label, const char* description, int& value, bool available, const char* link) {
+    bool changed = GatedToggle(label, description, value, available);
+    if (!available && link != nullptr) {
+        ImGui::PushFont(sFontSmall);
+        ImGui::PushStyleColor(ImGuiCol_TextLink, kAccent);
+        if (ImGui::TextLink(link))
+            changed = true; /* the caller reads the click from here */
+        ImGui::PopStyleColor();
+        ImGui::PopFont();
+    }
+    return changed;
+}
+
 static void PageHome(SDL_Window* window) {
     float avail = ImGui::GetContentRegionAvail().x;
     float coverW = std::clamp(avail * 0.28f, Px(220), Px(330));
@@ -1080,8 +1119,17 @@ static void PageHome(SDL_Window* window) {
     {
         float gap = Px(10), full = ImGui::GetContentRegionAvail().x;
         float third = ready ? (full - 2 * gap) / 3.0f : full;
-        if (ImGui::Button(T("Instalar ROM...", "Install ROM..."), ImVec2(third, 0)))
-            PickRom(window);
+        /* roms/ first (anything left there is installed by moving it), the file picker when it holds nothing */
+        ImGui::BeginDisabled(romdir::Busy());
+        if (ImGui::Button(romdir::Busy() ? T("Buscando en roms...", "Looking in roms...") : T("Instalar ROM...", "Install ROM..."),
+                          ImVec2(third, 0)))
+            StartRomFolderScan(true);
+        ImGui::EndDisabled();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("%s", T("Primero instala lo que hayas dejado en la carpeta roms (ROMs con cualquier nombre, zips, "
+                                      "la carpeta hd del mod HD); si no hay nada, elige el archivo.",
+                                      "First installs whatever you left in the roms folder (ROMs under any name, zips, the HD "
+                                      "mod's hd folder); if there is nothing, choose the file."));
         if (ready) {
             ImGui::SameLine(0, gap);
             if (ImGui::Button(T("Acceso directo", "Desktop shortcut"), ImVec2(third, 0)))
@@ -1189,6 +1237,37 @@ static void PageHome(SDL_Window* window) {
                      language, 6, langs)) {
             Ini("game_language") = language;
             SaveIni();
+        }
+    }
+    {
+        std::error_code ec;
+        bool hd = fs::exists(sRoot / "hd" / "movies" / "ROP.mp4", ec) || fs::exists(sRoot / "hd" / "music" / "Title.ogg", ec) ||
+                  fs::exists(sRoot / "hd" / "sprites" / "gCardWep01Tiles.png", ec);
+        int on = Ini("graphics_mode") == 1;
+        ImGui::Spacing();
+        if (HomeFeatureRow(T("Modo 1.5 HD", "1.5 HD mode"),
+                           T("Las cartas, el HUD, la música, los videos y las escenas de Re:Chain of Memories, de tu "
+                             "KINGDOM HEARTS HD 1.5+2.5.",
+                             "Re:Chain of Memories' cards, HUD, music, movies and scenes, from your KINGDOM HEARTS HD 1.5+2.5."),
+                           on, hd, T("Cargar los assets HD en Mejoras \xE2\x86\x92", "Load the HD assets in Enhancements \xE2\x86\x92"))) {
+            if (hd) {
+                ApplyGraphicsMode(on ? 1 : 2); /* off: GBA enhanced, the mode without HD extras */
+                SaveIni();
+            } else {
+                sPage = PAGE_EXTRAS;
+            }
+        }
+        if (sSelected != 2) { /* the Japanese cartridge already speaks Japanese */
+            if (HomeFeatureRow(T("Undub (voces japonesas)", "Undub (Japanese voices)"),
+                               T("Las voces japonesas originales con los textos de tu versión. Necesita la ROM japonesa.",
+                                 "The original Japanese voices with your version's text. Needs the Japanese ROM."),
+                               Ini("undub"), sState[2].installed,
+                               T("Instalar la ROM japonesa \xE2\x86\x92", "Install the Japanese ROM \xE2\x86\x92"))) {
+                if (sState[2].installed)
+                    SaveIni();
+                else
+                    PickRom(window);
+            }
         }
     }
     ImGui::Spacing();
@@ -1446,6 +1525,7 @@ static void PageGraphics() {
 }
 
 #include "hd_import.inc"
+#include "rom_folder.inc"
 
 static void PageSound() {
     bool changed = false;
@@ -1455,13 +1535,16 @@ static void PageSound() {
     changed |= SliderRow(T("Volumen música", "Music volume"), Ini("music_volume"), 0, 100, "%d%%");
     changed |= SliderRow(T("Volumen efectos", "Effects volume"), Ini("sfx_volume"), 0, 100, "%d%%");
     ImGui::Separator();
-    ImGui::BeginDisabled(!sState[2].installed);
-    changed |= ToggleRow(T("Undub (voces japonesas)", "Undub (Japanese voices)"),
+    changed |= GatedToggle(T("Undub (voces japonesas)", "Undub (Japanese voices)"),
                          T("Requiere la ROM japonesa original verificada en roms/B8CJ.gba. Se aplica al iniciar el juego; conserva los textos europeos o ingleses.",
-                           "Requires the verified original Japanese ROM in roms/B8CJ.gba. Applied when starting the game; keeps European or English text."), Ini("undub"));
-    ImGui::EndDisabled();
+                           "Requires the verified original Japanese ROM in roms/B8CJ.gba. Applied when starting the game; keeps European or English text."), Ini("undub"), sState[2].installed);
+    
     ImGui::Separator();
-    changed |= HdModCard();
+    ImGui::PushStyleColor(ImGuiCol_TextLink, kAccent);
+    if (ImGui::TextLink(T("La música, los videos y las escenas HD de Re:Chain of Memories: en Mejoras â",
+                          "Re:Chain of Memories' HD music, movies and scenes: in Enhancements â")))
+        sPage = PAGE_EXTRAS;
+    ImGui::PopStyleColor();
     ImGui::EndChild();
     if (changed)
         SaveIni();
@@ -1646,6 +1729,11 @@ static void NetlinkRows() {
 
 static void PageExtras() {
     bool changed = false;
+    /* the HD mod first: loading Re:Chain of Memories' assets was hidden under Sound (user, 24/10) */
+    BeginCard("hdmod");
+    changed |= HdModCard();
+    ImGui::EndChild();
+    ImGui::Spacing();
     BeginCard("extras");
     Eyebrow(T("MEJORAS", "ENHANCEMENTS"));
 #ifdef REKHCOM_SHOW_EXTRA_OPTIONS /* raised cards: an internal setting */
@@ -2020,9 +2108,13 @@ static void Header() {
         ImGui::SetCursorScreenPos(after);
     }
 
-    const char* tabs[PAGE_COUNT] = { T("Inicio", "Home"), T("Gráficos", "Graphics"), T("Sonido", "Sound"),
-                                     T("Mejoras", "Enhancements"), T("Controles", "Controls"),
-                                     T("Editor de partidas", "Save editor"), T("Logros", "Achievements") };
+    static int lastSettings = PAGE_GRAPHICS; /* Settings reopens on its last tab */
+    if (SettingsPage(sPage))
+        lastSettings = sPage;
+    enum { TAB_COUNT = 5 };
+    const char* tabs[TAB_COUNT] = { T("Inicio", "Home"), T("Mejoras", "Enhancements"), T("Configuración", "Settings"),
+                                    T("Logros", "Achievements"), T("Editor de partidas", "Save editor") };
+    const int tabPage[TAB_COUNT] = { PAGE_HOME, PAGE_EXTRAS, -1, PAGE_ACHIEVEMENTS, PAGE_EDITOR };
     ImGui::SetCursorScreenPos(ImVec2(top.x, top.y + logoH + Px(10)));
     ImVec2 band = ImGui::GetCursorScreenPos();
     dl->AddRectFilled(band, ImVec2(right, band.y + Px(3)), ImGui::GetColorU32(kText));
@@ -2031,8 +2123,8 @@ static void Header() {
     float tabH = ImGui::GetTextLineHeight() + Px(20);
     ImVec2 row = ImGui::GetCursorScreenPos();
     float tx = row.x;
-    for (int i = 0; i < PAGE_COUNT; i++) {
-        bool active = sPage == i;
+    for (int i = 0; i < TAB_COUNT; i++) {
+        bool active = tabPage[i] < 0 ? SettingsPage(sPage) : sPage == tabPage[i];
         float sq = active ? Px(12) : 0, pad = Px(14);
         float w = ImGui::CalcTextSize(tabs[i]).x + pad * 2 + (active ? sq + Px(8) : 0);
         if (tx + w > right) { /* a narrow window: the tabs wrap */
@@ -2042,7 +2134,7 @@ static void Header() {
         ImGui::SetCursorScreenPos(ImVec2(tx, row.y));
         ImGui::PushID(i);
         if (ImGui::InvisibleButton("##tab", ImVec2(w, tabH), ImGuiButtonFlags_EnableNav))
-            sPage = i;
+            sPage = tabPage[i] < 0 ? lastSettings : tabPage[i];
         bool hover = ImGui::IsItemHovered();
         ImGui::PopID();
         ImVec2 mn(tx, row.y), mx(tx + w, row.y + tabH);
@@ -2065,6 +2157,31 @@ static void Header() {
 
 #include "save_editor_page.inc"
 #include "achievements_page.inc"
+
+/* Settings: Graphics, Sound and Controls as tabs inside it, drawn as the launcher's buttons with the game's square */
+static void SettingsTabs() {
+    const char* names[3] = { T("Gráficos", "Graphics"), T("Sonido", "Sound"), T("Controles", "Controls") };
+    const int pages[3] = { PAGE_GRAPHICS, PAGE_SOUND, PAGE_CONTROLS };
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    for (int i = 0; i < 3; i++) {
+        bool active = sPage == pages[i];
+        if (i)
+            ImGui::SameLine(0, Px(6));
+        ImGui::PushStyleColor(ImGuiCol_Button, active ? kPanelHover : kControl);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kControlHover);
+        char label[64];
+        snprintf(label, sizeof(label), "%s%s", active ? "    " : "", names[i]);
+        if (ImGui::Button(label, ImVec2(0, Px(34))))
+            sPage = pages[i];
+        ImGui::PopStyleColor(2);
+        if (active) {
+            ImVec2 mn = ImGui::GetItemRectMin(), mx = ImGui::GetItemRectMax();
+            GameSquare(dl, ImVec2(mn.x + Px(14), (mn.y + mx.y) * 0.5f), Px(10), true);
+            dl->AddRectFilled(ImVec2(mn.x, mx.y - Px(3)), mx, ImGui::GetColorU32(kAccent));
+        }
+    }
+    ImGui::Spacing();
+}
 
 static void Footer() {
     if (!sNotice.empty() && ImGui::GetTime() - sNoticeTime < 8.0) {
@@ -2090,6 +2207,8 @@ static void Frame(SDL_Window* window) {
         ImGui::SetNextWindowScroll(ImVec2(0, (float)std::atof(scroll)));
     ImGui::BeginChild("page", ImVec2(0, -Px(28)), ImGuiChildFlags_None, ImGuiWindowFlags_None);
     ImGui::PopStyleColor();
+    if (SettingsPage(sPage))
+        SettingsTabs();
     switch (sPage) {
         case PAGE_HOME:
             PageHome(window);
@@ -2114,6 +2233,8 @@ static void Frame(SDL_Window* window) {
             break;
     }
     ImGui::EndChild();
+    RomFolderPoll(window);
+    HdOfferPopup();
     Footer();
     ImGui::End();
     AchievementPreviewDraw();
@@ -2757,23 +2878,8 @@ int main(int argc, char** argv) {
     AdoptPreviousInstall();
     hd::MoveScenes(sRoot / "hd"); /* the layout of older versions, moved on every start (not only on the HD page) */
     ScanInstall();
-    /* a dump left next to the launcher (the simplest install: drop it in the folder) is checked and installed once */
-    {
-        std::error_code ec;
-        for (const auto& e : fs::directory_iterator(sRoot, ec)) {
-            std::string ext = e.path().extension().string();
-            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-            if (ext != ".gba" || e.file_size(ec) != kRomSize)
-                continue;
-            std::vector<unsigned char> head;
-            bool already = false;
-            if (ReadFile(e.path(), head) && head.size() == kRomSize)
-                for (int v = 0; v < kVersionCount; v++)
-                    already |= sState[v].installed && std::memcmp(head.data() + 0xAC, kVersions[v].code, 4) == 0;
-            if (!already)
-                InstallRom(e.path());
-        }
-    }
+    /* a dump left in roms/ or next to the launcher (the simplest install: drop it in the folder) is installed at start */
+    StartRomFolderScan(false);
     LoadIni();
     LoadLauncherState();
     SaveLauncherState(); /* the first time, keeps the language chosen from the system */

@@ -1540,13 +1540,41 @@ static bool HdModCard() {
                                "de PC (Steam o Epic). ReKHCoM no incluye nada de ese juego: lo copia de tu instalación.",
                                "Uses the Re:Chain of Memories movies and soundtrack of your PC Kingdom Hearts HD 1.5+2.5 ReMIX "
                                "(Steam or Epic). ReKHCoM ships none of it: it copies them from your installation."));
+    ImGui::Spacing();
+    {
+        /* what is loaded, at a glance: one tile per part, the game's red square when it is there */
+        struct Tile { const char* name; int count; const char* unit; } tiles[4] = {
+            { T("Videos", "Movies"), haveMovies - haveScenes, T("videos", "movies") },
+            { T("Escenas", "Scenes"), haveScenes, T("escenas", "scenes") },
+            { T("Música", "Music"), haveTracks, T("pistas", "tracks") },
+            { T("HUD HD", "HD HUD"), haveSprites, T("gráficos", "graphics") } };
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        float gap = Px(8), w = (ImGui::GetContentRegionAvail().x - 3 * gap) / 4, h = Px(58);
+        ImVec2 p = ImGui::GetCursorScreenPos();
+        for (int i = 0; i < 4; i++) {
+            bool ok = tiles[i].count > 0;
+            ImVec2 a(p.x + i * (w + gap), p.y), b(a.x + w, a.y + h);
+            dl->AddRectFilled(a, b, ImGui::GetColorU32(ok ? kPanel : kControl), Px(6));
+            dl->AddRect(a, b, ImGui::GetColorU32(ok ? kAccent : kBorder), Px(6), 0, ok ? Px(2) : Px(1));
+            GameSquare(dl, ImVec2(a.x + Px(16), a.y + Px(17)), Px(12), ok);
+            dl->AddText(ImVec2(a.x + Px(30), a.y + Px(8)), ImGui::GetColorU32(kText), tiles[i].name);
+            char line[64];
+            if (ok)
+                snprintf(line, sizeof(line), "%d %s", tiles[i].count, tiles[i].unit);
+            else
+                snprintf(line, sizeof(line), "%s", T("Sin cargar", "Not loaded"));
+            dl->AddText(ImVec2(a.x + Px(12), a.y + Px(32)), ImGui::GetColorU32(ok ? kText : kMuted), line);
+        }
+        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, h));
+    }
+    ImGui::Spacing();
     ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
-    ImGui::TextWrapped("%s %s", T("Origen:", "Source:"),
-                       source.empty() ? T("no se encontró el juego; elige su carpeta o una con los videos/la música.",
-                                          "the game was not found; choose its folder or one with the movies/music.")
+    ImGui::TextWrapped("%s %s", source.empty() ? T("Juego:", "Game:") : T("Encontrado:", "Found:"),
+                       source.empty() ? T("no se encontró KINGDOM HEARTS HD 1.5+2.5 en Steam ni Epic; si lo tienes en otra "
+                                          "plataforma o carpeta, elígela.",
+                                          "KINGDOM HEARTS HD 1.5+2.5 was not found on Steam or Epic; if it is on another "
+                                          "platform or folder, choose it.")
                                       : source.u8string().c_str());
-    ImGui::TextWrapped("%s %d %s · %d %s · %d %s", T("Importado:", "Imported:"), haveMovies, T("videos", "movies"), haveTracks,
-                       T("pistas", "tracks"), haveSprites, T("gráficos", "graphics"));
     ImGui::PopStyleColor();
     ImGui::BeginDisabled(hd::sJob.running);
     if (ImGui::Button(T("Buscar el juego", "Find the game")))
@@ -1591,16 +1619,17 @@ static bool HdModCard() {
         ImGui::TextWrapped("%s", T("Recodificar lleva unos minutos (el mod completo, 20-40 min según el equipo).",
                                    "Re-encoding takes a few minutes (the full mod, 20-40 min depending on the machine)."));
     ImGui::PopStyleColor();
-    ImGui::BeginDisabled(source.empty());
-    if (ImGui::Button(T("Importar mod base (videos, música y gráficos)", "Import base mod (movies, music and graphics)")))
-        hd::Start(source, sRoot, true, false, true, true, quality);
-    ImGui::SameLine();
-    char scenesLabel[96];
-    snprintf(scenesLabel, sizeof(scenesLabel), "%s%s)", T("Importar escenas (completo, ", "Import scenes (full, "),
-             kScenesSize[quality]);
-    if (ImGui::Button(scenesLabel))
-        hd::Start(source, sRoot, false, true, false, false, quality);
-    ImGui::EndDisabled();
+    {
+        char full[96];
+        snprintf(full, sizeof(full), "%s  %s", T("CARGAR TODO DESDE EL JUEGO", "LOAD EVERYTHING FROM THE GAME"),
+                 kScenesSize[quality]);
+        if (PlayButton(full, ImVec2(ImGui::GetContentRegionAvail().x, Px(52)), !source.empty() && !hd::sJob.running))
+            hd::Start(source, sRoot, true, true, true, true, quality);
+        ImGui::BeginDisabled(source.empty());
+        if (ImGui::Button(T("Solo lo básico: intros, música y HUD (~0,6 GB)", "Just the basics: intros, music and HUD (~0.6 GB)")))
+            hd::Start(source, sRoot, true, false, true, true, quality);
+        ImGui::EndDisabled();
+    }
     /* what is already installed (a full mod imported at source quality, say), re-encoded here to the quality above:
        no need for the game's installation; a second click confirms, since the larger files are replaced */
     {
@@ -1634,42 +1663,28 @@ static bool HdModCard() {
         ImGui::TextWrapped("%s", hd::sJob.Status().c_str());
     }
     ImGui::Separator();
-    ImGui::BeginDisabled(!haveBase);
-    changed |= ToggleRow(T("Intros HD", "HD intros"),
+    changed |= GatedToggle(T("Intros HD", "HD intros"),
                          T("La apertura, los créditos y los finales de Sora y Riku de Re:Chain of Memories.",
-                           "Re:Chain of Memories' opening, credits and Sora's and Riku's endings."),
-                         Ini("hd_movies"));
-    ImGui::EndDisabled();
-    ImGui::BeginDisabled(haveTracks == 0);
-    changed |= ToggleRow(T("Música HD", "HD music"),
+                           "Re:Chain of Memories' opening, credits and Sora's and Riku's endings."), Ini("hd_movies"), !(!haveBase));
+    changed |= GatedToggle(T("Música HD", "HD music"),
                          T("La banda sonora orquestada de Re:Chain of Memories en lugar de la música de GBA.",
-                           "Re:Chain of Memories' soundtrack in place of the GBA music."),
-                         Ini("hd_music"));
-    ImGui::EndDisabled();
-    ImGui::BeginDisabled(haveScenes <= 0);
-    changed |= ToggleRow(T("Escenas HD (mod completo)", "HD scenes (full mod)"),
+                           "Re:Chain of Memories' soundtrack in place of the GBA music."), Ini("hd_music"), !(haveTracks == 0));
+    changed |= GatedToggle(T("Escenas HD (mod completo)", "HD scenes (full mod)"),
                          T("Las escenas de historia de Re:Chain of Memories en lugar de las de GBA donde coinciden, "
                            "con subtítulos en el idioma del juego. Desactivado por defecto.",
                            "Re:Chain of Memories' story scenes in place of the GBA ones where they match, with subtitles "
-                           "in the game's language. Off by default."),
-                         Ini("hd_scenes"));
-    ImGui::EndDisabled();
-    ImGui::BeginDisabled(haveMovies <= 0);
-    changed |= ToggleRow(T("Subtítulos HD", "HD subtitles"),
+                           "in the game's language. Off by default."), Ini("hd_scenes"), !(haveScenes <= 0));
+    changed |= GatedToggle(T("Subtítulos HD", "HD subtitles"),
                          T("Los subtítulos de Re:Chain of Memories en los videos y escenas HD, en el idioma del juego.",
-                           "Re:Chain of Memories' subtitles over the HD movies and scenes, in the game's language."),
-                         Ini("hd_subtitles"));
-    ImGui::EndDisabled();
-    ImGui::BeginDisabled(haveSprites <= 0);
+                           "Re:Chain of Memories' subtitles over the HD movies and scenes, in the game's language."), Ini("hd_subtitles"), !(haveMovies <= 0));
     /* one switch, as the game's HD HUD: the cards, the battle HUD and the title logo */
-    if (ToggleRow(T("HUD HD", "HD HUD"),
+    if (GatedToggle(T("HUD HD", "HD HUD"),
                   T("Las cartas, el HUD de combate y el logo del título con el arte de Re:Chain of Memories. "
                     "Necesita la vista amplia.",
                     "The cards, the battle HUD and the title logo with Re:Chain of Memories' art. Needs the wide view."),
-                  Ini("hd_cards"))) {
+                  Ini("hd_cards"), haveSprites > 0)) {
         Ini("hd_title") = Ini("hd_cards");
         changed = true;
     }
-    ImGui::EndDisabled();
     return changed;
 }
