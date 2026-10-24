@@ -386,6 +386,7 @@ static void GamePush(const int16_t* frames, uint32_t count) {
 /* the network link's socket (shared/udp_host.h): BSD sockets */
 #define UDP_HOST_POSIX
 #include "udp_host.h"
+#include "thread_host.h" /* the image's other threads: none here (bridge entry thread answers one core) */
 static void H_audio_push(const int16_t* frames, uint32_t count) { HdMusicPush(frames, count, sGameRate, GamePush); }
 
 /* HD movies: played here to the end with the NDK's decoders (port/portable/hdmovie_android.c, as on 32-bit Android) */
@@ -886,7 +887,7 @@ int main(int argc, char** argv) {
         HM(log_e, (double (*)(double))log), HM(fmod, (double (*)(double, double))fmod), HM(sinf, (float (*)(float))sinf),
         HM(cosf, (float (*)(float))cosf), HM(powf, (float (*)(float, float))powf), HF(set_title), HF(notify),
         HF(touch_poll), HF(app_state), HF(hd_music), HF(hd_movie),
-        HF(udp_open), HF(udp_resolve), HF(udp_send), HF(udp_recv),
+        HF(udp_open), HF(udp_resolve), HF(udp_send), HF(udp_recv), HF(thread),
     };
     for (int i = 0; i < HF_COUNT; ++i)
         if (!t[i]) {

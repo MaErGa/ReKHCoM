@@ -36,8 +36,24 @@ extern const void* gMsgwinMapBlocks[4];
 #ifdef PORT_PPU_THREADS
 #include <SDL3/SDL.h>
 #define PPU_TLS _Thread_local
+/* While the GBA picture's rows are drawn after the frame's line events (PpuInnerKeep, below), each row reads the
+   registers, palettes and OAM its line had: these views point at that row's copy (NULL: the live memory). */
+static PPU_TLS const uint8_t* sPpuIoView;
+static PPU_TLS const uint16_t* sPpuPlttView;
+static PPU_TLS const uint16_t* sPpuOamView;
+#define PPU_IO_KEPT 0x60 /* the display registers: DISPCNT to the blend registers */
+#undef IO16
+#undef IO32
+#define IO16(off) (*(volatile uint16_t*)((off) < PPU_IO_KEPT && sPpuIoView ? (uintptr_t)sPpuIoView + (off) \
+                                                                         : (uintptr_t)(GBA_IO + (off))))
+#define IO32(off) (*(volatile uint32_t*)((off) < PPU_IO_KEPT && sPpuIoView ? (uintptr_t)sPpuIoView + (off) \
+                                                                         : (uintptr_t)(GBA_IO + (off))))
+#define PPU_PLTT_BASE (sPpuPlttView ? sPpuPlttView : (const uint16_t*)(uintptr_t)GBA_PLTT)
+#define PPU_OAM_BASE (sPpuOamView ? sPpuOamView : (const uint16_t*)(uintptr_t)GBA_OAM)
 #else
 #define PPU_TLS
+#define PPU_PLTT_BASE ((const uint16_t*)(uintptr_t)GBA_PLTT)
+#define PPU_OAM_BASE ((const uint16_t*)(uintptr_t)GBA_OAM)
 #endif
 
 PortScreen gPortScreen = { GBA_SCREEN_W, GBA_SCREEN_H, 0, 0, 0 };
@@ -746,7 +762,7 @@ int PortPpuHudActive(void) {
 uint32_t* gPortFrame;
 uint32_t* gPortMenuBackground;
 
-#define PLTT16 ((const uint16_t*)(uintptr_t)GBA_PLTT)
+#define PLTT16 PPU_PLTT_BASE
 #define VRAM8 ((const uint8_t*)(uintptr_t)GBA_VRAM)
 
 /* The registration that matches what the tile holds now: the latest, else the one before. */
@@ -758,7 +774,7 @@ static const BgTextTile* BgTextTileAt(unsigned offset) {
     return t->code && !memcmp(t->source, VRAM8 + offset, 32) ? t : &sBgTextTiles[offset / 32];
 }
 
-#define OAM16 ((const uint16_t*)(uintptr_t)GBA_OAM)
+#define OAM16 PPU_OAM_BASE
 
 /* Line buffers hold BGR555 colours; bit 15 marks a transparent pixel. */
 #define TRANSPARENT 0x8000
@@ -2900,7 +2916,7 @@ static void RenderLine(int y, int gy) {
    panel), and is transparent elsewhere so the scenery shows; the backdrop is
    underneath. The scene's fade applies to the bars too. */
 #define NARROW_SIDE_W 96
-#define PLTT16_0() (((const uint16_t*)(uintptr_t)GBA_PLTT)[0])
+#define PLTT16_0() (PPU_PLTT_BASE[0])
 static uint32_t sNarrowSide[2][GBA_SCREEN_H][NARROW_SIDE_W];
 /* per row: the colour of the layer in front of the scenery at the picture's
    edge, and whether that row was a band (2), only touched the edge (1) or
@@ -3507,24 +3523,29 @@ static void OuterRow(const OuterRows* r, int y) {
 extern void MapWorldTilePrime(void); /* src/map/map_cell.c */
 static int sPpuWorkers = -1; /* other cores drawing with this one; -1 not started */
 static SDL_Semaphore *sPpuGo, *sPpuDone;
-static const OuterRows* sPpuJob;
+static const OuterRows* sPpuJob; /* NULL: the GBA picture's rows (PpuInnerRow) */
+static int sPpuEnd;
 static SDL_AtomicInt sPpuNext;
+static void PpuInnerRow(int y);
 static PendingGlyph sPpuGlyphs[PPU_MAX_THREADS][1024];
 static int sPpuGlyphCount[PPU_MAX_THREADS];
 static int sPpuVerify, sPpuMismatches;
 
 static void PpuRows(int slot) {
     const OuterRows* r = sPpuJob;
-    int y, end;
+    int y, end, last = sPpuEnd;
     sGlyphPend = sPpuGlyphs[slot];
     sGlyphPendCount = 0;
     for (;;) {
         y = SDL_AddAtomicInt(&sPpuNext, PPU_CHUNK);
-        if (y >= r->y1)
+        if (y >= last)
             break;
-        for (end = y + PPU_CHUNK < r->y1 ? y + PPU_CHUNK : r->y1; y < end; y++) {
+        for (end = y + PPU_CHUNK < last ? y + PPU_CHUNK : last; y < end; y++) {
             sGlyphRow = y;
-            OuterRow(r, y);
+            if (r)
+                OuterRow(r, y);
+            else
+                PpuInnerRow(y);
         }
     }
     sPpuGlyphCount[slot] = sGlyphPendCount;
@@ -3599,49 +3620,190 @@ static int GlyphSame(const BgTextGlyph* a, const BgTextGlyph* b) {
            a->screen == b->screen;
 }
 
-/* KHCOM_PPU_VERIFY: the batch drawn again on this core must give the same rows and glyphs */
-static void PpuVerify(const OuterRows* r, int glyphStart) {
-    static uint8_t* saved;
-    static size_t savedSize;
-    static BgTextGlyph glyphs[1024];
-    size_t w = (size_t)gPortScreen.width, rows = (size_t)(r->y1 - r->y0), off = (size_t)r->y0 * w, n = rows * w;
+/* KHCOM_PPU_VERIFY: rows drawn twice, once on several cores and once line by line on this one, must be the same:
+   PpuSaveRows keeps what the first drawing left (and takes its glyphs off the list), PpuCheckRows compares */
+static uint8_t* sVerifySaved;
+static size_t sVerifySavedSize;
+static BgTextGlyph sVerifyGlyphs[1024];
+static int sVerifyGlyphCount;
+
+static int PpuSaveRows(int y0, int y1, int glyphStart) {
+    size_t w = (size_t)gPortScreen.width, off = (size_t)y0 * w, n = (size_t)(y1 - y0) * w;
     size_t need = n * 13; /* frame, background (4 bytes each), three masks (1), sprite occlusion (2) */
-    int count = sBgTextCount - glyphStart, y, bad = -1, i;
     uint8_t* s;
-    if (need > savedSize) {
-        uint8_t* grown = (uint8_t*)realloc(saved, need);
+    if (need > sVerifySavedSize) {
+        uint8_t* grown = (uint8_t*)realloc(sVerifySaved, need);
         if (!grown)
-            return;
-        saved = grown;
-        savedSize = need;
+            return 0;
+        sVerifySaved = grown;
+        sVerifySavedSize = need;
     }
-    s = saved;
+    s = sVerifySaved;
     memcpy(s, gPortFrame + off, n * 4);
     memcpy(s + n * 4, gPortMenuBackground + off, n * 4);
     memcpy(s + n * 8, sOccBg + off, n);
     memcpy(s + n * 9, sOccBgLayer + off, n);
     memcpy(s + n * 10, sMsgMask + off, n);
     memcpy(s + n * 11, sOccObj + off, n * 2);
-    memcpy(glyphs, sBgTextGlyphs + glyphStart, (size_t)count * sizeof(*glyphs));
+    sVerifyGlyphCount = sBgTextCount - glyphStart;
+    memcpy(sVerifyGlyphs, sBgTextGlyphs + glyphStart, (size_t)sVerifyGlyphCount * sizeof(*sVerifyGlyphs));
     sBgTextCount = glyphStart;
-    for (y = r->y0; y < r->y1; y++)
-        OuterRow(r, y);
+    return 1;
+}
+
+static void PpuCheckRows(int y0, int y1, int glyphStart, const char* what) {
+    size_t w = (size_t)gPortScreen.width, rows = (size_t)(y1 - y0), off = (size_t)y0 * w, n = rows * w;
+    const uint8_t* s = sVerifySaved;
+    int y, bad = -1, i, count = sVerifyGlyphCount;
     for (y = 0; y < (int)rows && bad < 0; y++) {
         size_t o = (size_t)y * w;
         if (memcmp(s + o * 4, gPortFrame + off + o, w * 4) ||
             memcmp(s + n * 4 + o * 4, gPortMenuBackground + off + o, w * 4) ||
             memcmp(s + n * 8 + o, sOccBg + off + o, w) || memcmp(s + n * 9 + o, sOccBgLayer + off + o, w) ||
             memcmp(s + n * 10 + o, sMsgMask + off + o, w) || memcmp(s + n * 11 + o * 2, sOccObj + off + o, w * 2))
-            bad = r->y0 + y;
+            bad = y0 + y;
     }
     if (bad < 0 && sBgTextCount - glyphStart != count)
         bad = -2;
     for (i = 0; bad < 0 && i < count; i++)
-        if (!GlyphSame(&glyphs[i], &sBgTextGlyphs[glyphStart + i]))
+        if (!GlyphSame(&sVerifyGlyphs[i], &sBgTextGlyphs[glyphStart + i]))
             bad = -3;
     if (bad != -1 && sPpuMismatches++ < 20)
-        PortLog("ppu verify: MISMATCH frame %u rows %d-%d (%s %d)", (unsigned)PortFrameCount(), r->y0, r->y1,
+        PortLog("ppu verify: MISMATCH %s frame %u rows %d-%d (%s %d)", what, (unsigned)PortFrameCount(), y0, y1,
                 bad >= 0 ? "row" : "glyphs", bad);
+}
+
+static void PpuVerify(const OuterRows* r, int glyphStart) {
+    int y;
+    if (!PpuSaveRows(r->y0, r->y1, glyphStart))
+        return;
+    for (y = r->y0; y < r->y1; y++)
+        OuterRow(r, y);
+    PpuCheckRows(r->y0, r->y1, glyphStart, "margins");
+}
+
+/* Rows y0..y1 on every core; the glyphs found are merged into the list in row order. */
+static void PpuRunBatch(const OuterRows* job, int y0, int y1) {
+    static const PendingGlyph* order[PPU_MAX_THREADS * 1024];
+    int i, slot, n = 0;
+    if (sBgWorldLatched[1].fn || sBgWorldLatched[2].fn || sBgWorldLatched[3].fn)
+        MapWorldTilePrime(); /* its per-room tables, filled before the cores read them */
+    IsoPrime();
+    sPpuJob = job;
+    sPpuEnd = y1;
+    SDL_SetAtomicInt(&sPpuNext, y0);
+    for (i = 0; i < sPpuWorkers; i++)
+        SDL_SignalSemaphore(sPpuGo);
+    PpuRows(sPpuWorkers);
+    for (i = 0; i < sPpuWorkers; i++)
+        SDL_WaitSemaphore(sPpuDone);
+    for (slot = 0; slot <= sPpuWorkers; slot++)
+        for (i = 0; i < sPpuGlyphCount[slot]; i++)
+            order[n++] = &sPpuGlyphs[slot][i];
+    if (n > 1)
+        qsort(order, (size_t)n, sizeof(*order), PpuGlyphOrder);
+    for (i = 0; i < n && sBgTextCount < 1024; i++)
+        sBgTextGlyphs[sBgTextCount++] = order[i]->g;
+}
+
+/* ---- the GBA picture's rows on several cores ----------------------------------------------------------------------
+ * Between the picture's lines the game's line events run (V-counter and HBlank interrupts, HBlank DMA): what they
+ * change shows from the next line on. So the frame's line events run first, each line keeping what its drawing
+ * reads that they can change (the display registers, the affine reference point, and the palettes and OAM when
+ * they differ from the line before), and then the rows are drawn from those copies on every core like the margins'.
+ * The result is the line-by-line one, pixel for pixel: KHCOM_PPU_VERIFY=1 also draws each frame line by line and
+ * logs any difference. Frames with state carried from row to row stay line by line (PpuRowsIndependent, the title's
+ * faded art); a vertical mosaic switched on halfway draws the rows kept so far and goes on line by line.
+ * On by default on the Switch (PORT_SWITCH: at 1280x720 the picture is 160 of the canvas's 180 rows), elsewhere with
+ * KHCOM_PPU_INNER=1; KHCOM_PPU_INNER=0 turns it off. */
+typedef struct PpuLineState {
+    uint8_t io[PPU_IO_KEPT];
+    int32_t affX[2], affY[2];
+    const uint16_t *pltt, *oam;
+} PpuLineState;
+static PpuLineState sPpuLines[GBA_SCREEN_H];
+static uint16_t sPpuPltt[GBA_SCREEN_H][512], sPpuOam[GBA_SCREEN_H][512];
+static int sPpuPlttKept, sPpuOamKept, sPpuInnerFrom, sPpuInnerOn = -1, sPpuInnerGlyphs, sPpuInnerFrames, sPpuInnerShared;
+
+static void PpuInnerRow(int y) {
+    int gy = y - gPortScreen.originY;
+    const PpuLineState* l = &sPpuLines[gy];
+    sPpuIoView = l->io;
+    sPpuPlttView = l->pltt;
+    sPpuOamView = l->oam;
+    sAffX[0] = l->affX[0]; sAffX[1] = l->affX[1];
+    sAffY[0] = l->affY[0]; sAffY[1] = l->affY[1];
+    RenderLine(y, gy);
+    sPpuIoView = NULL;
+    sPpuPlttView = sPpuOamView = NULL;
+}
+
+/* Whether this frame's picture rows wait for the line events (PpuInnerKeep) */
+static int PpuInnerBegin(void) {
+    if (sPpuInnerOn < 0) {
+        const char* env = SDL_getenv("KHCOM_PPU_INNER");
+#ifdef PORT_SWITCH
+        sPpuInnerOn = !env || SDL_atoi(env) != 0;
+#else
+        sPpuInnerOn = env && SDL_atoi(env) != 0;
+#endif
+        if (sPpuInnerOn)
+            PortLog("ppu: the picture's rows on several cores too");
+    }
+    if (sPpuWorkers < 0)
+        PpuStart();
+    if (sPpuInnerOn && ++sPpuInnerFrames == 600) { /* how often it acts, in the log the consoles' players send */
+        PortLog("ppu: the picture's rows on %d cores in %d of the last 600 frames", sPpuWorkers + 1, sPpuInnerShared);
+        sPpuInnerFrames = sPpuInnerShared = 0;
+    }
+    if (!sPpuInnerOn || sPpuWorkers <= 0 || sTitleArtFade || (IO16(0x00) & 0x80) || !PpuRowsIndependent())
+        return 0;
+    sPpuInnerShared++;
+    sPpuPlttKept = sPpuOamKept = -1;
+    sPpuInnerFrom = 0;
+    sPpuInnerGlyphs = sBgTextCount;
+    return 1;
+}
+
+static void PpuInnerDraw(int gy1);
+
+/* Line gy, after its LineStart and LatchAffine: keep what its drawing reads. 0: draw this line and the rest now. */
+static int PpuInnerKeep(int gy) {
+    PpuLineState* l = &sPpuLines[gy];
+    if ((IO16(0x4C) >> 4) & 15) { /* a vertical mosaic: the rows carry its reference */
+        PpuInnerDraw(gy);
+        return 0;
+    }
+    memcpy(l->io, (const void*)(uintptr_t)GBA_IO, PPU_IO_KEPT);
+    l->affX[0] = sAffX[0]; l->affX[1] = sAffX[1];
+    l->affY[0] = sAffY[0]; l->affY[1] = sAffY[1];
+    if (sPpuPlttKept < 0 || memcmp(sPpuPltt[sPpuPlttKept], (const void*)(uintptr_t)GBA_PLTT, 1024))
+        memcpy(sPpuPltt[++sPpuPlttKept], (const void*)(uintptr_t)GBA_PLTT, 1024);
+    if (sPpuOamKept < 0 || memcmp(sPpuOam[sPpuOamKept], (const void*)(uintptr_t)GBA_OAM, 1024))
+        memcpy(sPpuOam[++sPpuOamKept], (const void*)(uintptr_t)GBA_OAM, 1024);
+    l->pltt = sPpuPltt[sPpuPlttKept];
+    l->oam = sPpuOam[sPpuOamKept];
+    if (sPpuVerify) { /* the line-by-line drawing to compare with */
+        sPpuIoView = NULL;
+        RenderLine(gy + gPortScreen.originY, gy);
+    }
+    return 1;
+}
+
+/* The kept rows 0..gy1 of the picture, on every core */
+static void PpuInnerDraw(int gy1) {
+    int32_t affX[2] = { sAffX[0], sAffX[1] }, affY[2] = { sAffY[0], sAffY[1] };
+    int y0 = gPortScreen.originY + sPpuInnerFrom, y1 = gPortScreen.originY + gy1, check = 0;
+    if (y1 <= y0)
+        return;
+    if (sPpuVerify)
+        check = PpuSaveRows(y0, y1, sPpuInnerGlyphs);
+    PpuRunBatch(NULL, y0, y1);
+    if (check)
+        PpuCheckRows(y0, y1, sPpuInnerGlyphs, "picture");
+    sAffX[0] = affX[0]; sAffX[1] = affX[1]; /* this core drew rows too: the line events' reference goes on */
+    sAffY[0] = affY[0]; sAffY[1] = affY[1];
+    sPpuInnerFrom = gy1;
 }
 #endif
 
@@ -3663,25 +3825,8 @@ static void RenderOuterRows(int y0, int y1, int below) {
     if (sPpuWorkers > 0 && (size_t)(y1 - y0) * gPortScreen.width < 64 * 1024)
         sPpuStats[4]++;
     if (sPpuWorkers > 0 && (size_t)(y1 - y0) * gPortScreen.width >= 64 * 1024 && PpuRowsIndependent()) {
-        static const PendingGlyph* order[PPU_MAX_THREADS * 1024];
-        int i, slot, n = 0, glyphStart = sBgTextCount;
-        if (sBgWorldLatched[1].fn || sBgWorldLatched[2].fn || sBgWorldLatched[3].fn)
-            MapWorldTilePrime(); /* its per-room tables, filled before the cores read them */
-        IsoPrime();
-        sPpuJob = &r;
-        SDL_SetAtomicInt(&sPpuNext, y0);
-        for (i = 0; i < sPpuWorkers; i++)
-            SDL_SignalSemaphore(sPpuGo);
-        PpuRows(sPpuWorkers);
-        for (i = 0; i < sPpuWorkers; i++)
-            SDL_WaitSemaphore(sPpuDone);
-        for (slot = 0; slot <= sPpuWorkers; slot++)
-            for (i = 0; i < sPpuGlyphCount[slot]; i++)
-                order[n++] = &sPpuGlyphs[slot][i];
-        if (n > 1)
-            qsort(order, (size_t)n, sizeof(*order), PpuGlyphOrder);
-        for (i = 0; i < n && sBgTextCount < 1024; i++)
-            sBgTextGlyphs[sBgTextCount++] = order[i]->g;
+        int glyphStart = sBgTextCount;
+        PpuRunBatch(&r, y0, y1);
         if (sPpuVerify)
             PpuVerify(&r, glyphStart);
     } else
@@ -3724,6 +3869,23 @@ void PortPpuRenderFrame(void) {
     /* Lines above the original picture: state of line 0. */
     RenderOuterRows(0, gPortScreen.originY, 0);
 
+#ifdef PORT_PPU_THREADS
+    if (PpuInnerBegin()) {
+        int kept = 1;
+        for (gy = 0; gy < GBA_SCREEN_H; gy++) {
+            LineStart(gy);
+            LatchAffine(0);
+            if (kept)
+                kept = PpuInnerKeep(gy);
+            if (!kept)
+                RenderLine(gy + gPortScreen.originY, gy);
+            StepAffine(1);
+            HBlank(gy);
+        }
+        if (kept)
+            PpuInnerDraw(GBA_SCREEN_H);
+    } else
+#endif
     for (gy = 0; gy < GBA_SCREEN_H; gy++) {
         LineStart(gy);
         LatchAffine(0);
@@ -3819,7 +3981,7 @@ static int ObjColor(uint16_t a0, uint16_t a2, int tx, int ty, int ow, int mappin
 /* Development aid for the HD inventory (KHCOM_HDSPRITE_EXPORT=dir): every sprite drawn, assembled in its frame's
    coordinates with the palette it is shown with, saved once as <dir>/<tiles address>_<frame address>.bmp;
    port/tools/hdsprite_catalog.py names them from the ROM symbols. */
-#ifdef PORT_PPU_THREADS /* the desktop builds, where SDL is at hand */
+#if defined(PORT_PPU_THREADS) && !defined(PORT_GBA_RELOC) /* the desktop builds, where SDL is at hand */
 typedef struct ExportCanvas {
     const void *tiles, *frame;
     uint32_t px[256 * 256]; /* frame coordinates -128..127 */

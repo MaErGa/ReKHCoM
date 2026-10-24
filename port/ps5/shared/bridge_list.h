@@ -57,3 +57,6 @@ X(udp_open)   /* int (int bind_port): 1 a non-blocking UDP socket for the networ
 X(udp_resolve) /* int (const char* host, int port, uint8_t* addr6): 1 found; addr6 = IPv4 + port, network order */
 X(udp_send)   /* void (const uint8_t* addr6, const void* data, int size) */
 X(udp_recv)   /* int (void* data, int cap, uint8_t* addr6): one datagram's bytes, 0 none waiting */
+X(thread)     /* int (int op, uint32_t a, uint32_t b, uint32_t c, uint32_t d): the PPU's other cores (Switch; 0 elsewhere):
+                 op 0 cores the game may use; 1 start a thread entering the image at a (switch_thread) with fn b, arg c,
+                 stack top d, 1 started; 2 a semaphore at count a, its handle (> 0); 3 wait on semaphore a; 4 signal it */

@@ -34,6 +34,33 @@ un release cuando el motor nuevo esté hecho y comprobado (medido en una Switch 
      estado que usa la PPU (registros, paleta: el siguiente paso también para PC a x1, RENDIMIENTO.md).
 2. **Solo si 1 no alcanza**: la PPU en la GPU (deko3d / shaders), proyecto grande.
 
+## Hecho (24/10/2026, pedido del usuario: "rebuildear el motor de switch antes de la 2.0 y hacer pruebas")
+
+Medido primero (fase 0): a 1280x720 el lienzo es 320x180 (x4) y la imagen GBA ocupa 160 de las 180 filas, así que
+repartir solo las filas de los márgenes (lo de PC) no servía. Se hizo el paso siguiente de RENDIMIENTO.md:
+
+- **Las 160 filas de la imagen en varios núcleos** (`port_ppu.c`, `PpuInnerKeep`/`PpuInnerDraw`): primero corren
+  los eventos de línea del cuadro (VCount, HBlank, DMA de HBlank) y cada línea guarda lo que su dibujo lee y ellos
+  pueden cambiar: los registros de pantalla (0x00-0x5F), el punto de referencia afín, y la paleta y la OAM cuando
+  difieren de la línea anterior. Después las filas se dibujan desde esas copias en todos los núcleos, como las de los
+  márgenes. Las lecturas de la PPU (`IO16`, `IO32`, `PLTT16`, `OAM16`) pasan por vistas por hilo (`sPpuIoView`...).
+  Quedan línea a línea los cuadros con estado entre filas (`PpuRowsIndependent`, el arte con fundido del título) y,
+  si un mosaico vertical se enciende a mitad de cuadro, se dibuja lo guardado y se sigue línea a línea.
+  Encendido por defecto solo en Switch (`PORT_SWITCH`); en PC `KHCOM_PPU_INNER=1` (para la v2.0 queda apagado en
+  PC). El log dice cada 600 cuadros en cuántos se repartió.
+- **Verificación píxel a píxel:** `KHCOM_PPU_VERIFY=1` dibuja además cada cuadro línea a línea y compara (cuadro,
+  fondo, máscaras, oclusión, glifos HD). `sh build/inner_verify.sh` (combates, Jafar, Darkside, eventos 004/016/056/
+  107/120/177, título; 1280x720 y 1920x1080; EU/US/JP): 0 diferencias, repartido en 597 de 600 cuadros.
+- **Hilos en la imagen invitada** (sin TLS del sistema): entrada del puente `thread` (`shared/thread_host.h`: libnx
+  `threadCreate` en los núcleos 1 y 2 + semáforos en Switch, pthreads en el host de prueba Linux, "un núcleo" en
+  PS4/PS5/Android 64). El hilo entra en la imagen por `switch_thread` (crt0_a64.S) sobre una pila de la imagen
+  (`rk_tstacks`, 3 x 512 KiB alineadas): la pila dice el número de hilo, y con él su pila del host para las
+  llamadas al puente (`gHostSp[]`) y su bloque de variables `_Thread_local` (`gTlsBase[]`): `__tlv_bootstrap` es
+  nuestro (lld deja los descriptores para dyld; `rk_threads_boot` los apunta a él al arrancar). Android 64 reusa el
+  invitado sin `PORT_PPU_THREADS`.
+- Arreglado de paso: los botones táctiles nuevos usaban `SDL_expf`/`SDL_sqrtf`, que el shim de consolas no tenía: el
+  invitado de Switch y el de Android 64 no compilaban.
+
 ## Cómo se prueba
 
 - Correctitud: el host de prueba Linux AArch64 en la VM ARM64 (`build_switch.py`, `--shot`), mismas capturas que

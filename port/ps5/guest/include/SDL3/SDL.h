@@ -62,6 +62,8 @@ typedef int64_t Sint64;
 #define SDL_sinf sinf
 #define SDL_cosf cosf
 #define SDL_powf powf
+#define SDL_sqrtf __builtin_sqrtf
+#define SDL_expf(x) ((float)exp((double)(x)))
 size_t SDL_strlcpy(char* dst, const char* src, size_t size);
 size_t SDL_strlcat(char* dst, const char* src, size_t size);
 
@@ -79,6 +81,23 @@ Uint64 SDL_GetPerformanceCounter(void);
 Uint64 SDL_GetPerformanceFrequency(void);
 void SDL_Delay(Uint32 ms);
 void SDL_DelayPrecise(Uint64 ns);
+
+/* Threads, semaphores and atomics: the PPU's other cores on the Switch (port_ppu.c with PORT_PPU_THREADS,
+ * port/switch/guest/stubs_a64.c); other images have none (SDL_GetNumLogicalCPUCores 1, SDL_CreateThread NULL). */
+#define SDLCALL
+typedef struct SDL_Thread SDL_Thread;
+typedef struct SDL_Semaphore SDL_Semaphore;
+typedef int (*SDL_ThreadFunction)(void* data);
+typedef struct SDL_AtomicInt { int value; } SDL_AtomicInt;
+int SDL_GetNumLogicalCPUCores(void);
+SDL_Thread* SDL_CreateThread(SDL_ThreadFunction fn, const char* name, void* data);
+void SDL_DetachThread(SDL_Thread* thread);
+SDL_Semaphore* SDL_CreateSemaphore(Uint32 initial);
+void SDL_WaitSemaphore(SDL_Semaphore* sem);
+void SDL_SignalSemaphore(SDL_Semaphore* sem);
+static inline int SDL_AddAtomicInt(SDL_AtomicInt* a, int v) { return __atomic_fetch_add(&a->value, v, __ATOMIC_SEQ_CST); }
+static inline int SDL_SetAtomicInt(SDL_AtomicInt* a, int v) { return __atomic_exchange_n(&a->value, v, __ATOMIC_SEQ_CST); }
+static inline int SDL_GetAtomicInt(SDL_AtomicInt* a) { return __atomic_load_n(&a->value, __ATOMIC_SEQ_CST); }
 const char* SDL_GetBasePath(void);
 bool SDL_CreateDirectory(const char* path);
 void* SDL_LoadFile(const char* file, size_t* datasize);

@@ -29,6 +29,7 @@ BASE = 0x01000000
 def configure():
     build_switch.BASE = BASE
     build_switch.BUILD = ROOT / 'build/android64'
+    build_switch.PPU_THREADS = False  # its host has no threads for the image (bridge entry thread answers 0)
     switch_flags = build_switch.common_flags
 
     def flags():

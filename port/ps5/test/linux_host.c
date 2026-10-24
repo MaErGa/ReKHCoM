@@ -247,6 +247,8 @@ static int L_hd_movie(const char* m, const char* a, const char* b, const char* f
 #define L_udp_resolve H_udp_resolve
 #define L_udp_send H_udp_send
 #define L_udp_recv H_udp_recv
+#include "thread_host.h" /* the image's other threads: none here (bridge entry thread answers one core) */
+#define L_thread H_thread
 #define HF(name) [HF_##name] = (uint64_t)(uintptr_t)L_##name
 #define HM(name, fn) [HF_##name] = (uint64_t)(uintptr_t)fn
 static void* MapFixed(uint32_t base, size_t size) {
@@ -302,7 +304,7 @@ int main(int argc, char** argv) {
         HF(gfx_blend), HF(audio_open), HF(audio_push), HF(audio_queued), HF(audio_clear), HF(audio_ratio), HF(pad_poll),
         HF(quit_requested), HM(sin, sin), HM(cos, cos), HM(tan, tan), HM(atan2, atan2), HM(pow, pow), HM(exp, exp),
         HM(log_e, log), HM(fmod, fmod), HM(sinf, sinf), HM(cosf, cosf), HM(powf, powf), HF(set_title), HF(notify), HF(touch_poll), HF(app_state), HF(hd_music), HF(hd_movie),
-        HF(udp_open), HF(udp_resolve), HF(udp_send), HF(udp_recv),
+        HF(udp_open), HF(udp_resolve), HF(udp_send), HF(udp_recv), HF(thread),
     };
     _Static_assert(sizeof(t) / sizeof(t[0]) == HF_COUNT, "bridge table out of step with bridge_list.h");
     memcpy(table, t, sizeof(t));

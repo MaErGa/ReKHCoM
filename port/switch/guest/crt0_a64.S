@@ -25,6 +25,7 @@ _switch_boot:
     mov w0, w0
     mov sp, x0
     mov x29, #0
+    bl _rk_threads_boot
     bl _guest_main
     adrp x9, _gHostSp@PAGE
     add x9, x9, _gHostSp@PAGEOFF
@@ -50,10 +51,16 @@ ___host_call:
     adrp x9, _gHostTable@PAGE
     add x9, x9, _gHostTable@PAGEOFF
     ldr x17, [x9, w16, uxtw #3]
-    adrp x9, _gHostSp@PAGE
-    add x9, x9, _gHostSp@PAGEOFF
-    ldr x10, [x9]
     mov x11, sp
+    adrp x9, _rk_tstacks@PAGE   /* the slot of this thread: 1.. on a stack of rk_tstacks, else 0 */
+    add x9, x9, _rk_tstacks@PAGEOFF
+    sub x10, x11, x9
+    lsr x10, x10, #19
+    cmp x10, #3
+    csinc x10, xzr, x10, hs
+    adrp x9, _gHostSp@PAGE      /* each thread's host stack */
+    add x9, x9, _gHostSp@PAGEOFF
+    ldr x10, [x9, x10, lsl #3]
     mov sp, x10
     stp x11, x30, [sp, #-16]!
     mov w0, w0
@@ -67,6 +74,77 @@ ___host_call:
     blr x17
     ldp x11, x30, [sp], #16
     mov sp, x11
+    ret
+
+/* int switch_thread(uint32_t fn, uint32_t arg, uint32_t stackTop): a host thread (bridge entry thread, op 1) entering
+ * the image, like switch_boot: fn(arg) on the guest stack stackTop, one of rk_tstacks (stubs_a64.c), whose slot
+ * keeps this thread's host stack for its host calls. */
+    .globl _switch_thread
+_switch_thread:
+    stp x29, x30, [sp, #-16]!
+    stp x27, x28, [sp, #-16]!
+    stp x25, x26, [sp, #-16]!
+    stp x23, x24, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+    stp d14, d15, [sp, #-16]!
+    stp d12, d13, [sp, #-16]!
+    stp d10, d11, [sp, #-16]!
+    stp d8, d9, [sp, #-16]!
+    mov w0, w0
+    mov w1, w1
+    mov w2, w2
+    sub x11, x2, #16
+    adrp x9, _rk_tstacks@PAGE   /* the slot of this thread: 1.. on a stack of rk_tstacks, else 0 */
+    add x9, x9, _rk_tstacks@PAGEOFF
+    sub x10, x11, x9
+    lsr x10, x10, #19
+    cmp x10, #3
+    csinc x10, xzr, x10, hs
+    mov x19, x10
+    adrp x9, _gHostSp@PAGE
+    add x9, x9, _gHostSp@PAGEOFF
+    mov x11, sp
+    str x11, [x9, x19, lsl #3]
+    mov sp, x2
+    mov x29, #0
+    mov x9, x0
+    mov w0, w1
+    blr x9
+    adrp x9, _gHostSp@PAGE
+    add x9, x9, _gHostSp@PAGEOFF
+    ldr x10, [x9, x19, lsl #3]
+    mov sp, x10
+    ldp d8, d9, [sp], #16
+    ldp d10, d11, [sp], #16
+    ldp d12, d13, [sp], #16
+    ldp d14, d15, [sp], #16
+    ldp x19, x20, [sp], #16
+    ldp x21, x22, [sp], #16
+    ldp x23, x24, [sp], #16
+    ldp x25, x26, [sp], #16
+    ldp x27, x28, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
+
+/* Thread-local variables (_Thread_local, port_ppu.c's PPU_TLS): clang calls each variable's descriptor thunk with the
+ * descriptor in x0 and wants its address back, every other register but x16/x17 kept. The descriptors' thunk is this
+ * function (rk_threads_boot points them here): the slot of the calling thread's stack picks its block (gTlsBase),
+ * plus the descriptor's offset. */
+    .globl __tlv_bootstrap
+__tlv_bootstrap:
+    mov x16, sp
+    adrp x17, _rk_tstacks@PAGE
+    add x17, x17, _rk_tstacks@PAGEOFF
+    sub x16, x16, x17
+    lsr x16, x16, #19
+    cmp x16, #3
+    csinc x16, xzr, x16, hs
+    adrp x17, _gTlsBase@PAGE
+    add x17, x17, _gTlsBase@PAGEOFF
+    ldr w16, [x17, x16, lsl #2]
+    ldr w17, [x0, #8]
+    add w0, w16, w17
     ret
 
 /* jmp_buf: x19-x30, sp, d8-d15 (22 words, include/setjmp.h) */
@@ -179,10 +257,13 @@ _memmove:
     .p2align 3
     .globl _gHostSp
 _gHostSp:
-    .quad 0
+    .quad 0, 0, 0, 0  /* the game's thread, then the PPU's (slots 1-3) */
 
 /* The guest's heap and stack: zero-filled segments the host maps with the image. */
     .globl _rk_heap
     .globl _rk_stack
     .zerofill __RKHEAP, __heap, _rk_heap, 0x06000000, 12
     .zerofill __RKSTACK, __stack, _rk_stack, 0x00800000, 12
+/* the stacks of the other threads (stubs_a64.c): three of 512 KiB, aligned so the slot is sp's offset >> 19 */
+    .globl _rk_tstacks
+    .zerofill __RKTSTACK, __stacks, _rk_tstacks, 0x00180000, 19

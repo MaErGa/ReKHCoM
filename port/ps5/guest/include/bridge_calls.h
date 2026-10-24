@@ -59,4 +59,5 @@ int h_udp_open(int bind_port);
 int h_udp_resolve(const char* host, int port, uint8_t* addr6);
 void h_udp_send(const uint8_t* addr6, const void* data, int size);
 int h_udp_recv(void* data, int cap, uint8_t* addr6);
+int h_thread(int op, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
 #endif

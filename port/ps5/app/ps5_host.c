@@ -292,6 +292,7 @@ static void GamePush(const int16_t *frames, uint32_t count) { plat_audio_push(fr
 #include "hd_music_host.h"
 /* the network link's socket (shared/udp_host.h): none on this host yet, the link stays the cable */
 #include "udp_host.h"
+#include "thread_host.h" /* the image's other threads: none here (bridge entry thread answers one core) */
 static void H_audio_push(const int16_t *frames, uint32_t count) { HdMusicPush(frames, count, sGameRate, GamePush); }
 /* HD movies: only the Android host plays them (bridge entry hd_movie); the game plays its own movie */
 static int H_hd_movie(const char* movie, const char* subs1, const char* subs2, const char* font) {
@@ -1041,6 +1042,7 @@ int main(void)
         [HF_hd_movie] = (uintptr_t)H_hd_movie,
         [HF_udp_open] = (uintptr_t)H_udp_open, [HF_udp_resolve] = (uintptr_t)H_udp_resolve,
         [HF_udp_send] = (uintptr_t)H_udp_send, [HF_udp_recv] = (uintptr_t)H_udp_recv,
+        [HF_thread] = (uintptr_t)H_thread,
     };
     for (int i = 0; i < HF_COUNT; ++i)
         if (!t[i])
