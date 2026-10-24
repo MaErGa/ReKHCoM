@@ -2323,7 +2323,8 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
 
             if (gx < sLeft || gx >= sRight)
                 continue;
-            if (sceneActorFrame && !sOamTag[i].screen && !sOamTag[i].hud &&
+            /* the message window, its portrait and text (priority 0) stay where the game puts them (112, PR #71) */
+            if (sceneActorFrame && !sOamTag[i].screen && !sOamTag[i].hud && !sOamTag[i].text && prio > 0 &&
                 (gx < 0 || gx >= GBA_SCREEN_W || gy < 0 || gy >= GBA_SCREEN_H))
                 continue;
             if (sOamTag[i].clipX0 < sOamTag[i].clipX1 &&
