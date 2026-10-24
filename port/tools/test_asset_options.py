@@ -1,13 +1,13 @@
 """Options needing assets, the new game's toggles, the new-asset offer and the big confirmations (24/10).
 
 Runs build/pc/khcom.exe in isolated folders (build/assets_ui/<case>), no window, no sound. Usage:
-  python build/assets_ui_test.py [case ...]     cases: notice, newgame, confirm_mode, confirm_title, title_last
+  python port/tools/test_asset_options.py [case ...]     cases: notice, newgame, confirm_mode, confirm_title, title_last
 Prints each case's log lines and kh_com.ini values; the pictures stay in each folder (wizard_*.bmp, options_*.bmp).
 """
 import os, re, shutil, subprocess, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 EXE = ROOT / 'build/pc/khcom.exe'
 OUT = ROOT / 'build/assets_ui'
 
