@@ -15,7 +15,9 @@ Reglas del usuario:
 
 **Objetivo nuevo del usuario (24/10): el repo autosuficiente.** Cualquiera (otro modelo con la cuenta de GitHub del
 usuario, sin nada de este PC) debe poder clonar, poner su ROM y seguir los pendientes replicando todas las pruebas.
-Hacer: `port/progress/EMPEZAR_AQUI.md` corto (qué leer, cómo compilar, dónde van las ROMs, cómo correr cada batería y
+Hecho el primer paso: `EMPEZAR_AQUI.md` (raíz) y `port/progress/REGLAS_DEL_USUARIO.md` (las reglas que vivían solo en
+la memoria local de Claude). Falta: revisar que cada herramienta que nombra funcione sin rutas de este PC (buscar
+`D:/01Claude` y `KHCoMPC` en port/tools y volverlas parámetros con valor por omisión relativo). Antes era: `EMPEZAR_AQUI.md` corto (qué leer, cómo compilar, dónde van las ROMs, cómo correr cada batería y
 herramienta, qué se instala y de dónde: toolchain llvm-mingw, SDL3, emsdk, Android SDK, devkitA64/VitaSDK/OpenOrbis por
 Docker o VM). Instrucciones de las VMs/toolkit como texto (TOOLKIT_CONSOLAS.md), **nunca ISOs, discos de VM ni
 binarios grandes en git**; todo lo sintetizado < 50 MB. Las rutas de este PC (D:/01Claude, KHCoMPC/...) en los .md
