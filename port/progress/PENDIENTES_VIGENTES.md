@@ -36,6 +36,17 @@ video de YouTube; averiguar cuáles: pedir nombres al reportero si hace falta).
 **Online Android con rollback:** conecta, pero el emulador es demasiado lento para llegar a la batalla con demora 2
 (menús en lockstep): probar en un Android real (reporte) o con más tiempo.
 
+## COLA del usuario (23/10 noche)
+
+1. **Darkside: revisión de las 7 poses** (`pruebas/Darkside poses (elegir cuales van y cuales mejorar).png`, rama
+   `claude/arenas` 744d8fadc, worktree `D:/01Claude/arenas-wt`). Espera los comentarios del usuario. Lectura propia:
+   1 de pie bien; 2/5/7 bien con costura leve; 3 pelo cortado y escalón en el hombro; 4 espejo rígido; 6 puñetazo
+   con huecos y pedazos sueltos (rehacer).
+2. **Preliminar V2: arenas de todos los jefes** (pedido del usuario, en esta sesión, después de Darkside): copia
+   jugable + .bat con cada jefe en vista ancha, método de WORKFLOW_ARTE_AMPLIO.md / BATTLE_SCENERY_TECHNIQUE.md, de a
+   uno con antes/después; base: auditoría BATTLE_SCENERY_AUDIT.md y lo aprobado (Guard Armor 008, Agrabah).
+3. v2.0 para todas las plataformas: depurar, cerrar issues, lista de verificación de abajo; builds solo con su OK.
+
 ## ONLINE — avance (usuario 23/10: "ir haciendo % de avances"; metas de ping: 20-150 ms local, 150-250 bien)
 
 | Parte | % | Estado |
