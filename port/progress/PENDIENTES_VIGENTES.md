@@ -32,6 +32,17 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   port: `PORT_ENV_ONCE` (port.h) en DrawObjs (por fila, todas las escenas), patio de Guard Armor, bandas del título,
   HUD HD (por píxel), sprites HD, audio, daño, toast. Las 7 arenas en 16:9 y 32:9 terminan normal (242 s).
   DEBUG_WORKFLOW.md: clases nuevas (getenv caliente, búfer nativo, envoltura vertical).
+- **v2.0-pre4 interna (PC)**: main 0bb66e76a, zip `KHCoMPC/ReKHCoM-v2.0-pre4-windows-x86.zip` (sha f7ea1853...) y copia
+  `jugar/ReKHCoM-v2.0-pre4` + .bat. Humo oculto `build/smoke_pc.sh <copia>`: EU/US/JP combate 10:4 y Jafar 16:9/32:9,
+  9/9 sin fallos. Imagen para el usuario: `pruebas/Jafar final (16x9 arriba, 32x9 abajo).png`.
+- **Vita del otro port (ggdrn/KH_COM_VITA), concepto de rendimiento**: el juego compilado nativo para ARM (sin
+  imagen invitada), lógica en el núcleo 0 y la PPU repartida en los núcleos 1 y 2 (3-6 ms por cuadro), audio en el 2,
+  escala por GPU (vitaGL), 282 px de ancho; kubridge para los accesos a NULL. Nuestra Vita/Switch corren la PPU en el
+  invitado, sin hilos: la idea a probar es **llevar las filas de la PPU al host** (que sí tiene hilos), como
+  PORT_PPU_THREADS en escritorio. Su registro por segundo (logic/render/present en us) es buena idea para medir en
+  hardware: agregar uno igual a nuestro log en consolas.
+- **Pista de su #12 (EU, crash al recibir daño mientras se guardan cartas)**: acceso NULL (addr 0x10); probar el
+  mismo caso en nuestro EU (PC "bios:" + Android 64) con la batería; si aparece, arreglarlo y buscar parientes.
 - Siguiente: Marluxia, copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 
