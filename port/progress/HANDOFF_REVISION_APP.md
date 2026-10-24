@@ -1,5 +1,22 @@
 # Handoff: revisión humana de arte mediante nubes
 
+## LEER PRIMERO (Claude, 24/10, al integrar el PR #48)
+
+- **Herramienta solo del usuario, solo en su PC** (127.0.0.1). **Nunca va en un release**: los paquetes llevan una
+  lista fija de archivos y `port/tools` no entra; no agregarla a `package_release.py`/`stage_release.py`.
+- **Qué hay que hacer, en un archivo:** `build/art-review/COLA_PARA_AGENTES.md` (y `cola.json`), regenerado en cada
+  guardado, envío o importación (`python port/tools/art_review/server.py --data <datos> --queue` lo escribe a mano).
+  Por pieza: turno (**agente**: envíos sin una versión hija posterior, o una versión con honores para integrar;
+  **humano**: revisar la última versión o dar ★), y la lista de **todos** los envíos sin responder (no solo
+  `ULTIMO_ENVIO.txt`, que apunta al último y ya se llenaba con un envío por imagen).
+- **Dónde corre:** `Revisar preliminares.bat` (raíz KHCoMPC) usa el código de `khcom-claude-int` (main) con
+  `-Data khcom-codex\build\art-review`, donde están las revisiones reales: no moverlas. El lanzador reemplaza un
+  servidor de esta herramienta que venga de otra copia del código (`code_dir` en `/api/state`).
+- **Preliminares** = toda pieza sin aprobación **con honores** (la regla del build), mostrada en su última versión;
+  una aprobación normal aparece también en "Ya aceptados" con "falta ★ para build". Antes una aprobación normal la
+  sacaba de Preliminares y parecía desaparecer (Darkside 03, con una nube posterior).
+- Integrar al juego **solo lo aprobado con honores en esta app** (usuario 24/10); la app nunca integra sola.
+
 Orden del usuario, 24/10/2026: entregar estas herramientas por PR para que Claude
 integre cuando corresponda. PR de herramientas: #48, `codex/art-review-local` → main.
 No fusionar automáticamente ni incorporar toda `codex/preliminar-v1`: contiene arte
