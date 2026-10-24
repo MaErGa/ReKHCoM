@@ -147,6 +147,82 @@ static fs::path RomPath(int v) {
     return sRoot / "roms" / (std::string(kVersions[v].code) + ".gba");
 }
 
+/* The player's own files in an install: saves (every bank and version), settings, the RetroAchievements login and the
+   achievements earned offline, the online settings, save states, ROMs and the HD mod. */
+static bool IsPlayerFile(const std::string& name) {
+    auto starts = [&](const char* p) { return name.rfind(p, 0) == 0; };
+    auto ends = [&](const char* s) { size_t n = strlen(s); return name.size() >= n && name.compare(name.size() - n, n, s) == 0; };
+    if (name == "kh_com.default.ini") /* shipped with the package */
+        return false;
+    return (starts("kh_com") && (ends(".sav") || ends(".ini"))) || name == "decompui.ini" ||
+           name == "retroachievements.ini" || (starts("achievements") && ends(".dat")) || name == "netlink.cfg" ||
+           ends(".gba");
+}
+
+static bool HasPlayerData(const fs::path& dir) {
+    std::error_code ec;
+    for (const auto& f : fs::directory_iterator(dir, ec))
+        if (f.is_regular_file(ec) && IsPlayerFile(f.path().filename().string()))
+            return true;
+    return fs::is_directory(dir / "roms", ec) && !fs::is_empty(dir / "roms", ec);
+}
+
+/* An update unpacked beside the old install instead of over it: up to v1.9.10 the ZIP had a versioned top folder
+   (ReKHCoM-v1.9.10-windows-x86/), so "extract over the same folder" put the new version next to it, with no saves.
+   A new install with no player files of its own takes them from the newest ReKHCoM install inside it or beside it:
+   files and folders copied (never over one already here), the HD mod moved (gigabytes; a rename on the same disk). */
+static void AdoptPreviousInstall() {
+    std::error_code ec;
+    if (HasPlayerData(sRoot))
+        return;
+    fs::path best;
+    fs::file_time_type bestTime{};
+    auto consider = [&](const fs::path& dir) {
+        std::string name = dir.filename().string();
+        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+        if (fs::equivalent(dir, sRoot, ec) || name.rfind("rekhcom", 0) != 0 || !HasPlayerData(dir))
+            return;
+        fs::file_time_type t{};
+        for (const auto& f : fs::directory_iterator(dir, ec))
+            if (f.is_regular_file(ec) && IsPlayerFile(f.path().filename().string()))
+                t = std::max(t, f.last_write_time(ec));
+        if (best.empty() || t > bestTime)
+            best = dir, bestTime = t;
+    };
+    for (const auto& d : fs::directory_iterator(sRoot, ec))
+        if (d.is_directory(ec))
+            consider(d.path());
+    for (const auto& d : fs::directory_iterator(sRoot.parent_path(), ec))
+        if (d.is_directory(ec))
+            consider(d.path());
+    if (best.empty())
+        return;
+    int copied = 0;
+    for (const auto& f : fs::directory_iterator(best, ec)) {
+        std::string name = f.path().filename().string();
+        fs::path to = sRoot / name;
+        if (f.is_directory(ec) && (name == "roms" || name == "states")) {
+            /* the package has its own roms/ (its notes): merged, nothing here replaced */
+            fs::copy(f.path(), to, fs::copy_options::recursive | fs::copy_options::skip_existing, ec);
+            copied += !ec;
+            continue;
+        }
+        if (fs::exists(to, ec))
+            continue;
+        if (f.is_regular_file(ec) && IsPlayerFile(name)) {
+            copied += fs::copy_file(f.path(), to, ec) ? 1 : 0;
+        } else if (f.is_directory(ec) && name == "hd") {
+            fs::rename(f.path(), to, ec); /* another disk: left there, the launcher's import makes a new one */
+            copied += !ec;
+        }
+    }
+    if (copied)
+        Notice(std::string(T("Se trajeron tus partidas, opciones y ROMs de la instalación anterior: ",
+                             "Your saves, settings and ROMs were brought over from the previous install: ")) +
+                   best.u8string(),
+               false);
+}
+
 static void ScanInstall() {
     static const char* const devDirs[] = { "pc", "pc-us", "pc-jp" };
 
@@ -2671,6 +2747,8 @@ int main(int argc, char** argv) {
             fprintf(stderr, "%s\n", hd::sJob.Status().c_str());
             return 0;
         }
+    AdoptPreviousInstall();
+    hd::MoveScenes(sRoot / "hd"); /* the layout of older versions, moved on every start (not only on the HD page) */
     ScanInstall();
     /* a dump left next to the launcher (the simplest install: drop it in the folder) is checked and installed once */
     {

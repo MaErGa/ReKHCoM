@@ -53,8 +53,13 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   en `build/hd_sizes.txt`); pasar la tabla real al usuario y a HD_MOD.md / kScenesSize del launcher.
 - **720p casi no ahorra** (pregunta del usuario): las escenas ya son 720p; solo cambian los 6 videos 1080p. Probar
   calidad constante (Media Foundation, modo Quality) con VMAF; HEVC solo como opción con comprobación.
-- **Migración al actualizar** (usuario 24/10): el launcher debe reacomodar todo lo que cambió de lugar entre versiones
-  (hoy solo escenas hd/movies → hd/scenes): auditar desde v0.1 y probar actualizando copias viejas.
+- **Migración al actualizar: hecha (24/10)**. `port/tools/test_update.py --new <paquete> [--olds <zips>]` instala cada
+  estable vieja (y la v2.0-pre2, la que da Quiver) con ROM, partida, una opción cambiada y el HD en la estructura vieja,
+  actualiza como un jugador o Quiver (que extrae y mezcla encima, sin borrar: leído en su código) y comprueba partida,
+  opción, ROM, escenas y que el juego arranque: 6/6 (1.9.8, 1.9.9, 1.9.10 con carpeta; 1.9.12, 1.9.14, 2.0-pre2 planos).
+  Arreglado en el launcher: adopta la instalación anterior si la nueva quedó al lado (zips hasta 1.9.10 con carpeta:
+  copia partidas/opciones/ROMs/estados, mueve el HD, nunca pisa), escenas hd/movies → hd/scenes al iniciar (antes
+  solo al abrir Sonido). Juego: quien actualiza desde antes de los modos y elige "GBA mejorado" conserva sus opciones.
 - **Quiver** (usuario 24/10): "no me deja elegir cuál versión probé". Causas nuestras halladas: (1) borramos cada
   estable vieja al publicar la nueva (regla del 20/10), así que "Versions → Change Version" (Quiver 3.4.2+) no tiene
   entre qué elegir; (2) el README de main dice v1.9.13 estable (nunca lo fue; la estable es v1.9.14) y Quiver muestra
@@ -546,6 +551,8 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
 5. Revisar issues abiertos al final, arreglar bugs, responder breve.
 
 ### Lista de verificación antes de publicar (no saltear)
+- Correr `port/tools/test_update.py` con el paquete nuevo contra las estables de `respaldos/releases-estables` y la
+  última de prueba (la que tenga Quiver): todo ok antes de publicar.
 - **No se borra NINGÚN release ni archivo** (estables ni de prueba): Quiver nos aceptó el 24/10 y sus mantenedores dijeron
   que borrar parecía sospechoso. Publicar = solo agregar. README con la versión nueva.
 - Copiar los archivos de la estable publicada a `KHCoMPC/respaldos/releases-estables` (originales, mismo SHA).

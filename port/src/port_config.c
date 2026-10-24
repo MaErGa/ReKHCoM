@@ -75,6 +75,9 @@ PortConfig gPortConfig = {
 #define CONFIG_VERSION PORT_ZOOM_CONFIG_VERSION
 
 static int sConfigVersion;
+/* a settings file from before the graphics modes (no graphics_mode line): the player's own settings, which "GBA
+   enhanced" keeps as they are when the first start asks for a mode */
+static int sUpgradedSettings;
 static char sDataPath[768];
 
 void PortConfigSetDataPath(const char* path) {
@@ -350,6 +353,7 @@ static void PortConfigLoadFile(void) {
     /* a package preset (the Steam Deck's fullscreen) ships as
        kh_com.default.ini, so an update extracted over an install never
        replaces the player's own kh_com.ini */
+    sUpgradedSettings = f != NULL; /* the player's own file (not the package's preset) */
     if (f == NULL)
         f = fopen(PortConfigPath("kh_com.default.ini"), "r");
     if (f == NULL)
@@ -358,6 +362,8 @@ static void PortConfigLoadFile(void) {
         char* eq = strchr(line, '=');
         size_t i;
 
+        if (SDL_strncmp(line, "graphics_mode=", 14) == 0)
+            sUpgradedSettings = 0;
         if (line[0] == '#' || line[0] == ';' || eq == NULL)
             continue;
         *eq = '\0';
@@ -437,6 +443,11 @@ void PortApplyGraphicsMode(int mode) {
     if (mode <= PORT_MODE_CHOOSE || mode >= PORT_MODE_COUNT)
         return;
     gPortConfig.graphicsMode = gPortConfig.graphicsModeApplied = mode;
+    if (mode == PORT_MODE_GBA_ENHANCED && sUpgradedSettings) { /* an update: the player's settings are that mode */
+        sUpgradedSettings = 0;
+        return;
+    }
+    sUpgradedSettings = 0;
     gPortConfig.viewMode = classic ? PORT_VIEW_ORIGINAL : PORT_VIEW_AUTO;
     gPortConfig.hdText = hd;
     gPortConfig.hdCards = hd;
