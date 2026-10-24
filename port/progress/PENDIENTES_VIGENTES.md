@@ -59,6 +59,10 @@ partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
      movió la resolución activó una fila que abre Logros, o la vuelta (B/Atrás) no sale de esa página en Android.
      Pedir al usuario su `kh_com.log` (Ajustes de la app → "Compartir registro") y el modelo del teléfono; reproducir
      en el emulador recorriendo Opciones con táctil y mando.
+  Contexto: el teléfono del usuario es de **bajos recursos** y el juego va muy lento ahí; lo usa para probar la
+  interfaz. Puede que los toques se registren tarde o repetidos con el juego lento: probar en el emulador con la CPU
+  limitada (o cuadros saltados forzados, `KHCOM_SKIPTEST`) y revisar que un toque/tecla se tome una sola vez.
+  Rendimiento Android de gama baja: también pendiente antes de la v2.0 (línea `timing:` del log ya disponible).
 - **Calidad constante (hd_quality_probe.py, 24/10)**: en 4 escenas, RC=3 Q=70 por hardware pesa 23 % menos que Buena
   (151 vs 197 MB) con VMAF 95,4-96,1 (Buena 96,9-98,5); por software sale mal (VMAF ~52, descartado). Siguiente:
   probar Q 75/80/85 por hardware y elegir el que pese menos que Buena con su misma VMAF; la VMAF de ROP da 44 en
