@@ -31,6 +31,14 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
 - **Editor de posición de botones táctiles (2e613ab45):** Opciones > "Mover botones táctiles": juego en pausa,
   se arrastra cada grupo, ✓ guarda (`touch_<grupo>_x/_y` en kh_com.ini), ↺ restablece. test_android_touch lo
   recorre. Captura en la app de revisión (Pre). Falta verlo en el emulador Android y en la web (punto 5).
+- **Launcher de Android = el de PC (e7223a862):** decompui compilado para Android (LAUNCHER_ANDROID, liblauncher.so en
+  LauncherActivity, que ahora es SDLActivity): mismas pestañas, horizontal, desplazamiento con el dedo; selectores del
+  sistema por JNI (ROM con SHA-1, partidas, carpeta hd del PC), juego en su proceso. Probado en el emulador: páginas,
+  JUGAR y volver, ROM US instalada por el selector. **Web:** opciones del PC que faltaban (a4e9a982f).
+- **Android en el emulador (24/10 tarde):** instalación limpia → el título muestra solo NEW GAME (sin Riku) ✓;
+  Jafar EU ✓ (test_android_scenarios); la elección de modo responde al táctil (el emulador es lento: tarda). Arreglado:
+  el título decía "TOUCH Options" en Android 64/Switch/Vita (parche de PS5 heredado). "Logros pegado": espera log.
+- **debug_kit report:** 1 sitio, viejo (event_message.c:5073, ya arreglado en 188dfc4c3; no se reproduce).
 - **Elección de modo con vista previa (5c214462d):** detrás de la ventana se ve cómo quedará la pantalla (amplia /
   240x160 con borde). En la app (Pre); si no gusta, se quita el bloque `preview` en port_ui.c.
 
@@ -138,7 +146,7 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
    espera "Darkside · arena y contexto" (en Rev, turno del agente).
 3. **Elección de modo al primer arranque**: ejemplos visuales en cada opción (port_ui.c WIZ_MODE, a la app de
    revisión) y probarla en Android (sin mod HD ya va directo a GBA mejorado / clásico).
-4. **Launchers de Android y web iguales al de PC** (diseño y funciones; plan en el historial, "TRASPASO 24/10 tarde"):
+4. ~~Launchers de Android y web~~ hecho (Android nativo = PC; web con las opciones que faltaban). **Launchers de Android y web iguales al de PC** (diseño y funciones; plan en el historial, "TRASPASO 24/10 tarde"):
    Android = el launcher ImGui de PC compilado para Android (SHA-1 portable, diálogos SDL, Intent al juego, URLs
    SDL_OpenURL, táctil); web = completar lo que falte frente al de PC.
 5. **Android antes de la v2.0**: título con "Nueva partida Riku" sin truco ni partida terminada (comprobar en el
