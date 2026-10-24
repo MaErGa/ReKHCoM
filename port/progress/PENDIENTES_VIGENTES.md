@@ -25,13 +25,23 @@ title_last). Humo del zip v2.0 Windows: 9/9 limpio. JP: `check_jp_glyphs.py` ok.
 **Pedidos del usuario (24/10 noche), en orden:**
 1. **v2.0-pre5 PUBLICADA** (prerelease, tag en 6446aad36): Windows zip + Linux tar.gz + SHA256SUMS; humo del zip 9/9.
    Copia del usuario `jugar/Probar ReKHCoM v2.0 pre5.bat` (partidas de la pre4, HD enlazado).
-2. **Botón de rodar (táctil)**: proponer mejoras al PNG; probar un vector y meter **el sprite de Sora rodando en gris**
-   con el mismo estilo de botón, **generado al cargar la ROM** (nada del juego en el repo). Mostrarle la tentativa
-   (copia + imagen) y esperar aprobación.
+2. **Botones táctiles rediseñados (Android, web, Switch: `port/android/native/touch_android.c`)**: maqueta mostrada,
+   ESPERA APROBACIÓN (`pruebas/Botones tactiles - *.png`, script `build/touchmock/themes.py <rom>`). Tres temas:
+   **Clear** (el gris que el usuario aprobó en la primera maqueta, con un toque más de azul, sutil), **Dark** y
+   **Color** (opacidad baja; Sora en sus colores; las cartas de acumular en los colores del juego). Vidrio azul marino
+   con la transparencia de antes, anillo plateado con bisel, letras KHMenu, rojo KH al pulsar, cruceta de una pieza,
+   L/R y Start/Select en píldoras. **Rodar**: Sora de la ROM (`gSor1ll67`, anim 53 del combate; cuadros 2, 3 y 4 como
+   estela), generado al cargar la ROM. **Acumular**: el diseño original (`stock.svg`, la carta con corona del juego);
+   al usuario NO le gustó la versión de naipes en abanico. Al implementar: opción **"Tema de botones"** en Opciones
+   (gris con la lógica de disponible/no disponible cuando no hay botones táctiles; en teléfonos vienen activos).
+   Después, **editor de posición**: mover los botones y el HUD a gusto (arrastrar), fluido y depurado.
 3. **Antes de la v2.0: verificar los fallos que reportó el usuario** (los 3 de Android de arriba: texto HD apagado ya
    resuelto; resolución que cambia sola al bajar en Opciones; Logros que se abre solo y queda pegado) y que no pasen;
    optimizar y depurar todo.
 4. **Issues**: ir mirando si llegan y resolverlos si no están cubiertos.
+4b. **Antes de la v2.0: tablets Android** (resoluciones de las más populares, p. ej. 2560x1600 16:10, 2000x1200,
+   1280x800, 2208x1840 plegable abierto, 4:3 2048x1536): que los HUD se acomoden como en las otras; arreglar o rellenar
+   artes/fondos con lo aprendido (LOGICA_APROBADOS.md).
 5. **Codex**: mismos carriles: Codex toma los artes restantes y termina las Preliminares (ver Reparto).
 
 **Ojo:** a las ~01:45 un `taskkill` mío cortó 2-4 combates de la batería `eu_riku` (debug_kit, test_battles
