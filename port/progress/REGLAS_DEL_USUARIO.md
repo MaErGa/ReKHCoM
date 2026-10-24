@@ -3,9 +3,13 @@
 Sintetizadas de sus pedidos hasta el 24/10/2026. Hablarle en español, breve y directo.
 
 ## Cola y avance
+- **Actualización 24/10: [COLA_COLABORATIVA.md](COLA_COLABORATIVA.md) manda sobre los repartos anteriores.**
+  Mantener varios carriles con piezas distintas; tomar y registrar la pieza antes de editar. Cada entrega va en
+  rama propia y pull request; un solo integrador con reserva remota fusiona los PR verificados. Si no hay
+  integrador, tomar esa reserva antes de integrar. No pushear directamente a `main`.
 - Una sola cola: `PENDIENTES_VIGENTES.md`. Anotar cada avance en el momento (qué, commit, cómo se probó, qué falta) y
   dejar un bloque TRASPASO arriba antes de que se corte la sesión.
-- Subir a main cada pieza verificada enseguida (no juntar varias).
+- Subir la rama y abrir un PR por pieza verificada enseguida (no juntar varias); registrar PR y evidencia en la cola.
 - Hacer exactamente lo pedido; lo chico y verificado se decide y se cierra solo; preguntar solo lo grande (arte,
   lógica del juego, publicar).
 - "Aprobado con mejoras" = cerrado ahora; las mejoras son a futuro, no pendientes.
@@ -16,7 +20,9 @@ Sintetizadas de sus pedidos hasta el 24/10/2026. Hablarle en español, breve y d
 - Velocidad original del cartucho (una actualización por VBlank, 59,7275 Hz); nunca modos de velocidad.
 - No inventar objetos ni vidas del juego desde el port: arreglar dentro del flujo del juego (`#ifdef PLATFORM_PC`).
 - Toda mejora (QoL) opcional: en Opciones del juego, el launcher y `kh_com.ini`. Estética de los menús del propio juego.
-- Lo aprobado va encendido para todos; una variable de prueba solo lo apaga (`=0`), nunca lo enciende.
+- Arte nuevo: activar para todos solo la versión `build_version` **con honores** de la app; aprobado sin honores
+  conserva su valoración y espera ★. Una variable de prueba solo apaga la integración (`=0`). Las integraciones
+  históricas siguen registradas como tales; una hija nueva no hereda la aprobación de su madre.
 - Arte de vista ancha: se entrega como copia jugable + .bat con antes/después y espera aprobación
   (`PRUEBAS_VISUALES.md`, `WORKFLOW_ARTE_AMPLIO.md`); lo aprobado se anota en `LOGICA_APROBADOS.md`. Pruebas de arte a
   x3 (zoom=6) en 1920x1080 y 3840x1080; el rectángulo GBA debe quedar idéntico.
@@ -43,5 +49,6 @@ Sintetizadas de sus pedidos hasta el 24/10/2026. Hablarle en español, breve y d
 ## Repo
 - Que cualquiera con su ROM pueda retomar desde GitHub (`EMPEZAR_AQUI.md`): instrucciones como texto, nada de
   imágenes de VM ni binarios grandes en git; mantener el repo liviano.
-- Codex/ChatGPT también trabaja en main: si el otro lleva más de 10 minutos sin tocar nada, se pueden tomar sus
-  puntos anotándolo en la cola; no tocar su árbol de trabajo.
+- Claude y Codex trabajan en ramas/worktrees separados. La reserva remota de la cola decide quién tomó cada
+  pieza; 10 minutos sin commits no autorizan a pisar una reserva viva. Recuperar una reserva vencida con el
+  protocolo de COLA_COLABORATIVA y anotar el relevo; nunca tocar el árbol sin commitear del otro.

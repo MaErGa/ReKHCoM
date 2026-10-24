@@ -3,6 +3,11 @@
 Reglas que se repiten en todo lo que el usuario ha aprobado. Aplicarlas antes
 de proponer algo nuevo; ante un caso nuevo, derivar la solución de ellas.
 
+**Regla vigente de entrega (24/10):** aprender de todas las valoraciones aceptadas, pero activar arte nuevo para
+jugadores solo desde la versión **con honores** (`build_version`) de la app. Cada entrega entra por PR y la
+fusiona un integrador reservado; ver [COLA_COLABORATIVA.md](COLA_COLABORATIVA.md). Las menciones históricas a
+"aprobado" o "Claude integra" no sustituyen esta regla. No elevar valoraciones ni heredar ★ a una versión hija.
+
 ## Principios
 
 1. **Solo píxeles del juego.** Nada se dibuja nuevo: se reutilizan los tiles de
