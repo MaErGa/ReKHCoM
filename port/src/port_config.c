@@ -149,6 +149,7 @@ static const Key sKeys[] = {
     { "ps2_fast_text", &gPortConfig.ps2FastText, 0, 1 },
     { "hd_hud", &gPortConfig.hdHud, 0, 1 },
     { "aspect", &gPortConfig.aspect, 0, PORT_ASPECT_COUNT - 1 },
+    { "assets_seen", &gPortConfig.assetsSeen, -1, (1 << PORT_ASSET_COUNT) - 1 },
 #define BIND(name, act)                                                           { "kb_" name, &gPortConfig.keys[act][0], 0, 0x7FFFFFFF },                     { "kb_" name "_2", &gPortConfig.keys[act][1], 0, 0x7FFFFFFF },                { "pad_" name, &gPortConfig.pad[act], -1, PORT_PAD_AXIS_BASE + SDL_GAMEPAD_AXIS_COUNT * 2 - 1 }
     BIND("a", PORT_ACT_A), BIND("b", PORT_ACT_B), BIND("l", PORT_ACT_L), BIND("r", PORT_ACT_R),
     BIND("start", PORT_ACT_START), BIND("select", PORT_ACT_SELECT), BIND("up", PORT_ACT_UP),
@@ -342,6 +343,7 @@ static void PortConfigLoadFile(void) {
     char line[256];
 
     gPortConfig.discordPresence = 1; /* on unless the file says otherwise */
+    gPortConfig.assetsSeen = -1;     /* an older kh_com.ini: what is there now counts as known */
     gPortConfig.netStats = 1;        /* the online alpha: the network line shows unless turned off */
 #ifdef PORT_SWITCH
     gPortConfig.hideTouchControls = 1; /* the console has buttons; Minus + Plus held opens the options (issue #36) */
@@ -437,6 +439,46 @@ static void PortConfigLoadFile(void) {
    HD: every HD asset of the imported mod and every improvement on; GBA enhanced: the port's improvements (wide
    view, one-button controls) with the HD extras off; GBA classic: everything off, the GBA picture at a whole scale
    with a decorative border, almost an emulator but native. */
+/* What the launcher imported (the HD mod, HD_MOD.md) or found (the Japanese ROM of the undub): an option whose files
+   are missing is never turned on (checked once a second at most). */
+int PortAssetPresent(int asset) {
+    extern int PortUndubAvailable(void);
+    static const char* const files[PORT_ASSET_COUNT][2] = {
+        { "hd/sprites/gCardWep01Tiles.png", NULL },
+        { "hd/music/Title.ogg", NULL },
+        { "hd/movies/ROP.mp4", NULL },
+        { "hd/scenes/zz_event_011.mp4", "hd/movies/zz_event_011.mp4" }, /* hd/scenes since 23/10 */
+        { "hd/subs/ROP.us.txt", NULL },
+        { NULL, NULL },
+    };
+    static int result[PORT_ASSET_COUNT];
+    static Uint64 when[PORT_ASSET_COUNT];
+    Uint64 now = SDL_GetTicks();
+    int i;
+    if (asset < 0 || asset >= PORT_ASSET_COUNT)
+        return 0;
+    if (asset == PORT_ASSET_UNDUB)
+        return PortUndubAvailable();
+    if (!when[asset] || now - when[asset] > 1000) {
+        result[asset] = 0;
+        for (i = 0; i < 2 && files[asset][i] && !result[asset]; i++) {
+            FILE* f = fopen(PortConfigPath(files[asset][i]), "rb");
+            result[asset] = f != NULL;
+            if (f)
+                fclose(f);
+        }
+        when[asset] = now ? now : 1;
+    }
+    return result[asset];
+}
+
+int PortAssetsPresentMask(void) {
+    int i, mask = 0;
+    for (i = 0; i < PORT_ASSET_COUNT; i++)
+        mask |= PortAssetPresent(i) << i;
+    return mask;
+}
+
 void PortApplyGraphicsMode(int mode) {
     extern void PortSetQolButtons(int on);
     int hd = mode == PORT_MODE_HD, classic = mode == PORT_MODE_GBA_CLASSIC;
@@ -449,13 +491,15 @@ void PortApplyGraphicsMode(int mode) {
     }
     sUpgradedSettings = 0;
     gPortConfig.viewMode = classic ? PORT_VIEW_ORIGINAL : PORT_VIEW_AUTO;
+    /* the HD mod's parts only once imported: the new start offers them when the launcher brings them */
     gPortConfig.hdText = hd;
-    gPortConfig.hdCards = hd;
-    gPortConfig.hdTitle = hd;
-    gPortConfig.hdMusic = hd;
-    gPortConfig.hdMovies = !classic; /* HD intros (opening, credits, endings): on unless GBA Original */
-    gPortConfig.hdSubtitles = !classic;
-    gPortConfig.hdScenes = hd;
+    gPortConfig.hdCards = hd && PortAssetPresent(PORT_ASSET_HD_CARDS);
+    gPortConfig.hdTitle = gPortConfig.hdCards;
+    gPortConfig.hdMusic = hd && PortAssetPresent(PORT_ASSET_HD_MUSIC);
+    /* HD intros (opening, credits, endings): on unless GBA Original */
+    gPortConfig.hdMovies = !classic && PortAssetPresent(PORT_ASSET_HD_MOVIES);
+    gPortConfig.hdSubtitles = !classic && PortAssetPresent(PORT_ASSET_HD_SUBS);
+    gPortConfig.hdScenes = hd && PortAssetPresent(PORT_ASSET_HD_SCENES);
     PortSetQolButtons(!classic);
     gPortConfig.gbaBorder = classic ? (gPortConfig.gbaBorder ? gPortConfig.gbaBorder : 1) : 0;
 }

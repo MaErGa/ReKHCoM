@@ -50,6 +50,14 @@ HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes
 - Windows: the HD movies also play with the software renderer (they closed the game there).
 - Battle HP gauges: no division by zero when the deck menu goes back into a battle before the HP are set
   (closed the game on Android, the web and Linux ARM; #40).
+- New Game window: its options start as your graphics mode set them (HD text no longer turns itself off), and the
+  HD mod's rows are always listed: greyed out until the launcher imports them.
+- Options that need files (the HD mod's parts, the Japanese ROM of the undub) are never turned on without them,
+  by the graphics modes or the launcher either.
+- Something new loaded since the last start (an HD part, the undub's ROM): the game says so on the title ("Undub
+  loaded!") and offers to turn it on; several at once get a switch each.
+- Options: "Return to title screen" is now the last row and "Reset to a mode's defaults" asks which mode; both ask
+  twice in a window with a warning, as skipping a scene does.
 
 ## v1.9.14 — 2026-10-21
 

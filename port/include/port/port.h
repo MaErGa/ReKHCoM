@@ -177,6 +177,7 @@ typedef struct PortConfig {
     int netDelay;              /* net_delay: the online link's input delay in frames (0 automatic, from the round trip) */
     int netStats;              /* net_stats: during an online link, the round trip, input delay and last rollback on screen */
     char onlineName[25];       /* online_name: the player's name on the lobby's rooms (relay servers; Steam uses its own) */
+    int assetsSeen;            /* assets_seen: the PORT_ASSET_* found on the last start (-1 unknown); new ones are offered */
 } PortConfig;
 
 extern PortConfig gPortConfig;
@@ -209,6 +210,11 @@ void PortConfigSave(void);
 /* Graphics modes (first start, launcher, Options > reset to a mode's defaults). */
 enum { PORT_MODE_CHOOSE, PORT_MODE_HD, PORT_MODE_GBA_ENHANCED, PORT_MODE_GBA_CLASSIC, PORT_MODE_COUNT };
 void PortApplyGraphicsMode(int mode);
+/* Files an option needs (PortAssetPresent): imported by the launcher, or the Japanese ROM of the undub. */
+enum { PORT_ASSET_HD_CARDS, PORT_ASSET_HD_MUSIC, PORT_ASSET_HD_MOVIES, PORT_ASSET_HD_SCENES, PORT_ASSET_HD_SUBS,
+       PORT_ASSET_UNDUB, PORT_ASSET_COUNT };
+int PortAssetPresent(int asset);
+int PortAssetsPresentMask(void);
 int PortSaveSlotSelectEnabled(void);
 void PortConfigView(int mode, int* w, int* h);
 /* Internal size and pixel scale that fill an outW x outH output (auto view). */

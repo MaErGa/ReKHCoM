@@ -1319,8 +1319,15 @@ static void ApplyGraphicsMode(int mode) {
         return;
     Ini("graphics_mode_applied") = mode;
     Ini("view_mode") = classic ? 0 : 4;
-    for (const char* k : { "hd_text", "hd_cards", "hd_title", "hd_music", "hd_movies", "hd_subtitles", "hd_scenes" })
-        Ini(k) = hd;
+    /* the HD mod's parts only once imported (the game checks the same files: PortAssetPresent) */
+    std::error_code ec;
+    auto has = [&](const char* rel) { return fs::exists(sRoot / "hd" / rel, ec); };
+    Ini("hd_text") = hd;
+    Ini("hd_cards") = Ini("hd_title") = hd && has("sprites/gCardWep01Tiles.png");
+    Ini("hd_music") = hd && has("music/Title.ogg");
+    Ini("hd_movies") = !classic && has("movies/ROP.mp4"); /* HD intros: on unless GBA classic, as in the game */
+    Ini("hd_subtitles") = !classic && has("subs/ROP.us.txt");
+    Ini("hd_scenes") = hd && (has("scenes/zz_event_011.mp4") || has("movies/zz_event_011.mp4"));
     Ini("dodge_button") = Ini("stock_button") = !classic;
     Ini("gba_border") = classic ? (Ini("gba_border") ? Ini("gba_border") : 1) : 0;
 }
