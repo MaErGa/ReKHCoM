@@ -82,6 +82,24 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         if (oy>=0 && oy<8) { *x=PortSceneTileMod(ox,64); *y=oy; return 1; }
         return 0;
     }
+    if (v[0]==4 && (ox<0 || ox>=64 || oy<0 || oy>=64)) {
+        /* Alley with the crate carpet: only the walls and the plain floor
+         * go on, along their own periods (wall 6 columns, shifting by
+         * (6,-3) along its base; floor 8 columns by 4 rows). Props, carpet
+         * and stains stay unique. */
+        int diagonal=2*oy+ox;
+        if (v[1]!=3) return 0;
+        if (ox>=64 && diagonal<97) {
+            sx=58+PortSceneTileMod(ox-58,6); sy=oy+(ox-sx)/2;
+            *x=sx; *y=sy<0?0:sy; return 1;
+        }
+        if (ox<0 && diagonal<72) {
+            sx=6+PortSceneTileMod(ox-6,6); sy=oy-(sx-ox)/2;
+            *x=sx; *y=sy<0?0:sy; return 1;
+        }
+        if (ox>=0 && ox<64 && oy<0) { *x=ox; *y=0; return 1; }
+        *x=56+PortSceneTileMod(ox,8); *y=56+PortSceneTileMod(oy,4); return 1;
+    }
     if (v[0]==7 && (ox<0 || ox>=64 || oy<0 || oy>=64)) {
         if (v[1]==2) {
             if (ox>=64) {

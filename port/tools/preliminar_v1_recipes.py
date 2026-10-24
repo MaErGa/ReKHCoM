@@ -6,11 +6,12 @@ Generate the C table with --generate. The inventory tool supplies content hashes
 import json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-READY={7,44,45,53,54,55,81,87,90,95,97,98,99,102,104,110,112,115,116,117,118,120,121,122,124} # Complete each fixture before promoting the next recipe.
+READY={4,7,44,45,53,54,55,81,87,90,95,97,98,99,102,104,110,112,115,116,117,118,120,121,122,124} # Complete each fixture before promoting the next recipe.
 # id: effective width/height, left band, right band, slope on each side,
 # quiet upper rectangle, quiet lower rectangle, repeat architecture layers.
 # Slope +1 follows 2*y+x; -1 follows 2*y-x. Unique props are excluded.
 RECIPES={
+ 4:(64,64,(0,12),(52,12),0,0,None,None,[]),
  7:(64,64,(0,8),(56,8),1,0,(4,0,4,4),(8,52,8,8),[2]),
  44:(64,64,(0,4),(60,4),1,0,(16,2,8,4),(52,56,8,8),[]),
  45:(64,64,(0,8),(56,8),0,0,(16,0,8,8),(56,56,8,8),[]),
