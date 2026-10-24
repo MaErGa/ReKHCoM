@@ -39,7 +39,21 @@ arte: `Revisar preliminares.bat` (raíz KHCoMPC; código de khcom-claude-int, da
 qué falta en arte: `khcom-codex/build/art-review/COLA_PARA_AGENTES.md`. Solo se integra al juego lo aprobado con
 honores en esa app. Codex lleva los artes y las Preliminares.
 
-**Espera al usuario:** (1) temas de botones táctiles Clear/Dark/Color (`pruebas/Botones tactiles - *.png`); al
+**Regla nueva (usuario 24/10):** todo lo gráfico que necesite ojo humano se manda a la app de revisión
+(`import_image.py ... --parent <id>`), no como imágenes sueltas; se integra solo lo aprobado ahí.
+
+**APROBADO 24/10, a implementar YA (siguiente tarea):** los 3 temas de botones táctiles Clear/Dark/Color
+(`pruebas/Botones tactiles - *.png`, maqueta `build/touchmock/themes.py`: colores, anillos, alfas exactos). Plan:
+`touch_theme` en kh_com.ini (0 Clear, 1 Dark, 2 Color) y fila "Tema de botones" junto a "Ocultar controles
+táctiles" en port_ui.c (en gris si están ocultos); en `port/android/native/touch_android.c` (se compila en el guest
+de Android 64/Switch y en la web: los símbolos de la ROM están) reemplazar `DrawButton`: discos/píldoras de vidrio
+azul marino, anillo plateado con bisel, rojo KH al pulsar, cruceta de una pieza; letras con la fuente del juego
+(`PortUiRenderTextLine` a textura); rodar = Sora de `gSor1ll67Frames/Tiles` + `gSoraPalette`, cuadros 1-3 como
+estela (gris en Clear/Dark, color en Color), generado al crear las texturas; acumular = el diseño de stock.svg
+(Color: cartas azul/verde/roja, cruces doradas). Probar con `test_android_touch.py` y una captura web/Switch; luego
+el editor para mover botones/HUD (fluido).
+
+**Antes era:** (1) temas de botones táctiles; al
 aprobar: implementarlos en `port/android/native/touch_android.c` (Sora de la ROM `gSor1ll67`, cuadros 2-4 como estela;
 acumular = diseño original stock.svg), opción "Tema de botones" en gris sin táctil; luego el editor para mover
 botones/HUD (fluido). (2) Darkside r3 (03, 05, 06, 07) en la app.
