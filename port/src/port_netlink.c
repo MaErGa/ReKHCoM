@@ -515,6 +515,11 @@ uint32_t PortNetlinkMs(void) {
 
 int PortNetlinkDelayOverride(void) {
     const char* d = SDL_getenv("KHCOM_NETLINK_DELAY");
+    return d ? SDL_atoi(d) : gPortConfig.netDelay; /* the launcher's choice; 0 automatic */
+}
+
+int PortNetlinkGiveUpSeconds(void) {
+    const char* d = SDL_getenv("KHCOM_NETLINK_GIVEUP");
     return d ? SDL_atoi(d) : 0;
 }
 
@@ -567,6 +572,9 @@ uint32_t PortNetlinkMs(void) {
     return 0;
 }
 int PortNetlinkDelayOverride(void) {
+    return 0;
+}
+int PortNetlinkGiveUpSeconds(void) {
     return 0;
 }
 int PortNetlinkTrace(void) {

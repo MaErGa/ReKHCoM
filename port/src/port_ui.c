@@ -1610,13 +1610,18 @@ void PortUiNotice(const char* text) {
 
 /* src/sio/sio.c over the network: the other player has not been heard for a while; the game waits (nothing is
    cut) and goes on when the packets come back. */
-void PortUiLinkWaitingNotice(int seconds) {
+void PortUiLinkWaitingNotice(int seconds, int canGiveUp) {
     static const char* const text[LANG_COUNT] = {
         "Waiting for the other player... %d s", "En attente de l'autre joueur... %d s",
         "Warte auf den anderen Spieler... %d s", "In attesa dell'altro giocatore... %d s",
         "Esperando al otro jugador... %d s", "Waiting for the other player... %d s",
     };
+    static const char* const giveUp[LANG_COUNT] = { "   (hold B: leave)", "   (B maintenu : quitter)",
+                                                    "   (B halten: verlassen)", "   (tieni B: esci)",
+                                                    "   (mantén B: salir)", "   (hold B: leave)" };
     SDL_snprintf(sNotice, sizeof(sNotice), text[Lang()], seconds);
+    if (canGiveUp)
+        SDL_strlcat(sNotice, giveUp[Lang()], sizeof(sNotice));
     sNoticeFrames = 90;
 }
 
@@ -1980,6 +1985,20 @@ void PortUiSetFps(float fps, float logic) {
     SDL_snprintf(sFpsText, sizeof(sFpsText), "%.1f FPS   %.1f Hz", fps, logic);
 }
 
+/* the online link's line (net_stats): round trip, input delay, the last rollback's frames */
+static const char* NetLine(void) {
+    extern int NetLinkStats(int* rttMs, int* delay);
+    extern int PortRollbackLastDepth(void);
+    static char text[64];
+    int rtt, delay;
+    if (!gPortConfig.netStats || !NetLinkStats(&rtt, &delay))
+        return NULL;
+    SDL_snprintf(text, sizeof(text), Lang() == LANG_ES ? "Red %d ms  retardo %d  rollback %d" :
+                                                         "Net %d ms  delay %d  rollback %d",
+                 rtt, delay, PortRollbackLastDepth());
+    return text;
+}
+
 int PortUiDrawNotice(uint32_t* frame, int width, int height) {
     const char* text = sNotice;
 
@@ -1987,7 +2006,7 @@ int PortUiDrawNotice(uint32_t* frame, int width, int height) {
         sNoticeFrames--;
     else if (gPortConfig.showFps)
         text = sFpsText;
-    else
+    else if (!(text = NetLine()))
         return 0;
     sFb = frame;
     sFbW = width;

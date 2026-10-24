@@ -122,6 +122,12 @@ typedef struct {
        the game is rolled back to that frame and played again to now, in the same real frame (port_rollback.c).
        It only waits when the other player is more than NET_WINDOW frames behind. */
     u8 delay, peerAdvantage;
+    u32 sentAt[NET_RING]; /* when each slot of ours was made: an ack of it gives the round trip */
+    u32 rttMs;            /* smoothed */
+    /* the player gave up waiting (B held after 10 s): from then on the link reports the cable's timeout, and the
+       cartridge's own error screen ends it as when a cable is pulled */
+    u8 dropped;
+    u16 giveUpHold;
     u32 frames, waited, waitStart, rollbacks, guessed;
     /* the desync check, on confirmed link frames only: ours by frame, sent once final; theirs as received */
     u32 hashAt[8], hash[8], hashSent[8], peerHashAt[8], peerHash[8], checks, mismatches;
@@ -294,8 +300,12 @@ static void NetReceive(void) {
             sNetLastFirst = first;
             sNetLastCount = count;
             sNetSlotsIn++;
-            if (ack > sNet.acked && ack <= sNet.mine)
+            if (ack > sNet.acked && ack <= sNet.mine) {
+                u32 rtt = PortNetlinkMs() - sNet.sentAt[(ack - 1) % NET_RING];
+                if (rtt < 5000)
+                    sNet.rttMs = sNet.rttMs ? (sNet.rttMs * 7 + rtt) / 8 : rtt;
                 sNet.acked = ack;
+            }
             sNet.peerAdvantage = d[11];
             for (i = 0; i < count && 12 + (int)(i + 1) * 9 <= n; i++) {
                 u32 slot = first + i;
@@ -339,7 +349,7 @@ static void NetWait(void) {
         sNet.waitStart = now | 1;
     else if (now - sNet.waitStart > 1000 && now - noticed > 500) {
         noticed = now;
-        PortUiLinkWaitingNotice((int)((now - sNet.waitStart) / 1000));
+        PortUiLinkWaitingNotice((int)((now - sNet.waitStart) / 1000), now - sNet.waitStart > 10000);
         if ((now - sNet.waitStart) / 500 % 4 == 2)
             PortLog("netlink: waiting at link frame %u: %u of ours made, %u acked, %u of theirs; last in %u+%u (%u)",
                     (unsigned)sLinkFrame, (unsigned)sNet.mine, (unsigned)sNet.acked, (unsigned)sNet.theirs,
@@ -348,6 +358,14 @@ static void NetWait(void) {
     NetSendSlots();
     PortLinkIdle();
     NetReceive();
+    if (sNet.waitStart && now - sNet.waitStart > 10000) { /* after 10 s, B held a moment gives up */
+        int autoGiveUp = PortNetlinkGiveUpSeconds(); /* tests: KHCOM_NETLINK_GIVEUP=<seconds> */
+        sNet.giveUpHold = (PortInputKeys() & 0x0002 /* B */) ? sNet.giveUpHold + 1 : 0;
+        if (sNet.giveUpHold > 20 || (autoGiveUp > 0 && now - sNet.waitStart > (u32)autoGiveUp * 1000)) {
+            sNet.dropped = 1;
+            PortLog("netlink: the player gave up waiting: the link ends as a pulled cable");
+        }
+    }
 }
 
 /* the battle's desync check: the state before link frame `f`, kept until every slot it depends on is confirmed */
@@ -410,12 +428,13 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
     }
     if (f == sNet.mine) { /* a new frame: our slot for it */
         NetSlot* s = &sNet.my[f % NET_RING];
-        while (sNet.mine - sNet.acked >= NET_RING - 4 && gSioWork.state == SIO_STATE_CONNECTED) { /* ring full */
+        while (sNet.mine - sNet.acked >= NET_RING - 4 && gSioWork.state == SIO_STATE_CONNECTED && !sNet.dropped) { /* ring full */
             NetWait();
             waited = 1;
         }
         CpuCopy16(words, s->words, sizeof(words));
         s->pause = 0;
+        sNet.sentAt[f % NET_RING] = PortNetlinkMs();
         sNet.mine++;
         NetSendSlots();
     } else if (f < sNet.mine && memcmp(words, sNet.my[f % NET_RING].words, sizeof(words)) != 0) {
@@ -438,7 +457,7 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
            ahead of the other player (an outage, or a much slower machine). */
         extern int VsBattleRunning(void);
         while (!NetPeerKnown(p) && (p >= sNet.theirs + NET_WINDOW || !VsBattleRunning()) &&
-               gSioWork.state == SIO_STATE_CONNECTED) {
+               gSioWork.state == SIO_STATE_CONNECTED && !sNet.dropped) {
             NetWait();
             waited = 1;
         }
@@ -488,7 +507,7 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
         NetSendControl(NET_START);
     }
     gSioWork.queueFull = 0;
-    gSioWork.timeout = 0;
+    gSioWork.timeout = sNet.dropped; /* given up: the cable's timeout, every frame, until the game ends the link */
     gSioWork.hardwareError = 0;
     gSioWork.checksumError = 0;
     SioReadRecvFrame(recvFrame);
@@ -510,12 +529,21 @@ static void NetSlotsFrame(u16* sendFrame, u16 (*recvFrame)[2]) {
 
 /* mode_sio.c: a link is going (the lobby is not opened again) */
 int NetLinkConnected(void) {
-    return sNetState != NULL && NetActive() && gSioWork.state == SIO_STATE_CONNECTED;
+    return sNetState != NULL && NetActive() && gSioWork.state == SIO_STATE_CONNECTED && !sNet.dropped;
+}
+
+/* port_ui.c: the network line on screen (net_stats): round trip, input delay; 0 when no link session */
+int NetLinkStats(int* rttMs, int* delay) {
+    if (!NetLinkConnected())
+        return 0;
+    *rttMs = (int)(sNet.rttMs ? sNet.rttMs : sNetRttMin);
+    *delay = sNet.delay;
+    return 1;
 }
 
 /* port_rollback.c: the link session's frames */
 int NetRollbackSession(void) {
-    return sNetState != NULL && NetActive() && gSioWork.state == SIO_STATE_CONNECTED;
+    return sNetState != NULL && NetActive() && gSioWork.state == SIO_STATE_CONNECTED && !sNet.dropped;
 }
 u32 NetLinkFrame(void) {
     return sLinkFrame;

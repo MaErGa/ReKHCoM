@@ -44,7 +44,12 @@ static size_t sSnapSize;
 static uint8_t* sCursor;
 static uint32_t sTimeline; /* part of the snapshot: taken back with the game */
 static int sResim, sSession, sFailed;
-static uint32_t sReplayed;
+static uint32_t sReplayed, sLastDepth;
+
+/* port_ui.c's network line: how many frames the last rollback played again */
+int PortRollbackLastDepth(void) {
+    return (int)sLastDepth;
+}
 
 /* Tests (KHCOM_ROLLBACK_TEST=<n>): every n link frames the game is rolled back 6 frames although no guess was wrong,
    and every frame played again is compared with what it was the first time: the first byte that differs is logged
@@ -192,6 +197,7 @@ void PortRollbackBoundary(int inMainLoop) {
                     sSnapValid[i] = 0;
             sResim = 1;
             sReplayed += from - sTimeline;
+            sLastDepth = from - sTimeline;
             if (PortNetlinkTrace())
                 PortLog("rollback: link frame %u, %u frames again", (unsigned)to, (unsigned)(from - sTimeline));
         }

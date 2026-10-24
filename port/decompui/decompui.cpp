@@ -246,7 +246,7 @@ static const Setting kSettings[] = {
     { "experimental_hide_touch_controls", 0 },
     { "config_version", PORT_ZOOM_CONFIG_VERSION }, { "view_mode", 4 },   { "zoom", PORT_ZOOM_DEFAULT },         { "scale_mode", 0 },
     { "filter", 0 },         { "fullscreen", 0 },  { "vsync", 1 },        { "hud_size", 1 },
-    { "narrow_fit", 1 },     { "scanlines", 0 },   { "color_correction", 0 }, { "show_fps", 0 }, { "experimental_frame_skip", 1 }, { "discord_presence", 1 }, { "hd_movies", 1 }, { "hd_music", 1 }, { "hd_scenes", 0 }, { "hd_subtitles", 1 }, { "hd_cards", 0 }, { "hd_title", 0 },
+    { "narrow_fit", 1 },     { "scanlines", 0 },   { "color_correction", 0 }, { "show_fps", 0 }, { "experimental_frame_skip", 1 }, { "discord_presence", 1 }, { "net_stats", 1 }, { "net_delay", 0 }, { "hd_movies", 1 }, { "hd_music", 1 }, { "hd_scenes", 0 }, { "hd_subtitles", 1 }, { "hd_cards", 0 }, { "hd_title", 0 },
     { "graphics_mode", 0 }, { "graphics_mode_applied", 0 }, { "gba_border", 0 },
     { "window_scale", 4 },   { "fullscreen_width", 0 }, { "fullscreen_height", 0 },
     { "master_volume", 100 }, { "music_volume", 100 }, { "sfx_volume", 100 },
@@ -1518,6 +1518,27 @@ static void NetlinkRows() {
                                    "Uses Valve's test app (Spacewar, 480): you do not need to own it.")
                                : T("Falta steam_api.dll junto al juego.", "steam_api.dll is missing next to the game."));
         ImGui::PopFont();
+    }
+    if (mode != 0) { /* the link's own settings, in kh_com.ini */
+        static const char* const delays[9] = { "Auto", "1", "2", "3", "4", "5", "6", "7", "8" };
+        static const char* const onOff[2] = { "No", T("Sí", "Yes") };
+        int delay = std::clamp(Ini("net_delay"), 0, 8), stats = Ini("net_stats") != 0;
+        if (CycleRow(T("Retardo de entrada (en línea)", "Input delay (online)"),
+                     T("Cuadros de demora de las teclas. Auto: según el ping al conectar (1-2); más alto = menos "
+                       "correcciones del rollback con mucho ping. Lo elige quien aloja.",
+                       "Frames of delay on the keys. Auto: from the ping when linking (1-2); higher = fewer rollback "
+                       "corrections on a high ping. The host's choice counts."),
+                     delay, 9, delays)) {
+            sIni["net_delay"] = delay;
+            SaveIni();
+        }
+        if (CycleRow(T("Mostrar el estado de la red", "Show the network state"),
+                     T("Arriba a la izquierda durante el enlace: ping, retardo y el último rollback.",
+                       "Top left during the link: ping, delay and the last rollback."),
+                     stats, 2, onOff)) {
+            sIni["net_stats"] = stats;
+            SaveIni();
+        }
     }
     if (save) {
         std::ofstream f(cfg, std::ios::trunc);

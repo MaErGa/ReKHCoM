@@ -120,6 +120,8 @@ static const Key sKeys[] = {
     { "stock_button", &gPortConfig.stockButton, 0, 1 },
     { "pad_layout", &gPortConfig.padLayout, 0, 2 },
     { "discord_presence", &gPortConfig.discordPresence, 0, 1 },
+    { "net_stats", &gPortConfig.netStats, 0, 1 },
+    { "net_delay", &gPortConfig.netDelay, 0, 8 },
     { "hd_movies", &gPortConfig.hdMovies, 0, 1 },
     { "hd_music", &gPortConfig.hdMusic, 0, 1 },
     { "hd_scenes", &gPortConfig.hdScenes, 0, 1 },
@@ -337,6 +339,7 @@ static void PortConfigLoadFile(void) {
     char line[256];
 
     gPortConfig.discordPresence = 1; /* on unless the file says otherwise */
+    gPortConfig.netStats = 1;        /* the online alpha: the network line shows unless turned off */
 #ifdef PORT_SWITCH
     gPortConfig.hideTouchControls = 1; /* the console has buttons; Minus + Plus held opens the options (issue #36) */
 #endif

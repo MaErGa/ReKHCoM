@@ -15,6 +15,7 @@ int PortNetlinkSilentMs(void);               /* since the other player was last 
 int PortNetlinkTrace(void);
 int PortNetlinkFakeDesync(void);                  /* KHCOM_NETLINK_TRACE: every packet pair in the log */
 uint32_t PortNetlinkMs(void);                /* a millisecond clock for the round trip */
+int PortNetlinkGiveUpSeconds(void);           /* KHCOM_NETLINK_GIVEUP: tests give up waiting after that, 0 never */
 int PortNetlinkDelayOverride(void);          /* KHCOM_NETLINK_DELAY: the lockstep's delay in frames, 0 none */
 void PortLinkIdle(void);                     /* port_main.c: one wait while the other player's frame is on its way */
 void PortRollbackBoundary(int inMainLoop);   /* port_rollback.c: at every frame wait of a link session */

@@ -24,7 +24,7 @@ void PortUiHarnessToggle(void);
 void PortUiTitleHint(void);
 /* Short message in the corner of the screen (UTF-8). */
 void PortUiNotice(const char* text);
-void PortUiLinkWaitingNotice(int seconds);
+void PortUiLinkWaitingNotice(int seconds, int canGiveUp); /* after 10 s: "hold B: leave" */
 void PortUiLinkNotice(const char* en, const char* es, const char* name);
 void PortUiZoomStep(int dir); /* the main zoom, one step (dir < 0: closer), with a notice */
 /* Transparent single-line text using the cartridge font. Caller owns pixels. */

@@ -1,7 +1,7 @@
 # Two hidden local games linked over UDP (port/progress/ONLINE_ESTUDIO.md): logs and shots in build/netlink/{p1,p2}.
 #   sh port/tools/netlink_pair.sh <frames> <keys for both> [direct|relay]
 # BUILD=build/pc-eu (the exe), K1=<keys only player 1 gets>, SHOTS=300,900, MODE=60:mode_sio_battle:1,
-# FAKE1=1 (player 1 fakes a desync), LINK_ENV="KHCOM_NETLINK_LAG=6 ..." (both). relay starts netlink_relay.py on 47801.
+# OUTSHOTS=<frames>: the window as presented (port layers too), FAKE1=1 (player 1 fakes a desync), LINK_ENV="KHCOM_NETLINK_LAG=6 ..." (both). relay starts netlink_relay.py on 47801.
 R="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$R"; B=build/netlink
 # games left by an interrupted run hold the ports: gone first
@@ -12,7 +12,7 @@ for p in p1 p2; do cp $BUILD/khcom.exe $BUILD/SDL3.dll $B/$p/; printf 'config_ve
 F=$1; K=$2; HOW=${3:-direct}
 run() { (cd $B/$1 && env $LINK_ENV SDL_VIDEO_DRIVER=dummy SDL_AUDIO_DRIVER=dummy KHCOM_NETLINK=$2 KHCOM_NETLINK_TRACE=1 \
     KHCOM_NETLINK_FAKEDESYNC=$([ $1 = p1 ] && echo "$FAKE1") KHCOM_MODE=${MODE:-60:mode_sio_battle:1} \
-    KHCOM_KEYS="$K$([ $1 = p1 ] && echo ${K1:+,$K1})" KHCOM_SHOTS=${SHOTS:-300,900} KHCOM_QUIT=$F \
+    KHCOM_KEYS="$K$([ $1 = p1 ] && echo ${K1:+,$K1})" KHCOM_SHOTS=${SHOTS:-300,900} ${OUTSHOTS:+KHCOM_OUTPUT_SHOT=$OUTSHOTS} KHCOM_WINDOW=1280x720 KHCOM_QUIT=$F \
     timeout 300 ./khcom.exe --language es --rom "$R/roms/B8CP.gba" >/dev/null 2>&1; echo "$1 exit $?"); }
 if [ "$HOW" = relay ]; then
     py -3 port/tools/netlink_relay.py --port 47801 > $B/relay.log 2>&1 & RELAY=$!; sleep 1
