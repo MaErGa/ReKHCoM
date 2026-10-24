@@ -54,6 +54,13 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
     if (v[0]==54) {
         /* Keep the island and pier unique. BG3's leftmost 128px is clear
          * sky/sea and safe as a water donor at horizontal map edges. */
+        if (v[1]==2 && ox<0) {
+            /* the pier goes on to the lower left along 2y+x, two posts
+             * (eight columns) at a time (user 24/10) */
+            sx=4+PortSceneTileMod(ox-4,8); sy=oy+(ox-sx)/2;
+            if (sy<0 || sy>=64) return 0;
+            *x=sx; *y=sy; return 1;
+        }
         if (v[1]==2) return ox>=0 && ox<64 && oy>=0 && oy<64;
         if (ox>=0 && ox<64 && oy>=0 && oy<64) return 1;
         if (oy<0) {
