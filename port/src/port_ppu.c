@@ -179,7 +179,7 @@ static BgTextTile sBgTextTilesPrev[2048];
 static const BgTextTile* BgTextTileAt(unsigned offset);
 typedef struct BgTextGlyph {
     PortTextGlyph glyph;
-    uint8_t bg, priority, screen;
+    uint8_t bg, priority, screen, ink[8];
 } BgTextGlyph;
 static BgTextGlyph sBgTextGlyphs[1024];
 static int sBgTextCount;
@@ -1889,6 +1889,17 @@ scalar_world:
                             glyph->glyph.style = text->style;
                             glyph->glyph.cap = text->cap;
                             glyph->glyph.base = text->base;
+                            /* Remember actual ink, including holes in 0/3.
+                             * A selector behind a hole must not hide a whole digit. */
+                            {
+                                int ix,iy;
+                                memset(glyph->ink,0,sizeof(glyph->ink));
+                                for (iy=0;iy<8;iy++) for (ix=0;ix<8;ix++) {
+                                    int c=(text->source[iy*4+ix/2]>>((ix&1)*4))&15;
+                                    if (c==text->faceIndex || c==text->shadowIndex)
+                                        glyph->ink[iy]|=(uint8_t)(1u<<ix);
+                                }
+                            }
                             /* Numeric BG cells use the same 13/14/15 panel,
                                shadow and face convention as EXP cells. */
                             {
@@ -4947,22 +4958,31 @@ int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud) {
                 int layer = source->screen ? 2 : 0;
                 int width = source->screen ? gPortOverlayW : gPortScreen.width;
                 int height = source->screen ? GBA_SCREEN_H : gPortScreen.height;
-                int px = glyph->x + 4, py = glyph->y + 4, at;
+                int px, py, at, inkX=4, inkY=4, best=100, ix, iy;
                 const uint8_t* occBg = source->screen ? sScreenOccBg : sOccBg;
                 const uint8_t* occLayer = source->screen ? sScreenOccBgLayer : sOccBgLayer;
                 const uint16_t* occObj = source->screen ? sScreenOccObj : sOccObj;
                 uint16_t face, shadow;
-                if (source->priority != priority || source->bg != bg || layer != hud ||
-                    px < 0 || px >= width || py < 0 || py >= height) continue;
-                at = py * width + px;
-                if ((occBg[at] == 0 && occObj[at] == 0) || occBg[at] < priority ||
-                    (occBg[at] == priority && occLayer[at] < bg) ||
-                    occObj[at] < (priority + 1) * 128) continue; /* OBJ wins ties with BG. */
+                if (source->priority != priority || source->bg != bg || layer != hud) continue;
+                /* Keep any genuinely visible ink instead of testing one
+                 * arbitrary pixel. Windows still hide fully covered cells. */
+                for (iy=0;iy<8;iy++) for (ix=0;ix<8;ix++) {
+                    int distance=abs(ix-4)+abs(iy-4);
+                    if (!(source->ink[iy]&(1u<<ix)) || distance>=best) continue;
+                    px=glyph->x+ix; py=glyph->y+iy;
+                    if (px<0 || px>=width || py<0 || py>=height) continue;
+                    at=py*width+px;
+                    if ((occBg[at]==0 && occObj[at]==0) || occBg[at]<priority ||
+                        (occBg[at]==priority && occLayer[at]<bg) || occObj[at]<(priority+1)*128) continue;
+                    best=distance; inkX=ix; inkY=iy;
+                }
+                if (best==100) continue;
+                px=glyph->x+inkX; py=glyph->y+inkY;
                 out[n] = *glyph;
                 /* a window over part of the cell (a menu opened beside the
                    number): only the columns left uncovered are drawn */
                 {
-                    int c0 = 4, c1 = 4, row = py * width;
+                    int c0 = inkX, c1 = inkX, row = py * width;
                     #define BG_TEXT_SHOWN(cx) (glyph->x + (cx) >= 0 && glyph->x + (cx) < width &&                         !((occBg[row + glyph->x + (cx)] == 0 && occObj[row + glyph->x + (cx)] == 0) ||                           occBg[row + glyph->x + (cx)] < priority ||                           (occBg[row + glyph->x + (cx)] == priority && occLayer[row + glyph->x + (cx)] < bg) ||                           occObj[row + glyph->x + (cx)] < (priority + 1) * 128))
                     while (c0 > 0 && BG_TEXT_SHOWN(c0 - 1)) c0--;
                     while (c1 < 8 && BG_TEXT_SHOWN(c1)) c1++;
