@@ -51,7 +51,9 @@ def env_for(event):
     mode = ','.join([f'60:{room}', f'120:eventplay:{event}'] + [f'{f}:bosskill' for f in range(1000, FRAMES, 150)] +
                     [f'{f}:noharm' for f in range(700, FRAMES, 300)] +
                     # the orbs come to the player (Draw): a boss's never time out and its battle closes only once taken
-                    [f'{f}:drawprizes' for f in range(1000, FRAMES, 50)])
+                    [f'{f}:drawprizes' for f in range(1000, FRAMES, 50)] +
+                    # and a boss's prize card comes to the player's feet (takeprize): the battle waits for it too
+                    ['1000:takeprize'])
     return {'KHCOM_MODE': mode, 'KHCOM_KEYS': keys}
 
 

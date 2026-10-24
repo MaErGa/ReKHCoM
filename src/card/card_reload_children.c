@@ -607,9 +607,23 @@ void PrizeBoss_0(BossPrizeWork* work, PrizeCardTaskArgs* args) {
     gBtlWork->prizeCount++;
 }
 
+#ifdef PLATFORM_PC
+extern u8 gPortHarnessTakePrize; /* main.c, harness mode takeprize */
+#endif
+
 u8 PrizeBoss_1(BossPrizeWork* work, void* task) {
     s16 x;
     s16 y;
+
+#ifdef PLATFORM_PC
+    /* harness (takeprize): the card lies at the player's feet once it can be taken, so the game's own pickup
+       collider takes it, as the player walking up to it would; the battle closes only once it is taken */
+    if (gPortHarnessTakePrize && work->timer >= 60 && gBtlWork->actor != NULL) {
+        work->posX = gBtlWork->actor->x;
+        work->posY = gBtlWork->actor->y;
+        work->posZ = gBtlWork->actor->z;
+    }
+#endif
 
     if (work->posZ < 0) {
         work->posZ += 51;
