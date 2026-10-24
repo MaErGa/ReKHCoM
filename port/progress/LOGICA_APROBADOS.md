@@ -190,3 +190,12 @@ Por qué:
 Regla desde ahora: el arte lo hace el agente principal (con contexto), en serie, con la base del generador Python y su
 mejora propia; otros agentes (Codex) toman piezas en paralelo por la cola. Los workers solo para tareas mecánicas
 (capturas, baterías, limpieza), nunca para decidir arte.
+
+## Agrabah 107/108: subida del Genio (comentario posterior, 24/10)
+
+El usuario señala que, aunque la calle tiene honores, al aparecer el Genio la cámara sube y los pilares
+rosas y la ventana superior terminan en un corte. Esa aprobación no certifica el margen vertical.
+Regla corregida: verificar los extremos de la cámara del evento compartido, continuar cada pilar en
+su propia columna con su período vertical (4 filas), y completar únicamente la ventana que ya queda
+cortada, con su donante entero, sin repetir otras ventanas. Rectángulo GBA intacto.
+La propuesta se ve con KHCOM_PRELIMINAR_V1=1 y espera valoración propia; no hereda honores.
