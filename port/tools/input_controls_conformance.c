@@ -15,6 +15,10 @@ PortConfig gPortConfig = {
           SDL_GAMEPAD_BUTTON_NORTH,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_RIGHT_STICK}
 };
 uint32_t PortFrameCount(void){return 0;}
+/* the game's side port_input.c reaches (the battle's card scroll, the zoom hotkeys): outside a battle here */
+Mode* gCurrentMode;
+Mode gModeBattle, gModeVsbattle;
+void PortUiZoomStep(int dir){(void)dir;}
 void PortLog(const char* fmt,...){(void)fmt;}
 static void key(SDL_Keycode code,int down){
     SDL_Event e={0};e.type=down?SDL_EVENT_KEY_DOWN:SDL_EVENT_KEY_UP;
