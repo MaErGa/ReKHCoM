@@ -272,6 +272,9 @@ void PortGameSections(char** data, size_t* dataSize, char** bss, size_t* bssSize
 
 void PortFrame(void);
 void PortVideoApplyConfig(void);
+/* SDL_SCALEMODE_LINEAR, or the pixel-art scaling on SDL's software renderer (its LINEAR stretch reads past the
+   texture in fullscreen, port_main.c) */
+int PortSmoothScaleMode(void);
 /* port_ps2qol.c: the optional Re:Chain of Memories version of a game. */
 int PortRecomActive(void);
 void PortRecomSetActive(int active);

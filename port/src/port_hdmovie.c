@@ -589,7 +589,7 @@ static int PlayFile(const char* name) {
         PortLog("hd movie: no %s texture (%s)", nv12 ? "NV12" : "RGB", SDL_GetError());
         goto done;
     }
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+    SDL_SetTextureScaleMode(texture, (SDL_ScaleMode)PortSmoothScaleMode()); /* LINEAR, but not on SDL's software renderer */
     /* the first picture before anything is shown: a system whose Media Foundation opens the file but cannot decode
        its H.264 (Wine/Proton without the codec) keeps the cartridge's scene instead of a black movie */
     {

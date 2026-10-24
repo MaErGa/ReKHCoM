@@ -453,7 +453,7 @@ static SDL_Texture* GaugeTarget(SDL_Renderer* renderer, int i, int w, int h) {
             return NULL;
         sGaugeTargetW[i] = w;
         sGaugeTargetH[i] = h;
-        SDL_SetTextureScaleMode(sGaugeTarget[i], SDL_SCALEMODE_LINEAR);
+        SDL_SetTextureScaleMode(sGaugeTarget[i], (SDL_ScaleMode)PortSmoothScaleMode());
     }
     return sGaugeTarget[i];
 }

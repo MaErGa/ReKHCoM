@@ -252,7 +252,7 @@ static SDL_ScaleMode sPictureScaleMode = SDL_SCALEMODE_NEAREST; /* sTexture's sc
 /* The "smooth" filter's scaling. SDL's software renderer (no GPU, remote desktop) reads past its source when it
    stretches with LINEAR to a fullscreen window and closes the game (test_text_options.py, 24/10): there the
    pixel-art scaling, which it does draw safely. */
-static SDL_ScaleMode SmoothScaleMode(void) {
+int PortSmoothScaleMode(void) {
     static int software = -1;
     if (software < 0) {
         const char* name = SDL_GetRendererName(sRenderer);
@@ -278,7 +278,7 @@ static void EnsureTexture(void) {
 filter:
     switch (gPortConfig.filter) {
         case PORT_FILTER_LINEAR:
-            mode = SmoothScaleMode();
+            mode = (SDL_ScaleMode)PortSmoothScaleMode();
             break;
         case PORT_FILTER_SHARP:
             mode = SDL_SCALEMODE_PIXELART;
@@ -749,7 +749,7 @@ static void SideBar(int sx, int sy, int side, float y, float scale, float x0, fl
         SDL_UpdateTexture(sFadeSideTexture, NULL, pixels, fw * 4);
         /* on the picture's own pixel grid, anchored at its edge (see the
            menu style below), so the margin's columns and rows line up */
-        SDL_SetTextureScaleMode(sFadeSideTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? SmoothScaleMode()
+        SDL_SetTextureScaleMode(sFadeSideTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? (SDL_ScaleMode)PortSmoothScaleMode()
                                                                                            : SDL_SCALEMODE_PIXELART);
         RenderMarginColumns(sFadeSideTexture, fw, side, side < 0 ? x1 : x0 - GBA_SCREEN_W * scale, y, scale, x1);
         return;
@@ -905,7 +905,7 @@ static void SideBar(int sx, int sy, int side, float y, float scale, float x0, fl
                 }
             }
         SDL_UpdateTexture(sMenuSideTexture, NULL, strip, fw * 4);
-        SDL_SetTextureScaleMode(sMenuSideTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? SmoothScaleMode()
+        SDL_SetTextureScaleMode(sMenuSideTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? (SDL_ScaleMode)PortSmoothScaleMode()
                                                                                            : SDL_SCALEMODE_PIXELART);
         RenderMarginColumns(sMenuSideTexture, fw, side, side < 0 ? x1 : x0 - GBA_SCREEN_W * scale, y, scale, x1);
         return;
@@ -1002,7 +1002,7 @@ static void SideBar(int sx, int sy, int side, float y, float scale, float x0, fl
             for (pos = side < 0 ? x1 : x0; side < 0 ? pos > x0 : pos < x1; pos += side * w, flip ^= 1) {
                 SDL_FRect src = { (float)sx, (float)(sy + srcBand * 8), SIDE_STRIP, 8 };
                 SDL_FRect d = { side < 0 ? pos - w : pos, by, w, 8 * scale };
-                SDL_SetTextureScaleMode(sTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? SmoothScaleMode()
+                SDL_SetTextureScaleMode(sTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? (SDL_ScaleMode)PortSmoothScaleMode()
                                                                                            : SDL_SCALEMODE_PIXELART);
                 SDL_RenderTextureRotated(sRenderer, sTexture, &src, &d, 0, NULL, flip ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
             }
@@ -1534,7 +1534,7 @@ static void Present(void) {
         }
         if ((sSideStyle == 3 || sSideStyle == 8 || sSideStyle == 10 || sFitScale > 0) && !menuCanvas)
             DrawBlurredReflection(&src, outW, outH);
-        SDL_SetTextureScaleMode(sTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? SmoothScaleMode()
+        SDL_SetTextureScaleMode(sTexture, gPortConfig.filter == PORT_FILTER_LINEAR ? (SDL_ScaleMode)PortSmoothScaleMode()
                                                                                  : SDL_SCALEMODE_PIXELART);
         SDL_RenderTexture(sRenderer, sTexture, &src, &dst);
         if (moviePrompt)

@@ -181,8 +181,8 @@ static int Load(int i) {
     }
     SDL_SetTextureBlendMode(sState[i].image, SDL_BLENDMODE_BLEND);
     SDL_SetTextureBlendMode(sState[i].white, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureScaleMode(sState[i].image, SDL_SCALEMODE_LINEAR);
-    SDL_SetTextureScaleMode(sState[i].white, SDL_SCALEMODE_LINEAR);
+    SDL_SetTextureScaleMode(sState[i].image, (SDL_ScaleMode)PortSmoothScaleMode()); /* LINEAR, but not on SDL's software renderer */
+    SDL_SetTextureScaleMode(sState[i].white, (SDL_ScaleMode)PortSmoothScaleMode());
     sState[i].bytes = need;
     sBytes += need;
     return 1;
