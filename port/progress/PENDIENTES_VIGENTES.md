@@ -55,7 +55,12 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   calidad constante (Media Foundation, modo Quality) con VMAF; HEVC solo como opción con comprobación.
 - **Migración al actualizar** (usuario 24/10): el launcher debe reacomodar todo lo que cambió de lugar entre versiones
   (hoy solo escenas hd/movies → hd/scenes): auditar desde v0.1 y probar actualizando copias viejas.
-- **Quiver** (usuario 24/10): "no me deja elegir cuál versión probé"; revisar por qué las versiones no entran bien.
+- **Quiver** (usuario 24/10): "no me deja elegir cuál versión probé". Causas nuestras halladas: (1) borramos cada
+  estable vieja al publicar la nueva (regla del 20/10), así que "Versions → Change Version" (Quiver 3.4.2+) no tiene
+  entre qué elegir; (2) el README de main dice v1.9.13 estable (nunca lo fue; la estable es v1.9.14) y Quiver muestra
+  el README en "How it runs"; (3) la retención del repositorio (#182 en tgeorgiadis/quiver-launcher) sigue abierta, sin
+  respuesta de los mantenedores. Para la v2.0: no borrar más las estables (solo las de prueba), README al día, mismo
+  nombre de zip de Windows siempre; preguntar en #182 si la retención sigue (publicar en el issue: con OK del usuario).
 - Siguiente: copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 
