@@ -19,7 +19,14 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   --only escena-053,evento-177-escena-053 --subject 53`: **24/24 EU**, cuatro anchos × tres cuadros × ambos
   eventos, GBA idéntico, márgenes distintos. `check_sources.py`: ok. El modo `--approved` comprueba el camino
   por defecto del jugador para no confundir una receta de prueba con una integración real.
-- **054 con honores** recibida (`18f40e19e5814241a966b3348a542977`): siguiente integración.
+- **054 con honores, implementación lista para PR** (`18f40e19e5814241a966b3348a542977`): raíz
+  toma este carril a las 13:14 Chile. Lista única `kPreliminarApproved`; `KHCOM_SCENE054_WIDE=0` la apaga.
+  `test_preliminar_v1.py --approved --build build/pc --out build/approved-054
+  --only escena-054,evento-178-escena-054 --subject 54`: **24/24 EU**, GBA idéntico y márgenes distintos
+  en ambos eventos, cuatro anchos y tres cuadros. A partir del pedido de las 13:16 todo cambio nuevo va por PR.
+- **Carriles tomados 24/10 13:16–13:17:** root integración 054; queue_tools herramienta de toma y exclusión
+  online; queue_docs inventario y protocolo para Claude; art_110 escena 110. Worktrees separados. No tomar
+  esas piezas mientras sigan activas. El protocolo nuevo sustituye el push directo a main.
 - Aprobaciones sin honores recibidas: 044, 045, 098, 104 y Darkside 03 r6. Recetas ya subidas a main;
   se conservan las valoraciones por versión. Criterios y referencias guardados en `LOGICA_APROBADOS.md`.
 - Nuevos comentarios a las hijas 087, 090, 095, 099 y 102 y al primer arranque: están en la cola de la app;
