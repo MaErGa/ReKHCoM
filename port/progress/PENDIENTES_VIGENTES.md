@@ -11,6 +11,32 @@ Reglas del usuario:
 - Nunca borrar carpetas ReKHCoM-vX sin que el usuario lo pida.
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
+## TRASPASO 24/10 noche (Claude, sesión nueva) — LEER PRIMERO
+
+**Hecho (main 62ff8d10d, 004e4260d):** opciones que necesitan archivos (partes del mod HD, ROM japonesa del undub)
+nunca se encienden sin ellos (`PortAssetPresent`, port_config.c; también los modos y el launcher); Partida nueva
+respeta el preset del modo (el texto HD ya no se apaga solo: era el bug 1 de Android) y lista siempre las filas HD, en
+gris hasta importarlas; al iniciar, lo cargado desde la última vez se ofrece una vez ("¡Undub cargado!"), con un
+interruptor por cada uno si llegan varios (`assets_seen` en kh_com.ini); Opciones: "Volver a la pantalla de título"
+es la última fila y "Restablecer según el modo" pregunta cuál; ambas piden doble confirmación en una ventana con
+aviso. Prueba: `port/tools/test_asset_options.py` (notice, notice_many, newgame, confirm_mode, confirm_title,
+title_last). Humo del zip v2.0 Windows: 9/9 limpio. JP: `check_jp_glyphs.py` ok.
+
+**Pedidos del usuario (24/10 noche), en orden:**
+1. **v2.0-pre5** (Windows + Linux) con todo lo de hasta hoy: en curso al escribir esto.
+2. **Botón de rodar (táctil)**: proponer mejoras al PNG; probar un vector y meter **el sprite de Sora rodando en gris**
+   con el mismo estilo de botón, **generado al cargar la ROM** (nada del juego en el repo). Mostrarle la tentativa
+   (copia + imagen) y esperar aprobación.
+3. **Antes de la v2.0: verificar los fallos que reportó el usuario** (los 3 de Android de arriba: texto HD apagado ya
+   resuelto; resolución que cambia sola al bajar en Opciones; Logros que se abre solo y queda pegado) y que no pasen;
+   optimizar y depurar todo.
+4. **Issues**: ir mirando si llegan y resolverlos si no están cubiertos.
+5. **Codex**: mismos carriles: Codex toma los artes restantes y termina las Preliminares (ver Reparto).
+
+**Ojo:** a las ~01:45 un `taskkill` mío cortó 2-4 combates de la batería `eu_riku` (debug_kit, test_battles
+--riku, build\pc-eu): si salen como fallo/timeout alrededor de los combates 153-154 y 192-193, **repetirlos**, no son
+fallos del juego.
+
 ## TRASPASO 24/10 tarde (Claude; quedan pocos tokens) — LEER PRIMERO
 
 **Objetivo nuevo del usuario (24/10): el repo autosuficiente.** Cualquiera (otro modelo con la cuenta de GitHub del
@@ -707,6 +733,7 @@ Cada una tiene `LEEME.md`. **Codex:** `package_preliminar_v1.py` ahora escribe e
 | **Claude** | **H. Próxima estable**: solo con el OK del usuario; `release_check.py` antes/después, todas las plataformas, web |
 | **ChatGPT/Codex** | 39: rutas completas de Sora y de Reverse/Rebirth |
 | **ChatGPT/Codex** | 16–24: arte de jefes y escenas, de a uno con antes/después, con el método de abajo ("Para Codex: cómo hacer el arte") |
+| **ChatGPT/Codex** | (usuario 24/10 noche) los artes restantes y terminar las Preliminares (V1 escenas, V2 jefes) con el mismo método; Claude no toca esos archivos |
 | **Usuario** | Probar `Probar Discord.bat` y `Probar ReKHCoM v1.9.13 pre2.bat` (pantalla completa sin parpadeo, mod HD, volver al título) |
 | **Usuario** | Aprobar el launcher nuevo (`Probar launcher nuevo.bat`, commit 07a6fa9ab); revisar 61–62 cuando Claude las muestre |
 
