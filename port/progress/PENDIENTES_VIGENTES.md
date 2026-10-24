@@ -18,6 +18,15 @@ las tareas de Codex a **`claude-relevo`** (`recover-task`, con esa autorización
 - **Batería skip JP:** caso `1_039` salió 0xC0000135 (falta DLL al arrancar, 13:33): las dos copias duplicadas del
   coordinador comparten carpeta y una limpia el SDL3.dll de la otra. No es del juego; repetir ese caso solo.
 
+- **Más integrado (24/10 tarde):** #63 orden del mod HD por peso, #65 estados rápidos en Trucos (F8 carga, apagados
+  por defecto, aviso, sin logros mientras estén activos), **#66 el mod HD conserva lo cargado** (`hd/import.list` por
+  video; una carga nueva solo hace lo que falta, está roto o tiene otra calidad: 33 videos 221 s → 1 s; instalaciones
+  viejas reconocidas por `hd/quality`; con todo cargado «DATOS YA CARGADOS» + botón chico para recargar).
+- **v2.0-pre10 interna (no publicada):** main 00d2b3a57, `KHCoMPC/ReKHCoM-v2.0-pre10-windows-x86.zip` (sha 6c9a678b…),
+  `jugar/ReKHCoM-v2.0-pre10` + `.bat` (partidas de la pre9, HD enlazado). Humo 9/9.
+- La carpeta del usuario en Quiver (`Documents/Apps/QuiverLauncher/...`) es SOLO de lectura: no tocar nada ahí.
+  Trabajar solo en KHCoMPC (C:) y en D:/01Claude/ReKHCoM-build.
+
 ### Siguiente (en orden)
 
 1. **Editor de tiles y sprites (Codex, prioridad del usuario: «para armar yo mismo las escenas»):** backend sin
@@ -26,11 +35,13 @@ las tareas de Codex a **`claude-relevo`** (`recover-task`, con esa autorización
    librerías en `khcom-resume/port/tools/art_review/web/vendor/` (Sortable, Fuse, hotkeys). Falta: editor.html/js/css
    (paleta de tiles y piezas, pintar, capas, voltear, deshacer, guardar), sprites (parámetro `sprites` sin usar).
 2. ~~Mod HD, selector ordenado por peso~~ hecho (#63): Original → Buena (sugerida) → Ahorro → básico; texto "~10 min".
-2b. **Savestates para la v2.0 (usuario 24/10, ANTES de publicar):** cargar pasa a **F8**; **desactivados por defecto**;
+2b. ~~Savestates para la v2.0~~ hecho (#65). Antes: (usuario 24/10, ANTES de publicar):** cargar pasa a **F8**; **desactivados por defecto**;
    el interruptor va en **Trucos** con aviso al activarlos («solo para pruebas o replicar bugs; mientras estén activos
    no se desbloquean logros»); con ellos activos el juego **no desbloquea logros** (ni oficiales offline ni RA). Objetivo:
    lo más parecido a una partida oficial. Probar: tecla F8, aviso, logro bloqueado con la opción activa, launcher e ini.
 3. Verificar que todo lo aprobado con honores esté encendido para jugadores y sin fallos (lista en LOGICA_APROBADOS).
+3b. **Cuelgue Guard Armor (008) con bosskill** (el único documentado sin resolver): la derrota espera
+   `BgFxIsActive()` (chara.c `CharaObjUpdateDefeat`); reproducir con revancha fila 0 + bosskill y decidir arnés o juego.
 4. Limpiar restos de pruebas en C: y D: (nunca carpetas ReKHCoM-vX; quitar enlaces antes de borrar).
 5. Cola de arte de la app (escenas 004/057/061/074 con la lógica corregida, 087 090 095 099 102 112 115-120, jefes).
 
