@@ -8,6 +8,11 @@ jugadores solo desde la versión **con honores** (`build_version`) de la app. Ca
 fusiona un integrador reservado; ver [COLA_COLABORATIVA.md](COLA_COLABORATIVA.md). Las menciones históricas a
 "aprobado" o "Claude integra" no sustituyen esta regla. No elevar valoraciones ni heredar ★ a una versión hija.
 
+**Mejora continua en cada PR (usuario 24/10):** todo PR de arte trae también su cambio a este archivo: el criterio
+nuevo que dejó una valoración y la **corrección** de la regla cuando una pieza ya aprobada recibe comentarios
+nuevos. Una aprobación con comentarios posteriores deja de ser modelo: su regla se reescribe con lo que pidió el
+usuario y se revisan las escenas hermanas que la copiaron.
+
 ## Principios
 
 1. **Solo píxeles del juego.** Nada se dibuja nuevo: se reutilizan los tiles de
@@ -61,11 +66,9 @@ Workflow completo (tiles, píxeles, pixel art, pruebas en x3 entero): WORKFLOW_A
 - 17: borde superior de la sala de Riku (Hollow Bastion B1, sala 3): aprobado
   totalmente el 18/10 (`src/map/map_cell.c`: `MapFindEdgeStrip`,
   `MapTopEdgeTile`, `MapPlainBaseTile`).
-- 061 hielo y 074 Monstro: aprobadas (18/10). 057 playa: aprobada con mejoras
-  (igualar la estructura de tiles del lado derecho-superior con la del izquierdo;
-  no cortar motivos de pasto por la mitad).
-- Anteriores (márgenes de ventanas 1-17, escenas 004/057/061/074, Guard Armor):
-  ver REPARTO.md y ESCENAS_REVISION_AMPLIA.md; mismos principios 1-3.
+- 061 hielo, 074 Monstro y 057 playa (18/10) y 004: **aprobadas antes de tiempo** (usuario 24/10). Ya no son
+  modelo; ver «Aprobaciones tempranas corregidas» abajo. Guard Armor y las ventanas 1-17 siguen valiendo
+  (REPARTO.md, ESCENAS_REVISION_AMPLIA.md).
 
 - 59 retratos: aprobado el 18/10. La vista amplia exponía las posiciones de espera
   X=449/-299 antes de aplicar la silueta. Ocultar la espera en `msgface_2` y
@@ -131,3 +134,20 @@ Las recetas ya están en main. La activación para jugadores sigue la referencia
 Aplicación al siguiente caso: medir el período y dirección de cada estructura; comprobar que el donante contiene
 la pieza entera, también encima del corte y en la última fila ocupada. No trasladar las coordenadas de un fondo
 a otro. Estas valoraciones documentan casos aceptados, no una aprobación automática de recetas futuras.
+
+## Aprobaciones tempranas corregidas (usuario 24/10, 13:17–13:20 Chile)
+
+El usuario dio por aprobadas 004/057/061/074 demasiado pronto y volvió a comentarlas sobre la versión integrada.
+Lo que se había aprendido de ellas no basta; estas son las reglas corregidas (valen para toda escena nueva):
+
+| Escena / versión comentada | Comentario | Regla corregida |
+|---|---|---|
+| 004 / `22fc4ea176864111880e02b851a58445` | «falta acabar patrón hacia la derecha» | Un patrón sigue **hasta el borde de la pantalla en los dos lados**; no basta con cerrar el lado más visible. Comprobar el ancho máximo (3840) en ambos márgenes. |
+| 057 / `e49d2f465f9346d28ba013d9a81de938` | «el patrón no se sigue hacia arriba bien» (4 nubes); «pelones a los que falta la mitad derecha del pasto»; «mejorar derecha del pasto» | Repetir **hacia arriba** con el período vertical medido del propio patrón, no con la fila superior. Cada mata de pasto entera (las dos mitades): el donante debe contenerla completa, como 053. El lado derecho con la misma estructura que el izquierdo. |
+| 061 / `f31927d3f7014eb3a51e52fcf7323003` | «falta un cachito»; «falta terminar el patrón de pasillo» | Sin huecos: revisar cada esquina y unión entre la extensión y el mapa. Un pasillo sigue con su propio período hasta el borde, sin cortarse antes. |
+| 074 / `303416c343704456aea87be42f0508bf` | «el patrón no está bien, creo que había una versión mejorada, mejorar» | Antes de rehacer, buscar en la app las versiones anteriores de la pieza y partir de la mejor valorada; el patrón debe repetir su período real. |
+
+Regla general que sale de las cuatro: medir el período de cada estructura en **horizontal y vertical**, extenderla
+**en todas las direcciones** hasta los bordes de la pantalla más ancha, y no dar por terminado un lado sin revisar
+los demás. Las escenas hermanas que usaron estas recetas se revisan con estas reglas al tocarlas.
+
