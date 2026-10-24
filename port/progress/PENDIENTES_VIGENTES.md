@@ -55,6 +55,10 @@ partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
   2. Al abrir Opciones (**Start + Select**) y **bajar**, **la resolución cambió sola**: las primeras filas de
      Opciones (resolución/zoom) cambian con izquierda/derecha y el táctil o el stick las mueve sin querer. Pedido:
      **no poner las opciones de resolución al principio** de Opciones (moverlas más abajo o pedir confirmación).
+  3. Después **se abrió la página de Logros sola y quedó pegado ahí** (sin salir). Posible: el mismo toque/stick que
+     movió la resolución activó una fila que abre Logros, o la vuelta (B/Atrás) no sale de esa página en Android.
+     Pedir al usuario su `kh_com.log` (Ajustes de la app → "Compartir registro") y el modelo del teléfono; reproducir
+     en el emulador recorriendo Opciones con táctil y mando.
 - **Calidad constante (hd_quality_probe.py, 24/10)**: en 4 escenas, RC=3 Q=70 por hardware pesa 23 % menos que Buena
   (151 vs 197 MB) con VMAF 95,4-96,1 (Buena 96,9-98,5); por software sale mal (VMAF ~52, descartado). Siguiente:
   probar Q 75/80/85 por hardware y elegir el que pese menos que Buena con su misma VMAF; la VMAF de ROP da 44 en
