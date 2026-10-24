@@ -220,6 +220,40 @@ def tail_rows(original, palette, rows, length):
     return out
 
 
+def strands(original, palette, rows, length):
+    """the wing's strands cut at x255 in the given rows, each carried on along its own slope (measured over the last
+    columns before the cut), thinning to a point and dissolving into shadow: no straight streaks"""
+    dark = darkest(palette, set(original.values()))
+    cut = sorted(y for y in edge_rows(original) if rows[0] <= y < rows[1])
+    groups, run = [], []
+    for y in cut:  # consecutive rows at the cut are one strand
+        if run and y != run[-1] + 1:
+            groups.append(run)
+            run = []
+        run.append(y)
+    if run:
+        groups.append(run)
+    out = {}
+    for g in groups:
+        def centre(x):
+            ys = [y for y in range(g[0] - 12, g[-1] + 13) if (x, y) in original]
+            return sum(ys) / len(ys) if ys else None
+        near, far = centre(SEAM - 1), centre(SEAM - 8)
+        slope = (near - far) / 7 if near is not None and far is not None else 0.0
+        half = (g[-1] - g[0] + 1) / 2
+        colour = original[SEAM - 1, g[len(g) // 2]]
+        for k in range(length):
+            t = k / length
+            cy, w = near + slope * (k + 1), half * (1 - t)
+            if w < 0.35:
+                break
+            for y in range(int(cy - w + 0.5), int(cy + w + 0.5) + 1):
+                x = SEAM + k
+                if (1 - t) * 16 > BAYER[y % 4][x % 4]:
+                    out[x, y] = colour if t < 0.35 else dark
+    return out
+
+
 def faded_from(added, start, width):
     """like faded, but whole up to start columns past the seam, then thinning over width (ordered dither)"""
     out = {}
@@ -251,7 +285,32 @@ def main():
         inc = inc_path.read_text()
         original, palette = frame(args.source, slot)
         added = {pt: c for pt, c in extension(inc).items() if pt not in original}
-        if args.round == 'r5':
+        if args.round == 'r6':
+            right = {pt: c for pt, c in added.items() if pt[0] >= SEAM}
+            dark = darkest(palette, set(original.values()))
+            zones = [n['pixels_xyxy_exclusive'] for n in sent['annotations']]
+            if key == '03':  # r4's torso, and the wing over it generated too, dissolving the same way (cloud: "the wing too")
+                torso = faded_from({pt: c for pt, c in shifted(right, 0, -6).items() if pt not in original}, 4, 22)
+                fx0, fy0, fx1, fy1 = study_to_frame(original, torso, zones[-1])
+                wing = strands(original, palette, (fy0, fy1), 26)
+                new = {**torso, **wing}
+                change = 'El ala también: los mechones/ala cortados en el borde siguen y se difuminan como el torso (tramado a sombra). Original intacto.'
+            else:  # 06: the orange arm born where the blue shoulder is (cloud 1), not lower (cloud 2); the seam redrawn
+                r5 = {pt: c for pt, c in shifted({pt: c for pt, c in added.items() if pt[0] >= SEAM - 16}, -8, -2).items()
+                      if pt[0] >= SEAM and pt not in original}
+                b1 = study_to_frame(original, r5, zones[0])
+                b2 = study_to_frame(original, r5, zones[1])
+                dy = b1[1] - b2[1]
+                arm = {pt: c for pt, c in shifted(r5, 0, dy).items() if pt[0] >= SEAM and pt not in original
+                       and pt[1] >= b1[1] - 2}  # nothing above the shoulder: the generated hair would float there
+                arm = outline(arm, dark)  # the game's dark rim where the moved arm now ends
+                for y in range(b1[1], b1[3]):  # the seam: the shoulder's colour carried one pixel into the arm
+                    if (SEAM - 1, y) in original and (SEAM, y) not in arm and (SEAM + 1, y) in arm:
+                        arm[SEAM, y] = original[SEAM - 1, y]
+                reach = max((x for x, y in arm), default=SEAM) - SEAM
+                new = faded_bottom(faded_from(arm, int(reach * .8), max(4, int(reach * .2))), 6)
+                change = 'El brazo naranja nace donde termina el hombro azul (%d px más arriba), con la costura redibujada y el contorno oscuro del juego. Original intacto.' % -dy
+        elif args.round == 'r5':
             right = {pt: c for pt, c in added.items() if pt[0] >= SEAM}
             if key == '04':  # r4 faded from too far left: whole longer, then thinning; and thinning at the bottom too
                 new = faded_bottom(faded_from(right, 14, 18), 16)
