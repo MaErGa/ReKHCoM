@@ -31,3 +31,7 @@ repeticiones US/JP salvo que la pieza lo pida, no tocar `jugar/`, `ReKHCoM-vX` n
 Fricción conocida: en bash las rutas van como `/d/01Claude/...`, no `D:/...`. Un worker que muere por límite de sesión deja la pieza
 `en_curso`: el coordinador la libera con `release <id> --owner <el que la tenía>` y la relanza.
 `art_piece.py` lee la mesa de `$ART_DESK` (desde un worktree en D: exportarla, p. ej. `/d/01Claude/ReKHCoM-build/w3-desk`). `prelim_shot.sh` usa `build/pc/`; si tu build está en `build/pc-eu/`, copia el script con `sed`. `next` ya no te devuelve una pieza que tú liberaste.
+
+Fricción ronda 3 (r3c): `import_image.py` exige `--title` y `--version`. En un worktree, `ninja -C build/pc-eu` falla: usar `ninja -f build/pc-eu/build.ninja` desde la raíz.
+Los hashes de una escena nueva salen de `inventory_preliminar_v1.py`; NO regenerar todo el `.inc` con `--generate` (cambia flags `ready` de otras escenas): insertar solo las filas de tu escena.
+057 y 061 están liberadas con diagnóstico (decisión de tile-map mayor): no las tomes con `next`; usa `next --prefix escena-08 --prefix escena-09 ...`.
