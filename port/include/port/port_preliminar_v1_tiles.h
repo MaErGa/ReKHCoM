@@ -37,13 +37,18 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         if (oy<27 && (ox<10 || ox>=54)) {
             *x=oy<15?24:10+PortSceneTileMod(ox-10,12); *y=oy; return 1;
         }
+        if (ox>=54 && ox<64 && oy>=43 && oy<64) { /* the sunlit corner, shaded as the rest */
+            *x=PortSceneTileMod(ox,8); *y=44+PortSceneTileMod(oy-44,4); return 1;
+        }
         if (ox>=0 && ox<64 && oy<64) return 1;
         if (oy>=64) {
             sy=62+PortSceneTileMod(oy-62,2); sx=ox+oy-sy;
             if (sx>=0 && sx<64) { *x=sx; *y=sy; return 1; }
         }
         if (oy<43) { *x=0; *y=oy; return 1; }
-        *x=56+PortSceneTileMod(ox,8); *y=56+PortSceneTileMod(oy,8); return 1;
+        /* the dark green in the trees' shade, as inside (columns 0..7 under
+         * the wall), not the sunlit corner's (user 24/10) */
+        *x=PortSceneTileMod(ox,8); *y=44+PortSceneTileMod(oy-44,4); return 1;
     }
     if (v[0]==54) {
         /* Keep the island and pier unique. BG3's leftmost 128px is clear
@@ -305,6 +310,13 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==45 && p->v[1]==2 && wx<0 && wx>=-24 && wy>=54*8 && wy<64*8) {
+        /* the pine cut by the map's left edge (its axis at x=20): its missing
+         * half is its right half reflected, below row 54 where the next pine
+         * ends; its tip above is narrow enough to be whole (user 24/10) */
+        *sx=39-wx; *sy=wy;
+        return 1;
+    }
     if (p && p->v[0]==124 && (wx<0 || wx>=480 || wy<0 || wy>=440)) {
         int L=2*wy+wx, R=2*wy-wx;
         if (p->v[1]==3) {
