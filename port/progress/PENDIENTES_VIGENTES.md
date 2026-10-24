@@ -70,6 +70,9 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   respuesta de los mantenedores. Para la v2.0: no borrar más las estables (solo las de prueba), README al día, mismo
   nombre de zip de Windows siempre; preguntar en #182 si la retención sigue (publicar en el issue: con OK del usuario).
   **24/10: Quiver nos aceptó** (retención levantada). Regla: no borrar ni reemplazar ningún release ni archivo.
+- **Motor nuevo de Switch** (usuario 24/10: "prepárate para implementarlo"): plan en SWITCH_MOTOR.md (fase 0 medir en
+  la consola con una línea de tiempos por segundo; fase 1 PPU en 3 núcleos del invitado: hilos por el puente y
+  contexto por núcleo en vez de TLS; fase 2 GPU solo si hace falta).
 - Siguiente: copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 
