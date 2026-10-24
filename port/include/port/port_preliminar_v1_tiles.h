@@ -151,6 +151,20 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
          * the authored perimeter strictly inside the original room. */
         int chunk=ox>=0?ox/w:(ox-(w-1))/w;
         int phase=PortSceneTileMod(chunk*3,8);
+        /* the room's own structures go on too (user 24/10): the brick wall
+         * on the right (columns 24..31 from row 18), the stone step at the
+         * bottom along 2y+x=56, the stone landing at the top along 3y+x=12 */
+        if (ox>=24 && oy>=18) {
+            *x=24+PortSceneTileMod(ox-24,8); *y=oy<32?oy:22+PortSceneTileMod(oy-22,10); return 1;
+        }
+        if (ox<24 && 2*oy+ox>=56) {
+            sx=8+PortSceneTileMod(ox-8,8); sy=oy+(ox-sx)/2;
+            if (sy>=32) sy=28+PortSceneTileMod(sy-28,4);
+            *x=sx; *y=sy; return 1;
+        }
+        if (3*oy+ox<12) { /* only the landing's stone (rows 0..1, columns 0..5) */
+            *x=PortSceneTileMod(ox,6); *y=PortSceneTileMod(oy,2); return 1;
+        }
         *x=PortSceneTileMod(ox,w);
         *y=8+PortSceneTileMod(oy-8+phase,8);
         return 1;
