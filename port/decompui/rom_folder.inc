@@ -321,7 +321,8 @@ static void RomFolderPoll(SDL_Window* window) {
         sHdOfferAsked = true;
         std::error_code ec;
         bool imported = fs::exists(sRoot / "hd" / "movies" / "ROP.mp4", ec) || fs::exists(sRoot / "hd" / "music" / "Title.ogg", ec);
-        if (!imported && !sHdOfferDeclined && !SDL_getenv("DECOMPUI_SHOT") && !hd::FindInstall().empty())
+        if (!imported && !sHdOfferDeclined && !SDL_getenv("DECOMPUI_SHOT") && !hd::ReadJournal(sRoot).found &&
+            !hd::FindInstall().empty())
             sHdOfferOpen = true;
     }
 }

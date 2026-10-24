@@ -400,57 +400,143 @@ static bool IsInstall(const fs::path& p) {
     return fs::exists(p / "Image" / "dt" / "Recom.hed", ec) || !MovieFolder(p).empty();
 }
 
-/* Steam libraries (registry + libraryfolders.vdf), then Epic's manifests. */
-static fs::path FindInstall() {
-    std::vector<fs::path> roots;
+/* Every quoted value after "key" in a JSON or VDF text, with \\ unescaped */
+static std::vector<std::string> QuotedValues(const std::string& text, const char* key) {
+    std::vector<std::string> out;
+    std::string k = std::string("\"") + key + "\"";
+    for (size_t at = text.find(k); at != std::string::npos; at = text.find(k, at + k.size())) {
+        size_t a = text.find('"', at + k.size());
+        if (a == std::string::npos)
+            break;
+        /* only ':' or blanks between the key and its value */
+        if (text.find_first_not_of(" \t:\r\n", at + k.size()) != a)
+            continue;
+        std::string clean;
+        size_t i = a + 1;
+        for (; i < text.size() && text[i] != '"'; i++) {
+            if (text[i] == '\\' && i + 1 < text.size())
+                i++;
+            clean += text[i];
+        }
+        out.push_back(clean);
+    }
+    return out;
+}
+
+static std::string ReadText(const fs::path& f) {
+    std::ifstream in(f, std::ios::binary);
+    return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+}
+
+static fs::path RegPath(HKEY root, const wchar_t* key, const wchar_t* value) {
     WCHAR buf[MAX_PATH];
     DWORD size = sizeof(buf);
-    if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\Valve\\Steam", L"SteamPath", RRF_RT_REG_SZ, nullptr, buf, &size) == ERROR_SUCCESS) {
-        fs::path steam(buf);
-        roots.push_back(steam);
-        std::ifstream vdf(steam / "steamapps" / "libraryfolders.vdf");
-        std::string line;
-        while (std::getline(vdf, line)) {
-            size_t k = line.find("\"path\"");
-            if (k == std::string::npos)
-                continue;
-            size_t a = line.find('"', k + 6), b = a == std::string::npos ? a : line.find('"', a + 1);
-            if (a == std::string::npos || b == std::string::npos)
-                continue;
-            std::string path = line.substr(a + 1, b - a - 1), clean;
-            for (size_t i = 0; i < path.size(); i++) {
-                if (path[i] == '\\' && i + 1 < path.size() && path[i + 1] == '\\')
-                    i++;
-                clean += path[i];
-            }
-            roots.push_back(fs::u8path(clean));
-        }
+    if (RegGetValueW(root, key, value, RRF_RT_REG_SZ, nullptr, buf, &size) == ERROR_SUCCESS)
+        return fs::path(buf);
+    return {};
+}
+
+static fs::path KnownFolder(const KNOWNFOLDERID& id) {
+    PWSTR path = nullptr;
+    fs::path out;
+    if (SUCCEEDED(SHGetKnownFolderPath(id, 0, nullptr, &path)))
+        out = path;
+    CoTaskMemFree(path);
+    return out;
+}
+
+/* The game's folder names: Steam's, Epic's, and the store's title as some people name it by hand */
+static const char* const kInstallNames[] = { "KINGDOM HEARTS -HD 1.5+2.5 ReMIX-", "KH_1.5_2.5", "KINGDOM HEARTS HD 1.5+2.5 ReMIX",
+                                             "KINGDOM HEARTS HD 1.5 + 2.5 ReMIX", "Kingdom Hearts HD 1.5 2.5 ReMIX" };
+
+/* KINGDOM HEARTS HD 1.5+2.5 ReMIX on this PC. On PC it is sold on Steam and the Epic Games Store; it is looked for
+   through every launcher that installs it (Steam, the Epic Games Launcher, Heroic and Legendary for Epic), Windows'
+   list of installed programs, and, last, the usual game folders on every fixed drive. */
+static fs::path FindInstall() {
+    std::vector<fs::path> candidates;
+    auto add = [&](const fs::path& p) {
+        if (!p.empty())
+            candidates.push_back(p);
+    };
+    /* Steam: its folder (user and machine registry, default places) and every library in libraryfolders.vdf */
+    std::vector<fs::path> steams = { RegPath(HKEY_CURRENT_USER, L"Software\\Valve\\Steam", L"SteamPath"),
+                                     RegPath(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Valve\\Steam", L"InstallPath"),
+                                     RegPath(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Valve\\Steam", L"InstallPath"),
+                                     KnownFolder(FOLDERID_ProgramFilesX86) / "Steam", KnownFolder(FOLDERID_ProgramFiles) / "Steam" };
+    for (const fs::path& steam : steams) {
+        if (steam.empty())
+            continue;
+        add(steam);
+        for (const char* vdf : { "steamapps/libraryfolders.vdf", "config/libraryfolders.vdf" })
+            for (const std::string& path : QuotedValues(ReadText(steam / vdf), "path"))
+                add(fs::u8path(path));
     }
-    for (const fs::path& root : roots) {
-        fs::path p = root / "steamapps" / "common" / "KINGDOM HEARTS -HD 1.5+2.5 ReMIX-";
-        if (IsInstall(p))
-            return p;
-    }
+    std::vector<fs::path> found;
+    for (const fs::path& root : candidates)
+        for (const char* name : kInstallNames)
+            found.push_back(root / "steamapps" / "common" / name);
+    /* Epic Games Launcher: its manifests (where the registry says, or the default) and LauncherInstalled.dat */
+    fs::path programData = KnownFolder(FOLDERID_ProgramData);
+    std::vector<fs::path> manifests = { programData / "Epic" / "EpicGamesLauncher" / "Data" / "Manifests" };
+    fs::path epicData = RegPath(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher", L"AppDataPath");
+    if (!epicData.empty())
+        manifests.push_back(epicData / "Manifests");
     std::error_code ec;
-    for (const auto& item : fs::directory_iterator("C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests", ec)) {
-        if (item.path().extension() != ".item")
-            continue;
-        std::ifstream f(item.path());
-        std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-        size_t k = text.find("\"InstallLocation\"");
-        if (k == std::string::npos || text.find("KINGDOM HEARTS") == std::string::npos)
-            continue;
-        size_t a = text.find('"', text.find(':', k) + 1), b = text.find('"', a + 1);
-        std::string path = text.substr(a + 1, b - a - 1), clean;
-        for (size_t i = 0; i < path.size(); i++) {
-            if (path[i] == '\\' && i + 1 < path.size() && path[i + 1] == '\\')
-                i++;
-            clean += path[i];
+    for (const fs::path& dir : manifests)
+        for (const auto& item : fs::directory_iterator(dir, ec))
+            if (item.path().extension() == ".item")
+                for (const std::string& path : QuotedValues(ReadText(item.path()), "InstallLocation"))
+                    found.push_back(fs::u8path(path));
+    for (const std::string& path : QuotedValues(ReadText(programData / "Epic" / "UnrealEngineLauncher" / "LauncherInstalled.dat"), "InstallLocation"))
+        found.push_back(fs::u8path(path));
+    /* Heroic and Legendary (other launchers for Epic games) */
+    fs::path roaming = KnownFolder(FOLDERID_RoamingAppData), home = KnownFolder(FOLDERID_Profile);
+    for (const fs::path& json : { roaming / "heroic" / "legendaryConfig" / "legendary" / "installed.json",
+                                  home / ".config" / "legendary" / "installed.json" })
+        for (const std::string& path : QuotedValues(ReadText(json), "install_path"))
+            found.push_back(fs::u8path(path));
+    /* Windows' installed programs (Steam and Epic register their games there too) */
+    for (HKEY root : { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER })
+        for (const wchar_t* key : { L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+                                    L"SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall" }) {
+            HKEY uninstall;
+            if (RegOpenKeyExW(root, key, 0, KEY_READ, &uninstall) != ERROR_SUCCESS)
+                continue;
+            WCHAR sub[256];
+            for (DWORD i = 0, n = 256; RegEnumKeyExW(uninstall, i, sub, &n, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS; i++, n = 256) {
+                WCHAR name[512];
+                DWORD size = sizeof(name);
+                if (RegGetValueW(uninstall, sub, L"DisplayName", RRF_RT_REG_SZ, nullptr, name, &size) != ERROR_SUCCESS)
+                    continue;
+                std::wstring title(name);
+                std::transform(title.begin(), title.end(), title.begin(), ::towupper);
+                if (title.find(L"KINGDOM HEARTS") != std::wstring::npos && title.find(L"1.5") != std::wstring::npos) {
+                    WCHAR where[MAX_PATH];
+                    size = sizeof(where);
+                    if (RegGetValueW(uninstall, sub, L"InstallLocation", RRF_RT_REG_SZ, nullptr, where, &size) == ERROR_SUCCESS)
+                        found.push_back(fs::path(where));
+                }
+            }
+            RegCloseKey(uninstall);
         }
-        fs::path p = fs::u8path(clean);
+    /* last: the usual folders on every fixed drive */
+    DWORD drives = GetLogicalDrives();
+    for (int d = 0; d < 26; d++) {
+        if (!(drives & (1u << d)))
+            continue;
+        wchar_t letter[4] = { (wchar_t)(L'A' + d), L':', L'\\', 0 };
+        if (GetDriveTypeW(letter) != DRIVE_FIXED)
+            continue;
+        fs::path drive(letter);
+        for (const char* base : { "SteamLibrary/steamapps/common", "Steam/steamapps/common", "Program Files (x86)/Steam/steamapps/common",
+                                  "Program Files/Steam/steamapps/common", "Games/SteamLibrary/steamapps/common",
+                                  "Program Files/Epic Games", "Epic Games", "Games/Epic Games", "Games", "Juegos" })
+            for (const char* name : kInstallNames)
+                found.push_back(drive / fs::u8path(base) / name);
+    }
+    for (const fs::path& p : found)
         if (IsInstall(p))
             return p;
-    }
     return {};
 }
 
@@ -864,8 +950,46 @@ static bool ApplyRecipe(Rgba img, const std::string& ops, int boxW, int boxH, Rg
 
 struct Job {
     std::atomic<bool> running{ false };
+    std::atomic<bool> cancel{ false }; /* the launcher is closing: stop at the next block (see the import journal) */
     std::atomic<int> done{ 0 }, total{ 0 };
-    std::atomic<float> part{ 0 }; /* how far the file being re-encoded is, 0..1 */
+    /* how far each file being worked on went, in the same units as done/total (a movie counts by its size; several
+       re-encode at once, one slot each) */
+    std::atomic<int> partial[4] = {};
+    /* the same per part (PART_*), for the tiles: what each holds in all, what is finished, which part each slot is on */
+    std::atomic<int> partTotal[4] = {}, partDone[4] = {}, slotPart[4] = {};
+    float Partial() {
+        int n = 0;
+        for (auto& p : partial)
+            n += p;
+        return (float)n;
+    }
+    float PartProgress(int part) {
+        int total = partTotal[part], n = partDone[part];
+        for (int i = 0; i < 4; i++)
+            if (slotPart[i] == part)
+                n += partial[i];
+        return total > 0 ? std::min(1.0f, (float)n / (float)total) : 0.0f;
+    }
+    void Plan(int part, int units) { /* known up front, so the total never jumps back */
+        partTotal[part] += units;
+        total += units;
+    }
+    void Done(int part, int units) {
+        partDone[part] += units;
+        done += units;
+    }
+    void Finish(int part) { /* the part's rest, when fewer files came than planned */
+        int rest = partTotal[part] - partDone[part];
+        if (rest > 0)
+            Done(part, rest);
+    }
+    void Reset() {
+        cancel = false;
+        done = 0;
+        total = 0;
+        for (int i = 0; i < 4; i++)
+            partial[i] = partTotal[i] = partDone[i] = slotPart[i] = 0;
+    }
     std::mutex lock;
     std::string status;
     void Say(const std::string& s) {
@@ -877,7 +1001,9 @@ struct Job {
         return status;
     }
 };
+enum { PART_MOVIES, PART_SCENES, PART_MUSIC, PART_SPRITES };
 static Job sJob;
+static thread_local int tSlot = 0, tUnits = 1; /* the worker's progress slot and the weight of its file */
 
 /* Every sprite of the recipe from the installation's Recom.hed/.pkg into data/hd/sprites/<name>.png. */
 static int WriteSprites(const fs::path& hed, const fs::path& data) {
@@ -913,7 +1039,6 @@ static int WriteSprites(const fs::path& hed, const fs::path& data) {
     }
     std::ifstream pkg(fs::path(hed).replace_extension(".pkg"), std::ios::binary);
     int written = 0;
-    sJob.total += (int)(sizeof(kHdSpriteRecipe) / sizeof(kHdSpriteRecipe[0]));
     /* another texture a recipe takes letters from (src=asset:texture#n) */
     std::map<std::string, std::map<std::string, std::vector<unsigned char>>> others;
     auto load = [&](const std::string& source, Rgba& img) {
@@ -932,13 +1057,15 @@ static int WriteSprites(const fs::path& hed, const fs::path& data) {
         return others[asset].count(tex) && DecodeTexture(others[asset][tex], index, img);
     };
     for (auto& [asset, rows] : byAsset) {
+        if (sJob.cancel)
+            break;
         sJob.Say(std::string(T("Gráficos HD: ", "HD graphics: ")) + asset);
         auto it = offsets.find(Md5Hex(asset));
         std::vector<unsigned char> base;
         std::map<std::string, std::vector<unsigned char>> extras;
         bool ok = it != offsets.end() && ReadAssetExtras(pkg, it->second, base, extras);
         for (auto& f : rows) {
-            sJob.done++;
+            sJob.Done(PART_SPRITES, 1);
             std::string tex = f[8].substr(f[8].find(':') + 1);
             int index = 0;
             if (size_t hash = tex.find('#'); hash != std::string::npos) {
@@ -999,8 +1126,11 @@ static bool CopyMovie(const fs::path& src, const fs::path& dst) {
         for (std::streamsize i = 0; i < n; i++)
             buf[i] ^= (char)kMovieKey[i % 16];
     out.write(buf.data(), n);
-    while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0)
+    while (in.read(buf.data(), (std::streamsize)buf.size()) || in.gcount() > 0) {
+        if (sJob.cancel)
+            return false;
         out.write(buf.data(), in.gcount());
+    }
     return (bool)out;
 }
 
@@ -1141,6 +1271,7 @@ static bool Transcode(const fs::path& src, const fs::path& dst, const Quality& q
         hr = MFCreateAttributes(&attr, 1);
     if (SUCCEEDED(hr)) {
         attr->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, getenv("KHCOM_ENC_HW") ? atoi(getenv("KHCOM_ENC_HW")) : TRUE);
+        attr->SetGUID(MF_TRANSCODE_CONTAINERTYPE, MFTranscodeContainerType_MPEG4); /* MP4 also under a .part name */
         hr = MFCreateSinkWriterFromURL(dst.wstring().c_str(), nullptr, attr, &writer);
     }
     Release(attr);
@@ -1169,6 +1300,10 @@ static bool Transcode(const fs::path& src, const fs::path& dst, const Quality& q
         hr = writer->BeginWriting();
     bool videoDone = false, audioDone = !haveAudio;
     while (SUCCEEDED(hr) && !(videoDone && audioDone)) {
+        if (sJob.cancel) {
+            hr = E_ABORT;
+            break;
+        }
         DWORD index = 0, flags = 0;
         LONGLONG time = 0;
         IMFSample* sample = nullptr;
@@ -1181,7 +1316,7 @@ static bool Transcode(const fs::path& src, const fs::path& dst, const Quality& q
         if (sample) {
             hr = writer->WriteSample(isVideo ? videoStream : audioStream, sample);
             if (isVideo && duration > 0)
-                sJob.part = (float)((double)time / (double)duration);
+                sJob.partial[tSlot] = (int)(tUnits * ((double)time / (double)duration));
             sample->Release();
         } else if (flags & MF_SOURCE_READERF_STREAMTICK) {
             writer->SendStreamTick(isVideo ? videoStream : audioStream, time);
@@ -1224,30 +1359,228 @@ static void MoveScenes(const fs::path& hdDir) {
     }
 }
 
-/* One movie into dst: copied as it is (quality 0), or re-encoded from a plain copy beside it (the copy is kept when
-   the re-encoding fails). */
+/* ---- an import cut short (the launcher closed, a crash, the power) ---------------------------------------------
+   While an import runs, hd/import.journal holds its choices on the first line and then every file it created that was
+   not there before, as each one is finished. Files are written under a .part name and renamed once complete, so a
+   finished name is always whole. On the next start the player resumes it (the journal's files are checked and
+   skipped) or discards it (only what that import created goes; what was there before stays). */
+static fs::path sJournal; /* the running import's journal */
+static std::mutex sJournalLock;
+
+static fs::path JournalPath(const fs::path& data) { return data / "hd" / "import.journal"; }
+
+struct JournalInfo {
+    bool found = false, movies = false, scenes = false, music = false, sprites = false;
+    int quality = 1;
+    fs::path source;
+    std::vector<std::string> files; /* relative to hd/ ("movies/ROP.mp4"; "music/" a whole folder it created) */
+};
+
+static JournalInfo ReadJournal(const fs::path& data) {
+    JournalInfo j;
+    std::ifstream in(JournalPath(data));
+    std::string line;
+    if (!std::getline(in, line))
+        return j;
+    int m = 0, sc = 0, mu = 0, sp = 0, q = 1;
+    char src[1024] = {};
+    if (sscanf(line.c_str(), "%d %d %d %d %d %1023[^\n]", &q, &m, &sc, &mu, &sp, src) < 5)
+        return j;
+    j.found = true;
+    j.quality = q, j.movies = m, j.scenes = sc, j.music = mu, j.sprites = sp;
+    j.source = fs::u8path(src);
+    while (std::getline(in, line))
+        if (!line.empty())
+            j.files.push_back(line);
+    return j;
+}
+
+/* a finished file this import created (relative to hd/) */
+static void JournalAdd(const std::string& relative) {
+    std::lock_guard<std::mutex> g(sJournalLock);
+    if (!sJournal.empty())
+        std::ofstream(sJournal, std::ios::app) << relative << "\n";
+}
+
+/* the .part files an import or a compression left half-written */
+static void RemoveParts(const fs::path& data) {
+    std::error_code ec;
+    for (const char* sub : { "movies", "scenes", "music", "sprites" })
+        for (const auto& f : fs::directory_iterator(data / "hd" / sub, ec))
+            if (f.path().extension() == ".part")
+                fs::remove(f.path(), ec);
+}
+
+/* Discard an import cut short: what it created, its half-written files and the journal; nothing else */
+static void DiscardImport(const fs::path& data) {
+    std::error_code ec;
+    JournalInfo j = ReadJournal(data);
+    for (const std::string& f : j.files) {
+        fs::path at = data / "hd" / fs::u8path(f);
+        if (!f.empty() && f.back() == '/')
+            fs::remove_all(at, ec);
+        else
+            fs::remove(at, ec);
+    }
+    RemoveParts(data);
+    fs::remove(JournalPath(data), ec);
+}
+
+/* A whole MP4: its top-level boxes add up to the file and the index (moov) and the data (mdat) are there. Reads a few
+   bytes a box: quick even for the opening. */
+static bool Mp4Ok(const fs::path& f) {
+    std::error_code ec;
+    uintmax_t size = fs::file_size(f, ec), at = 0;
+    std::ifstream in(f, std::ios::binary);
+    bool moov = false, mdat = false;
+    if (ec || !in)
+        return false;
+    while (at + 8 <= size) {
+        unsigned char h[16];
+        in.seekg((std::streamoff)at);
+        if (!in.read((char*)h, 8))
+            return false;
+        uint64_t box = (uint64_t)h[0] << 24 | h[1] << 16 | h[2] << 8 | h[3];
+        if (box == 1) {
+            if (!in.read((char*)h + 8, 8))
+                return false;
+            box = 0;
+            for (int i = 8; i < 16; i++)
+                box = box << 8 | h[i];
+        } else if (box == 0) {
+            box = size - at;
+        }
+        if (box < 8)
+            return false;
+        moov |= memcmp(h + 4, "moov", 4) == 0;
+        mdat |= memcmp(h + 4, "mdat", 4) == 0;
+        at += box;
+    }
+    return at == size && moov && mdat;
+}
+
+/* One movie into dst: copied as it is (quality 0), or re-encoded from a plain copy beside it (that copy becomes the
+   movie when the re-encoding fails). Written under .part names: dst appears only once whole. */
 /* quality: the compression, 0 source, 1 good, 2 saving */
 static bool ImportMovie(const fs::path& src, const fs::path& dst, int quality) {
     std::error_code ec;
     Quality q = { 0, quality };
-    if (quality <= 0 || quality > 2)
-        return CopyMovie(src, dst);
-    fs::path plain = fs::path(dst).replace_extension(".source.mp4");
-    if (!CopyMovie(src, plain))
-        return false;
-    sJob.part = 0;
-    bool ok = Transcode(plain, dst, q);
-    if (ok)
-        fs::remove(plain, ec);
-    else
-        fs::rename(plain, dst, ec);
-    sJob.part = 0;
-    return ok || !ec;
+    bool existed = fs::exists(dst, ec);
+    fs::path part = dst, plain = dst;
+    part += ".part";
+    plain += ".copy.part";
+    bool ok;
+    if (quality <= 0 || quality > 2) {
+        ok = CopyMovie(src, part);
+        if (ok)
+            fs::rename(part, dst, ec);
+    } else {
+        ok = CopyMovie(src, plain);
+        if (ok) {
+            sJob.partial[tSlot] = 0;
+            if (Transcode(plain, part, q)) {
+                fs::rename(part, dst, ec);
+            } else if (!sJob.cancel) {
+                fs::remove(part, ec);
+                fs::rename(plain, dst, ec);
+            } else {
+                ok = false;
+            }
+            sJob.partial[tSlot] = 0;
+        }
+    }
+    ok = ok && !ec;
+    fs::remove(part, ec);
+    fs::remove(plain, ec);
+    if (ok && !existed)
+        JournalAdd(dst.parent_path().filename().u8string() + "/" + dst.filename().u8string());
+    return ok;
 }
 
-static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool music, bool sprites, int quality) {
+/* A movie's weight in the progress, about the time it takes: its size, 8 MB a unit when re-encoded (~1 s), 64 MB when
+   only copied; a music track or an HD graphic is about one unit */
+static int sUnitShift = 23;
+static int Units(const fs::path& f) {
+    std::error_code ec;
+    uintmax_t size = fs::file_size(f, ec);
+    return ec ? 1 : (int)std::max<uintmax_t>(1, size >> sUnitShift);
+}
+static int MoviePart(const fs::path& f) {
+    return f.filename().string().rfind("zz_event_", 0) == 0 ? PART_SCENES : PART_MOVIES;
+}
+
+/* How many movies to work on at once, from this computer: copying is the disk's (2); re-encoding decodes on the
+   processor (~5 threads a movie) and encodes on the graphics card when it has an H.264 encoder (several sessions),
+   else all on the processor. Never past the threads, nor ~700 MB of free memory a movie. KHCOM_IMPORT_JOBS forces it. */
+static int Workers(int quality) {
+    const int most = (int)(sizeof(sJob.partial) / sizeof(sJob.partial[0]));
+    if (const char* e = getenv("KHCOM_IMPORT_JOBS"))
+        return std::clamp(atoi(e), 1, most);
+    if (quality <= 0)
+        return 2;
+    int threads = (int)std::max(1u, std::thread::hardware_concurrency());
+    bool hardware = false;
+    MFT_REGISTER_TYPE_INFO h264 = { MFMediaType_Video, MFVideoFormat_H264 };
+    IMFActivate** found = nullptr;
+    UINT32 count = 0;
+    if (SUCCEEDED(MFTEnumEx(MFT_CATEGORY_VIDEO_ENCODER, MFT_ENUM_FLAG_HARDWARE | MFT_ENUM_FLAG_SORTANDFILTER, nullptr,
+                            &h264, &found, &count))) {
+        hardware = count > 0;
+        for (UINT32 i = 0; i < count; i++)
+            found[i]->Release();
+        CoTaskMemFree(found);
+    }
+    int n = hardware ? std::clamp(threads / 5, 1, 3) : std::clamp(threads / 8, 1, 2);
+    MEMORYSTATUSEX mem = { sizeof(mem) };
+    if (GlobalMemoryStatusEx(&mem))
+        n = std::min(n, std::max(1, (int)(mem.ullAvailPhys / (700ull << 20))));
+    return n;
+}
+
+/* fn(item) for every item, n at once (each thread with its own progress slot and COM) */
+static void Parallel(const std::vector<fs::path>& list, int n, const std::function<void(const fs::path&)>& fn) {
+    std::atomic<size_t> next{ 0 };
+    auto work = [&](int slot) {
+        HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+        tSlot = slot;
+        for (size_t i; !sJob.cancel && (i = next++) < list.size();) {
+            tUnits = Units(list[i]);
+            int units = tUnits, part = MoviePart(list[i]); /* the file may change size while it is worked on */
+            sJob.slotPart[slot] = part;
+            fn(list[i]);
+            sJob.partial[slot] = 0;
+            sJob.Done(part, units);
+        }
+        if (SUCCEEDED(com))
+            CoUninitialize();
+    };
+    std::vector<std::thread> threads;
+    for (int i = 1; i < n && i < (int)list.size(); i++)
+        threads.emplace_back(work, i);
+    work(0);
+    for (auto& t : threads)
+        t.join();
+}
+
+static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool music, bool sprites, int quality,
+                bool resume = false) {
     std::error_code ec;
     quality = Compression(quality);
+    /* the journal: a new import starts one; resuming keeps the files it lists (checked) and goes on from there */
+    JournalInfo previous = resume ? ReadJournal(data) : JournalInfo();
+    fs::create_directories(data / "hd", ec);
+    RemoveParts(data);
+    {
+        std::lock_guard<std::mutex> g(sJournalLock);
+        sJournal = JournalPath(data);
+        if (!previous.found)
+            std::ofstream(sJournal, std::ios::trunc) << quality << " " << movies << " " << scenes << " " << music << " "
+                                                     << sprites << " " << source.u8string() << "\n";
+    }
+    auto finished = [&](const fs::path& f) { /* resuming: made by the import cut short, and whole */
+        std::string rel = f.parent_path().filename().u8string() + "/" + f.filename().u8string();
+        return std::find(previous.files.begin(), previous.files.end(), rel) != previous.files.end() && Mp4Ok(f);
+    };
     HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     bool mf = SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_LITE));
     if (!mf)
@@ -1255,13 +1588,15 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
     fs::path outMovies = data / "hd" / "movies", outScenes = data / "hd" / "scenes", outMusic = data / "hd" / "music";
     MoveScenes(data / "hd");
     int imported = 0;
+    sUnitShift = quality ? 23 : 26;
+    /* everything to do, weighed up front: the bar moves with the time left, and never back */
+    fs::path hed = source / "Image" / "dt" / "Recom.hed";
+    bool haveHed = fs::exists(hed, ec);
+    std::vector<fs::path> list;
     if (movies || scenes) {
-        fs::create_directories(outMovies, ec);
-        fs::create_directories(outScenes, ec);
         fs::path folder = MovieFolder(source);
         if (folder.empty())
             folder = source;
-        std::vector<fs::path> list;
         for (const char* m : kBaseMovies)
             if (movies && fs::exists(folder / (std::string(m) + ".mp4"), ec))
                 list.push_back(folder / (std::string(m) + ".mp4"));
@@ -1269,27 +1604,42 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
             for (const auto& f : fs::directory_iterator(folder, ec))
                 if (f.path().extension() == ".mp4" && f.path().filename().string().rfind("zz_event_", 0) == 0)
                     list.push_back(f.path());
-        sJob.total += (int)list.size();
-        for (const fs::path& f : list) {
-            sJob.Say(std::string(quality ? T("Recodificando ", "Re-encoding ") : T("Copiando ", "Copying ")) + f.filename().string());
-            if (ImportMovie(f, (f.filename().string().rfind("zz_event_", 0) == 0 ? outScenes : outMovies) / f.filename(), quality))
-                imported++;
-            sJob.done++;
-        }
+        for (const fs::path& f : list)
+            sJob.Plan(MoviePart(f), Units(f));
+    }
+    if (music)
+        sJob.Plan(PART_MUSIC, (int)(sizeof(kTracks) / sizeof(kTracks[0])));
+    if (sprites && haveHed)
+        sJob.Plan(PART_SPRITES, (int)(sizeof(kHdSpriteRecipe) / sizeof(kHdSpriteRecipe[0])));
+    if (movies || scenes) {
+        fs::create_directories(outMovies, ec);
+        fs::create_directories(outScenes, ec);
+        std::atomic<int> movieCount{ 0 };
+        int workers = Workers(quality);
+        Parallel(list, workers, [&](const fs::path& f) {
+            sJob.Say(std::string(quality ? T("Recodificando ", "Re-encoding ") : T("Copiando ", "Copying ")) + f.filename().string() +
+                     (workers > 1 ? " (" + std::to_string(workers) + T(" a la vez)", " at once)") : std::string()));
+            fs::path dst = (f.filename().string().rfind("zz_event_", 0) == 0 ? outScenes : outMovies) / f.filename();
+            if (finished(dst) || ImportMovie(f, dst, quality))
+                movieCount++;
+        });
+        imported += movieCount;
+        sJob.Finish(PART_MOVIES);
+        sJob.Finish(PART_SCENES);
         sJob.Say(T("Subtítulos", "Subtitles"));
         imported += WriteSubtitles(source, data);
     }
-    if (music) {
+    if (music && !sJob.cancel) {
+        if (!fs::exists(outMusic, ec) && !previous.found)
+            JournalAdd("music/"); /* a folder this import makes: discarding takes it away */
         fs::create_directories(outMusic, ec);
-        fs::path hed = source / "Image" / "dt" / "Recom.hed";
-        if (fs::exists(hed, ec)) {
+        if (haveHed) {
             std::map<std::string, std::string> want;
             for (const char* t : kTracks)
                 want[Md5Hex(std::string("STREAM/0001/") + t + ".win32.scd")] = t;
             std::ifstream h(hed, std::ios::binary), pkg(fs::path(hed).replace_extension(".pkg"), std::ios::binary);
             unsigned char e[0x20];
-            sJob.total += (int)want.size();
-            while (h.read((char*)e, 0x20)) {
+            while (!sJob.cancel && h.read((char*)e, 0x20)) {
                 static const char* hex = "0123456789abcdef";
                 std::string md5;
                 for (int i = 0; i < 16; i++) {
@@ -1308,7 +1658,7 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
                     WriteTrack(outMusic, it->second, ogg, a, b);
                     imported++;
                 }
-                sJob.done++;
+                sJob.Done(PART_MUSIC, 1);
             }
         } else { /* a folder with the tracks: .scd converted, .ogg copied */
             for (const auto& f : fs::directory_iterator(source, ec)) {
@@ -1327,16 +1677,26 @@ static void Run(fs::path source, fs::path data, bool movies, bool scenes, bool m
                     fs::copy_file(f.path(), outMusic / (stem + ".ogg"), fs::copy_options::overwrite_existing, ec);
                     imported++;
                 }
+                sJob.Done(PART_MUSIC, 1);
             }
         }
+        sJob.Finish(PART_MUSIC);
     }
-    if (sprites) {
-        fs::path hed = source / "Image" / "dt" / "Recom.hed";
-        if (fs::exists(hed, ec))
-            imported += WriteSprites(hed, data);
+    if (sprites && haveHed && !sJob.cancel) {
+        if (!fs::exists(data / "hd" / "sprites", ec) && !previous.found)
+            JournalAdd("sprites/");
+        imported += WriteSprites(hed, data);
+        sJob.Finish(PART_SPRITES);
     }
-    sJob.Say(imported ? std::string(T("Listo: ", "Done: ")) + std::to_string(imported) + T(" archivos importados.", " files imported.")
-                      : std::string(T("No se encontró nada para importar en esa carpeta.", "Nothing to import was found in that folder.")));
+    {
+        std::lock_guard<std::mutex> g(sJournalLock);
+        if (!sJob.cancel)
+            fs::remove(sJournal, ec);
+        sJournal.clear();
+    }
+    sJob.Say(sJob.cancel ? std::string(T("Carga detenida.", "Import stopped."))
+             : imported ? std::string(T("Listo: ", "Done: ")) + std::to_string(imported) + T(" archivos importados.", " files imported.")
+                        : std::string(T("No se encontró nada para importar en esa carpeta.", "Nothing to import was found in that folder.")));
     if (mf)
         MFShutdown();
     if (SUCCEEDED(com))
@@ -1409,32 +1769,38 @@ static void Compress(fs::path data, int quality) {
             if (f.path().extension() == ".mp4")
                 list.push_back(f.path());
     }
-    sJob.total += (int)list.size();
     quality = Compression(quality);
+    sUnitShift = 23;
+    for (const fs::path& f : list)
+        sJob.Plan(MoviePart(f), Units(f));
     Quality q = { 0, quality };
-    for (const fs::path& f : list) {
+    std::atomic<uintmax_t> sizeBefore{ 0 }, sizeAfter{ 0 };
+    std::atomic<int> compressed{ 0 };
+    int workers = mf ? Workers(quality) : 1;
+    Parallel(list, workers, [&](const fs::path& f) {
+        std::error_code ec;
         uintmax_t size = fs::file_size(f, ec);
-        before += size;
+        sizeBefore += size;
         if (!mf || quality <= 0 || AtOrUnder(f, quality)) {
-            after += size;
-            sJob.done++;
-            continue;
+            sizeAfter += size;
+            return;
         }
-        sJob.Say(std::string(T("Comprimiendo ", "Compressing ")) + f.filename().string());
+        sJob.Say(std::string(T("Comprimiendo ", "Compressing ")) + f.filename().string() +
+                 (workers > 1 ? " (" + std::to_string(workers) + T(" a la vez)", " at once)") : std::string()));
         fs::path plain = fs::path(f).replace_extension(".source.mp4");
-        sJob.part = 0;
         fs::rename(f, plain, ec);
         if (!ec && Transcode(plain, f, q) && fs::file_size(f, ec) < size) {
             fs::remove(plain, ec);
-            changed++;
+            compressed++;
         } else { /* failed, or not smaller: the movie as it was */
             fs::remove(f, ec);
             fs::rename(plain, f, ec);
         }
-        after += fs::file_size(f, ec);
-        sJob.part = 0;
-        sJob.done++;
-    }
+        sizeAfter += fs::file_size(f, ec);
+    });
+    before = sizeBefore;
+    after = sizeAfter;
+    changed = compressed;
     if (changed)
         std::ofstream(data / "hd" / "quality") << quality << "\n";
     char msg[160];
@@ -1453,8 +1819,7 @@ static void StartCompress(const fs::path& data, int quality) {
     if (sJob.running)
         return;
     sJob.running = true;
-    sJob.done = 0;
-    sJob.total = 0;
+    sJob.Reset();
     sJob.Say(T("Comprimiendo...", "Compressing..."));
     std::thread(Compress, data, quality).detach();
 }
@@ -1471,14 +1836,13 @@ static uintmax_t InstalledMovieBytes(const fs::path& data) {
 }
 
 static void Start(const fs::path& source, const fs::path& data, bool movies, bool scenes, bool music, bool sprites,
-                  int quality) {
+                  int quality, bool resume = false) {
     if (sJob.running)
         return;
     sJob.running = true;
-    sJob.done = 0;
-    sJob.total = 0;
+    sJob.Reset();
     sJob.Say(T("Importando...", "Importing..."));
-    std::thread(Run, source, data, movies, scenes, music, sprites, quality).detach();
+    std::thread(Run, source, data, movies, scenes, music, sprites, quality, resume).detach();
 }
 
 static int Count(const fs::path& folder, const char* ext) {
@@ -1514,6 +1878,90 @@ static fs::path PickFolder() {
 }
 
 }  // namespace hd
+
+static bool sQuitAsked, sQuitNow; /* the window's close while the HD mod loads: asked first (main loop) */
+static int sQuitChoice;           /* closing anyway: 1 keep what is finished to resume, 2 remove what this import made */
+
+/* Closing while the HD mod loads: the player is told it is better to wait; closing anyway stops the import at the next
+   block, then keeps it to resume on the next start or removes only what this import created */
+static void HdQuitPopup() {
+    if (sQuitAsked) {
+        ImGui::OpenPopup("hdquit");
+        sQuitAsked = false;
+    }
+    if (sQuitChoice && !hd::sJob.running) {
+        if (sQuitChoice == 2)
+            hd::DiscardImport(sRoot);
+        sQuitNow = true;
+    }
+    ImGui::SetNextWindowSize(ImVec2(Px(560), 0));
+    if (!ImGui::BeginPopupModal("hdquit", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+    Eyebrow(T("MOD HD · CARGANDO", "HD MOD · LOADING"));
+    if (sQuitChoice) {
+        ImGui::TextWrapped("%s", T("Deteniendo la carga...", "Stopping the import..."));
+        ImGui::EndPopup();
+        return;
+    }
+    ImGui::TextWrapped("%s", T("El mod HD se está cargando. Cerrar ahora no es lo ideal: lo mejor es esperar a que termine.",
+                               "The HD mod is loading. Closing now is not ideal: it is best to wait until it finishes."));
+    ImGui::Spacing();
+    if (ImGui::Button(T("Seguir cargando", "Keep loading"), ImVec2(-FLT_MIN, Px(40))))
+        ImGui::CloseCurrentPopup();
+    if (ImGui::Button(T("Cerrar y retomar después", "Close and resume later"), ImVec2(-FLT_MIN, Px(40)))) {
+        hd::sJob.cancel = true;
+        sQuitChoice = 1;
+    }
+    if (ImGui::Button(T("Cerrar y borrar lo de esta carga", "Close and remove this import"), ImVec2(-FLT_MIN, Px(40)))) {
+        hd::sJob.cancel = true;
+        sQuitChoice = 2;
+    }
+    ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
+    ImGui::TextWrapped("%s", T("Retomar conserva lo ya cargado y sigue desde ahí al abrir de nuevo. Borrar quita solo lo que "
+                               "copió esta carga: lo que ya tenías y tus partidas quedan.",
+                               "Resuming keeps what is loaded and goes on from there next time. Removing takes away only "
+                               "what this import copied: what you had before and your saves stay."));
+    ImGui::PopStyleColor();
+    ImGui::EndPopup();
+}
+
+/* An import cut short (closed, a crash, a power cut): offered on the next start, to resume or discard */
+static void HdResumePopup() {
+    static bool checked;
+    static hd::JournalInfo journal;
+    if (!checked && !hd::sJob.running && !SDL_getenv("DECOMPUI_SHOT")) {
+        checked = true;
+        journal = hd::ReadJournal(sRoot);
+        if (journal.found)
+            ImGui::OpenPopup("hdresume");
+    }
+    ImGui::SetNextWindowSize(ImVec2(Px(560), 0));
+    if (!ImGui::BeginPopupModal("hdresume", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+    Eyebrow(T("MOD HD · CARGA A MEDIAS", "HD MOD · IMPORT CUT SHORT"));
+    char text[256];
+    snprintf(text, sizeof(text), T("La carga del mod HD no terminó (se cerró o se apagó el PC). %d archivos ya están listos: "
+                                   "se comprueban y se sigue desde ahí.",
+                                   "The HD mod's import did not finish (closed, or the PC went off). %d files are ready: "
+                                   "they are checked and it goes on from there."),
+             (int)journal.files.size());
+    ImGui::TextWrapped("%s", text);
+    ImGui::Spacing();
+    if (ImGui::Button(T("Retomar", "Resume"), ImVec2(-FLT_MIN, Px(40)))) {
+        std::error_code ec;
+        fs::path source = hd::IsInstall(journal.source) || fs::is_directory(journal.source, ec) ? journal.source : hd::FindInstall();
+        hd::Start(source, sRoot, journal.movies, journal.scenes, journal.music, journal.sprites, journal.quality, true);
+        sPage = PAGE_EXTRAS; /* the progress is there */
+        ImGui::CloseCurrentPopup();
+    }
+    if (ImGui::Button(T("Descartar lo de esa carga", "Discard that import"), ImVec2(-FLT_MIN, Px(40)))) {
+        hd::DiscardImport(sRoot);
+        ImGui::CloseCurrentPopup();
+    }
+    if (ImGui::Button(T("Más tarde", "Later"), ImVec2(-FLT_MIN, 0)))
+        ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+}
 
 /* The launcher card: find or choose the source, import, and the three switches. */
 static bool HdModCard() {
@@ -1559,11 +2007,18 @@ static bool HdModCard() {
             GameSquare(dl, ImVec2(a.x + Px(16), a.y + Px(17)), Px(12), ok);
             dl->AddText(ImVec2(a.x + Px(30), a.y + Px(8)), ImGui::GetColorU32(kText), tiles[i].name);
             char line[64];
-            if (ok)
+            bool busy = hd::sJob.running && hd::sJob.partTotal[i] > 0;
+            if (busy) { /* this part is being imported: how far it went, as a bar along the tile's foot */
+                float f = hd::sJob.PartProgress(i);
+                snprintf(line, sizeof(line), "%d %%", (int)(f * 100));
+                float x0 = a.x + Px(10), x1 = b.x - Px(10), y = b.y - Px(10);
+                dl->AddRectFilled(ImVec2(x0, y), ImVec2(x1, y + Px(4)), ImGui::GetColorU32(kBorder), Px(2));
+                dl->AddRectFilled(ImVec2(x0, y), ImVec2(x0 + (x1 - x0) * f, y + Px(4)), ImGui::GetColorU32(kAccent), Px(2));
+            } else if (ok)
                 snprintf(line, sizeof(line), "%d %s", tiles[i].count, tiles[i].unit);
             else
                 snprintf(line, sizeof(line), "%s", T("Sin cargar", "Not loaded"));
-            dl->AddText(ImVec2(a.x + Px(12), a.y + Px(32)), ImGui::GetColorU32(ok ? kText : kMuted), line);
+            dl->AddText(ImVec2(a.x + Px(12), a.y + Px(28)), ImGui::GetColorU32(ok || busy ? kText : kMuted), line);
         }
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, h));
     }
@@ -1658,7 +2113,7 @@ static bool HdModCard() {
     if (hd::sJob.running || !hd::sJob.Status().empty()) {
         int total = hd::sJob.total, done = hd::sJob.done;
         if (hd::sJob.running && total > 0) /* the file being re-encoded counts as far as it went */
-            ImGui::ProgressBar(std::min(1.0f, ((float)done + std::min(1.0f, (float)hd::sJob.part)) / (float)total),
+            ImGui::ProgressBar(std::min(1.0f, ((float)done + hd::sJob.Partial()) / (float)total),
                                ImVec2(-1, 0));
         ImGui::TextWrapped("%s", hd::sJob.Status().c_str());
     }

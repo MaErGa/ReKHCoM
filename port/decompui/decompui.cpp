@@ -2235,6 +2235,8 @@ static void Frame(SDL_Window* window) {
     ImGui::EndChild();
     RomFolderPoll(window);
     HdOfferPopup();
+    HdQuitPopup();
+    HdResumePopup();
     Footer();
     ImGui::End();
     AchievementPreviewDraw();
@@ -2858,20 +2860,21 @@ int main(int argc, char** argv) {
     for (int i = 1; i < argc; i++)
         if (strcmp(argv[i], "--hd-import") == 0) {
             fs::path source = i + 1 < argc && argv[i + 1][0] != '-' ? fs::u8path(argv[i + 1]) : hd::FindInstall();
-            bool scenes = false, spritesOnly = false;
+            bool scenes = false, spritesOnly = false, resume = false;
             int quality = 0;
             for (int j = 1; j < argc; j++) {
                 if (strcmp(argv[j], "--quality") == 0 && j + 1 < argc)
                     quality = atoi(argv[j + 1]);
                 scenes |= strcmp(argv[j], "--scenes") == 0;
                 spritesOnly |= strcmp(argv[j], "--sprites-only") == 0;
+                resume |= strcmp(argv[j], "--resume") == 0; /* an import cut short (hd/import.journal) */
             }
             if (source.empty()) {
                 fprintf(stderr, "KINGDOM HEARTS -HD 1.5+2.5 ReMIX- not found\n");
                 return 1;
             }
             hd::sJob.running = true;
-            hd::Run(source, sRoot, !spritesOnly, scenes && !spritesOnly, !spritesOnly, true, quality);
+            hd::Run(source, sRoot, !spritesOnly, scenes && !spritesOnly, !spritesOnly, true, quality, resume);
             fprintf(stderr, "%s\n", hd::sJob.Status().c_str());
             return 0;
         }
@@ -2971,8 +2974,12 @@ int main(int argc, char** argv) {
                 ImGui::GetIO().ConfigNavSwapGamepadButtons =
                     KhPadIsNintendo(SDL_GetGamepadFromID(ev.gbutton.which), Ini("pad_layout")) != 0;
             ImGui_ImplSDL3_ProcessEvent(&ev);
-            if (ev.type == SDL_EVENT_QUIT || ev.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-                running = false;
+            if (ev.type == SDL_EVENT_QUIT || ev.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+                if (hd::sJob.running && !shotDir)
+                    sQuitAsked = true; /* the HD mod is loading: asked first (HdQuitPopup) */
+                else
+                    running = false;
+            }
             if (ev.type == SDL_EVENT_DROP_FILE && ev.drop.data != nullptr)
                 InstallRom(fs::u8path(ev.drop.data));
         }
@@ -2986,6 +2993,8 @@ int main(int argc, char** argv) {
         ImGui::PushFont(sFontMenu);
         Frame(window);
         ImGui::PopFont();
+        if (sQuitNow)
+            running = false;
         ImGui::Render();
         int w, h;
         SDL_GetWindowSizeInPixels(window, &w, &h);
