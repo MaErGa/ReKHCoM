@@ -11,6 +11,19 @@ Reglas del usuario:
 - Nunca borrar carpetas ReKHCoM-vX sin que el usuario lo pida.
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
+## TRASPASO 24/10 (Claude, sesión nueva; usuario: "prerelease interna cerrando issues, limpiar pendientes, seguir
+hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v2.0") — LEER PRIMERO
+
+- **v2.0-pre3 interna (no publicada)**: Windows desde main cc3a9db9e (`build_all.py --platform windows --package
+  --release-version v2.0`, zip copiado a `build/releases/ReKHCoM-v2.0-pre3-windows-x86.zip`). Copia del usuario
+  `jugar/ReKHCoM-v2.0-pre3` + `jugar/Probar ReKHCoM v2.0 pre3.bat` (partidas de la 1.9.15 completo, hd enlazado a
+  D:/01Claude/ReKHCoM-build/hd-completo). Combate de prueba EU/US/JP (`KHCOM_BATTLE=10:4`) sin crash.
+- **Issues: 0 abiertos.** #40, #42, #45 cerrados con un comentario: el arreglo sale en la v2.0, pronto; #42 pide un
+  issue nuevo con qué pista suena dónde si las pistas HD siguen cambiadas (el video no lo dice).
+- Siguiente: Preliminar V2 de Oogie (usuario: "máxima lógica, píxel a píxel, prediciendo el escenario completo y
+  usando tiles donde sirvan"), luego Jafar y Marluxia, copia jugable de la V2 y esperar los comentarios del usuario
+  (checkpoint antes de la v2.0).
+
 ## TRASPASO 23/10 noche (Claude; /goal del usuario: "acabar y depurar todos los pendientes hasta llegar a la 2.0") — LEER PRIMERO
 
 **Cómo seguir:** la cola del usuario está en "COLA del usuario" (abajo). Cada pieza: probar, subir a main enseguida,
