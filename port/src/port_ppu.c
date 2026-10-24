@@ -87,8 +87,10 @@ static int sBgIsoLatched[4];
 static int sEventBackdropProfile = -1; /* derived at frame start, not saved */
 static int sUseSceneProfiles;
 static int sPreliminarV1;
-static int sPreliminarApprovedOnly; /* only the Preliminar V1 scenes approved with honours (121, 122), for everyone */
-static int sScene121On, sScene122On; /* KHCOM_SCENE121_WIDE / KHCOM_SCENE122_WIDE=0 turn each off */
+static int sPreliminarApprovedOnly; /* only the Preliminar V1 scenes approved with honours, for everyone */
+/* Preliminar V1 scenes approved with honours in the review app; KHCOM_SCENEnnn_WIDE=0 turns one off */
+static const int kPreliminarApproved[] = {55, 121, 122};
+static int sPreliminarApprovedOn[sizeof(kPreliminarApproved)/sizeof(kPreliminarApproved[0])];
 /* harness switches, read once per frame on the main thread: getenv in the per-row/per-pixel drawing is slow on
    Windows (a frame a second at 32:9) and not safe to call while the cores draw */
 static int sEnvNoGuardPatio, sEnvTitleBandsOff, sEnvActorFrameOff, sEnvHudLayoutFrame = -1;
@@ -3315,9 +3317,19 @@ void PortPpuBeginFrame(void) {
     memset(sPreliminarRecipe, 0, sizeof(sPreliminarRecipe));
     /* Preliminar V1 is opt-in until approved; scenes approved with honours are on for everyone (=0 turns one off) */
     sPreliminarApprovedOnly = !sPreliminarV1;
-    sScene121On = PortArtOn("KHCOM_SCENE121_WIDE");
-    sScene122On = PortArtOn("KHCOM_SCENE122_WIDE");
-    if ((sPreliminarV1 || sScene121On || sScene122On) && !sBattleView) {
+    {
+        int anyApproved = 0;
+        for (b = 0; b < (int)(sizeof(kPreliminarApproved)/sizeof(kPreliminarApproved[0])); b++) {
+            char var[] = "KHCOM_SCENE000_WIDE";
+            var[11] = (char)('0' + kPreliminarApproved[b] / 100);
+            var[12] = (char)('0' + kPreliminarApproved[b] / 10 % 10);
+            var[13] = (char)('0' + kPreliminarApproved[b] % 10);
+            sPreliminarApprovedOn[b] = PortArtOn(var);
+            anyApproved |= sPreliminarApprovedOn[b];
+        }
+        if (!anyApproved) sPreliminarApprovedOnly = 0;
+    }
+    if ((sPreliminarV1 || sPreliminarApprovedOnly) && !sBattleView) {
         const char* skipValue=getenv("KHCOM_PRELIMINAR_SKIP");
         int skip=skipValue?atoi(skipValue):-1;
         for (b=1; b<4; b++) {
@@ -3334,9 +3346,12 @@ void PortPpuBeginFrame(void) {
                             sPreliminarRecipe[b]?sPreliminarRecipe[b]->v[0]:-1);
                 if (sPreliminarRecipe[b] && sPreliminarRecipe[b]->v[0]==skip)
                     sPreliminarRecipe[b]=NULL;
-                if (sPreliminarApprovedOnly && sPreliminarRecipe[b] &&
-                    !((sPreliminarRecipe[b]->v[0]==121 && sScene121On) || (sPreliminarRecipe[b]->v[0]==122 && sScene122On)))
-                    sPreliminarRecipe[b]=NULL;
+                if (sPreliminarApprovedOnly && sPreliminarRecipe[b]) {
+                    int k, on = 0;
+                    for (k = 0; k < (int)(sizeof(kPreliminarApproved)/sizeof(kPreliminarApproved[0])); k++)
+                        if (sPreliminarRecipe[b]->v[0] == kPreliminarApproved[k]) on = sPreliminarApprovedOn[k];
+                    if (!on) sPreliminarRecipe[b]=NULL;
+                }
             }
         }
     }
