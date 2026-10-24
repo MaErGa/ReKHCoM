@@ -7,4 +7,5 @@ uint16_t PortAndroidTouchKeys(void);
 void PortAndroidTouchClear(void);
 void PortAndroidTouchSettingsChanged(void);
 void PortAndroidTouchDraw(struct SDL_Renderer* renderer);
+void PortAndroidTouchEditStart(void); /* the layout editor: drag the touch buttons (Options, "Move touch buttons") */
 #endif

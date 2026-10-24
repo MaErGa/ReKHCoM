@@ -86,6 +86,7 @@ enum {
     ITEM_INVERT_CARD_SCROLL,
     ITEM_HIDE_TOUCH,
     ITEM_TOUCH_THEME,  /* the touch buttons' look: Clear, Dark, Color */
+    ITEM_TOUCH_EDIT,   /* the layout editor: drag the touch buttons where the player wants them */
     ITEM_FRAMESKIP,
     ITEM_RECOM_EXTRAS, /* section heading, not selectable */
     ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): shown only once imported */
@@ -187,7 +188,8 @@ static int ItemVisible(int item) {
     switch (item) {
 #if !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(PORT_ANDROID64) && !defined(PORT_TOUCH)
         case ITEM_HIDE_TOUCH:
-        case ITEM_TOUCH_THEME: return 0;
+        case ITEM_TOUCH_THEME:
+        case ITEM_TOUCH_EDIT: return 0;
 #endif
 #if defined(__ANDROID__) || defined(__EMSCRIPTEN__) || defined(PORT_ANDROID64)
         case ITEM_REMATCH_MENU: return 0; /* rematches need states, not on these yet */
@@ -285,6 +287,8 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Nascondi controlli touch", "Ocultar controles táctiles", "タッチボタンを非表示" },
     { "Touch button theme", "Thème des boutons tactiles", "Design der Touch-Tasten", "Tema dei tasti touch",
       "Tema de botones", "タッチボタンのテーマ" },
+    { "Move touch buttons", "Déplacer les boutons tactiles", "Touch-Tasten verschieben", "Sposta i tasti touch",
+      "Mover botones táctiles", "タッチボタンを移動" },
     { "Skip frames when slow", "Sauter des images si lent", "Bilder überspringen wenn langsam",
       "Salta fotogrammi se lento", "Saltar cuadros si va lento", "遅い時はフレームを飛ばす" },
     { "Re:CoM improvements", "Améliorations Re:CoM", "Re:CoM-Verbesserungen", "Miglioramenti Re:CoM", "Mejoras de Re:CoM", "Re:CoMの改善" },
@@ -585,6 +589,7 @@ static const int sViewOrder[PORT_VIEW_COUNT] = { PORT_VIEW_AUTO, PORT_VIEW_ORIGI
                                                  PORT_VIEW_EXTENDED, PORT_VIEW_MAXIMUM };
 
 static int sOpen;
+static int sTouchEdit; /* the touch layout editor is open (PortUiTouchEdit) */
 /* the game's own menu sounds as the overlay opens and closes (taken by
    port_main once the menu's sound context is set up / the game's is back):
    its field menu opens with SYS_CANSEL and closes with SYS_CLOSE */
@@ -853,6 +858,7 @@ static int ItemEnabled(int item) {
         case ITEM_PS2_MENU:
             return gPortConfig.ps2Mode != 0;
         case ITEM_TOUCH_THEME: /* greyed while the touch buttons are hidden */
+        case ITEM_TOUCH_EDIT:
             return !gPortConfig.hideTouchControls;
         default:
             return 1;
@@ -1054,6 +1060,7 @@ static void ValueText(int item, char* out, size_t size) {
         case ITEM_ACHIEVEMENTS_MENU:
         case ITEM_CONTROLS_MENU:
         case ITEM_PS2_MENU:
+        case ITEM_TOUCH_EDIT:
             SDL_strlcpy(out, "\xE2\x86\x92", size);
             break;
         case ITEM_TITLE:
@@ -1283,6 +1290,15 @@ static void Change(int item, int dir) {
         case ITEM_ACHIEVEMENTS_MENU:
             if (dir > 0) AchievementMenuOpen();
             return;
+        case ITEM_TOUCH_EDIT:
+#if defined(__ANDROID__) || defined(__EMSCRIPTEN__) || defined(PORT_ANDROID64) || defined(PORT_TOUCH)
+            if (dir > 0 && !gPortConfig.hideTouchControls) {
+                Close();
+                sTouchEdit = 1; /* the game stays held until the editor's tick (PortUiTouchEdit(0)) */
+                PortAndroidTouchEditStart();
+            }
+#endif
+            return;
         case ITEM_REMATCH_MENU:
             if (dir > 0) { sPage = PAGE_REMATCH; sCursor = sScroll = ITEM_REMATCH_0; }
             break;
@@ -1401,7 +1417,11 @@ void PortUiInit(void) {
 
 static int sScenePause;
 int PortUiActive(void) {
-    return sOpen || sScenePause; /* the scene pause holds the game too */
+    return sOpen || sScenePause || sTouchEdit; /* the scene pause and the touch layout editor hold the game too */
+}
+
+void PortUiTouchEdit(int on) {
+    sTouchEdit = on;
 }
 
 /* Fades: the picture goes to black, the menu comes in from black, and the
@@ -3819,6 +3839,14 @@ void PortUiDraw(uint32_t* frame, int width, int height) {
         return;
     }
 
+    if (sTouchEdit) { /* the touch layout editor: its hint at the top; the buttons are the touch layer's */
+        static const char* const hint[LANG_COUNT] = {
+            "Drag the buttons where you want them", "Faites glisser les boutons où vous voulez",
+            "Ziehe die Tasten an ihren Platz", "Trascina i tasti dove vuoi", "Arrastra los botones a donde quieras",
+            "ボタンを好きな位置へドラッグ" };
+        MenuButton(gPortScreen.originX + (GBA_SCREEN_W - TextWidth(hint[l])) / 2 - 9, gPortScreen.originY + 22, hint[l], 0);
+        return;
+    }
     if (!sOpen && sReturn > 0) {
         /* The presenter fades the complete output, including HUD/text layers. */
         sReturn--;

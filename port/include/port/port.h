@@ -179,6 +179,8 @@ typedef struct PortConfig {
     char onlineName[25];       /* online_name: the player's name on the lobby's rooms (relay servers; Steam uses its own) */
     int assetsSeen;            /* assets_seen: the PORT_ASSET_* found on the last start (-1 unknown); new ones are offered */
     int touchTheme;            /* touch_theme: the touch buttons' look, 0 Clear, 1 Dark, 2 Color (touch_android.c) */
+    int touchPos[7][2];        /* touch_<group>_x/_y: where the player moved each touch group (d-pad, L, R, face buttons,
+                                  SELECT, START, menu), thousandths of the layout from its place (touch_android.c's editor) */
 } PortConfig;
 
 extern PortConfig gPortConfig;

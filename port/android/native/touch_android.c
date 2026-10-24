@@ -40,6 +40,21 @@ static const Button buttons[]={
     {.95f,.17f,12,"...",0}
 };
 static uint16_t uiHeld;
+/* ---- where the controls are: each group at its place, moved by the player (gPortConfig.touchPos, the layout editor
+   below), in fractions of the 16:9 layout ---- */
+enum { G_DPAD, G_L, G_R, G_FACE, G_SELECT, G_START, G_MENU, G_COUNT };
+static const float kGroupHome[G_COUNT][2]={{.13f,.73f},{.13f,.34f},{.87f,.34f},{.82f,.64f},{.45f,.93f},{.55f,.93f},{.95f,.17f}};
+static const uint8_t kButtonGroup[]={G_L,G_R,G_FACE,G_FACE,G_FACE,G_FACE,G_SELECT,G_START,G_MENU};
+static void GroupAt(int g,float* x,float* y) {
+    *x=kGroupHome[g][0]+gPortConfig.touchPos[g][0]*.001f;
+    *y=kGroupHome[g][1]+gPortConfig.touchPos[g][1]*.001f;
+}
+/* the layout editor (Options, "Move touch buttons"; port_ui.c holds the game while it is open): a finger drags the
+   group it lands on; at the top a tick saves and closes, a round arrow puts every group back at its place */
+static int editing, dragGroup=-1;
+static SDL_FingerID dragFinger;
+static float grabX,grabY;
+static const float kTool[2][2]={{.44f,.09f},{.56f,.09f}}; /* tick, reset */
 /* Android: with the touch controls hidden and a gamepad connected, nothing is drawn, not even the options button or
    the pad in the menus (issue #38); with no gamepad the options button stays, the only way into the menu. */
 static int AllHidden(void) {
@@ -57,7 +72,7 @@ static int AllHidden(void) {
     return count>0;
 #endif
 }
-void PortAndroidTouchClear(void) { SDL_memset(fingers,0,sizeof(fingers)); uiHeld=0; }
+void PortAndroidTouchClear(void) { SDL_memset(fingers,0,sizeof(fingers)); uiHeld=0; dragGroup=-1; }
 void PortAndroidTouchSettingsChanged(void) {
     PortAndroidTouchClear();
 #ifdef __EMSCRIPTEN__
@@ -71,13 +86,15 @@ static void FreeSkins(void);
 static void TouchUi(void) {
     /* the menus take the d-pad's main direction only: a diagonal touch sent down and right together, so going down in
        Options changed the resolution or opened Achievements by itself (user's report, 24/10) */
-    uint16_t keys=TouchKeys(1), pressed=keys & ~uiHeld;
+    uint16_t keys, pressed;
     static const struct { uint16_t bit; SDL_Keycode key; } bindings[]={
         {0x40,SDLK_UP},{0x80,SDLK_DOWN},{0x20,SDLK_LEFT},{0x10,SDLK_RIGHT},
         {1,SDLK_RETURN},{2,SDLK_ESCAPE},{4,SDLK_ESCAPE},{8,SDLK_ESCAPE},
         {0x200,SDLK_Q},{0x100,SDLK_E} /* L and R: the Achievements page's filter */
     };
     int i;
+    if(editing)return;
+    keys=TouchKeys(1);pressed=keys & ~uiHeld;
     uiHeld=keys;
     if(!PortUiActive()) {
         if((keys & 12)==12 && (pressed & 12)) {
@@ -94,6 +111,56 @@ static void TouchUi(void) {
         PortUiHandleEvent(&event);
     }
 }
+/* a finger's place in the layout's fractions */
+static void ToLayout(float* fx,float* fy) {
+#if defined(__EMSCRIPTEN__) || defined(PORT_TOUCH_CENTERED_LAYOUT)
+    *fx=(*fx*outputW-layoutX)/layoutW;*fy=(*fy*outputH-layoutY)/layoutH;
+#else
+    (void)fx;(void)fy;
+#endif
+}
+void PortAndroidTouchEditStart(void) {
+    PortAndroidTouchClear();
+    editing=1;
+}
+static void EditTouch(const SDL_Event* e) {
+    float fx=e->tfinger.x,fy=e->tfinger.y,gx,gy;
+    int g,t;
+    ToLayout(&fx,&fy);
+    if(e->type==SDL_EVENT_FINGER_DOWN) {
+        float best=1;
+        if(dragGroup>=0)return; /* one group at a time */
+        for(t=0;t<2;t++) {
+            float dx=(fx-kTool[t][0])*aspect,dy=fy-kTool[t][1];
+            if(dx*dx+dy*dy>.065f*.065f)continue;
+            if(t==0) { /* saved, and back to the game */
+                editing=0;
+                PortConfigSave();
+                PortUiTouchEdit(0);
+                PortAndroidTouchClear();
+            } else
+                SDL_memset(gPortConfig.touchPos,0,sizeof(gPortConfig.touchPos));
+            return;
+        }
+        for(g=0;g<G_COUNT;g++) { /* the nearest group the finger is on, against the group's reach */
+            static const float reach[G_COUNT]={.19f,.13f,.13f,.22f,.10f,.10f,.07f};
+            float dx,dy,d;
+            GroupAt(g,&gx,&gy);
+            dx=(fx-gx)*aspect;dy=fy-gy;
+            d=(dx*dx+dy*dy)/(reach[g]*reach[g]);
+            if(d<best) { best=d; dragGroup=g; grabX=gx-fx; grabY=gy-fy; }
+        }
+        if(dragGroup>=0)dragFinger=e->tfinger.fingerID;
+        return;
+    }
+    if(dragGroup<0 || e->tfinger.fingerID!=dragFinger)return;
+    if(e->type==SDL_EVENT_FINGER_MOTION) {
+        float x=SDL_clamp(fx+grabX,.03f,.97f),y=SDL_clamp(fy+grabY,.05f,.97f);
+        gPortConfig.touchPos[dragGroup][0]=SDL_clamp((int)SDL_roundf((x-kGroupHome[dragGroup][0])*1000),-900,900);
+        gPortConfig.touchPos[dragGroup][1]=SDL_clamp((int)SDL_roundf((y-kGroupHome[dragGroup][1])*1000),-900,900);
+    } else
+        dragGroup=-1;
+}
 void PortAndroidTouchEvent(const void* event) {
 #ifdef __EMSCRIPTEN__
     if(!touchEnabled)return;
@@ -109,6 +176,7 @@ void PortAndroidTouchEvent(const void* event) {
     }
     if(e->type!=SDL_EVENT_FINGER_DOWN && e->type!=SDL_EVENT_FINGER_MOTION &&
        e->type!=SDL_EVENT_FINGER_UP && e->type!=SDL_EVENT_FINGER_CANCELED) return;
+    if(editing) { EditTouch(e); return; }
     for(i=0;i<10;i++) {
         if(!fingers[i].active) { if(freeSlot<0) freeSlot=i; continue; }
         if(fingers[i].id!=e->tfinger.fingerID) continue;
@@ -129,14 +197,14 @@ static uint16_t TouchKeys(int menu) {
 #endif
     uint16_t keys=0;
     int i,b;
-    if(AllHidden()) return 0;
+    float px,py;
+    if(AllHidden() || editing) return 0;
     int panels = !gPortConfig.hideTouchControls || PortUiActive();
     for(i=0;i<10;i++) if(fingers[i].active) {
-        float fx=fingers[i].x,fy=fingers[i].y;
-#if defined(__EMSCRIPTEN__) || defined(PORT_TOUCH_CENTERED_LAYOUT)
-        fx=(fx*outputW-layoutX)/layoutW;fy=(fy*outputH-layoutY)/layoutH;
-#endif
-        float dx=(fx-.13f)*aspect,dy=fy-.73f;
+        float fx=fingers[i].x,fy=fingers[i].y,dx,dy;
+        ToLayout(&fx,&fy);
+        GroupAt(G_DPAD,&px,&py);
+        dx=(fx-px)*aspect;dy=fy-py;
         if(panels && SDL_fabsf(dx)<.17f && SDL_fabsf(dy)<.17f) {
             if(menu) { if(SDL_fabsf(dx)>SDL_fabsf(dy)) dy=0; else dx=0; }
             if(dx<-.035f) keys|=0x20;
@@ -147,7 +215,9 @@ static uint16_t TouchKeys(int menu) {
         }
         for(b=0;b<(int)SDL_arraysize(buttons);b++) {
             if(!panels && b!=(int)SDL_arraysize(buttons)-1) continue;
-            float x=(fx-buttons[b].x)*aspect-buttons[b].ox,y=fy-buttons[b].y-buttons[b].oy;
+            float x,y;
+            GroupAt(kButtonGroup[b],&px,&py);
+            x=(fx-px)*aspect-buttons[b].ox;y=fy-py-buttons[b].oy;
             float radius=b==6 || b==7 ? .055f : .075f;
             if(x*x+y*y<=radius*radius) { keys|=buttons[b].bits; break; }
             /* L/R and SELECT/START are pills now: their whole width counts */
@@ -186,7 +256,7 @@ enum { CTRL_DPAD=9, CTRL_COUNT=10 };
 static const Rgb* const kAccent[CTRL_COUNT]={&kGold,&kGold,&kRed,&kBlue,&kGold,&kGreen,&kSilver,&kSilver,&kSilver,&kBlue};
 
 typedef struct Skin { SDL_Texture* tex[2]; int w,h; } Skin;
-static Skin skins[CTRL_COUNT], arrows[4];
+static Skin skins[CTRL_COUNT], arrows[4], tools[2];
 static int skinUnit=-1, skinTheme=-1;
 
 typedef struct Canvas { int w,h; float* px; } Canvas; /* premultiplied RGBA */
@@ -419,6 +489,7 @@ static void FreeSkins(void) {
     int i,j;
     for(i=0;i<CTRL_COUNT;i++) for(j=0;j<2;j++) { SDL_DestroyTexture(skins[i].tex[j]); skins[i].tex[j]=NULL; }
     for(i=0;i<4;i++) for(j=0;j<2;j++) { SDL_DestroyTexture(arrows[i].tex[j]); arrows[i].tex[j]=NULL; }
+    for(i=0;i<2;i++) for(j=0;j<2;j++) { SDL_DestroyTexture(tools[i].tex[j]); tools[i].tex[j]=NULL; }
     skinUnit=-1;
 }
 /* the controls' shapes in screen rows (U: the 16:9 picture's height in pixels) */
@@ -478,6 +549,36 @@ static void BuildSkins(SDL_Renderer* r,float U) {
         arrows[b].tex[0]=Upload(r,&c);arrows[b].w=c.w;arrows[b].h=c.h;
         SDL_free(c.px);
     }
+    /* the layout editor's tick and round arrow: the options button's plate, the sign stroked in the theme's ink */
+    for(b=0;b<2;b++) {
+        Shape s={0};
+        float line[14][2],rad;
+        int n=0,i,x,y;
+        Canvas c;
+        s.hx=s.hy=s.r=.05f*U;
+        rad=s.hx*.42f;
+        if(!NewCanvas(&c,2*((int)SDL_ceilf(s.hx)+m),2*((int)SDL_ceilf(s.hy)+m)))continue;
+        Glass(&c,&s,t,t->tintA?&kGreen:NULL,0,k);
+        if(b==0) {
+            static const float tick[3][2]={{-.8f,.05f},{-.25f,.6f},{.8f,-.5f}};
+            for(i=0;i<3;i++) { line[n][0]=c.w*.5f+tick[i][0]*rad; line[n++][1]=c.h*.5f+tick[i][1]*rad; }
+        } else for(i=0;i<=11;i++) { /* most of a circle, open at the top right, with its arrowhead */
+            float a=-.9f+i*(5.0f/11);
+            line[n][0]=c.w*.5f+SDL_cosf(a)*rad; line[n++][1]=c.h*.5f+SDL_sinf(a)*rad;
+        }
+        for(y=0;y<c.h;y++) for(x=0;x<c.w;x++) {
+            float d=1e9f,px=x+.5f,py=y+.5f;
+            for(i=0;i+1<n;i++) d=SDL_min(d,SegDist(px,py,line[i][0],line[i][1],line[i+1][0],line[i+1][1]));
+            if(b==1) { /* the arrowhead at the circle's open end */
+                float hx=line[0][0],hy=line[0][1];
+                d=SDL_min(d,SegDist(px,py,hx,hy,hx+.55f*rad,hy+.05f*rad));
+                d=SDL_min(d,SegDist(px,py,hx,hy,hx+.05f*rad,hy-.55f*rad));
+            }
+            Over(c.px+((size_t)y*c.w+x)*4,t->ink,Clamp01(2.6f*k+.5f-d)*235/255.0f);
+        }
+        tools[b].tex[0]=Upload(r,&c);tools[b].w=c.w;tools[b].h=c.h;
+        SDL_free(c.px);
+    }
     skinUnit=(int)U;skinTheme=gPortConfig.touchTheme;
 }
 /* a texture at 1:1 centred on (x,y), cut to the screen (SDL's software renderer reads past a texture drawn partly
@@ -516,14 +617,25 @@ void PortAndroidTouchDraw(SDL_Renderer* r) {
     if(skinUnit!=(int)U || skinTheme!=gPortConfig.touchTheme) BuildSkins(r,U);
     SDL_SetRenderDrawBlendMode(r,SDL_BLENDMODE_BLEND);
     for(b=0;b<(int)SDL_arraysize(buttons);b++) {
-        int on=(keys&buttons[b].bits)==buttons[b].bits;
+        int on=editing ? kButtonGroup[b]==dragGroup : (keys&buttons[b].bits)==buttons[b].bits; /* the dragged group lit */
+        float gx,gy;
         if(gPortConfig.hideTouchControls && !PortUiActive() && b!=(int)SDL_arraysize(buttons)-1) continue;
-        Place(buttons[b].x+buttons[b].ox/aspect,buttons[b].y+buttons[b].oy,w,h,&px,&py);
+        GroupAt(kButtonGroup[b],&gx,&gy);
+        Place(gx+buttons[b].ox/aspect,gy+buttons[b].oy,w,h,&px,&py);
         Blit(r,skins[b].tex[on],skins[b].w,skins[b].h,px,py,w,h);
     }
     if(gPortConfig.hideTouchControls && !PortUiActive()) return;
-    Place(.13f,.73f,w,h,&px,&py);
-    Blit(r,skins[CTRL_DPAD].tex[(keys&0xF0)!=0],skins[CTRL_DPAD].w,skins[CTRL_DPAD].h,px,py,w,h);
+    if(editing)
+        for(b=0;b<2;b++) {
+            Place(kTool[b][0],kTool[b][1],w,h,&px,&py);
+            Blit(r,tools[b].tex[0],tools[b].w,tools[b].h,px,py,w,h);
+        }
+    {
+        float gx,gy;
+        GroupAt(G_DPAD,&gx,&gy);
+        Place(gx,gy,w,h,&px,&py);
+    }
+    Blit(r,skins[CTRL_DPAD].tex[editing ? dragGroup==G_DPAD : (keys&0xF0)!=0],skins[CTRL_DPAD].w,skins[CTRL_DPAD].h,px,py,w,h);
     {
         static const uint16_t bit[4]={0x40,0x80,0x20,0x10};
         static const float dir[4][2]={{0,-1},{0,1},{-1,0},{1,0}};

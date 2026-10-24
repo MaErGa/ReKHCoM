@@ -13,6 +13,8 @@ int PortUiRenderTextLine(uint32_t* pixels,int width,int height,const char* text,
 }
 int PortUiActive(void){return 0;}
 void PortUiOpenOptions(void){}
+void PortUiTouchEdit(int on){(void)on;}
+void PortConfigSave(void){}
 int PortUiHandleEvent(const void* event){(void)event;return 0;}
 static void point(int id,float x,float y) {
     SDL_Event event={0};event.type=SDL_EVENT_FINGER_DOWN;event.tfinger.fingerID=id;
