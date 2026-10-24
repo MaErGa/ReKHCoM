@@ -30,6 +30,7 @@ static bool Recycle(const fs::path& p) {
     std::error_code ec;
     if (SDL_getenv("DECOMPUI_NO_RECYCLE"))
         return fs::remove_all(p, ec) > 0;
+#ifdef _WIN32
     std::wstring from = p.wstring();
     from.append(2, L'\0');
     SHFILEOPSTRUCTW op = {};
@@ -37,6 +38,9 @@ static bool Recycle(const fs::path& p) {
     op.pFrom = from.c_str();
     op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI;
     return SHFileOperationW(&op) == 0 && !op.fAnyOperationsAborted;
+#else
+    return fs::remove_all(p, ec) > 0; /* no recycle bin on a phone */
+#endif
 }
 
 static int VersionOf(const std::vector<unsigned char>& rom) {
@@ -93,7 +97,7 @@ static fs::path HdRel(std::string name) {
 }
 
 static void Zip(const fs::path& path, Result& r) {
-    FILE* f = _wfopen(path.c_str(), L"rb");
+    FILE* f = OpenFile(path, "rb");
     if (!f)
         return;
     mz_zip_archive zip = {};
@@ -142,7 +146,7 @@ static void Zip(const fs::path& path, Result& r) {
             fs::create_directories(dest.parent_path(), ec);
             fs::path tmp = dest;
             tmp += ".part";
-            FILE* out = _wfopen(tmp.c_str(), L"wb");
+            FILE* out = OpenFile(tmp, "wb");
             bool good = out && mz_zip_reader_extract_to_cfile(&zip, i, out, 0);
             if (out)
                 fclose(out);

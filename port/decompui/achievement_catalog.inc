@@ -17,5 +17,5 @@ static void RememberAchievementProgress() {
     out.write("KHRAPRG1", 8); out.write((const char*)&known, 4); out.write((const char*)&count, 4);
     if (count) out.write((const char*)ids.data(), count * 4);
     out.close();
-    if (out && MoveFileExW(temp.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) previous = hash;
+    if (out && ReplaceWith(temp, path)) previous = hash;
 }

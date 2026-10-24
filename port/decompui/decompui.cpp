@@ -12,6 +12,7 @@
  *
  * Dear ImGui on SDL3 + OpenGL. Its look follows recomp-ui's GBA theme.
  */
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -20,9 +21,17 @@
 #include <shellapi.h>
 #include <shlobj.h>
 #include <objbase.h>
+#endif
+/* LAUNCHER_ANDROID: the same launcher as the Android app's first screen (port/android/CMakeLists.txt): OpenGL ES 3,
+   the app's files folder, the system's file pickers through the activity (launcher_android.inc) */
 
 #include <SDL3/SDL.h>
+#ifdef LAUNCHER_ANDROID
+#include <SDL3/SDL_main.h> /* main() is SDL_main, which LauncherActivity starts */
+#include <GLES3/gl3.h>
+#else
 #include <SDL3/SDL_opengl.h>
+#endif
 
 #include <algorithm>
 #include <cfloat>
@@ -63,6 +72,44 @@ namespace fs = std::filesystem;
 #include "../achievements/toast_layout.h"
 
 #include "../include/port/port_version.h"
+#ifndef _WIN32
+#include <cerrno>
+#include <ctime>
+#include <strings.h>
+#include <sys/stat.h>
+#define _stricmp strcasecmp
+#ifndef APIENTRY
+#define APIENTRY
+#endif
+/* what the Windows calls give, elsewhere (the Android app: LAUNCHER_ANDROID) */
+static void SecureZeroMemory(void* p, size_t n) {
+    volatile unsigned char* b = (volatile unsigned char*)p;
+    while (n--)
+        *b++ = 0;
+}
+#endif
+#ifdef LAUNCHER_ANDROID
+#include "launcher_android.inc"
+#endif
+
+/* a file opened by its path (UTF-16 on Windows) */
+static FILE* OpenFile(const std::filesystem::path& p, const char* mode) {
+#ifdef _WIN32
+    std::wstring m(mode, mode + std::strlen(mode));
+    return _wfopen(p.c_str(), m.c_str());
+#else
+    return std::fopen(p.c_str(), mode);
+#endif
+}
+
+/* from replaces to in one step, written through to the disk */
+static bool ReplaceWith(const std::filesystem::path& from, const std::filesystem::path& to) {
+#ifdef _WIN32
+    return MoveFileExW(from.c_str(), to.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+    return std::rename(from.c_str(), to.c_str()) == 0;
+#endif
+}
 
 static bool sSpanish;
 
@@ -107,6 +154,46 @@ static void Notice(const std::string& text, bool error) {
     sNoticeTime = ImGui::GetCurrentContext() ? ImGui::GetTime() : 0.0;
 }
 
+#ifndef _WIN32
+/* SHA-1 (FIPS 180-1), for the dumps' check where Windows' BCrypt is not at hand */
+static std::string Sha1Hex(const std::vector<unsigned char>& data) {
+    uint32_t h[5] = { 0x67452301u, 0xEFCDAB89u, 0x98BADCFEu, 0x10325476u, 0xC3D2E1F0u };
+    uint64_t bits = (uint64_t)data.size() * 8;
+    std::vector<unsigned char> m(data);
+    m.push_back(0x80);
+    while (m.size() % 64 != 56)
+        m.push_back(0);
+    for (int i = 7; i >= 0; i--)
+        m.push_back((unsigned char)(bits >> (i * 8)));
+    auto rol = [](uint32_t v, int n) { return (v << n) | (v >> (32 - n)); };
+    for (size_t off = 0; off < m.size(); off += 64) {
+        uint32_t w[80];
+        for (int i = 0; i < 16; i++)
+            w[i] = (uint32_t)m[off + i * 4] << 24 | (uint32_t)m[off + i * 4 + 1] << 16 | (uint32_t)m[off + i * 4 + 2] << 8 |
+                   m[off + i * 4 + 3];
+        for (int i = 16; i < 80; i++)
+            w[i] = rol(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+        uint32_t a = h[0], b = h[1], c = h[2], d = h[3], e = h[4];
+        for (int i = 0; i < 80; i++) {
+            uint32_t f, k;
+            if (i < 20) { f = (b & c) | (~b & d); k = 0x5A827999u; }
+            else if (i < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1u; }
+            else if (i < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDCu; }
+            else { f = b ^ c ^ d; k = 0xCA62C1D6u; }
+            uint32_t t = rol(a, 5) + f + e + k + w[i];
+            e = d; d = c; c = rol(b, 30); b = a; a = t;
+        }
+        h[0] += a; h[1] += b; h[2] += c; h[3] += d; h[4] += e;
+    }
+    std::string hex;
+    for (uint32_t v : h) {
+        char eight[9];
+        std::snprintf(eight, sizeof(eight), "%08x", v);
+        hex += eight;
+    }
+    return hex;
+}
+#else
 static std::string Sha1Hex(const std::vector<unsigned char>& data) {
     BCRYPT_ALG_HANDLE alg = nullptr;
     BCRYPT_HASH_HANDLE hash = nullptr;
@@ -128,6 +215,7 @@ static std::string Sha1Hex(const std::vector<unsigned char>& data) {
     BCryptCloseAlgorithmProvider(alg, 0);
     return hex;
 }
+#endif
 
 static bool ReadFile(const fs::path& path, std::vector<unsigned char>& out, size_t limit = 64u << 20) {
     std::ifstream f(path, std::ios::binary);
@@ -242,6 +330,15 @@ static void ScanInstall() {
     }
 }
 
+/* The game for version v can start: its dump, and its program (the Android app carries the game in its libraries) */
+static bool GameReady(int v) {
+#ifdef LAUNCHER_ANDROID
+    return sState[v].installed;
+#else
+    return sState[v].installed && fs::exists(sState[v].exe);
+#endif
+}
+
 /* Checks a dump and copies it into roms/. */
 static void InstallRom(const fs::path& path) {
     std::vector<unsigned char> rom;
@@ -290,6 +387,10 @@ static void InstallRom(const fs::path& path) {
 }
 
 static void PickRom(SDL_Window* window) {
+#ifdef LAUNCHER_ANDROID
+    (void)window;
+    AndroidPick(ANDROID_PICK_ROM, 0, 0); /* the system's picker; the activity copies it to roms/ and checks it */
+#else
     wchar_t file[MAX_PATH] = L"";
     OPENFILENAMEW ofn = {};
     SDL_PropertiesID props = SDL_GetWindowProperties(window);
@@ -302,6 +403,7 @@ static void PickRom(SDL_Window* window) {
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
     if (GetOpenFileNameW(&ofn))
         InstallRom(fs::path(file));
+#endif
 }
 
 /* ---- settings (kh_com.ini, shared with the game) ----------------------------- */
@@ -426,8 +528,28 @@ static void LoadIni() {
 
 /* The monitor's fullscreen resolutions, largest first, as the game's own
    list: the desktop first (0x0), then each distinct mode. */
+/* the desktop's size (the monitor's current mode), for the zoom levels and the fullscreen row */
+static void DesktopSize(int* w, int* h) {
+#ifdef _WIN32
+    DEVMODEW cur;
+    ZeroMemory(&cur, sizeof(cur));
+    cur.dmSize = sizeof(cur);
+    if (EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &cur) && cur.dmPelsWidth && cur.dmPelsHeight) {
+        *w = (int)cur.dmPelsWidth;
+        *h = (int)cur.dmPelsHeight;
+    }
+#else
+    const SDL_DisplayMode* mode = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay());
+    if (mode && mode->w > 0 && mode->h > 0) {
+        *w = std::max(mode->w, mode->h); /* the game is landscape */
+        *h = std::min(mode->w, mode->h);
+    }
+#endif
+}
+
 static std::vector<std::pair<int, int>> DisplayModes() {
     std::vector<std::pair<int, int>> modes;
+#ifdef _WIN32
     DEVMODEW dm;
     ZeroMemory(&dm, sizeof(dm));
     dm.dmSize = sizeof(dm);
@@ -436,6 +558,7 @@ static std::vector<std::pair<int, int>> DisplayModes() {
         if (m.first >= 640 && m.second >= 480 && std::find(modes.begin(), modes.end(), m) == modes.end())
             modes.push_back(m);
     }
+#endif
     std::sort(modes.begin(), modes.end(), [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
         return a.first * a.second > b.first * b.second || (a.first * a.second == b.first * b.second && a.first > b.first);
     });
@@ -481,7 +604,16 @@ static int sUiLanguage; /* 1 = Spanish, 2 = English; 0 until chosen */
 static void ApplyUiLanguage() {
     /* the first time, the system's language is chosen and kept */
     if (sUiLanguage != 1 && sUiLanguage != 2)
+    {
+#ifdef _WIN32
         sUiLanguage = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_SPANISH ? 1 : 2;
+#else
+        int count = 0;
+        SDL_Locale** locales = SDL_GetPreferredLocales(&count);
+        sUiLanguage = locales && count > 0 && locales[0]->language && strcmp(locales[0]->language, "es") == 0 ? 1 : 2;
+        SDL_free(locales);
+#endif
+    }
     sSpanish = sUiLanguage == 1;
 }
 
@@ -532,13 +664,19 @@ static fs::path SavePath(int v) {
 /* Copies the version's save to backups/<name>-<date>-<time>.sav. */
 static bool BackupSave(int v) {
     std::error_code ec;
-    SYSTEMTIME t;
     char stamp[64];
-
-    GetLocalTime(&t);
     static unsigned sequence=0;
+#ifdef _WIN32
+    SYSTEMTIME t;
+    GetLocalTime(&t);
     std::snprintf(stamp, sizeof(stamp), "-%04d%02d%02d-%02d%02d%02d-%03d-%u", t.wYear, t.wMonth, t.wDay,
                   t.wHour, t.wMinute, t.wSecond, t.wMilliseconds, ++sequence);
+#else
+    std::time_t now = std::time(nullptr);
+    std::tm t = *std::localtime(&now);
+    std::snprintf(stamp, sizeof(stamp), "-%04d%02d%02d-%02d%02d%02d-%u", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+                  t.tm_hour, t.tm_min, t.tm_sec, ++sequence);
+#endif
     fs::path dir = sRoot / "backups";
     fs::create_directories(dir, ec);
     fs::path dst = dir / (SavePath(v).stem().string() + stamp + ".sav");
@@ -592,6 +730,10 @@ static bool ImportSavePath(const fs::path& file,int v) {
 }
 
 static void ImportSave(SDL_Window* window, int v) {
+#ifdef LAUNCHER_ANDROID
+    (void)window;
+    AndroidPick(ANDROID_PICK_SAVE, v, std::clamp(Ini("save_bank"), 1, 5));
+#else
     wchar_t file[MAX_PATH] = L"";
     OPENFILENAMEW ofn = {};
     SDL_PropertiesID props = SDL_GetWindowProperties(window);
@@ -606,6 +748,7 @@ static void ImportSave(SDL_Window* window, int v) {
     if (!GetOpenFileNameW(&ofn))
         return;
     ImportSavePath(fs::path(file),v);
+#endif
 }
 
 
@@ -746,11 +889,17 @@ static void ApplyStyle() {
 
 static void LoadFonts() {
     ImGuiIO& io = ImGui::GetIO();
+#ifdef _WIN32
     wchar_t windir[MAX_PATH];
     GetWindowsDirectoryW(windir, MAX_PATH);
     fs::path fonts = fs::path(windir) / "Fonts";
     std::string regular = (fonts / "segoeui.ttf").string();
     std::string semibold = (fonts / "seguisb.ttf").string();
+#else
+    /* Android's own: Roboto (the system font of every version) */
+    std::string regular = "/system/fonts/Roboto-Regular.ttf";
+    std::string semibold = "/system/fonts/Roboto-Medium.ttf";
+#endif
     static const ImWchar ranges[] = { 0x0020, 0x00FF, 0x2190, 0x2193, 0x25B6, 0x25C0, 0 };
     ImFontConfig cfg;
     cfg.OversampleH = 2;
@@ -1112,7 +1261,7 @@ static void PageHome(SDL_Window* window) {
 
     ImGui::BeginGroup();
     /* play first: visible from the start, without scrolling */
-    bool ready = sState[sSelected].installed && fs::exists(sState[sSelected].exe);
+    bool ready = GameReady(sSelected);
     if (PlayButton(T("JUGAR", "PLAY"), ImVec2(ImGui::GetContentRegionAvail().x, Px(76)), ready))
         sLaunch = true;
     /* the two secondary actions side by side, under the play bar */
@@ -1130,6 +1279,7 @@ static void PageHome(SDL_Window* window) {
                                       "la carpeta hd del mod HD); si no hay nada, elige el archivo.",
                                       "First installs whatever you left in the roms folder (ROMs under any name, zips, the HD "
                                       "mod's hd folder); if there is nothing, choose the file."));
+#ifndef LAUNCHER_ANDROID /* a desktop's: no shortcuts or Steam on a phone */
         if (ready) {
             ImGui::SameLine(0, gap);
             if (ImGui::Button(T("Acceso directo", "Desktop shortcut"), ImVec2(third, 0)))
@@ -1146,6 +1296,7 @@ static void PageHome(SDL_Window* window) {
                                           "Adds it to your Steam library as a non-Steam game, with its cover (to play "
                                           "with Steam Input, Big Picture or on a Steam Deck)."));
         }
+#endif
     }
     if (!ready) {
         ImGui::PushFont(sFontSmall);
@@ -1210,7 +1361,7 @@ static void PageHome(SDL_Window* window) {
         if (!sState[v].installed) {
             status = T("Sin ROM", "No ROM");
             color = kMuted;
-        } else if (!fs::exists(sState[v].exe)) {
+        } else if (!GameReady(v)) {
             status = T("Falta el ejecutable", "Executable missing");
             color = kWarn;
         } else {
@@ -1273,10 +1424,17 @@ static void PageHome(SDL_Window* window) {
     ImGui::Spacing();
     ImGui::PushFont(sFontSmall);
     ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
+#ifdef LAUNCHER_ANDROID
+    ImGui::TextWrapped("%s", T("Elige tu volcado del cartucho en el teléfono. Se comprueba su SHA-1 y se copia a la "
+                               "app. No se incluye ninguna ROM.",
+                               "Choose your cartridge dump on the phone. Its SHA-1 is checked and it is copied into "
+                               "the app. No ROM is included."));
+#else
     ImGui::TextWrapped("%s", T("Elige tu volcado del cartucho (o arrástralo a esta ventana). Se comprueba su SHA-1 "
                                "y se copia a la carpeta roms. No se incluye ninguna ROM.",
                                "Choose your cartridge dump (or drop it on this window). Its SHA-1 is checked and "
                                "it is copied into the roms folder. No ROM is included."));
+#endif
     ImGui::PopStyleColor();
     ImGui::PopFont();
     ImGui::EndChild();
@@ -1303,6 +1461,7 @@ static void PageHome(SDL_Window* window) {
         bool has = fs::exists(save, ec);
         char line[160];
         if (has) {
+#ifdef _WIN32
             FILETIME ft, local;
             SYSTEMTIME st;
             WIN32_FILE_ATTRIBUTE_DATA attr;
@@ -1313,6 +1472,15 @@ static void PageHome(SDL_Window* window) {
                 std::snprintf(line, sizeof(line), "%s %s  -  %02d/%02d/%04d %02d:%02d", T("Partida:", "Save:"),
                               save.filename().string().c_str(), st.wDay, st.wMonth, st.wYear, st.wHour, st.wMinute);
             } else {
+#else
+            struct stat attr;
+            if (stat(save.c_str(), &attr) == 0) {
+                std::tm st = *std::localtime(&attr.st_mtime);
+                std::snprintf(line, sizeof(line), "%s %s  -  %02d/%02d/%04d %02d:%02d", T("Partida:", "Save:"),
+                              save.filename().string().c_str(), st.tm_mday, st.tm_mon + 1, st.tm_year + 1900, st.tm_hour,
+                              st.tm_min);
+            } else {
+#endif
                 std::snprintf(line, sizeof(line), "%s %s", T("Partida:", "Save:"), save.filename().string().c_str());
             }
         } else {
@@ -1323,8 +1491,14 @@ static void PageHome(SDL_Window* window) {
         ImGui::TextColored(has ? kText : kMuted, "%s", line);
         ImGui::PopFont();
         float half = (ImGui::GetContentRegionAvail().x - Px(8)) * 0.5f;
+#ifdef LAUNCHER_ANDROID
+        /* no folder to open on a phone: the save goes out through the system's "save as" */
+        if (ImGui::Button(T("Exportar partida", "Export save"), ImVec2(half, 0)))
+            AndroidPick(ANDROID_PICK_EXPORT, sSelected, std::clamp(Ini("save_bank"), 1, 5));
+#else
         if (ImGui::Button(T("Abrir carpeta", "Open folder"), ImVec2(half, 0)))
             ShellExecuteW(nullptr, L"explore", sRoot.wstring().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#endif
         ImGui::SameLine(0, Px(8));
         ImGui::BeginDisabled(!has);
         if (ImGui::Button(T("Copia de seguridad", "Back up save"), ImVec2(half, 0)))
@@ -1340,7 +1514,9 @@ static void PageHome(SDL_Window* window) {
                                       "A save from an emulator (mGBA, VBA, NO$GBA...) or GameShark / Action Replay. "
                                       "It is converted to this version if it comes from another region; the current "
                                       "one is backed up first."));
+#ifndef LAUNCHER_ANDROID
         InstallElsewhereRow();
+#endif
         ReportProblemRow();
     }
     ImGui::EndChild();
@@ -1353,12 +1529,7 @@ static bool ZoomRow(const char* label, const char* help, int& value, bool inheri
     const char* zooms[PORT_ZOOM_LEVELS + 1];
     int W = 1920, H = 1080;
     {
-        DEVMODEW cur;
-        ZeroMemory(&cur, sizeof(cur));
-        cur.dmSize = sizeof(cur);
-        if (EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &cur) && cur.dmPelsWidth && cur.dmPelsHeight) {
-            W = (int)cur.dmPelsWidth; H = (int)cur.dmPelsHeight;
-        }
+        DesktopSize(&W, &H);
         if (Ini("fullscreen") && Ini("fullscreen_width") > 0 && Ini("fullscreen_height") > 0) {
             W = Ini("fullscreen_width"); H = Ini("fullscreen_height");
         } else if (!Ini("fullscreen")) {
@@ -1470,6 +1641,9 @@ static void PageGraphics() {
     ImGui::EndChild();
     ImGui::Spacing();
     BeginCard("window");
+#ifdef LAUNCHER_ANDROID
+    Eyebrow(T("PANTALLA", "SCREEN")); /* a phone has no window, resolution or VSync to choose */
+#else
     Eyebrow(T("VENTANA", "WINDOW"));
     changed |= CycleRow(T("Pantalla completa", "Fullscreen"), nullptr, Ini("fullscreen"), 2, onoff);
     {
@@ -1477,13 +1651,11 @@ static void PageGraphics() {
         static std::vector<std::pair<int, int>> modes = DisplayModes();
         static std::vector<std::string> labels;
         static std::vector<const char*> names;
-        DEVMODEW cur;
-        ZeroMemory(&cur, sizeof(cur));
-        cur.dmSize = sizeof(cur);
-        EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &cur);
+        int curW = 0, curH = 0;
+        DesktopSize(&curW, &curH);
         labels.clear();
-        labels.push_back(std::string(T("Escritorio", "Desktop")) + " (" + std::to_string(cur.dmPelsWidth) + "x" +
-                         std::to_string(cur.dmPelsHeight) + ")");
+        labels.push_back(std::string(T("Escritorio", "Desktop")) + " (" + std::to_string(curW) + "x" +
+                         std::to_string(curH) + ")");
         for (auto& m : modes)
             labels.push_back(std::to_string(m.first) + "x" + std::to_string(m.second));
         names.clear();
@@ -1508,6 +1680,7 @@ static void PageGraphics() {
         changed = true;
     }
     changed |= CycleRow("VSync", nullptr, Ini("vsync"), 2, onoff);
+#endif
     int sc = std::clamp(Ini("scanlines") / 25, 0, 4);
     if (CycleRow("Scanlines", nullptr, sc, 5, scan)) {
         Ini("scanlines") = sc * 25;
@@ -1515,10 +1688,12 @@ static void PageGraphics() {
     }
     changed |= CycleRow(T("Colores LCD GBA", "GBA LCD colours"), nullptr, Ini("color_correction"), 2, onoff);
     changed |= CycleRow(T("Mostrar FPS", "Show FPS"), nullptr, Ini("show_fps"), 2, onoff);
+#ifndef LAUNCHER_ANDROID
     changed |= CycleRow(T("Estado en Discord", "Discord status"),
                         T("Con Discord abierto, tu perfil muestra el mundo, el piso, el personaje y el nivel.",
                           "With Discord open, your profile shows the world, floor, character and level."),
                         Ini("discord_presence"), 2, onoff);
+#endif
     ImGui::EndChild();
     if (changed)
         SaveIni();
@@ -1958,6 +2133,29 @@ static void BindCell(const char* key, bool pad) {
 }
 
 static void PageControls() {
+#ifdef LAUNCHER_ANDROID
+    {
+        /* the touch screen's buttons (touch_android.c): their look and whether they show; moving them is the game's */
+        static const char* const themes[3] = { "Clear", "Dark", "Color" };
+        const char* onoff[2] = { T("No", "Off"), T("Sí", "On") };
+        bool changed = false;
+        BeginCard("touch");
+        Eyebrow(T("BOTONES TÁCTILES", "TOUCH BUTTONS"));
+        changed |= CycleRow(T("Tema de botones", "Button theme"), nullptr, Ini("touch_theme"), 3, themes);
+        changed |= CycleRow(T("Ocultar con un mando conectado", "Hide with a controller connected"),
+                            T("Sin mando conectado, el botón de menú sigue visible: es la forma de abrir las opciones.",
+                              "With no controller connected the menu button stays: it is the way into the options."),
+                            Ini("experimental_hide_touch_controls"), 2, onoff);
+        ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
+        ImGui::TextWrapped("%s", T("Para moverlos: en el juego, Opciones > Mover botones táctiles; arrástralos y toca el visto.",
+                                   "To move them: in the game, Options > Move touch buttons; drag them and tap the tick."));
+        ImGui::PopStyleColor();
+        ImGui::EndChild();
+        ImGui::Spacing();
+        if (changed)
+            SaveIni();
+    }
+#endif
     ControllerProbePanel();
     ImGui::Spacing();
     struct Row {
@@ -2264,6 +2462,7 @@ static std::wstring Quote(const std::wstring& s) {
    button (shared data folder, its ROM; the language comes from kh_com.ini),
    without opening the launcher. */
 static void CreateDesktopShortcut() {
+#ifdef _WIN32
     const VersionState& st = sState[sSelected];
     const char* region = kVersions[sSelected].regionEn;
     PWSTR desktop = nullptr;
@@ -2311,6 +2510,7 @@ static void CreateDesktopShortcut() {
                   "Shortcut created on the desktop: it opens the game without the launcher.")
               : T("No se pudo crear el acceso directo.", "The shortcut could not be created."),
            !ok);
+#endif
 }
 
 /* ---- "Add to Steam": a non-Steam game in Steam's shortcuts.vdf (binary KeyValues: 0x00 a map, 0x01 a string,
@@ -2455,11 +2655,13 @@ static void AddToSteam() {
     if (const char* test = SDL_getenv("DECOMPUI_STEAM")) { /* harness: a copy of Steam's folders */
         steam = fs::u8path(test);
     } else {
+#ifdef _WIN32
         wchar_t buf[MAX_PATH];
         DWORD size = sizeof(buf);
         if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\Valve\\Steam", L"SteamPath", RRF_RT_REG_SZ, nullptr, buf, &size) ==
             ERROR_SUCCESS)
             steam = fs::path(buf);
+#endif
     }
     std::vector<fs::path> configs = steam.empty() ? std::vector<fs::path>() : SteamUserConfigs(steam);
     if (configs.empty()) {
@@ -2569,6 +2771,7 @@ static void InstallCopy(fs::path from, fs::path to) {
 /* The folder to install into: chosen in the system dialog, opening at <drive>:\Games when there is one. */
 static fs::path PickInstallFolder() {
     fs::path out;
+#ifdef _WIN32
     IFileOpenDialog* dialog = nullptr;
     if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog))))
         return out;
@@ -2599,6 +2802,7 @@ static fs::path PickInstallFolder() {
         }
     }
     dialog->Release();
+#endif
     return out;
 }
 
@@ -2608,7 +2812,7 @@ static void InstallElsewhereRow() {
     if (ImGui::Button(T("Instalar en otra carpeta...", "Install in another folder..."), ImVec2(-FLT_MIN, 0))) {
         fs::path pick = PickInstallFolder();
         if (!pick.empty()) {
-            fs::path dst = _wcsicmp(pick.filename().c_str(), L"ReKHCoM") == 0 ? pick : pick / "ReKHCoM";
+            fs::path dst = _stricmp(pick.filename().u8string().c_str(), "ReKHCoM") == 0 ? pick : pick / "ReKHCoM";
             fs::path rel = fs::relative(dst, sRoot, ec);
             bool inside = !ec && !rel.empty() && rel.native()[0] != L'.';
             if (fs::equivalent(dst, sRoot, ec) || inside)
@@ -2643,8 +2847,10 @@ static void InstallElsewhereRow() {
         ImGui::PopFont();
         if (sInstall.ok && ImGui::Button(T("Abrir desde ahí (cierra este)", "Open from there (closes this one)"),
                                          ImVec2(-FLT_MIN, 0))) {
+#ifdef _WIN32
             ShellExecuteW(nullptr, L"open", (sInstall.dst / "ReKHCoM.exe").wstring().c_str(), nullptr,
                           sInstall.dst.wstring().c_str(), SW_SHOWNORMAL);
+#endif
             SDL_Event quit = {};
             quit.type = SDL_EVENT_QUIT;
             SDL_PushEvent(&quit);
@@ -2705,19 +2911,33 @@ static void ReportProblemRow() {
     }
     if (log.size() > 2000) /* GitHub takes addresses up to ~8 KB, the text grows when encoded */
         log = log.substr(log.size() - 2000);
-    std::string body = std::string("**What happened** (and what you were doing):\n\n\n**Platform / device**: Windows\n"
-                                   "**Version**: ") + REKHCOM_VERSION + " " + kVersions[sSelected].regionEn +
+#ifdef LAUNCHER_ANDROID
+    static const char* const kPlatform = "Android";
+#else
+    static const char* const kPlatform = "Windows";
+#endif
+    std::string body = std::string("**What happened** (and what you were doing):\n\n\n**Platform / device**: ") + kPlatform +
+                       "\n**Version**: " + REKHCOM_VERSION + " " + kVersions[sSelected].regionEn +
                        "\n\n**Log** (kh_com.log):\n```\n" + (log.empty() ? std::string("(no log yet)\n") : log) + "```\n";
     std::string url = "https://github.com/MatyMeatBoy/ReKHCoM/issues/new?title=" + UrlEncode("[Bug] ") +
                       "&body=" + UrlEncode(body);
     if (const char* test = SDL_getenv("DECOMPUI_REPORT_URL")) /* harness: the address written there, no browser */
         std::ofstream(fs::u8path(test)) << url;
     else
-        ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        SDL_OpenURL(url.c_str());
 }
 
 /* Runs the game with the shared data folder; the launcher waits hidden. */
 static void Launch(SDL_Window* window) {
+#ifdef LAUNCHER_ANDROID
+    /* the game in its own process (GameActivity, :game); this screen stays behind it */
+    (void)window;
+    SaveIni();
+    SaveLauncherState();
+    if (!AndroidLaunch(kVersions[sSelected].id, RomPath(sSelected).u8string()))
+        Notice(T("No se pudo iniciar el juego.", "Could not start the game."), true);
+    return;
+#else
     const VersionState& st = sState[sSelected];
     std::wstring cmd = Quote(st.exe.wstring()) + L" --data-dir " + Quote(sRoot.wstring()) + L" --rom " +
                        Quote(RomPath(sSelected).wstring());
@@ -2748,6 +2968,7 @@ static void Launch(SDL_Window* window) {
     if (code != 0)
         Notice(T("El juego se cerró con un error; revisa kh_com.log.", "The game closed with an error; see kh_com.log."),
                true);
+#endif
 }
 
 /* ---- test harness ------------------------------------------------------------
@@ -2819,15 +3040,20 @@ static bool ShotFrames(SDL_Window* window, const char* dir) {
 }
 
 static fs::path ExeDir() {
+#ifdef LAUNCHER_ANDROID
+    return AndroidFilesDir(); /* the app's files folder, the game's data folder too */
+#else
     wchar_t path[MAX_PATH];
     GetModuleFileNameW(nullptr, path, MAX_PATH);
     return fs::path(path).parent_path();
+#endif
 }
 
 /* The player opened this launcher, so the programs it ships are trusted too: drop the "downloaded from the internet"
    mark (Zone.Identifier) that the ZIP passed to them, or Windows SmartScreen stops bin\khcom_*.exe. Only this
    install's own .exe and .dll files. */
 static void UnblockOwnFiles() {
+#ifdef _WIN32
     std::error_code ec;
     for (const fs::path& dir : { sRoot, sRoot / "bin" })
         for (const auto& entry : fs::directory_iterator(dir, ec)) {
@@ -2837,10 +3063,62 @@ static void UnblockOwnFiles() {
             if (entry.is_regular_file(ec) && (ext == L".exe" || ext == L".dll"))
                 DeleteFileW((entry.path().wstring() + L":Zone.Identifier").c_str());
         }
+#endif
 }
+
+#ifdef LAUNCHER_ANDROID
+/* A finger dragged up or down scrolls the page under it, as on a phone (ImGui scrolls with a wheel); once it moved
+   that far it is no longer a tap: the press SDL made of it is let go away from the buttons, and the rest of its
+   pretend mouse is dropped. */
+static bool TouchScroll(const SDL_Event& ev) {
+    static bool down, scrolling;
+    static float startY, lastY;
+    ImGuiIO& io = ImGui::GetIO();
+    int w = 0, h = 0;
+    switch (ev.type) {
+        case SDL_EVENT_FINGER_DOWN:
+            down = true;
+            scrolling = false;
+            startY = lastY = ev.tfinger.y;
+            return false;
+        case SDL_EVENT_FINGER_MOTION:
+            if (!down)
+                return false;
+            SDL_GetWindowSize(SDL_GetWindowFromID(ev.tfinger.windowID), &w, &h);
+            if (!scrolling && std::fabs(ev.tfinger.y - startY) * h > Px(14)) {
+                float x = ev.tfinger.x * w, y = ev.tfinger.y * h;
+                scrolling = true;
+                io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+                io.AddMouseButtonEvent(0, false);
+                io.AddMousePosEvent(x, y); /* the wheel goes to the page under the finger */
+            }
+            if (scrolling)
+                io.AddMouseWheelEvent(0, (ev.tfinger.y - lastY) * h / (2.0f * ImGui::GetFontSize()));
+            lastY = ev.tfinger.y;
+            return false;
+        case SDL_EVENT_FINGER_UP:
+        case SDL_EVENT_FINGER_CANCELED:
+            down = false;
+            return false;
+        case SDL_EVENT_MOUSE_MOTION:
+            return scrolling && ev.motion.which == SDL_TOUCH_MOUSEID;
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+            if (!scrolling || ev.button.which != SDL_TOUCH_MOUSEID)
+                return false;
+            if (ev.type == SDL_EVENT_MOUSE_BUTTON_UP)
+                scrolling = false;
+            return true;
+    }
+    return false;
+}
+#endif
 
 int main(int argc, char** argv) {
     sRoot = ExeDir();
+#ifdef LAUNCHER_ANDROID
+    AndroidExtractAssets(sRoot);
+#endif
     UnblockOwnFiles();
     ApplyUiLanguage();
     /* ReKHCoM.exe --hd-import [<source folder>] [--scenes] [--sprites-only] [--quality 0|1|2]: the HD mod import without the window
@@ -2912,8 +3190,14 @@ int main(int argc, char** argv) {
                 (long long)sInstall.total);
         return sInstall.ok ? 0 : 1;
     }
+#ifdef LAUNCHER_ANDROID
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight"); /* as the game: the page is laid out wide */
+#endif
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
         return 1;
+#ifdef LAUNCHER_ANDROID
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+#endif
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -2936,6 +3220,14 @@ int main(int argc, char** argv) {
     if (window == nullptr)
         return 1;
     SDL_SetWindowMinimumSize(window, (int)Px(960), (int)Px(640));
+#ifdef LAUNCHER_ANDROID
+    {
+        /* the phone's screen in landscape: the page laid out as on a 1180x720 window, as large as it fits */
+        int w = 0, h = 0;
+        SDL_GetWindowSize(window, &w, &h);
+        sScale = std::max(1.0f, std::min(std::max(w, h) / 1180.0f, std::min(w, h) / 720.0f));
+    }
+#endif
     SDL_GLContext gl = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl);
     SDL_GL_SetSwapInterval(1);
@@ -2948,7 +3240,11 @@ int main(int argc, char** argv) {
     ApplyStyle();
     LoadFonts();
     ImGui_ImplSDL3_InitForOpenGL(window, gl);
+#ifdef LAUNCHER_ANDROID
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+#else
     ImGui_ImplOpenGL3_Init("#version 130");
+#endif
     LoadBoxArt();
     if (shotDir && SDL_getenv("DECOMPUI_REWRITE_SETTINGS")) SaveIni();
     if (shotDir && SDL_getenv("DECOMPUI_PADFOCUS")) /* harness: the action the drawing lights */
@@ -2969,6 +3265,10 @@ int main(int argc, char** argv) {
         while (SDL_PollEvent(&ev)) {
             if (CaptureEvent(ev))
                 continue;
+#ifdef LAUNCHER_ANDROID
+            if (TouchScroll(ev))
+                continue;
+#endif
             /* Nintendo pads: the button labelled A confirms and B goes back, as in the game */
             if (ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN)
                 ImGui::GetIO().ConfigNavSwapGamepadButtons =
@@ -2987,6 +3287,28 @@ int main(int argc, char** argv) {
             SDL_Delay(50);
             continue;
         }
+#ifdef LAUNCHER_ANDROID
+        {
+            /* the activity's copies (a dump, a save, the HD folder): its line under the page, and the files looked at
+               again when one finished */
+            static int seen = -1;
+            AndroidStatus st = AndroidStatusNow();
+            hd::sJob.running = st.busy;
+            hd::sJob.text = st.busy ? st.text : std::string();
+            if (st.serial != seen) {
+                if (seen >= 0) {
+                    ScanInstall();
+                    LoadIni();
+                    for (int v = 0; v < kVersionCount; v++)
+                        if (sState[v].installed && !sState[sSelected].installed)
+                            sSelected = v;
+                    if (!st.text.empty())
+                        Notice(st.text, st.error);
+                }
+                seen = st.serial;
+            }
+        }
+#endif
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();

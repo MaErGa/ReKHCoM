@@ -150,7 +150,7 @@ android {
         gradle=stage/'app/build.gradle'
         gradle.write_text(gradle.read_text().replace("applicationId 'com.rekhcom.android'","applicationId 'com.rekhcom.android.smoke'"))
     libs=stage/'app/src/main/jniLibs'/args.abi;libs.mkdir(parents=True,exist_ok=True)
-    desired={'libSDL3.so',*(f'librekhcom_{r}.so' for r in args.regions)}
+    desired={'libSDL3.so','liblauncher.so',*(f'librekhcom_{r}.so' for r in args.regions)} # liblauncher: the first screen (LauncherActivity)
     # Remove only stale native binaries from this generated staging folder.
     for old in libs.glob('*.so'):
         assert old.resolve().is_relative_to(stage.resolve())
@@ -168,12 +168,18 @@ android {
     with64=not args.no_arm64
     if with64:
         libs64.mkdir(parents=True,exist_ok=True)
-        for name,source in (('libSDL3.so',native64/'SDL/libSDL3.so'),('librekhcom64.so',native64/'librekhcom64.so')):
+        for name,source in (('libSDL3.so',native64/'SDL/libSDL3.so'),('librekhcom64.so',native64/'librekhcom64.so'),
+                            ('liblauncher.so',native64/'liblauncher.so')):
             shutil.copy2(source,libs64/name);run([strip,'--strip-unneeded',libs64/name])
         for region in args.regions:
             shutil.copy2(ROOT/f'build/android64/guest-{region}.macho',images/f'guest-{region}.macho')
     notices=stage/'app/src/main/assets/licenses';notices.mkdir(parents=True,exist_ok=True)
     shutil.copytree(ROOT/'port/assets/fonts',stage/'app/src/main/assets/fonts',dirs_exist_ok=True)
+    # the launcher's own (decompui, LauncherActivity): copied to files/assets on start (launcher_android.inc)
+    launcher=stage/'app/src/main/assets/launcher';(launcher/'fonts').mkdir(parents=True,exist_ok=True);(launcher/'achievements').mkdir(exist_ok=True)
+    shutil.copy2(ROOT/'port/assets/fonts/KHMenu.otf',launcher/'fonts/KHMenu.otf')
+    for name in ('boxart.jpg','logo.png'):shutil.copy2(ROOT/'port/decompui/assets'/name,launcher/name)
+    shutil.copy2(ROOT/'port/assets/achievements/badges.png',launcher/'achievements/badges.png')
     # achievement badges: the game reads APK assets without the "assets/" prefix (PortLoadAsset)
     (stage/'app/src/main/assets/achievements').mkdir(parents=True,exist_ok=True)
     shutil.copy2(ROOT/'port/assets/achievements/badges.png',stage/'app/src/main/assets/achievements/badges.png')

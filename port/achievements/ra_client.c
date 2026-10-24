@@ -1,7 +1,19 @@
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winhttp.h>
 #include <wincrypt.h>
+#else
+#include <stddef.h>
+/* the Android launcher (LAUNCHER_ANDROID): the app's private folder keeps the sign-in, and no request reaches the
+   server (the Android game has no online achievements: the official set is earned offline there) */
+static void SecureZeroMemory(void* p, size_t n) {
+    volatile unsigned char* b = (volatile unsigned char*)p;
+    while (n--)
+        *b++ = 0;
+}
+#define _strdup strdup
+#endif
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,6 +58,7 @@ static void SetStatus(KhRa* ra, const char* text, int error) {
     ra->error = error;
 }
 
+#ifdef _WIN32
 static wchar_t* Wide(const char* text) {
     int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text, -1, NULL, 0);
     wchar_t* result;
@@ -66,9 +79,21 @@ static FILE* DataFile(KhRa* ra, const char* name, const wchar_t* mode) {
     free(wide);
     return file;
 }
+#else
+static FILE* DataFile(KhRa* ra, const char* name, const char* mode) {
+    char path[1200];
+    snprintf(path, sizeof(path), "%s/%s", ra->directory, name);
+    return fopen(path, mode);
+}
+#endif
+#ifdef _WIN32
+#define RA_MODE(m) L##m
+#else
+#define RA_MODE(m) m
+#endif
 
 static void ForgetToken(KhRa* ra) {
-    FILE* file = DataFile(ra, "retroachievements.auth", L"wb");
+    FILE* file = DataFile(ra, "retroachievements.auth", RA_MODE("wb"));
     if (file) fclose(file);
     SecureZeroMemory(ra->token, sizeof(ra->token));
     SecureZeroMemory(ra->username, sizeof(ra->username));
@@ -76,6 +101,17 @@ static void ForgetToken(KhRa* ra) {
 
 static int SaveToken(KhRa* ra) {
     struct { char user[128], token[128]; } credentials;
+#ifndef _WIN32
+    FILE* plain;
+    int saved = 0;
+    memset(&credentials, 0, sizeof(credentials));
+    snprintf(credentials.user, sizeof(credentials.user), "%s", ra->username);
+    snprintf(credentials.token, sizeof(credentials.token), "%s", ra->token);
+    plain = DataFile(ra, "retroachievements.auth", "wb");
+    if (plain) { saved = fwrite(&credentials, 1, sizeof(credentials), plain) == sizeof(credentials); fclose(plain); }
+    SecureZeroMemory(&credentials, sizeof(credentials));
+    return saved;
+#else
     DATA_BLOB in, out = {0};
     FILE* file;
     int ok = 0;
@@ -86,19 +122,32 @@ static int SaveToken(KhRa* ra) {
     in.cbData = sizeof(credentials);
     if (CryptProtectData(&in, L"ReKHCoM RetroAchievements", NULL, NULL, NULL,
                          CRYPTPROTECT_UI_FORBIDDEN, &out)) {
-        file = DataFile(ra, "retroachievements.auth", L"wb");
+        file = DataFile(ra, "retroachievements.auth", RA_MODE("wb"));
         if (file) { ok = fwrite(out.pbData, 1, out.cbData, file) == out.cbData; fclose(file); }
         SecureZeroMemory(out.pbData, out.cbData);
         LocalFree(out.pbData);
     }
     SecureZeroMemory(&credentials, sizeof(credentials));
     return ok;
+#endif
 }
 
 static void ReadToken(KhRa* ra) {
+#ifndef _WIN32
+    unsigned char plain[256];
+    FILE* in = DataFile(ra, "retroachievements.auth", "rb");
+    if (!in) return;
+    if (fread(plain, 1, sizeof(plain), in) == sizeof(plain) && plain[127] == 0 && plain[255] == 0) {
+        memcpy(ra->username, plain, 128);
+        memcpy(ra->token, plain + 128, 128);
+        ra->remember = 1;
+    }
+    fclose(in);
+    SecureZeroMemory(plain, sizeof(plain));
+#else
     BYTE bytes[4096];
     DATA_BLOB in, out = {0};
-    FILE* file = DataFile(ra, "retroachievements.auth", L"rb");
+    FILE* file = DataFile(ra, "retroachievements.auth", RA_MODE("rb"));
     size_t size;
     if (!file) return;
     size = fread(bytes, 1, sizeof(bytes), file);
@@ -116,12 +165,18 @@ static void ReadToken(KhRa* ra) {
         LocalFree(out.pbData);
     }
     SecureZeroMemory(bytes, sizeof(bytes));
+#endif
 }
 
 /* Workers only fill their response. rcheevos callbacks are dispatched by Pump
  * on the owning thread, so UI access and frame evaluation cannot race. */
 static int HttpWorker(void* userdata) {
     KhRaJob* job = (KhRaJob*)userdata;
+#ifndef _WIN32
+    job->status = RC_API_SERVER_RESPONSE_RETRYABLE_CLIENT_ERROR; /* no online requests here (see the top) */
+    SDL_SetAtomicInt(&job->done, 1);
+    return 0;
+#else
     wchar_t *url = Wide(job->url), *content_type = NULL;
     HINTERNET session = NULL, connect = NULL, request = NULL;
     URL_COMPONENTS parts;
@@ -181,6 +236,7 @@ done:
     free(content_type); free(url);
     SDL_SetAtomicInt(&job->done, 1);
     return 0;
+#endif
 }
 
 static void ServerCall(const rc_api_request_t* request, rc_client_server_callback_t callback,
@@ -353,7 +409,7 @@ KhRa* KhRaCreate(const char* directory, KhRaRead read, void* userdata, KhRaTrans
     rc_client_set_allow_background_memory_reads(ra->client, 1);
     rc_client_set_event_handler(ra->client, Event);
     SetStatus(ra, "Not connected", 0);
-    file = DataFile(ra, "retroachievements.ini", L"r");
+    file = DataFile(ra, "retroachievements.ini", RA_MODE("r"));
     if (file) { int value = 0; if (fscanf(file, "enabled=%d", &value) == 1) ra->enabled = value == 1; fclose(file); }
     ReadToken(ra);
     if (ra->enabled && ra->token[0]) {
@@ -419,7 +475,7 @@ void KhRaSetEnabled(KhRa* ra, int enabled) {
     if (!ra || ra->busy) return;
     ra->enabled = enabled != 0;
     ++ra->generation; ra->account_progress_available = 0;
-    file = DataFile(ra, "retroachievements.ini", L"w");
+    file = DataFile(ra, "retroachievements.ini", RA_MODE("w"));
     if (file) { fprintf(file, "enabled=%d\n", ra->enabled); fclose(file); }
     if (!ra->enabled) { rc_client_logout(ra->client); SetStatus(ra, "Not connected", 0); }
     else if (ra->token[0]) {

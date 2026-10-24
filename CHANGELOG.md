@@ -22,6 +22,13 @@ HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes
   emulator but native). The launcher's Graphics has "Graphics mode" (choose on start by default), and Options
   "Reset to a mode's defaults". A new game in GBA classic still offers the widescreen view.
 
+- **Touch buttons**: three looks (Clear, Dark, Color) and a layout editor: Options > "Move touch buttons", drag
+  the d-pad, L, R, the face buttons, SELECT, START and the menu button where you want them (Android, web, Switch).
+- **Android**: the app opens on the same launcher as the PC's (home, enhancements, graphics, sound and controls,
+  achievements, save editor), with the system's file pickers for dumps, saves and the PC's HD folder.
+- First start: behind the mode question, how the screen will look with the mode you are on.
+- HD import on the graphics card, about twice as fast as before.
+
 - HD scenes: smooth in and out of each scene (no flash of the event's picture when it ends), skipping a scene or
   movie fades the picture and its sound out instead of cutting them, the field's music fades out before a scene
   starts, and the scene pause sounds like the game's menus.

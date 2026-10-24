@@ -20,6 +20,23 @@ set(FT_DISABLE_PNG ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_BROTLI ON CACHE BOOL "" FORCE)
 add_subdirectory("${FREETYPE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/freetype")
+# The launcher: the PC launcher's own code (port/decompui, LAUNCHER_ANDROID) as the app's first screen
+# (LauncherActivity), on every ABI; the game runs in GameActivity's process
+set(RC "${ROOT}/port/third_party/rcheevos/src")
+file(GLOB RCHEEVOS_SOURCES "${RC}/rcheevos/*.c" "${RC}/rapi/*.c" "${RC}/rhash/*.c")
+set(IMGUI "${ROOT}/port/decompui/third_party/imgui")
+add_library(launcher SHARED "${ROOT}/port/decompui/decompui.cpp"
+    "${IMGUI}/imgui.cpp" "${IMGUI}/imgui_draw.cpp" "${IMGUI}/imgui_tables.cpp" "${IMGUI}/imgui_widgets.cpp"
+    "${IMGUI}/backends/imgui_impl_sdl3.cpp" "${IMGUI}/backends/imgui_impl_opengl3.cpp"
+    "${ROOT}/port/achievements/ra_client.c" "${ROOT}/port/achievements/offline_achievements.c"
+    "${ROOT}/port/decompui/miniz_unit.c" "${RC}/rc_client.c" "${RC}/rc_compat.c" "${RC}/rc_util.c" "${RC}/rc_version.c"
+    ${RCHEEVOS_SOURCES})
+target_compile_definitions(launcher PRIVATE LAUNCHER_ANDROID IMGUI_IMPL_OPENGL_ES3 RC_CLIENT_SUPPORTS_HASH)
+target_include_directories(launcher PRIVATE "${IMGUI}" "${ROOT}/port/decompui/third_party"
+    "${ROOT}/port/third_party/rcheevos/include" "${ROOT}/port/include")
+target_compile_options(launcher PRIVATE -O2 -w $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>)
+target_link_libraries(launcher PRIVATE SDL3::SDL3 GLESv3 EGL log android m)
+
 if(ANDROID_ABI STREQUAL "arm64-v8a")
     # 64-bit: the game is the AArch64 image with 32-bit pointers (port/android64/build_android64.py, in the APK's
     # assets); this library is only its host

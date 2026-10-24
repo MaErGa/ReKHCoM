@@ -12,6 +12,9 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#ifdef LAUNCHER_ANDROID
+#include "hd_android.inc"
+#else
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -1940,6 +1943,7 @@ static fs::path PickFolder() {
 }
 
 }  // namespace hd
+#endif
 
 static bool sQuitAsked, sQuitNow; /* the window's close while the HD mod loads: asked first (main loop) */
 static int sQuitChoice;           /* closing anyway: 1 keep what is finished to resume, 2 remove what this import made */
@@ -2085,6 +2089,23 @@ static bool HdModCard() {
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, h));
     }
     ImGui::Spacing();
+#ifdef LAUNCHER_ANDROID
+    /* on the phone the mod comes ready from the PC: the hd folder the PC launcher builds (in ReKHCoM's folder),
+       copied to the phone and chosen here; the activity copies what is new (launcher_android.inc) */
+    (void)haveBase;
+    ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
+    ImGui::TextWrapped("%s", T("En el teléfono el mod llega armado desde el PC: copia al teléfono la carpeta hd que arma "
+                               "el launcher de PC (en la carpeta de ReKHCoM) y elígela aquí. Las escenas ocupan varios GB: "
+                               "copia solo lo que quieras. Una segunda copia solo agrega lo nuevo.",
+                               "On the phone the mod comes ready from the PC: copy to the phone the hd folder the PC "
+                               "launcher builds (in ReKHCoM's folder) and choose it here. The scenes take several GB: copy "
+                               "only what you want. A second copy only adds what is new."));
+    ImGui::PopStyleColor();
+    ImGui::BeginDisabled(hd::sJob.running);
+    if (PlayButton(T("COPIAR LA CARPETA HD DEL PC", "COPY THE PC'S HD FOLDER"),
+                   ImVec2(ImGui::GetContentRegionAvail().x, Px(52)), !hd::sJob.running))
+        AndroidPick(ANDROID_PICK_HD, 0, 0);
+#else
     ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
     ImGui::TextWrapped("%s %s", source.empty() ? T("Juego:", "Game:") : T("Encontrado:", "Found:"),
                        source.empty() ? T("no se encontró KINGDOM HEARTS HD 1.5+2.5 en Steam ni Epic; si lo tienes en otra "
@@ -2171,6 +2192,7 @@ static bool HdModCard() {
         if (!ImGui::IsItemHovered() && !ImGui::IsItemActive() && confirm && ImGui::IsMouseClicked(0))
             confirm = false;
     }
+#endif
     ImGui::EndDisabled();
     if (hd::sJob.running || !hd::sJob.Status().empty()) {
         int total = hd::sJob.total, done = hd::sJob.done;
