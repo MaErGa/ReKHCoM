@@ -1496,6 +1496,17 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
        waiting for the user's approval (KHCOM_ARENAS_V2=1, the review copy) */
     int tmBoard = sBgLatch[bg].valid && PortTrickmasterBackdropMatches((const void* const*)sBgLatch[bg].map) &&
         PortArenasV2();
+    /* Maleficent's hall (1) goes on by its bays; her dragon's layer (2) shows one dragon */
+    int mdLayer = 0;
+    if (PortArenasV2() && sBgLatch[bg].valid) {
+        int b;
+        if (PortMaleficentLayer((const void* const*)sBgLatch[bg].map))
+            mdLayer = 1;
+        else if (PortMaleficentDragonLayer((const void* const*)sBgLatch[bg].map))
+            for (b = 0; b < 4; b++)
+                if (b != bg && sBgLatch[b].valid && PortMaleficentLayer((const void* const*)sBgLatch[b].map))
+                    mdLayer = 2;
+    }
 
     (void)dispcnt;
     if (mosV > 1)
@@ -1542,6 +1553,19 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
             int wy = l->y + gy + (vofs - l->vofs);
             if (PortGuardArmorBackdropPixel(wx, wy, &out[x])) {
                 sInWorld[x] = 1;
+                continue;
+            }
+        }
+        if (mdLayer && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
+            const BgLatch* l = &sBgLatch[bg];
+            int wx = l->x + gx + (hofs - l->hofs), wy = l->y + gy + (vofs - l->vofs);
+            int cx = l->x + GBA_SCREEN_W / 2 + (hofs - l->hofs), cy = l->y + GBA_SCREEN_H / 2 + (vofs - l->vofs);
+            if (mdLayer == 1 && PortMaleficentHallPixel(wx, wy, cx, cy, &out[x])) {
+                sInWorld[x] = 1;
+                continue;
+            }
+            if (mdLayer == 2 && !PortMaleficentDragonVisible(wx, wy, cx, cy)) {
+                out[x] = TRANSPARENT;
                 continue;
             }
         }
