@@ -1,4 +1,6 @@
 static int sAchievementChoice, sAchievementScroll, sAchievementView;
+static int sAchievementList; /* 0 the official list, 1 the Re:CoM one */
+int PortRecomActive(void);
 /* The set's badges: assets/achievements/badges.png, one atlas (10 per row in
  * set order, 64x64), decoded once when the list is first shown. */
 #include <stdio.h>
@@ -30,12 +32,21 @@ static void AchievementMenuBadge(const PortAchievementInfo* info, int index, int
     }
 }
 /* Read-only, portable list inside Options. Account controls stay in launcher. */
+/* the list shown, row i: its text and badge (-1 none) */
+static int AchievementMenuCount(void) {
+    return sAchievementList ? PortRecomListCount() : PortAchievementsListCount();
+}
+static int AchievementMenuGet(int i, PortAchievementInfo* info, int* badge) {
+    if (sAchievementList) return PortRecomListGet(i, info, badge);
+    if (badge) *badge = i;
+    return PortAchievementsListGet(i, info);
+}
 static int AchievementMenuRows(int* indices, int* earned) {
     PortAchievementInfo info;
     int i, count = 0;
     *earned = 0;
-    for (i = 0; i < PortAchievementsListCount(); ++i) {
-        if (!PortAchievementsListGet(i, &info)) continue;
+    for (i = 0; i < AchievementMenuCount(); ++i) {
+        if (!AchievementMenuGet(i, &info, NULL)) continue;
         *earned += info.state == 1;
         if ((sAchievementView == 1 && info.state != 0) || (sAchievementView == 2 && info.state != 1)) continue;
         indices[count++] = i;
@@ -46,10 +57,11 @@ static void AchievementMenuOpen(void) {
     PortAchievementsListRefresh();
     sPage = PAGE_ACHIEVEMENTS;
     sAchievementChoice = sAchievementScroll = sAchievementView = 0;
+    sAchievementList = PortRecomActive() && PortRecomListCount() > 0; /* a Re:CoM game opens its own list */
     sMenuLightStart = MenuLightNow();
 }
 static int AchievementMenuInput(const SDL_Event* ev) {
-    int move = 0, filter = 0, back = 0, indices[256], earned, count;
+    int move = 0, filter = 0, back = 0, list = 0, indices[256], earned, count;
     if (ev->type == SDL_EVENT_KEY_DOWN) {
         switch (ev->key.key) {
         case SDLK_UP: case SDLK_W: move = -1; break;
@@ -58,6 +70,7 @@ static int AchievementMenuInput(const SDL_Event* ev) {
         case SDLK_RIGHT: case SDLK_D: move = 5; break;
         case SDLK_Q: case SDLK_PAGEUP: filter = -1; break;
         case SDLK_E: case SDLK_PAGEDOWN: filter = 1; break;
+        case SDLK_TAB: case SDLK_X: list = 1; break;
         case SDLK_ESCAPE: case SDLK_BACKSPACE: case SDLK_F1: case SDLK_Z: case SDLK_J: back = !ev->key.repeat; break;
         }
     } else if (ev->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
@@ -68,11 +81,13 @@ static int AchievementMenuInput(const SDL_Event* ev) {
         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: move = 5; break;
         case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: filter = -1; break;
         case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: filter = 1; break;
+        case SDL_GAMEPAD_BUTTON_NORTH: list = 1; break;
         case SDL_GAMEPAD_BUTTON_EAST: back = 1; break;
         case SDL_GAMEPAD_BUTTON_START: case SDL_GAMEPAD_BUTTON_BACK: case SDL_GAMEPAD_BUTTON_GUIDE: Close(); return 1;
         }
     }
     if (back) { sPage = PAGE_MAIN; sCursor = ITEM_ACHIEVEMENTS_MENU; sScroll = 0; return 1; }
+    if (list && PortRecomListCount() > 0) { sAchievementList = !sAchievementList; sAchievementChoice = sAchievementScroll = 0; }
     if (filter) { sAchievementView = Wrap(sAchievementView + filter, 3); sAchievementChoice = sAchievementScroll = 0; }
     count = AchievementMenuRows(indices, &earned);
     if (move && count) {
@@ -80,7 +95,7 @@ static int AchievementMenuInput(const SDL_Event* ev) {
         if (move == 1 || move == -1) sAchievementChoice = Wrap(sAchievementChoice + move, count);
         else sAchievementChoice = SDL_clamp(sAchievementChoice + move, 0, count - 1);
     }
-    if (move || filter) sMenuLightStart = MenuLightNow();
+    if (move || filter || list) sMenuLightStart = MenuLightNow();
     return 1;
 }
 static void AchievementMenuText(const char* text, int x, int y, int right, uint32_t colour) {
@@ -98,15 +113,16 @@ static void DrawAchievementMenu(int l, int width, int height) {
     PortAchievementInfo info;
     char text[160];
     Fill(0, 0, width, height, 0xFFFFFFFFu);
-    DrawText(es ? "Logros" : "Achievements", x, MENU_TITLE_Y, MENU_INK, 0xFFD8D8D8u);
-    SDL_snprintf(text, sizeof(text), "%d/%d    L < %s > R", earned, PortAchievementsListCount(), filters[es][sAchievementView]);
+    DrawText(sAchievementList ? (es ? "Logros - Re:CoM" : "Achievements - Re:CoM")
+                              : (es ? "Logros - Oficiales" : "Achievements - Official"), x, MENU_TITLE_Y, MENU_INK, 0xFFD8D8D8u);
+    SDL_snprintf(text, sizeof(text), "%d/%d    L < %s > R", earned, AchievementMenuCount(), filters[es][sAchievementView]);
     AchievementMenuText(text, x, MENU_TOP + 2, right, MENU_RED_DARK);
     if (sAchievementChoice >= count) sAchievementChoice = SDL_max(0, count - 1);
     if (sAchievementChoice < sAchievementScroll) sAchievementScroll = sAchievementChoice;
     if (sAchievementChoice >= sAchievementScroll + rows) sAchievementScroll = sAchievementChoice - rows + 1;
     for (i = sAchievementScroll, y = top; i < count && i < sAchievementScroll + rows; ++i, y += 16) {
         int selected = i == sAchievementChoice;
-        PortAchievementsListGet(indices[i], &info);
+        AchievementMenuGet(indices[i], &info, NULL);
         MenuBar(x, y, right - x, selected);
         /* A filled red mark denotes earned; grey remains locked/unknown. */
         Fill(x + 2, y + 1, 7, 7, info.state == 1 ? MENU_RED : MENU_GREY);
@@ -119,8 +135,9 @@ static void DrawAchievementMenu(int l, int width, int height) {
         const char* p;
         int dx = x, dy = height - 88;
         int descriptionRight = right - 76;
-        PortAchievementsListGet(indices[sAchievementChoice], &info);
-        AchievementMenuBadge(&info, indices[sAchievementChoice], right - 64, height - 88);
+        int badge;
+        AchievementMenuGet(indices[sAchievementChoice], &info, &badge);
+        AchievementMenuBadge(&info, badge, right - 64, height - 88);
         p = info.description;
         while (*p && dy < height - 25) {
             int code = NextChar(&p), advance = GlyphWidth(code);
@@ -131,13 +148,17 @@ static void DrawAchievementMenu(int l, int width, int height) {
     }
     {
 #ifdef VERSION_EU
-        const char* note = es ? "Se consiguen al jugar, con o sin cuenta de RetroAchievements" :
+        const char* note = sAchievementList ? (es ? "Partidas Re:CoM; solo en este equipo, nunca en línea" :
+                                                    "Re:CoM games; kept on this device, never online")
+                         : es ? "Se consiguen al jugar, con o sin cuenta de RetroAchievements" :
                                 "Earned as you play, with or without a RetroAchievements account";
 #else
         const char* note = es ? "El set oficial es de la versión europea" : "The official set is for the European version";
 #endif
         AchievementMenuText(note, x, height - 22, right, MENU_DIM);
     }
-    AchievementMenuText(es ? "Arriba/abajo: lista  L/R: filtro  B: volver" : "Up/down: list  L/R: filter  B: back",
+    AchievementMenuText(PortRecomListCount() > 0 ? (es ? "Arriba/abajo  L/R: filtro  Y: oficiales/Re:CoM  B: volver"
+                                                        : "Up/down  L/R: filter  Y: official/Re:CoM  B: back")
+                        : es ? "Arriba/abajo: lista  L/R: filtro  B: volver" : "Up/down: list  L/R: filter  B: back",
         x, height - 11, right, MENU_DIM);
 }

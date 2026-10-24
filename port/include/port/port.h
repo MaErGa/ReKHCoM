@@ -282,6 +282,7 @@ int PortSmoothScaleMode(void);
 /* port_ps2qol.c: the optional Re:Chain of Memories version of a game. */
 int PortRecomActive(void);
 void PortRecomSetActive(int active);
+int PortRecomRunRank(void); /* the lowest difficulty this game was played on: 0 Beginner, 1 Standard, 2 Proud */
 int PortHdHudEnemy(int visible, int ratio, int layer);
 extern int gPortHdHudPart;
 int PortPpuEnemyHudRect(int* rect);

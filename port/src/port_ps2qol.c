@@ -22,8 +22,25 @@ int PortRecomActive(void) {
     return sActive;
 }
 
+/* difficulty setting (0 Standard, 1 Beginner, 2 Proud) as a rank: 0 Beginner, 1 Standard, 2 Proud */
+static int Rank(int difficulty) {
+    return difficulty == 1 ? 0 : difficulty == 2 ? 2 : 1;
+}
+
+/* The lowest difficulty the game being played has had since New Game (kept per save file): Re:CoM achievements
+   that need Proud count only if the whole game was played on it, whatever it is set to at the end. */
+static int sRunRank = 1;
+
+int PortRecomRunRank(void) {
+    int now = Rank(gPortConfig.ps2Difficulty);
+    if (now < sRunRank)
+        sRunRank = now;
+    return sRunRank;
+}
+
 void PortRecomSetActive(int active) {
     sActive = active != 0;
+    sRunRank = Rank(gPortConfig.ps2Difficulty); /* New Game: the run starts here */
 }
 
 /* Re:Chain of Memories difficulty changes only damage: Beginner scales damage
@@ -79,6 +96,7 @@ int PortFastText(void) {
 #define RECOM_DODGE (1 << 7)
 #define RECOM_STOCK (1 << 8)
 #define RECOM_FAST_TEXT (1 << 10)
+#define RECOM_RUN_SHIFT 11 /* bits 11-12: the run's lowest difficulty rank + 1 (0: not recorded) */
 static int sTable[RECOM_KEYS];
 static int sLoaded;
 
@@ -113,6 +131,7 @@ static void Store(void) {
     fprintf(f, "; ReKHCoM: how each save file's game was started (never inside the save itself)\n");
     fprintf(f, "; slot = (bank - 1) * 8 + file + 1; bits: 1 set, 2 Re:CoM, 4-8 difficulty, 16 HD text, 32 QoL buttons\n");
     fprintf(f, "; 64 individual options recorded, 128 dodge, 256 stock, 512 reserved, 1024 fast dialogue\n");
+    fprintf(f, "; 2048-6144: the lowest difficulty played (rank + 1: Beginner, Standard, Proud)\n");
     for (k = 0; k < RECOM_KEYS; k++)
         if (sTable[k])
             fprintf(f, "slot%d=%d\n", k, sTable[k]);
@@ -135,7 +154,8 @@ void PortRecomSaved(int file) {
         | (PortQolButtons() ? 32 : 0) | RECOM_INDIVIDUAL
         | (gPortConfig.dodgeButton ? RECOM_DODGE : 0)
         | (gPortConfig.stockButton ? RECOM_STOCK : 0)
-        | (gPortConfig.ps2FastText ? RECOM_FAST_TEXT : 0);
+        | (gPortConfig.ps2FastText ? RECOM_FAST_TEXT : 0)
+        | ((PortRecomRunRank() + 1) << RECOM_RUN_SHIFT);
     if (sTable[Key(file)] != v) {
         sTable[Key(file)] = v;
         Store();
@@ -156,6 +176,8 @@ void PortRecomLoaded(int file) {
     }
     sActive = (v & 2) != 0;
     gPortConfig.ps2Difficulty = SDL_clamp((v >> 2) & 3, 0, 2);
+    sRunRank = (v >> RECOM_RUN_SHIFT) & 3 ? SDL_clamp(((v >> RECOM_RUN_SHIFT) & 3) - 1, 0, 2)
+                                          : Rank(gPortConfig.ps2Difficulty);
     gPortConfig.hdText = (v & 16) != 0;
     if (v & RECOM_INDIVIDUAL) {
         gPortConfig.dodgeButton = (v & RECOM_DODGE) != 0;

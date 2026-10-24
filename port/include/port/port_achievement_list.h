@@ -12,4 +12,8 @@ typedef struct PortAchievementInfo {
 void PortAchievementsListRefresh(void);
 int PortAchievementsListCount(void);
 int PortAchievementsListGet(int index, PortAchievementInfo* out);
+/* The Re:CoM list (port_achievements_recom.inc): the official set again, then the mode's own; never online.
+   badgeIndex: the official badge, -1 for the mode's own. */
+int PortRecomListCount(void);
+int PortRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex);
 #endif

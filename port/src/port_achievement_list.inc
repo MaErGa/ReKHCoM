@@ -38,3 +38,38 @@ int PortAchievementsListGet(int index, PortAchievementInfo* out) {
 #endif
     return 1;
 }
+/* The Re:CoM list: the official set as earned in Re:CoM games (Proud noted where it is needed), then the mode's own */
+int PortRecomListCount(void) {
+#ifdef KH_OFFLINE_EVAL
+    return KhOfficialCount() + PortRecomExtraCount();
+#else
+    return 0;
+#endif
+}
+int PortRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex) {
+#ifdef KH_OFFLINE_EVAL
+    int l = ACHIEVEMENT_TEXT_LANGUAGE;
+    if (!out || index < 0 || index >= PortRecomListCount()) return 0;
+    if (l < 0 || l > 5) l = 0;
+    memset(out, 0, sizeof(*out));
+    if (index < KhOfficialCount()) {
+        const KhOfficialAchievement* a = KhOfficialAt(index);
+        SDL_strlcpy(out->title, KhOfficialText(a, l, 0), sizeof(out->title));
+        SDL_snprintf(out->description, sizeof(out->description), "%s%s", KhOfficialText(a, l, 1),
+                     PortRecomNeedsProud(index) ? kRecomProudNote[l] : "");
+        out->points = a->points;
+        out->state = PortRecomUnlocked(index);
+        if (badgeIndex) *badgeIndex = index;
+    } else {
+        int e = index - KhOfficialCount();
+        SDL_strlcpy(out->title, PortRecomExtraText(e, l, 0), sizeof(out->title));
+        SDL_strlcpy(out->description, PortRecomExtraText(e, l, 1), sizeof(out->description));
+        out->state = PortRecomExtraUnlocked(e);
+        if (badgeIndex) *badgeIndex = -1;
+    }
+    return 1;
+#else
+    (void)index; (void)out; (void)badgeIndex;
+    return 0;
+#endif
+}

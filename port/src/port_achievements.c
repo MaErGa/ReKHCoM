@@ -91,6 +91,8 @@ static void OfflineEvent(const rc_runtime_event_t* event) {
 }
 #endif
 
+int PortEventId(void); /* mode_event.c */
+#include "port_achievements_recom.inc"
 #include "port_achievement_list.inc"
 
 void PortAchievementsInit(void) {
@@ -104,6 +106,7 @@ void PortAchievementsInit(void) {
             rc_runtime_activate_achievement(&sOfflineRuntime, KhOfficialAt(i)->id, KhOfficialAt(i)->definition, NULL, 0) == RC_OK)
             sOfflineReady++;
     PortLog("achievements: %d of %d official achievements to earn", sOfflineReady, KhOfficialCount());
+    RecomInit();
 #endif
 #ifdef PORT_RETROACHIEVEMENTS
     /* Official set (EU cartridge): evaluated from the port's memory as the
@@ -137,12 +140,14 @@ static int sPauseNotice; /* 0 none, 1 Re:CoM mode, 2 cheats or other modifiers; 
 static void PauseNoticeFrame(void) {
     static const char* const kTitle[6] = { "Achievements paused", "Succès en pause", "Erfolge pausiert",
         "Obiettivi in pausa", "Logros en pausa", "実績は一時停止中" };
-    static const char* const kRecom[6] = { "Turn off Re:CoM mode.",
-        "Désactivez le mode Re:CoM.",
-        "Schalte den Re:CoM-Modus aus.",
-        "Disattiva la modalità Re:CoM.",
-        "Apaga el modo Re:CoM.",
-        "Re:CoMモードをオフにしてください。" };
+    static const char* const kRecomTitle[6] = { "Re:CoM achievements", "Succès Re:CoM", "Re:CoM-Erfolge",
+        "Obiettivi Re:CoM", "Logros Re:CoM", "Re:CoM 実績" };
+    static const char* const kRecom[6] = { "Their own list, kept offline.",
+        "Leur propre liste, hors ligne.",
+        "Eigene Liste, nur offline.",
+        "Lista propria, solo offline.",
+        "Su propia lista, sin conexión.",
+        "専用リスト(オフライン)。" };
     static const char* const kCheat[6] = { "Cheats or debug tools were used.",
         "Astuces ou débogage utilisés.",
         "Cheats oder Debug benutzt.",
@@ -153,7 +158,7 @@ static void PauseNoticeFrame(void) {
 
     if (sPauseNotice <= 0 || (gCurrentMode != &gModeMapFld && gCurrentMode != &gModeBattle)) return;
     if (l < 0 || l > 5) l = 0;
-    PortAchievementToast(kTitle[l], sPauseNotice == 1 ? kRecom[l] : kCheat[l], "", -1);
+    PortAchievementToast(sPauseNotice == 1 ? kRecomTitle[l] : kTitle[l], sPauseNotice == 1 ? kRecom[l] : kCheat[l], "", -1);
     sPauseNotice = -1;
 }
 
@@ -161,8 +166,7 @@ void PortAchievementsInvalidate(const char* reason) {
     if (sInvalidated) return;
     sInvalidated = 1;
     if (sPauseNotice == 0)
-        sPauseNotice = gPortConfig.ps2Mode && !gPortConfig.cheatOneHit && !gPortConfig.cheatInfiniteHp &&
-                       !gPortConfig.cheatUnlockRiku && !gPortConfig.cheatSaveStates ? 1 : 2;
+        sPauseNotice = 2;
     PortLog("achievements: session paused (%s)", reason);
 #ifdef PORT_RETROACHIEVEMENTS
     KhRaInvalidate(sRa, reason);
@@ -260,7 +264,7 @@ static void DryRunFrame(void) {
 #endif
 
 void PortAchievementsFrame(void) {
-    int evaluate;
+    int evaluate, recom;
 #ifdef PORT_RETROACHIEVEMENTS
     DryRunFrame();
 #endif
@@ -269,16 +273,19 @@ void PortAchievementsFrame(void) {
         sPreviewFrame == (unsigned)SDL_atoi(SDL_getenv("KHCOM_ACHIEVEMENT_PREVIEW")))
         PortAchievementToast("Heartless Hunter", "Defeat your first Heartless in Castle Oblivion.", "VISTA PREVIA - LOGRO", SDL_atoi(SDL_getenv("KHCOM_ACHIEVEMENT_BADGE") ? SDL_getenv("KHCOM_ACHIEVEMENT_BADGE") : "0"));
     /* Invalidate before this frame can evaluate or submit an official award. */
-    if (gPortConfig.cheatOneHit || gPortConfig.cheatInfiniteHp || gPortConfig.cheatUnlockRiku || gPortConfig.cheatSaveStates ||
-        gPortConfig.ps2Mode)
+    if (gPortConfig.cheatOneHit || gPortConfig.cheatInfiniteHp || gPortConfig.cheatUnlockRiku || gPortConfig.cheatSaveStates)
         PortAchievementsInvalidate("Gameplay modifiers enabled");
+    /* a game of the Re:CoM version earns the Re:CoM list instead; the official one (and the account) waits */
+    recom = gPortConfig.ps2Mode && PortRecomActive();
+    if (recom && !sInvalidated && sPauseNotice == 0 && sStarted)
+        sPauseNotice = 1;
     PauseNoticeFrame();
     if (gCurrentMode == &gModeTitle) sStarted = 0;
     if (gCurrentMode == &gModeMapFld || gCurrentMode == &gModeBattle) sStarted = 1;
     evaluate = !sInvalidated && (gCurrentMode == &gModeMapFld || gCurrentMode == &gModeBattle ||
                                  gCurrentMode == &gModeTitle || sStarted);
 #ifdef PORT_RETROACHIEVEMENTS
-    KhRaPump(sRa, evaluate);
+    KhRaPump(sRa, evaluate && !recom);
     {
         const char* notice = KhRaTakeNotice(sRa);
         if (notice) {
@@ -295,9 +302,18 @@ void PortAchievementsFrame(void) {
     }
 #endif
 #ifdef KH_OFFLINE_EVAL
-    if (evaluate && sOfflineReady)
+    if (evaluate && !recom && sOfflineReady)
         rc_runtime_do_frame(&sOfflineRuntime, OfflineEvent, OfflinePeek, NULL, NULL);
+    {
+        /* harness: KHCOM_CREDITS=frame:movie reaches a story's credits (with KHCOM_ACHIEVEMENTS_LIVE) */
+        const char* c = SDL_getenv("KHCOM_CREDITS");
+        unsigned f; int m;
+        if (c && SDL_getenv("KHCOM_ACHIEVEMENTS_LIVE") && SDL_sscanf(c, "%u:%d", &f, &m) == 2 && f == sPreviewFrame)
+            PortAchievementsMovie(m);
+    }
+    RecomFrame(evaluate && recom);
     if (!PortUiActive()) {
+        RecomNoticesFrame();
         int i, account = 0, spanish;
 #ifdef PORT_RETROACHIEVEMENTS
         /* signed in: RetroAchievements' own notice announces it; here it is only kept */

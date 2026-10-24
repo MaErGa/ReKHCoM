@@ -462,7 +462,8 @@ static u16 sMovieSubLowerWidths[MOVIE_SUB_MAX_CHARS];
 void PortUiOpenMoviePause(void);
 unsigned PortUiOpenSerial(void);
 u32 PortFrameCount(void);
-int PortHdMoviePlay(int movieId);
+int PortHdMoviePlay(int movieId);
+void PortAchievementsMovie(int movieId);
 static u8 sPortMovieSkip;
 
 void PortMovieSkipRequest(void) {
@@ -829,6 +830,7 @@ void mode_movie_1() {
         break;
     case MOVIE_MODE_STATE_PLAY:
 #ifdef PLATFORM_PC
+        PortAchievementsMovie(sMovieId); /* the credits finish a story (Re:CoM achievements) */
         /* the player's imported HD movie (port/progress/HD_MOD.md) plays instead; the game goes on as after its own */
         if (PortHdMoviePlay(sMovieId)) {
             sMovieModeState = MOVIE_MODE_STATE_EXIT;

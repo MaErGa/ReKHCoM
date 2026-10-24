@@ -5,6 +5,9 @@ static char sRaUsername[128], sRaPassword[256], sAchievementSearch[128];
 static bool sRaRemember = true;
 static int sAchievementFilter;
 static KhOfflineState sOfflineProgress; /* earned in the game (achievements_official_eu.dat) */
+#include "../achievements/recom_set.inc"
+static KhOfflineState sRecomProgress; /* Re:CoM games: achievements_recom_eu.dat, never online */
+static unsigned long long sRecomExtraWhen[RECOM_EXTRA_COUNT]; /* achievements_recom_extra.dat */
 static Uint64 sOfflineReadAt;
 static bool sOfflineRead;
 static bool sAchievementPreview;
@@ -185,6 +188,95 @@ static void PageOfficialAchievements() {
     ImGui::EndChild();
 }
 
+/* The Re:CoM list: games of the Re:CoM version earn it instead of the official one; kept on this computer only. */
+static void PageRecomAchievements() {
+    static Uint64 readAt;
+    static bool read;
+    if (!read || SDL_GetTicks() - readAt > 1000) { /* the game may be writing them */
+        KhOfflineLoad(&sRecomProgress, (sRoot / "achievements_recom_eu.dat").u8string().c_str());
+#ifdef _WIN32
+        FILE* f = _wfopen((sRoot / "achievements_recom_extra.dat").wstring().c_str(), L"r");
+#else
+        FILE* f = std::fopen((sRoot / "achievements_recom_extra.dat").u8string().c_str(), "r");
+#endif
+        KhRecomExtraParse(f, sRecomExtraWhen);
+        if (f) fclose(f);
+        read = true; readAt = SDL_GetTicks();
+    }
+    int lang = sSpanish ? 4 : 0;
+    BeginCard("recom-catalog");
+    Eyebrow(T("LOGROS RE:COM · SOLO EN ESTE EQUIPO", "RE:COM ACHIEVEMENTS · ON THIS COMPUTER ONLY"));
+    ImGui::PushFont(sFontSmall);
+    ImGui::TextWrapped("%s", T("Las partidas de la versión Re:CoM tienen su propia lista: los mismos logros oficiales y los del modo."
+        " Los de mundos, jefes y la historia piden la partida entera en Experto. Nunca se suben a RetroAchievements.",
+        "Games of the Re:CoM version have their own list: the same official achievements plus the mode's own."
+        " Worlds, bosses and the story need the whole game on Proud. They are never sent to RetroAchievements."));
+    ImGui::PopFont();
+    int total = KhOfficialCount() + RECOM_EXTRA_COUNT, earned = 0;
+    for (int i = 0; i < KhOfficialCount(); ++i) earned += sRecomProgress.when[i] != 0;
+    for (int i = 0; i < RECOM_EXTRA_COUNT; ++i) earned += sRecomExtraWhen[i] != 0;
+    char progress[80];
+    std::snprintf(progress, sizeof(progress), "%d / %d", earned, total);
+    ImGui::Spacing();
+    ImGui::ProgressBar((float)earned / total, ImVec2(-1, Px(24)), progress);
+    ImGui::Spacing();
+    AchievementFilters();
+    bool table = ImGui::BeginTable("recom-achievement-grid", ImGui::GetContentRegionAvail().x >= Px(850) ? 2 : 1,
+        ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_PadOuterX);
+    int shown = 0;
+    for (int i = 0; i < RECOM_EXTRA_COUNT; ++i) { /* the mode's own first */
+        bool unlocked = sRecomExtraWhen[i] != 0;
+        const char* title = kRecomExtraText[i][lang][0];
+        const char* description = kRecomExtraText[i][lang][1];
+        if (!AchievementMatches(title, description, unlocked)) continue;
+        if (table) ImGui::TableNextColumn();
+        AchievementRow(0x52450000 + i, title, description, unlocked);
+        ++shown;
+    }
+    for (int i = 0; i < KhOfficialCount(); ++i) {
+        const KhOfficialAchievement* a = KhOfficialAt(i);
+        bool unlocked = sRecomProgress.when[i] != 0;
+        const char* title = KhOfficialText(a, lang, 0);
+        char description[800];
+        std::snprintf(description, sizeof(description), "%s%s", KhOfficialText(a, lang, 1),
+                      KhRecomNeedsProud(a) ? kRecomProudNote[lang] : "");
+        if (!AchievementMatches(title, description, unlocked)) continue;
+        ImVec2 uv0, uv1;
+        GLuint badge = OfficialAchievementBadge(i, unlocked, &uv0, &uv1);
+        if (table) ImGui::TableNextColumn();
+        AchievementRow(0x52460000 + (int)a->id, title, description, unlocked, nullptr, badge, uv0, uv1);
+        ++shown;
+    }
+    if (table) ImGui::EndTable();
+    if (!shown) ImGui::TextDisabled("%s", T("No hay logros con ese filtro.", "No achievements match this filter."));
+    ImGui::EndChild();
+}
+
+/* Official / Re:CoM: two lists as tabs, drawn like Settings' (the launcher's buttons with the game's square) */
+static int sAchievementList = -1; /* 0 official, 1 Re:CoM; -1 not chosen yet */
+static void AchievementListTabs() {
+    const char* names[2] = { T("Oficiales", "Official"), T("Re:CoM", "Re:CoM") };
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    if (sAchievementList < 0)
+        sAchievementList = SDL_getenv("DECOMPUI_ACHIEVEMENT_LIST") ? SDL_atoi(SDL_getenv("DECOMPUI_ACHIEVEMENT_LIST")) != 0 : 0;
+    for (int i = 0; i < 2; i++) {
+        bool active = sAchievementList == i;
+        if (i) ImGui::SameLine(0, Px(6));
+        ImGui::PushStyleColor(ImGuiCol_Button, active ? kPanelHover : kControl);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kControlHover);
+        char label[64];
+        snprintf(label, sizeof(label), "%s%s##achlist%d", active ? "    " : "", names[i], i);
+        if (ImGui::Button(label, ImVec2(0, Px(34)))) sAchievementList = i;
+        ImGui::PopStyleColor(2);
+        if (active) {
+            ImVec2 mn = ImGui::GetItemRectMin(), mx = ImGui::GetItemRectMax();
+            GameSquare(dl, ImVec2(mn.x + Px(14), (mn.y + mx.y) * 0.5f), Px(10), true);
+            dl->AddRectFilled(ImVec2(mn.x, mx.y - Px(3)), mx, ImGui::GetColorU32(kAccent));
+        }
+    }
+    ImGui::Spacing();
+}
+
 static void PageAchievements() {
     Eyebrow(T("LOGROS · KINGDOM HEARTS: CHAIN OF MEMORIES", "ACHIEVEMENTS · KINGDOM HEARTS: CHAIN OF MEMORIES"));
     /* the account reads the set with the European cartridge, when installed */
@@ -198,5 +290,7 @@ static void PageAchievements() {
     if (sRaAccountShot) ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader(T("Cuenta RetroAchievements (opcional)", "RetroAchievements account (optional)")))
         PageAchievementAccount();
-    PageOfficialAchievements();
+    AchievementListTabs();
+    if (sAchievementList == 1) PageRecomAchievements();
+    else PageOfficialAchievements();
 }
