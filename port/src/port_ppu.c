@@ -298,6 +298,10 @@ typedef struct MenuSources {
     int headerX, headerDrawn;
 } MenuSources;
 static MenuSources sMenuShown = { .tabBg = { -1, -1 } }, sMenuPend = { .tabBg = { -1, -1 } };
+/* Sample BG tab colours with the visible picture, before VBlank DMA updates
+ * its map/palette for the next frame. Presentation must not read live VRAM. */
+static uint32_t sMenuTabPixels[2][16];
+static void CaptureMenuTabPixels(void);
 #define sMenuHeaderFrame sMenuShown.headerFrame
 #define sMenuHeaderTiles sMenuShown.headerTiles
 #define sMenuHeaderPalette sMenuShown.headerPalette
@@ -3928,6 +3932,7 @@ void PortPpuRenderFrame(void) {
     /* Lines below the original picture: state after line 159. */
     RenderOuterRows(gPortScreen.originY + GBA_SCREEN_H, gPortScreen.height, 1);
     MainHdOver();
+    CaptureMenuTabPixels();
 }
 
 /* A skipped frame (frame_skip, the device is late): the visible lines' events reach the game as in a drawn frame
@@ -4304,7 +4309,7 @@ uint32_t PortMenuBandPixel(int y, int phase) {
     return 0;
 }
 
-uint32_t PortMenuTabPixel(int y, int phase, int side) {
+static uint32_t MenuTabPixelRaw(int y, int phase, int side) {
     int i = side > 0, bg = sMenuTabBg[i], x, yy, ci, col;
     uint16_t cnt, entry;
     uint32_t map, chr, address;
@@ -4338,6 +4343,19 @@ uint32_t PortMenuTabPixel(int y, int phase, int side) {
         if (effect == 3) col = Darken(col, evy);
     }
     return sColorLut[col];
+}
+
+static void CaptureMenuTabPixels(void) {
+    int side, y;
+    for (side = 0; side < 2; side++)
+        for (y = 0; y < 16; y++)
+            sMenuTabPixels[side][y] = MenuTabPixelRaw(y + 16, 0, side ? 1 : -1);
+}
+
+uint32_t PortMenuTabPixel(int y, int phase, int side) {
+    if (sMenuTabFrame && side < 0)
+        return MenuTabPixelRaw(y, phase, side);
+    return y >= 16 && y < 32 ? sMenuTabPixels[side > 0][y - 16] : 0;
 }
 
 /* The backdrop colour (palette 0), as displayed. */
