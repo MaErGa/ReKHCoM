@@ -93,6 +93,13 @@ def run(exe_dir, work, hd, version, list_id, index, frames, timeout, recom, movi
         code = "timeout"
     log = (d / "kh_com.log").read_text(errors="replace") if (d / "kh_com.log").exists() else ""
     os.rmdir(d / "hd")
+    # the first run of the event only: the keys go on, and the debug menu starts the event again once it ends (each
+    # run rightly offers its scene again; until 23/10 a stale check hid that, and the ending of chained events too)
+    first = re.search(r"hd scene: event \d+", log)
+    if first:
+        again = log.find(first.group(0), first.end())
+        if again > 0:
+            log = log[:again]
     asked = [int(x) for x in re.findall(r"hd scene: event (\d+)", log)]
     movies = re.findall(r"hd movie: (\w+) \(", log)
     return code, "CRASH" in log, asked, movies
