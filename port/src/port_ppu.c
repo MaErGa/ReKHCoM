@@ -520,6 +520,7 @@ static int TagHudY(const SpriteTag* t, int yg, int h, int raise) {
 
 static int sHudLayer;
 static int sHdText;
+static int sJafarFight; /* this frame shows Jafar's room (port_jafar.c) */
 int gPortHdHudPart;
 int gPortHudDigit;
 static PortHudDigit* sHudDigits;
@@ -2219,6 +2220,10 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
        240x160 camera. Keep the extended backgrounds, but let those actors
        enter and leave through the original frame as authored. */
     int sceneActorFrame = gPortScreen.wide && sEventBackdropProfile == 97 && !sEnvActorFrameOff;
+    /* Jafar: a view wider than the 512-pixel sprite space showed each sprite twice, 512 apart (his attacks
+       mirrored in the margin, user 24/10); his fight's sprites live in the 512 columns around the picture */
+    int objLeft = sJafarFight ? SDL_max(sLeft, GBA_SCREEN_W / 2 - 256) : sLeft;
+    int objRight = sJafarFight ? SDL_min(sRight, GBA_SCREEN_W / 2 + 256) : sRight;
     int mapping1d = (dispcnt >> 6) & 1;
     int bitmapMode = (dispcnt & 7) >= 3;
     uint16_t mosaic = IO16(0x4C);
@@ -2279,10 +2284,10 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
         } else {
             if (oy >= sBottom)
                 oy -= 256;
-            if (ox >= sRight)
+            if (ox >= objRight)
                 ox -= 512;
         }
-        if (ox >= sRight || ox + bw <= sLeft)
+        if (ox >= objRight || ox + bw <= objLeft)
             continue;
 
         line = gy - oy;
@@ -3479,6 +3484,13 @@ void PortPpuBeginFrame(void) {
                 IO16(0x0C), IO16(0x0E), gPortScreen.wide, sSceneNarrow);
     sHudLayer = gPortScreen.wide && gPortHudScale > 0 && gPortHudW >= GBA_SCREEN_W;
     sHdText = gPortConfig.hdText;
+    sJafarFight = 0;
+    if (PortJafarWide()) {
+        int jb;
+        for (jb = 0; jb < 4; jb++)
+            if (sBgLatch[jb].valid && PortJafarLayer((const void* const*)sBgLatch[jb].map) == 1)
+                sJafarFight = 1;
+    }
 #if defined(__ANDROID__) || defined(PORT_LINUX)
     sHdText = sHdText && PortPortableHdReady();
 #endif
