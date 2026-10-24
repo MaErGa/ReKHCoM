@@ -11,7 +11,20 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
 - La validación en hardware real no es pendiente: llega como reporte. Publicar (releases, comentarios) solo con OK.
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release (Quiver nos aceptó el 24/10).
 
-## Estado (24/10 ~05:00, Claude)
+## Estado (24/10 ~06:30, Claude — sesión nueva, /goal: terminar todo lo de antes de la v2.0)
+
+- **App de revisión 0.5.0 (b32647332, en main; la app abierta se actualiza sola):** pestañas Pre / Rev / Aprobado
+  (subpestañas Aprobados y ★ Honores; Rev = ya enviaste nubes y se espera la versión hija), lápiz con 8 colores, 3
+  grosores, borrador, Ctrl+Z y Limpiar (los trazos van al envío: `<id>-garabatos.png` + color y caja de cada trazo),
+  zoom de visor (rueda al cursor por escalones, + − 0 1, casilla de %, doble clic ajustar/1:1, herramienta Mover).
+  Arreglado: un envío con solo comentario general o trazos se daba por respondido (lista de nubes vacía).
+- **Escena 055 con honores (48bef52c7):** lista única de escenas Preliminar V1 con honores (55, 121, 122) en
+  port_ppu.c. El juego actual ya mostraba la imagen aprobada (banda morada continua): 0 píxeles cambian.
+- **EN CURSO: motor de Switch (pedido 24/10 ~06:20, "rebuildear el motor de switch antes de la 2.0 y hacer
+  pruebas"):** fase 1 de SWITCH_MOTOR.md sin tocar la lógica de la PPU: hilos del invitado + TLS de Mach-O
+  resuelto por el propio invitado (pila por hilo), mismo `PORT_PPU_THREADS` que PC.
+
+## Estado anterior (24/10 ~05:00, Claude)
 
 - main al día (aac6e9af0 + esta limpieza). Issues abiertos en MatyMeatBoy/ReKHCoM: **0** (`gh` apunta por defecto al
   upstream Pheenoh/khcom: usar `-R MatyMeatBoy/ReKHCoM`).
