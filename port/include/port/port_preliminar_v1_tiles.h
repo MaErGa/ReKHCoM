@@ -291,6 +291,92 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==124 && (wx<0 || wx>=480 || wy<0 || wy>=440)) {
+        int L=2*wy+wx, R=2*wy-wx;
+        if (p->v[1]==3) {
+            /* The golden field surrounds finite platforms. The two arms
+             * which cross the source edges keep their own borders; the
+             * upper-left point is an authored corner, not a repeated bay. */
+            *sx=320+PortSceneTileMod(wx-320,64);
+            *sy=400+PortSceneTileMod(wy-400,32);
+            if (L<496) {
+                *sx=PortSceneTileMod(wx,64);
+                *sy=wy+(wx-*sx)/2;
+                if (*sy<0) *sy=PortSceneTileMod(*sy,32);
+            } else if (wx<0 && L>=600 && L<880) {
+                *sx=8+PortSceneTileMod(wx-8,16);
+                *sy=wy+(wx-*sx)/2;
+            } else if (wx>=480 && L>=600 && L<880) {
+                *sx=448+PortSceneTileMod(wx-448,16);
+                *sy=wy+(wx-*sx)/2;
+            } else if (wx>=480 && wx<520 && R>=16 && L<=1054) {
+                *sx=448+PortSceneTileMod(wx-448,16);
+                *sy=wy+(wx-*sx)/2;
+            }
+        } else if (p->v[1]==2) {
+            *sx=504; *sy=504; /* no extra columns */
+            if (wx<0 && L>=608 && L<656) {
+                *sx=8+PortSceneTileMod(wx-8,16);
+                *sy=wy+(wx-*sx)/2;
+            } else if (wx<0 && L>=816 && L<896) {
+                *sx=64+PortSceneTileMod(wx-64,16);
+                *sy=wy+(wx-*sx)/2;
+            } else if (wx>=480 && ((L>=608 && L<656) || (L>=816 && L<896))) {
+                *sx=448+PortSceneTileMod(wx-448,16);
+                *sy=wy+(wx-*sx)/2;
+            } else if (wx>=480 && wx<520 && R>=0 && R<48 && L<=1054) {
+                *sx=448+PortSceneTileMod(wx-448,16);
+                *sy=wy-(wx-*sx)/2;
+            } else if (wx>=480 && wx<520 && L>=1040 && L<1120 && R>=16) {
+                *sx=448+PortSceneTileMod(wx-448,16);
+                *sy=wy+(wx-*sx)/2;
+            }
+        } else return 0;
+        return 1;
+    }
+    if (p && p->v[0]==121 && (wx<0 || wx>=384 || wy<0 || wy>=256)) {
+        if (p->v[1]==2) {
+            *sx=504; *sy=248; /* empty map cell, not the emblem */
+            if (wx<0) {
+                int x=PortSceneTileMod(wx,16), y=wy+(wx-x)/2;
+                if (y>=128 && y<160) { *sx=x; *sy=y; }
+            } else if (wx>=224) {
+                int x=240+PortSceneTileMod(wx-240,16), y=wy+(wx-x)/2;
+                if (y>=40 && y<64) { *sx=x; *sy=y; }
+            }
+            /* The original corner shaft crosses y=0. Continue that shaft,
+             * and complete the two existing windows from the intact first
+             * window; do not place windows at any new positions. */
+            if (wy<0 && wx>=214 && wx<234) {
+                *sx=wx; *sy=PortSceneTileMod(wy,32);
+            } else if (wy<0 && wx>=284 && wx<292 && wy>=-10) {
+                *sx=wx-20; *sy=wy+10;
+            } else if (wy<0 && wx>=304 && wx<312 && wy>=-20) {
+                *sx=wx-40; *sy=wy+20;
+            }
+        } else if (p->v[1]==3) {
+            int floor;
+            if (wx<192) {
+                *sx=PortSceneTileMod(wx,32);
+                *sy=wy+(wx-*sx)/2;
+                if (*sy<0) *sy=PortSceneTileMod(*sy,64);
+                floor=2*wy+wx>=272;
+            } else if (wx>=224) {
+                *sx=224+PortSceneTileMod(wx-224,32);
+                *sy=wy+(wx-*sx)/2;
+                if (*sy<0) *sy=PortSceneTileMod(*sy,32);
+                floor=2*wy+wx>=336;
+            } else {
+                *sx=wx; *sy=PortSceneTileMod(wy,32);
+                floor=2*wy-wx>=-112;
+            }
+            if (floor) {
+                *sx=PortSceneTileMod(wx,128);
+                *sy=160+PortSceneTileMod(wy-160,64);
+            }
+        } else return 0;
+        return 1;
+    }
     /* Coliseum 122, approved with honours (user 24/10, Codex c62c7d8ee) */
     if (p && p->v[0]==122 && (wx<0 || wx>=440 || wy<0 || wy>=336)) {
         /* Three original wall planes: the central face spans x=184..311.

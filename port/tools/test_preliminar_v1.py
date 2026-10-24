@@ -24,6 +24,30 @@ def fixtures():
  list_id,index=events[88]
  result.append(dict(name='evento-088-escena-087',scene=87,
                     start=('KHCOM_EVENT',f'{list_id}:{index}')))
+ # Atlantica's Ursula chamber art is also used by the follow-up event 106.
+ list_id,index=events[106]
+ result.append(dict(name='evento-106-escena-104',scene=104,
+                    start=('KHCOM_EVENT',f'{list_id}:{index}')))
+ # gEventBg110 is also used for Agrabah's follow-up event 111.
+ list_id,index=events[111]
+ result.append(dict(name='evento-111-escena-110',scene=110,
+                    start=('KHCOM_EVENT',f'{list_id}:{index}')))
+ # Agrabah's shared backdrop also appears in the departure follow-up event.
+ list_id,index=events[114]
+ result.append(dict(name='evento-114-escena-112',scene=112,
+                    start=('KHCOM_EVENT',f'{list_id}:{index}')))
+ # gEventBg118 is shared by Neverland's follow-up ending event.
+ list_id,index=events[119]
+ result.append(dict(name='evento-119-escena-118',scene=118,
+                    start=('KHCOM_EVENT',f'{list_id}:{index}')))
+ # The Coliseum golden platforms are reused by the E3 ending event.
+ list_id,index=events[126]
+ result.append(dict(name='evento-126-escena-124',scene=124,
+                    start=('KHCOM_EVENT',f'{list_id}:{index}')))
+ # gEventBg122 is also used by the Coliseum E2 follow-up event.
+ list_id,index=events[123]
+ result.append(dict(name='evento-123-escena-122',scene=122,
+                    start=('KHCOM_EVENT',f'{list_id}:{index}')))
  # gEventBg081 is shared across the Monstro E3 fight's success/failure/retry states.
  for event_id in (82,83,84,85):
   list_id,index=events[event_id]
