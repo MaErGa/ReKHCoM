@@ -101,6 +101,7 @@ static const Key sKeys[] = {
     { "cheat_infinite_hp", &gPortConfig.cheatInfiniteHp, 0, 1 },
     { "experimental_save_point_slot_select", &gPortConfig.savePointSlotSelect, 0, 1 },
     { "experimental_hide_touch_controls", &gPortConfig.hideTouchControls, 0, 1 },
+    { "touch_theme", &gPortConfig.touchTheme, 0, 2 },
     { "undub", &gPortConfig.undub, 0, 1 },
     { "integer_zoom", &gPortConfig.integerZoom, 0, 1 },
     { "scale_mode", &gPortConfig.scaleMode, 0, PORT_SCALE_COUNT - 1 },

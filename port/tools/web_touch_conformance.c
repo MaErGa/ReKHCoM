@@ -4,6 +4,13 @@
 #include <stdio.h>
 #include "../android/native/touch_android.c"
 PortConfig gPortConfig;
+/* the look's cartridge parts and font (touch_android.c draws Sora and the letters from them): none here */
+void* gSor1ll67Frames[8];
+const uint8_t gSor1ll67Tiles[32];
+const uint16_t gSoraPalette[16];
+int PortUiRenderTextLine(uint32_t* pixels,int width,int height,const char* text,uint32_t color) {
+    (void)text;(void)color;if(pixels) SDL_memset(pixels,0,(size_t)width*height*4);return 0;
+}
 int PortUiActive(void){return 0;}
 void PortUiOpenOptions(void){}
 int PortUiHandleEvent(const void* event){(void)event;return 0;}

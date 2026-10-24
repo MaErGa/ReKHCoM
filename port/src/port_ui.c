@@ -85,6 +85,7 @@ enum {
     ITEM_MOOGLE_NOTICE,
     ITEM_INVERT_CARD_SCROLL,
     ITEM_HIDE_TOUCH,
+    ITEM_TOUCH_THEME,  /* the touch buttons' look: Clear, Dark, Color */
     ITEM_FRAMESKIP,
     ITEM_RECOM_EXTRAS, /* section heading, not selectable */
     ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): shown only once imported */
@@ -185,7 +186,8 @@ static int PageEnd(void) {
 static int ItemVisible(int item) {
     switch (item) {
 #if !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(PORT_ANDROID64) && !defined(PORT_TOUCH)
-        case ITEM_HIDE_TOUCH: return 0;
+        case ITEM_HIDE_TOUCH:
+        case ITEM_TOUCH_THEME: return 0;
 #endif
 #if defined(__ANDROID__) || defined(__EMSCRIPTEN__) || defined(PORT_ANDROID64)
         case ITEM_REMATCH_MENU: return 0; /* rematches need states, not on these yet */
@@ -281,6 +283,8 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Invertir selección de cartas", "カード送りを反転" },
     { "Hide touch controls", "Masquer les commandes tactiles", "Touch-Steuerung ausblenden",
       "Nascondi controlli touch", "Ocultar controles táctiles", "タッチボタンを非表示" },
+    { "Touch button theme", "Thème des boutons tactiles", "Design der Touch-Tasten", "Tema dei tasti touch",
+      "Tema de botones", "タッチボタンのテーマ" },
     { "Skip frames when slow", "Sauter des images si lent", "Bilder überspringen wenn langsam",
       "Salta fotogrammi se lento", "Saltar cuadros si va lento", "遅い時はフレームを飛ばす" },
     { "Re:CoM improvements", "Améliorations Re:CoM", "Re:CoM-Verbesserungen", "Miglioramenti Re:CoM", "Mejoras de Re:CoM", "Re:CoMの改善" },
@@ -848,6 +852,8 @@ static int ItemEnabled(int item) {
             return gPortConfig.viewMode != PORT_VIEW_AUTO;
         case ITEM_PS2_MENU:
             return gPortConfig.ps2Mode != 0;
+        case ITEM_TOUCH_THEME: /* greyed while the touch buttons are hidden */
+            return !gPortConfig.hideTouchControls;
         default:
             return 1;
     }
@@ -1014,6 +1020,11 @@ static void ValueText(int item, char* out, size_t size) {
         case ITEM_HIDE_TOUCH:
             SDL_strlcpy(out, sOnOff[gPortConfig.hideTouchControls != 0][l], size);
             break;
+        case ITEM_TOUCH_THEME: {
+            static const char* const names[3] = { "Clear", "Dark", "Color" };
+            SDL_strlcpy(out, names[SDL_clamp(gPortConfig.touchTheme, 0, 2)], size);
+            break;
+        }
         case ITEM_PS2_MODE:
             SDL_strlcpy(out, sOnOff[gPortConfig.ps2Mode != 0][l], size);
             break;
@@ -1249,6 +1260,12 @@ static void Change(int item, int dir) {
             break;
         case ITEM_HIDE_TOUCH:
             gPortConfig.hideTouchControls = !gPortConfig.hideTouchControls;
+#if defined(__ANDROID__) || defined(__EMSCRIPTEN__) || defined(PORT_ANDROID64) || defined(PORT_TOUCH)
+            PortAndroidTouchSettingsChanged();
+#endif
+            break;
+        case ITEM_TOUCH_THEME:
+            gPortConfig.touchTheme = Wrap(gPortConfig.touchTheme + dir, 3);
 #if defined(__ANDROID__) || defined(__EMSCRIPTEN__) || defined(PORT_ANDROID64) || defined(PORT_TOUCH)
             PortAndroidTouchSettingsChanged();
 #endif

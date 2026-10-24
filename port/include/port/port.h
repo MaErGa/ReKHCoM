@@ -178,6 +178,7 @@ typedef struct PortConfig {
     int netStats;              /* net_stats: during an online link, the round trip, input delay and last rollback on screen */
     char onlineName[25];       /* online_name: the player's name on the lobby's rooms (relay servers; Steam uses its own) */
     int assetsSeen;            /* assets_seen: the PORT_ASSET_* found on the last start (-1 unknown); new ones are offered */
+    int touchTheme;            /* touch_theme: the touch buttons' look, 0 Clear, 1 Dark, 2 Color (touch_android.c) */
 } PortConfig;
 
 extern PortConfig gPortConfig;

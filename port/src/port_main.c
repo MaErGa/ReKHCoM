@@ -1948,7 +1948,12 @@ static void Present(void) {
            PortHarnessShot (the game's frames stand still under it). */
         const char* out = SDL_getenv("KHCOM_OUTPUT_SHOT");
         if (sHarnessShot[0] || (out && HarnessListHas(out, sFrameCount))) {
-            SDL_Surface* s = SDL_RenderReadPixels(sRenderer, NULL);
+            SDL_Surface* s;
+#if defined(__ANDROID__) || defined(__EMSCRIPTEN__) || defined(PORT_ANDROID64) || defined(PORT_TOUCH)
+            if (SDL_getenv("KHCOM_SHOT_TOUCH")) /* the touch controls in the shot too (their look, test_touch_themes) */
+                PortAndroidTouchDraw(sRenderer);
+#endif
+            s = SDL_RenderReadPixels(sRenderer, NULL);
             char name[64];
             if (sHarnessShot[0])
                 SDL_strlcpy(name, sHarnessShot, sizeof(name));
