@@ -63,11 +63,18 @@ PORT_PATCHES = {
 PORT_EXCLUDED = {'port_memory', 'port_sections', 'port_state', 'port_hdtext', 'port_watchdog', 'port_biosfault'}
 
 
-def patched_source(src, folder):
+# the DualSense's own: the title's hint names its touchpad (Select there); a SELECT button elsewhere (Switch, Android)
+DUALSENSE_ONLY = {('static const char* const sTitleHint[LANG_COUNT]', '};', 'SELECT  ', 'TOUCH  ')}
+
+
+def patched_source(src, folder, dualsense=True):
     """src with its PORT_PATCHES applied, written to folder (only when the text changes, so builds stay incremental).
-    The console images (PS5, PS4, Switch, Vita, Android 64-bit) all compile these copies."""
+    The console images (PS5, PS4, Switch, Vita, Android 64-bit) all compile these copies; dualsense=False leaves out
+    the patches only the PlayStation's pad needs."""
     text = src.read_text(encoding='utf-8')
     for patch in PORT_PATCHES[src.name]:
+        if not dualsense and patch in DUALSENSE_ONLY:
+            continue
         if len(patch) == 4:  # (start marker, end marker, old, new): replaced between the markers only
             start, end, old, new = patch
             a = text.find(start)

@@ -95,7 +95,7 @@ def build_guest(region, jobs):
         if src.stem in build_ps5.PORT_EXCLUDED:
             continue
         if src.name in build_ps5.PORT_PATCHES:
-            src = build_ps5.patched_source(src, out / 'patched')
+            src = build_ps5.patched_source(src, out / 'patched', dualsense=False)  # the Vita has a SELECT button
         units.append((src, out / 'port' / (src.stem + '.o'), port_flags))
     units.append((pc / 'rom_relocs.c', out / 'port/rom_relocs.o', port_flags))
     for src in sorted((PS5 / 'guest/src').glob('*.c')):
