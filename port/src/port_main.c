@@ -7,6 +7,11 @@
  */
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#if defined(_WIN32) && !defined(PORT_GBA_RELOC)
+#define COBJMACROS
+#include <dxgi1_5.h>
+#endif
+
 #include "port/pad_layout.h"
 #include <setjmp.h>
 #include <stdarg.h>
@@ -185,6 +190,45 @@ void PortFbPresent(SDL_Renderer* renderer);
 static int sFbW, sFbH;
 #endif
 
+/* SDL already creates an ALLOW_TEARING flip swap chain when DXGI supports it.
+ * This proves eligibility, not that the user enabled VRR in the driver/monitor.
+ * Never infer VRR from refresh rate or GPU brand, or use adaptive VSync (-1). */
+static int VrrPresentEligible(void) {
+#if defined(_WIN32) && !defined(PORT_GBA_RELOC)
+    SDL_PropertiesID properties=SDL_GetRendererProperties(sRenderer);
+    IDXGISwapChain* chain=(IDXGISwapChain*)SDL_GetPointerProperty(properties,
+        SDL_PROP_RENDERER_D3D11_SWAPCHAIN_POINTER,NULL);
+    DXGI_SWAP_CHAIN_DESC desc;
+    if (!chain) chain=(IDXGISwapChain*)SDL_GetPointerProperty(properties,
+        SDL_PROP_RENDERER_D3D12_SWAPCHAIN_POINTER,NULL);
+    if (chain && SUCCEEDED(IDXGISwapChain_GetDesc(chain,&desc)))
+        return desc.Windowed && (desc.Flags & DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING)!=0;
+#endif
+    return 0;
+}
+
+static void ApplyVideoSync(int force) {
+    static int cachedRequested=-1,cachedCapability=-1,cachedApplied=0;
+    int requested=gPortConfig.vsync;
+    int eligible=requested==2 && VrrPresentEligible();
+    int interval=requested==0 || eligible?0:1;
+    int capability=eligible;
+    if (!force && cachedRequested==requested && cachedCapability==capability && cachedApplied) return;
+    int applied=SDL_SetRenderVSync(sRenderer,interval);
+    if (!applied && eligible) {
+        eligible=0; interval=1;
+        applied=SDL_SetRenderVSync(sRenderer,interval);
+    }
+    cachedRequested=requested; cachedCapability=capability; cachedApplied=applied;
+    static int lastRequested=-1,lastInterval=-1,lastEligible=-1,lastApplied=-1;
+    if (lastRequested!=requested || lastInterval!=interval || lastEligible!=eligible || lastApplied!=applied) {
+        PortLog("video-sync: requested=%d interval=%d applied=%d VRR-path=%s%s",requested,
+            interval,applied,eligible?"eligible":"unavailable",
+            requested==2?(eligible?" (monitor/driver must enable VRR)":" (VSync fallback)"):"");
+        lastRequested=requested; lastInterval=interval; lastEligible=eligible; lastApplied=applied;
+    }
+}
+
 static void ApplyWindowMode(void) {
 #ifdef PORT_LINUX
     /* The framebuffer is the screen: one window of its size, paced by the game. */
@@ -201,7 +245,7 @@ static void ApplyWindowMode(void) {
 #if defined(__ANDROID__) || defined(PORT_ANDROID64)
     /* Android has no desktop window mode; keep system bars out of the game. */
     SDL_SetWindowFullscreen(sWindow, true);
-    SDL_SetRenderVSync(sRenderer, gPortConfig.vsync ? 1 : 0);
+    ApplyVideoSync(1);
     return;
 #endif
     SDL_DisplayID display = SDL_GetDisplayForWindow(sWindow);
@@ -215,7 +259,7 @@ static void ApplyWindowMode(void) {
         SDL_SetWindowFullscreenMode(sWindow, NULL);
     }
     SDL_SetWindowFullscreen(sWindow, gPortConfig.fullscreen != 0);
-    SDL_SetRenderVSync(sRenderer, gPortConfig.vsync ? 1 : 0);
+    ApplyVideoSync(1);
 }
 
 /* Distinct fullscreen resolutions of the window's display, largest first. */
@@ -1269,10 +1313,10 @@ static void DetectLetterbox(const SDL_FRect* src, int* top, int* bottom) {
         for (yy2 = y0; yy2 >= 0 && yy2 < GBA_SCREEN_H; yy2 += dy) {
             const uint32_t* r = &sComposite[((int)src->y + yy2) * gPortScreen.width + (int)src->x];
             for (x2 = 0; x2 < GBA_SCREEN_W; x2++) {
-                int sh, far = 0;
+                int sh, colorFar = 0;
                 for (sh = 0; sh <= 16; sh += 8)
-                    far |= SDL_abs((int)((r[x2] >> sh) & 255) - (int)((lb >> sh) & 255)) > 24;
-                if (far) break;
+                    colorFar |= SDL_abs((int)((r[x2] >> sh) & 255) - (int)((lb >> sh) & 255)) > 24;
+                if (colorFar) break;
             }
             if (x2 < GBA_SCREEN_W) break;
         }
@@ -2600,6 +2644,7 @@ static void VBlankCycle(void) {
     {
         int w = gPortScreen.width, h = gPortScreen.height;
         UpdateResolution();
+        if (gPortConfig.vsync==2 && sFrameCount%60==0) ApplyVideoSync(0);
         skip = FrameSkipDue(w != gPortScreen.width || h != gPortScreen.height);
     }
 

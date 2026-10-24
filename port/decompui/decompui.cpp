@@ -1848,7 +1848,15 @@ static void PageGraphics() {
         Ini("window_scale") = ws + 1;
         changed = true;
     }
+#ifdef _WIN32
+    const char* syncModes[] = { T("No", "Off"), "VSync", "VRR (G-SYNC/FreeSync)" };
+    changed |= CycleRow(T("Sincronización", "Synchronization"),
+                       T("VRR requiere activarlo en monitor y controlador; usa VSync si la ruta no está disponible.",
+                         "VRR must be enabled in the monitor and driver; falls back to VSync if unavailable."),
+                       Ini("vsync"), 3, syncModes);
+#else
     changed |= CycleRow("VSync", nullptr, Ini("vsync"), 2, onoff);
+#endif
 #endif
     int sc = std::clamp(Ini("scanlines") / 25, 0, 4);
     if (CycleRow("Scanlines", nullptr, sc, 5, scan)) {

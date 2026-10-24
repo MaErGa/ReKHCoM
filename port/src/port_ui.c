@@ -266,7 +266,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Fullscreen", "Plein écran", "Vollbild", "Schermo intero", "Pantalla completa", "フルスクリーン" },
     { "Fullscreen resolution", "Résolution plein écran", "Vollbild-Auflösung", "Risoluzione a schermo intero",
       "Resolución completa", "フルスクリーン解像度" },
-    { "VSync", "VSync", "VSync", "VSync", "VSync", "VSync" },
+    { "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR" },
     { "Scanlines", "Lignes de balayage", "Scanlines", "Linee di scansione", "Scanlines", "スキャンライン" },
     { "GBA LCD colours", "Couleurs LCD GBA", "GBA-LCD-Farben", "Colori LCD GBA", "Colores LCD GBA", "GBAカラー" },
     { "Battle cards raised", "Cartes de combat relevées", "Kampfkarten angehoben", "Carte di battaglia rialzate",
@@ -938,7 +938,7 @@ static void ValueText(int item, char* out, size_t size) {
             SDL_strlcpy(out, sOnOff[gPortConfig.integerZoom != 0][l], size);
             break;
         case ITEM_VSYNC:
-            SDL_strlcpy(out, sOnOff[gPortConfig.vsync != 0][l], size);
+            SDL_strlcpy(out, gPortConfig.vsync==2 ? "VRR" : gPortConfig.vsync==1 ? "VSync" : sOnOff[0][l], size);
             break;
         case ITEM_SCANLINES:
             if (gPortConfig.scanlines == 0)
@@ -1189,7 +1189,11 @@ static void Change(int item, int dir) {
             sFsPending = Wrap((sFsPending >= 0 ? sFsPending : ModeIndex()) + dir, sModeCount + 1);
             return;
         case ITEM_VSYNC:
+            #ifdef _WIN32
+            gPortConfig.vsync = Wrap(gPortConfig.vsync + dir, 3);
+#else
             gPortConfig.vsync = !gPortConfig.vsync;
+#endif
             break;
         case ITEM_SCANLINES:
             gPortConfig.scanlines = Wrap(gPortConfig.scanlines / 25 + dir, 5) * 25;

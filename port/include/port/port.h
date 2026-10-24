@@ -123,7 +123,7 @@ typedef struct PortConfig {
     int scaleMode;
     int filter;
     int fullscreen;
-    int vsync;
+    int vsync; /* 0 off, 1 VSync, 2 opt-in VRR presentation with VSync fallback */
     int hudSize;          /* wide view: HUD drawn this many pixel-scale steps larger (0 = same) */
     int narrowFit;        /* scenes without a wide view: 1 fill the height, 0 exact pixels */
     int scanlines;        /* 0..100 % intensity */
