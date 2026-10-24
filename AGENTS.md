@@ -20,6 +20,13 @@ Cuando el usuario diga «ponte al día y procesa la cola pendiente», empieza po
 - Para arte, consulta la mesa compartida y la aprobación de la versión exacta.
   Respeta la política vigente en `LOGICA_APROBADOS.md`; una hija no hereda
   aprobación. Conserva comentarios, trazos, imágenes y partidas.
+- Piezas de arte: sigue [WORKER_BRIEF.md](port/progress/WORKER_BRIEF.md), sobre todo «REGLA 25/10»:
+  intentar SIEMPRE (base del generador Python + mejora propia) y subir la imagen a la app antes del PR;
+  una duda vuelve como propuesta con imagen, nunca como pregunta suelta. `next --owner <tu-nombre>`
+  reparte sin choques; varios agentes (Claude y Codex) trabajan en paralelo y Claude integra.
+- Varias escenas tocan los mismos archivos (`port_preliminar_v1_tiles.h`, `_data.inc`,
+  `preliminar_v1_recipes.py`, `LOGICA_APROBADOS.md`): edita solo el bloque o la fila de tu escena,
+  no regeneres el `.inc` entero, y rebasa sobre `origin/main` justo antes de abrir el PR.
 - Habla en español, prueba en silencio y no publiques releases ni comentarios
   externos sin autorización. Deja traspaso antes de terminar.
 
