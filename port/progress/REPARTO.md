@@ -1,4 +1,18 @@
-## CIERRE DE WORKERS Y COLA ÚNICA (vigente)
+# Reparto vigente — cola colaborativa, 24/10/2026
+
+Leer primero [COLA_COLABORATIVA.md](COLA_COLABORATIVA.md) y la tabla superior de
+[PENDIENTES_VIGENTES.md](PENDIENTES_VIGENTES.md). Claude y Codex toman piezas distintas mediante reserva remota;
+no hay exclusividad permanente por agente. Mantener varios carriles mientras haya trabajo independiente.
+Cada pieza se marca tomada antes de editar, se entrega por rama y PR con evidencia y se integra solo con la
+reserva de integrador. Si está libre, cualquiera puede tomarla y fusionar los PR verificados de uno en uno.
+No push directo a main, no integrar en paralelo, no publicar releases sin OK.
+
+## Historial de repartos (evidencia; no asignaciones vigentes)
+
+Todo lo que sigue es histórico. Sus autorizaciones de push directo, publicación o integrador exclusivo quedan
+sustituidas por la regla de arriba. La lista de tareas vigente está en PENDIENTES_VIGENTES.
+
+## CIERRE DE WORKERS Y COLA ÚNICA (histórico)
 
 Abrir [PENDIENTES_VIGENTES.md](PENDIENTES_VIGENTES.md): 44 puntos y responsables.
 Cierres comprobados en [CIERRE_WORKERS.md](CIERRE_WORKERS.md).

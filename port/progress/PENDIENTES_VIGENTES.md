@@ -1,15 +1,101 @@
-# Cola vigente hacia la v2.0 (limpiada el 24/10/2026 ~05:00)
+# Cola vigente hacia la v2.0 (actualizada 24/10/2026)
 
 Única cola de trabajo. Lo terminado sale de aquí (queda en git y en CHANGELOG.md); los traspasos y estados viejos
 están en **PENDIENTES_HISTORIAL_2026-10.md** (evidencia, comandos, hallazgos). Método de depuración: DEBUG_WORKFLOW.md.
 
 Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
-- Claude y Codex pushean a main; si uno lleva más de 10 min sin commits ni archivos tocados, el otro toma sus puntos
-  anotando hora y evidencia aquí. Cada pieza verificada se pushea enseguida y se anota aquí en el momento.
+- Varios carriles, toma inmediata en la reserva remota, rama y PR por entrega; un solo integrador con token.
+  Regla vigente: [COLA_COLABORATIVA.md](COLA_COLABORATIVA.md). No push directo a main ni robos por tiempo.
 - Lo visual que necesite ojo humano va a la app de revisión (`Revisar preliminares.bat`, `import_image.py ... --parent
   <id>`); solo se integra lo aprobado ahí (con honores para el arte). Lógica aprobada: LOGICA_APROBADOS.md.
 - La validación en hardware real no es pendiente: llega como reporte. Publicar (releases, comentarios) solo con OK.
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release (Quiver nos aceptó el 24/10).
+
+## Cola colaborativa activa — 24/10, fotografía de la mesa a las 13:20 Chile
+
+La toma real se consulta y actualiza inmediatamente con `python port/tools/art_queue.py list` en la rama
+`coordination/art-queue` (`PENDIENTES.md` remoto). Esta tabla no concede una reserva. Las referencias de la
+mesa son familias/versiones: conservarlas al tomar la pieza. Ver protocolo en COLA_COLABORATIVA.md.
+
+### Carriles ya tomados en esta sesión
+
+| ID | Dueño | Estado / siguiente paso |
+|---|---|---|
+| `docs-cola` | `queue_docs` | En curso: inventario y protocolo para Claude, rama `codex/queue-collaborative-docs`; abrir PR. |
+| `tools-cola` | `queue_tools` | En curso: herramienta CAS de cola remota y exclusión del integrador; abrir PR. |
+| `escena-110` | `art_110` | En curso: responder envío `20261024-054123-fb2267`; revisión/PR propio. |
+| `integrar-054` | `root` | PR [#50](https://github.com/MatyMeatBoy/ReKHCoM/pull/50) abierto: honores `18f40e19e5814241a966b3348a542977`, 24/24 EU y check_sources; espera merge exclusivo. |
+
+### Comentarios que esperan respuesta del agente
+
+26 familias en la mesa; la 110 ya tiene dueño. Las demás quedan disponibles salvo reserva remota posterior.
+Leer `envios/<id>/COMENTARIOS_PARA_CODEX.txt` y responder con hija de la imagen del envío, incluida cada nube,
+trazo y comentario general. Cero nubes no significa cero comentarios.
+
+| Pieza | Estado de trabajo al tomar la fotografía | Envío pendiente / nubes |
+|---|---|---|
+| Botones táctiles · editor de posición | Pendiente de tomar | `20261024-131133-57e115` / 1 |
+| Darkside 06 · Puñetazo | Pendiente de tomar | `20261024-130718-f3041e` / 1 |
+| Darkside · arena y contexto | Pendiente de tomar | `20261024-053517-3760ea` / 3 |
+| Escena 004 · integrada | Pendiente de tomar | `20261024-132007-6cb5fe` / 1 |
+| Escena 057 · integrada | Pendiente de tomar | `20261024-131858-65bb72` / 6 |
+| Escena 061 · integrada | Pendiente de tomar | `20261024-131809-942e10` / 2 |
+| Escena 074 · integrada | Pendiente de tomar | `20261024-131734-82dad2` / 1 |
+| Escena 081 | Pendiente de tomar | `20261024-054647-2e12c3` / 3 |
+| Escena 087 | Pendiente de tomar | `20261024-130825-fd09bc` / 2 |
+| Escena 090 | Pendiente de tomar | `20261024-130932-cd374d` / 5 |
+| Escena 095 | Pendiente de tomar | `20261024-130959-c53dec` / 2 |
+| Escena 097 | Pendiente de tomar | `20261024-053021-97caa8` / 1 |
+| Escena 099 | Pendiente de tomar | `20261024-131033-00cca4` / 1 |
+| Escena 102 | Pendiente de tomar | `20261024-131106-953533` / 2 |
+| Escena 110 | Tomada por `art_110` | `20261024-054123-fb2267` / 2 |
+| Escena 112 | Pendiente de tomar | `20261024-054012-207689` / 4 |
+| Escena 115 | Pendiente de tomar | `20261024-053858-e6498d` / 2 |
+| Escena 116 | Pendiente de tomar | `20261024-053858-e6498d` / 3 |
+| Escena 117 | Pendiente de tomar | `20261024-053858-e6498d` / 1 |
+| Escena 118 | Pendiente de tomar | `20261024-053718-1ee415` / 3 |
+| Escena 120 | Pendiente de tomar | `20261024-053718-1ee415` / 2 |
+| Maléfica 01 · ala recortada | Pendiente de tomar | `20261024-054906-282e24` / 1 |
+| Maléfica · arena y contexto | Pendiente de tomar | `20261024-053355-5d5bcf` / 0 |
+| Oogie Boogie · arena | Pendiente de tomar | `20261024-055323-3bb655` / 4 |
+| Primer arranque · elección de modo con vista previa | Pendiente de tomar | `20261024-131202-943804` / 1 |
+| Trickmaster · arena | Pendiente de tomar | `20261024-055415-313327` / 2 |
+
+081 requiere extender ventana; 097 es lógica de sprites. Darkside 06 tiene nuevo comentario sobre r6.
+Las respuestas previas de 004/057/061/074/087/090/095/099/102 no cierran los envíos nuevos de esta tabla.
+
+### Honores: comprobar referencia y camino del jugador antes de integrar
+
+La mesa conserva 9 familias con `build_version`; no son 9 trabajos por rehacer. Solo se toma como nueva
+integración lo que aún falta. Los cierres de abajo proceden del historial del repo, no de cambiar valoraciones.
+
+| Familia / build_version | Estado demostrado y siguiente paso |
+|---|---|
+| Agrabah 107/108 / `e0779d8a9f5f4eea9eb73e9586505a03` | Integradas por defecto el 22/10; referencia y receta en LOGICA_APROBADOS. No duplicar tarea. |
+| Agrabah 109 / `3fa0a50b4582424cbef46d540076c838` | Integrada por defecto el 22/10; no duplicar tarea. |
+| Coliseo 121 / `9917b6dad433408b870bc5eadf613f35` | Integrada, `1ee40e4e6`; historial EU/US/JP. No duplicar tarea. |
+| Coliseo 122 / `b4d77f38012545f9bc6c8e8517e92a37` | Integrada, `c62c7d8ee`; historial EU/US/JP. No duplicar tarea. |
+| Escena 055 / `ac6109e021c34faa8d47288399992a72` | Integrada, `48bef52c7`; lista única de honores. |
+| Guard Armor / `7ef20691e77d4bc0b99730ea3443f4af` | Patio/escena008 ya integrados (LOGICA_APROBADOS). Mantener pendiente aparte el arnés bosskill. |
+| Escena 053 / `553e59d173b14e00bc61c1d513188719` | Integrada en `951d11777`; 24/24 EU sin bandera preliminar y GBA idéntico. |
+| Escena 054 / `18f40e19e5814241a966b3348a542977` | Tomada por root; PR #50, todavía no marcar integrada sin SHA de merge. |
+| Darkside 01 / `b7b6839a2cbc448fbcec91996c9bbb45` | Receta en main; activación global bloqueada por arena/contexto. Resolver envío de arena y validar antes de cerrar. |
+
+### Turno del usuario y pendientes técnicos
+
+Aprobadas sin honores: Coliseo124; Darkside02/03/04/05/07; escenas004/007/044/045/057/061/098/104;
+Jafar; Marluxia; Úrsula. No convertir estas valoraciones en ★ ni desactivar integraciones históricas ya aceptadas.
+Maléfica02 y03 esperan revisión. Maléfica arena está aprobada, pero conserva comentario general pendiente:
+por eso aparece también en la tabla de trabajo del agente.
+
+Siguen los pendientes técnicos de Android/web, baterías, datos/reportes y checklist v2.0 en los bloques de
+abajo. No relanzar las baterías existentes: consultar `run_batteries.py --status` en `khcom-claude-int`.
+Release v2.0 espera OK; ninguno de estos PR autoriza publicarla.
+
+### Contexto y traspasos anteriores
+
+Los bloques siguientes conservan evidencia y pendientes técnicos. Las tomas, orden e instrucciones de push
+anteriores quedan sustituidas por esta cola y COLA_COLABORATIVA.md. No recuperar un carril por el reloj.
 
 ## Aprobaciones nuevas 24/10 13:12–13:17 (Codex)
 

@@ -5,6 +5,8 @@ la cola. Nada de este archivo pide archivos del PC del autor. Idioma de trabajo 
 
 ## 1. Qué leer, en este orden
 
+0. **`port/progress/COLA_COLABORATIVA.md`: regla vigente para Claude y Codex.** Varios carriles, toma inmediata,
+   rama y PR por entrega, un integrador reservado. Sustituye el push directo a main y los dueños históricos.
 1. `port/progress/PENDIENTES_VIGENTES.md`: la cola única. El bloque **TRASPASO** más reciente (arriba) dice el estado
    y qué sigue.
 2. `port/progress/REGLAS_DEL_USUARIO.md`: cómo quiere trabajar el usuario (publicar, aprobar arte, probar).
