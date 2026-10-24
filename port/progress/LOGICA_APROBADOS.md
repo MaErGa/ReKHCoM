@@ -190,3 +190,7 @@ Por qué:
 Regla desde ahora: el arte lo hace el agente principal (con contexto), en serie, con la base del generador Python y su
 mejora propia; otros agentes (Codex) toman piezas en paralelo por la cola. Los workers solo para tareas mecánicas
 (capturas, baterías, limpieza), nunca para decidir arte.
+
+## Escena 099: techo, propuesta de Codex (24/10)
+
+La nube bab8281c-e1c9-4e01-b894-a3a05e339e8b sobre d3e87dca65eb4e9fb10535b3e731419d pide mejorar el patrón superior y valora positivamente el suelo. No trasladar esa aprobación al techo ni cambiar el suelo. El friso mide 28 píxeles por casilla: usar una pareja completa de 56 píxeles, aunque no coincida con la rejilla de tiles, y conservar su fase en las dos uniones. Propuesta pendiente de valoración: completar arriba filas alternadas de casillas con el mismo donante; el mapa original queda intacto. No se habilita para jugadores sin honores de esta versión.

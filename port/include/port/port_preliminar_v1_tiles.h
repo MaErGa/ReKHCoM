@@ -519,6 +519,18 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
     }
     if (p && p->v[0]==99 && p->v[1]==3 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
         int tx=wx>>3, ty=wy>>3;
+        if (wy<24) {
+            /* The ceiling's donor is a complete 56px pair (x=58..113),
+             * not a tile-aligned stripe. Continue its 28px squares upwards
+             * with alternating rows, phased to the authored edge at y=24.
+             * Keep this proposal outside the source map; the praised floor
+             * and the fireplace never pass through this branch. */
+            int row=(wy-24)/28;
+            if (wy<24 && (wy-24)%28) --row;
+            *sx=58+PortSceneTileMod(wx-2+((row+1)&1)*28,56);
+            *sy=0;
+            return 1;
+        }
         if (PortPreliminar099Floor(wx,wy,sx,sy)) return 1;
         if (!PortPreliminarTileSource(p,&tx,&ty)) return 0;
         *sx=tx*8+(wx&7); *sy=ty*8+(wy&7);
