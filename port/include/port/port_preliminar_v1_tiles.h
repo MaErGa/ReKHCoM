@@ -144,6 +144,19 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         }
         if (ox>=64 && oy>=21 && oy<24 && v[1]==3) { *x=0; *y=22; return 1; }
     }
+    if (v[0]==87 && v[1]==2 && (ox<0 || ox>=w)) {
+        /* BG2 holds the stone step's lit edge (user 24/10 "falta seguir borde"):
+         * right, the horizontal ledge (rows 15..17, columns 24..31) repeats by
+         * its 2-tile zigzag; left, the diagonal ledge (one row per two
+         * columns) repeats by its 4-column period down to the screen edge. */
+        if (ox>=w) {
+            if (oy<15 || oy>17) return 0;
+            *x=24+PortSceneTileMod(ox-24,8); return 1;
+        }
+        sx=4+PortSceneTileMod(ox-4,4); sy=oy-(sx-ox)/2;
+        if (sy<24 || sy>=h) return 0; /* ledge rows only; the pumpkins above stay unique */
+        *x=sx; *y=sy; return 1;
+    }
     if (v[0]==87 && v[1]==3 &&
         (ox<0 || ox>=w || oy<0 || oy>=h)) {
         /* The chamber floor is repeatable, but BG3 also contains both room
