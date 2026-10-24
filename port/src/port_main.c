@@ -1812,13 +1812,35 @@ static void Present(void) {
         }
         GrowPixelBuffer(&sHudBuf, &sHudCapacity, (size_t)gPortHudW * gPortHudH);
         PortPpuRenderHud(sHudBuf);
+        /* The field HUD can be just a small floor badge on a window-sized
+         * transparent texture. Blending the empty area cost a whole frame on
+         * SDL's software renderer. Integer HUD scaling lets us crop the draw
+         * to nontransparent pixels without changing any output pixel. */
+        SDL_FRect hudSource = { 0, 0, (float)sHudTexW, (float)sHudTexH };
+        int hudLeft=sHudTexW, hudTop=sHudTexH, hudRight=0, hudBottom=0, hx,hy;
+        if (!SDL_getenv("KHCOM_HUD_FULL_BLIT")) {
+            for (hy=0;hy<sHudTexH;hy++) for (hx=0;hx<sHudTexW;hx++)
+                if (sHudBuf[hy*sHudTexW+hx] >> 24) {
+                    if (hx<hudLeft) hudLeft=hx;
+                    if (hy<hudTop) hudTop=hy;
+                    if (hx>=hudRight) hudRight=hx+1;
+                    if (hy>=hudBottom) hudBottom=hy+1;
+                }
+            hudSource.x=(float)hudLeft; hudSource.y=(float)hudTop;
+            hudSource.w=(float)(hudRight>hudLeft?hudRight-hudLeft:0);
+            hudSource.h=(float)(hudBottom>hudTop?hudBottom-hudTop:0);
+        }
         SDL_UpdateTexture(sHudTexture, NULL, sHudBuf, sHudTexW * 4);
         hd.w = (float)(sHudTexW * gPortHudScale);
         hd.h = (float)(sHudTexH * gPortHudScale);
         hd.x = (float)((outW - (int)hd.w) / 2);
         hd.y = (float)((outH - (int)hd.h) / 2);
         PortHdHudDraw(sRenderer, outW, outH);
-        SDL_RenderTexture(sRenderer, sHudTexture, NULL, &hd);
+        if (hudSource.w>0 && hudSource.h>0) {
+            SDL_FRect hudDraw = { hd.x+hudSource.x*gPortHudScale, hd.y+hudSource.y*gPortHudScale,
+                                 hudSource.w*gPortHudScale, hudSource.h*gPortHudScale };
+            SDL_RenderTexture(sRenderer, sHudTexture, &hudSource, &hudDraw);
+        }
         {
             /* HD sprites (cards), then what the cartridge draws in front of them */
             uint16_t bld = *(volatile uint16_t*)(uintptr_t)(GBA_IO + 0x50);

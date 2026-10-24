@@ -1,0 +1,134 @@
+{
+  "before": [
+    {
+      "build": "pre11",
+      "scene": "map",
+      "frames": 181,
+      "median_ms": 18.2183,
+      "p95_ms": 25.4369,
+      "over25ms": 12,
+      "work_median": 18.178
+    },
+    {
+      "build": "pre11",
+      "scene": "battle",
+      "frames": 181,
+      "median_ms": 16.7423,
+      "p95_ms": 17.9625,
+      "over25ms": 0,
+      "work_median": 9.1552
+    },
+    {
+      "build": "main",
+      "scene": "map",
+      "frames": 181,
+      "median_ms": 18.1852,
+      "p95_ms": 24.0206,
+      "over25ms": 3,
+      "work_median": 18.1309
+    },
+    {
+      "build": "main",
+      "scene": "battle",
+      "frames": 181,
+      "median_ms": 16.7427,
+      "p95_ms": 17.296,
+      "over25ms": 0,
+      "work_median": 6.6906
+    }
+  ],
+  "after": [
+    {
+      "build": "cropped",
+      "scene": "map",
+      "frames": 181,
+      "median_ms": 16.7426,
+      "p95_ms": 16.9965,
+      "over25ms": 0,
+      "work_median": 9.2096
+    },
+    {
+      "build": "cropped",
+      "scene": "battle",
+      "frames": 181,
+      "median_ms": 16.7426,
+      "p95_ms": 16.8488,
+      "over25ms": 0,
+      "work_median": 6.0376
+    }
+  ],
+  "pixels": [
+    {
+      "scene": "map",
+      "window": [
+        1536,
+        864
+      ],
+      "frame": 126,
+      "diff": null
+    },
+    {
+      "scene": "map",
+      "window": [
+        1536,
+        864
+      ],
+      "frame": 132,
+      "diff": null
+    },
+    {
+      "scene": "map",
+      "window": [
+        1920,
+        1080
+      ],
+      "frame": 126,
+      "diff": null
+    },
+    {
+      "scene": "map",
+      "window": [
+        1920,
+        1080
+      ],
+      "frame": 132,
+      "diff": null
+    },
+    {
+      "scene": "map",
+      "window": [
+        3840,
+        1080
+      ],
+      "frame": 126,
+      "diff": null
+    },
+    {
+      "scene": "map",
+      "window": [
+        3840,
+        1080
+      ],
+      "frame": 132,
+      "diff": null
+    },
+    {
+      "scene": "battle",
+      "window": [
+        1920,
+        1080
+      ],
+      "frame": 126,
+      "diff": null
+    },
+    {
+      "scene": "battle",
+      "window": [
+        1920,
+        1080
+      ],
+      "frame": 132,
+      "diff": null
+    }
+  ]
+}
