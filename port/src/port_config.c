@@ -299,6 +299,16 @@ void PortConfigAutoView(int outW, int outH, int battle, int* w, int* h, int* sca
        keeps the Enhanced size, so its text stays readable at any zoom */
     f = PortUiMenuCanvas() ? SDL_max(outH / 320.0f, SDL_max(outW / (float)PORT_MAX_W, outH / (float)PORT_MAX_H))
                        : PortConfigZoomScaleF(battle && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom);
+    /* a screen taller than 16:9 (Android tablets 16:10 and 4:3, a foldable opened): the same rows as a 16:9 screen
+       of its width at this zoom, so the floor below the fight and the HUD's distance stay as designed (less width
+       instead). Preview until the user approves it: KHCOM_TALL_FIT=1 (24/10). */
+    if (!PortUiMenuCanvas() && outW > 0 && outH * 16 > outW * 9) {
+        static int tall = -1;
+        if (tall < 0)
+            tall = SDL_getenv("KHCOM_TALL_FIT") && SDL_getenv("KHCOM_TALL_FIT")[0] == '1';
+        if (tall)
+            f *= (outH * 16.0f) / (outW * 9.0f);
+    }
     while (SDL_ceilf(outW / f) > PORT_MAX_W || SDL_ceilf(outH / f) > PORT_MAX_H)
         f += 0.25f;
     *w = SDL_max((int)SDL_ceilf(outW / f), GBA_SCREEN_W);
