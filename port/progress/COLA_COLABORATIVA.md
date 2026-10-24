@@ -43,6 +43,8 @@ y vuelve a comprobar la composición. No tocar WIP, ejecutables ni partidas del 
 5. Commitear solo la pieza, pushear su rama y abrir **un PR por entrega** contra `main` con problema, cambio,
    referencia humana, pruebas y limitaciones reales. Registrar de inmediato `pr_abierto`, URL y evidencia.
    Entregas de documentación/herramientas también van por PR. No acumular un lote de aprobados sin subir.
+   Cada PR de arte incluye su mejora de `LOGICA_APROBADOS.md`: el criterio de las valoraciones nuevas y la
+   corrección de la regla de toda pieza aprobada que recibió comentarios después (usuario 24/10).
 6. Si hay PR verificados y no hay integrador, tomar su reserva remota. Solo quien obtuvo el token integra.
    Si otro ya integra, seguir otro carril. Refrescar `main`, comprobar que el PR sigue vigente y sin conflicto,
    revisar aprobación exacta y pruebas; fusionar **un PR a la vez**. Actualizar/validar la rama cuando un PR
