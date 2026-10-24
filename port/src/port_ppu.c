@@ -3323,7 +3323,7 @@ void PortPpuBeginFrame(void) {
         memset(sTitleFadeReady, 0, sizeof(sTitleFadeReady));
         sTitlePaletteValid = 1;
     }
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(PORT_LINUX) /* FreeType HD text (#77) */
     extern int PortPortableHdReady(void);
 #endif
     sBgTextCount = 0;
@@ -3468,7 +3468,7 @@ void PortPpuBeginFrame(void) {
                 IO16(0x0C), IO16(0x0E), gPortScreen.wide, sSceneNarrow);
     sHudLayer = gPortScreen.wide && gPortHudScale > 0 && gPortHudW >= GBA_SCREEN_W;
     sHdText = gPortConfig.hdText;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(PORT_LINUX)
     sHdText = sHdText && PortPortableHdReady();
 #endif
     RegisterBgSlashes(dispcnt);

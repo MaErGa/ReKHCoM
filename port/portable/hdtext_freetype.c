@@ -74,7 +74,13 @@ int PortPortableHdReady(void) {
         char path[1024]; FT_Face face;
         SDL_snprintf(path,sizeof(path),"assets/fonts/%s",names[i]);
         data[i]=SDL_LoadFile(PortConfigPath(path),&sizes[i]);
+        if (!data[i] && SDL_GetBasePath()) { /* next to the executable, or bin/../assets in the packaged game */
+            char full[1024];
+            SDL_snprintf(full,sizeof(full),"%s%s",SDL_GetBasePath(),path);data[i]=SDL_LoadFile(full,&sizes[i]);
+            if (!data[i]) {SDL_snprintf(full,sizeof(full),"%s../%s",SDL_GetBasePath(),path);data[i]=SDL_LoadFile(full,&sizes[i]);}
+        }
         if (!data[i]) {SDL_snprintf(path,sizeof(path),"fonts/%s",names[i]);data[i]=SDL_LoadFile(path,&sizes[i]);}
+        if (!data[i]) PortLog("HD text: %s not found; the game's own text stays",names[i]);
         if (!data[i] || FT_New_Memory_Face(library,data[i],sizes[i],0,&face)) return 0;
         if (!FT_Get_Char_Index(face,'H')) {FT_Done_Face(face);return 0;}
         FT_Done_Face(face);
@@ -82,7 +88,30 @@ int PortPortableHdReady(void) {
     /* Optional platform fallbacks; no platform fonts are redistributed. */
     FT_New_Face(library,"/system/fonts/Roboto-Regular.ttf",0,&fallback);
     if (!fallback) FT_New_Face(library,"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",0,&fallback);
-    if (!fallback) FT_New_Face(library,"C:/Windows/Fonts/arial.ttf",0,&fallback);
+    {
+        /* Comic Hearts has no accents: without a fallback face the first accented letter turns HD text
+           off (#77, Bazzite/Fedora keep DejaVu elsewhere) */
+        static const char* const paths[] = {
+            "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf", "/usr/share/fonts/TTF/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf", "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+            "/usr/share/fonts/noto/NotoSans-Regular.ttf", "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+            "/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "C:/Windows/Fonts/arial.ttf"
+        };
+        size_t k;
+        for (k=0;!fallback && k<SDL_arraysize(paths);k++) FT_New_Face(library,paths[k],0,&fallback);
+    }
+#if defined(__linux__) && !defined(__ANDROID__)
+    if (!fallback) {
+        FILE* pipe=popen("fc-match -f '%{file}' sans:lang=es 2>/dev/null","r");
+        if (pipe) {
+            char path[1024]; size_t n=fread(path,1,sizeof(path)-1,pipe); path[n]=0;
+            pclose(pipe);
+            if (n && FT_New_Face(library,path,0,&fallback)) fallback=NULL;
+        }
+    }
+#endif
+    PortLog("HD text: fallback face %s",fallback?"found":"missing (accents fall back to the game's text)");
     OpenJapanese();
 #ifdef VERSION_JP
     /* Never hide Japanese SD glyphs without a usable Japanese outline face. */
