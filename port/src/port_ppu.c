@@ -3315,6 +3315,7 @@ void PortPpuBeginFrame(void) {
         sEnvTitleBandsOff = getenv("KHCOM_TITLE_BANDS_OFF") != NULL;
     }
     sPreliminarV1 = getenv("KHCOM_PRELIMINAR_V1") != NULL;
+    (void)PortArenasV2(); /* its switch read here, on the main thread, before the cores draw (they ask it per row) */
     sSinglePanelBg = PortEventBackdropPanel();
 
     memset(sTitleBand, 0, sizeof(sTitleBand));

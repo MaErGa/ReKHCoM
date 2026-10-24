@@ -150,12 +150,23 @@ static void HeapInit(void) {
     sRover = sFirst;
 }
 
+/* The heap and getenv's table are shared by the image's threads (the Switch's PPU cores, switch/guest/stubs_a64.c):
+   each behind a spin lock, free unless two threads meet there. */
+static int sHeapLock, sEnvLock;
+static void Lock(int* l) {
+    while (__atomic_exchange_n(l, 1, __ATOMIC_ACQUIRE))
+        while (__atomic_load_n(l, __ATOMIC_RELAXED)) {}
+}
+static void Unlock(int* l) {
+    __atomic_store_n(l, 0, __ATOMIC_RELEASE);
+}
+
 static Blk* Next(Blk* b) {
     Blk* n = (Blk*)((char*)b + (b->size & ~1u));
     return n >= sEnd ? NULL : n;
 }
 
-void* malloc(size_t n) {
+static void* MallocLocked(size_t n) {
     uint32_t need;
     Blk *b, *start;
     int wrapped = 0;
@@ -188,9 +199,16 @@ void* malloc(size_t n) {
     }
 }
 
-void free(void* p) {
+void* malloc(size_t n) {
+    void* p;
+    Lock(&sHeapLock);
+    p = MallocLocked(n);
+    Unlock(&sHeapLock);
+    return p;
+}
+
+static void FreeLocked(void* p) {
     Blk *b, *n, *pr;
-    if (!p) return;
     b = (Blk*)((char*)p - HDR);
     b->size &= ~1u;
     n = Next(b);
@@ -209,6 +227,13 @@ void free(void* p) {
             if (n) n->prev = pr->size;
         }
     }
+}
+
+void free(void* p) {
+    if (!p) return;
+    Lock(&sHeapLock);
+    FreeLocked(p);
+    Unlock(&sHeapLock);
 }
 
 void* calloc(size_t a, size_t b) {
@@ -753,7 +778,16 @@ int rename(const char* a, const char* b) { return h_rename(a, b); }
 
 /* Values longer than a slot (the harness' KHCOM_MODE / KHCOM_KEYS lists run to kilobytes) are read again into a
    bigger one: cut at 159 bytes, the Android story scenarios lost their key presses and stalled in the event. */
+static char* GetenvLocked(const char* name);
 char* getenv(const char* name) {
+    char* v;
+    Lock(&sEnvLock);
+    v = GetenvLocked(name);
+    Unlock(&sEnvLock);
+    return v;
+}
+
+static char* GetenvLocked(const char* name) {
     enum { SLOTS = 128 };
     static char* slots[SLOTS];
     static const char* keys[SLOTS];

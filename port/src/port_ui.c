@@ -2796,17 +2796,27 @@ static void DrawWizard(int l, int width, int height) {
     {
         /* on the wide view's row the picture shows behind the window, so the change is seen */
         int kinds[9];
-        if (sWizStep == WIZ_OPTIONS && WizOptions(kinds) > sWizCursor && kinds[sWizCursor] == WOPT_WIDE) {
-            /* the wide view's row: a night sky fills the whole picture, so its width shows (the GBA's 240x160
-               inside the border, or the whole window) */
-            int yy;
-            for (yy = 0; yy < height; yy++) {
-                int t = yy * 255 / SDL_max(1, height - 1);
-                Fill(0, yy, width, 1, 0xFF000000u | (uint32_t)(16 + t * 32 / 255) << 16 | (uint32_t)(16 + t * 16 / 255) << 8 |
-                                          (uint32_t)(56 + t * 40 / 255));
+        /* what the screen will look like, behind the window: 1 the wide view (HD mode, GBA enhanced, the wide view's
+           row), 2 the GBA's own 240x160 screen in the middle (GBA classic) */
+        int preview = sWizStep == WIZ_OPTIONS && WizOptions(kinds) > sWizCursor && kinds[sWizCursor] == WOPT_WIDE ? 1
+                    : sWizStep == WIZ_MODE ? 1 : sWizStep == WIZ_MODE_GBA ? 1 + sWizCursor : 0;
+        if (preview) {
+            /* a night sky fills the picture, so its width shows (the whole window, or only the GBA's screen) */
+            int yy, sx = 0, sy = 0, sw = width, sh = height;
+            if (preview == 2) {
+                int k = SDL_max(1, SDL_min(width / GBA_SCREEN_W, height / GBA_SCREEN_H)); /* at whole scale, as shown */
+                sw = GBA_SCREEN_W * k; sh = GBA_SCREEN_H * k;
+                sx = (width - sw) / 2; sy = (height - sh) / 2;
+                Fill(0, 0, width, height, 0xFF000000u);
+                Fill(sx - 2, sy - 2, sw + 4, sh + 4, MENU_GREY); /* the border around the GBA's screen */
+            }
+            for (yy = 0; yy < sh; yy++) {
+                int t = yy * 255 / SDL_max(1, sh - 1);
+                Fill(sx, sy + yy, sw, 1, 0xFF000000u | (uint32_t)(16 + t * 32 / 255) << 16 | (uint32_t)(16 + t * 16 / 255) << 8 |
+                                            (uint32_t)(56 + t * 40 / 255));
             }
             for (yy = 0; yy < 60; yy++) /* stars at fixed places, spread over the whole width */
-                Fill((yy * 97 + 13) % width, (yy * 53 + 7) % height, 1, 1, 0xFFC0C8F0u);
+                Fill(sx + (yy * 97 + 13) % sw, sy + (yy * 53 + 7) % sh, 1, 1, 0xFFC0C8F0u);
         } else {
             Fill(0, 0, width, height, 0xFF000000u);
         }
