@@ -9,7 +9,7 @@ on Windows (the toolchain ships Windows tools) or Linux.
     python port/ps4/build_ps4.py host                  # only the host and the package (guest images already built)
     python port/ps4/build_ps4.py test-host             # the same host for Linux, headless (run it in the Linux VM)
 
-Needs: OO_PS4_TOOLCHAIN (default D:/01Claude/ReKHCoM-build/ps4/toolchain, the OpenOrbis v0.5.4 release), clang and ld.lld
+Needs: OO_PS4_TOOLCHAIN (default <work folder>/ps4/toolchain, port/tools/workdir.py; the OpenOrbis v0.5.4 release), clang and ld.lld
 (the repository's llvm-mingw on Windows), .NET 6 or later for PkgTool, and the generated assets of each region
 (build/<region>, as for the desktop build). Output: port/ps4/dist/ReKHCoM-ps4-alpha.pkg.
 """
@@ -24,7 +24,9 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 BUILD = HERE / 'build'
 DIST = HERE / 'dist'
-OO = Path(os.environ.get('OO_PS4_TOOLCHAIN', 'D:/01Claude/ReKHCoM-build/ps4/toolchain'))
+sys.path.insert(0, str(ROOT / 'port/tools'))
+from workdir import WORK_DIR  # noqa: E402
+OO = Path(os.environ.get('OO_PS4_TOOLCHAIN', WORK_DIR / 'ps4/toolchain'))
 WINDOWS = os.name == 'nt'
 LLVM = ROOT.parent / 'toolchain/llvm-mingw-20261006-ucrt-x86_64/bin'
 CLANG = os.environ.get('CLANG', str(LLVM / 'clang.exe') if WINDOWS else 'clang-18')
