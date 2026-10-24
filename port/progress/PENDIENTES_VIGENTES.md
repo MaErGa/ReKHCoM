@@ -35,6 +35,13 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   8 h; su árbol khcom-codex con WIP sin commitear de escena 124 en port_ppu.c y preliminar_v1_*). Por la regla de los
   10 min, Claude toma su cola de la app de revisión (escenas V1 044-120 con nubes, jefes V2 Oogie/Trickmaster/Maléfica,
   Darkside arena). Su WIP queda como está (no se toca su árbol).
+- **Cola de arte tomada de Codex, en curso (Claude):** WIP de Codex integrado tal cual (ab1389aa5, escena 124; para
+  jugadores nada cambia: eventos 119-125 idénticos). Método por escena: mapa con rejilla desde
+  `build/preliminar-v1/inventory/eu/gEventBgNNN.png` (inventory_preliminar_v1.py), corregir la receta en
+  port_preliminar_v1_tiles.h, `sh build/prelim_shot.sh NNN` (3440x1440, con y sin receta), mirar, y
+  `answer_scene.py NNN --change "..."` (versión hija en la app que responde el envío). Hechas: **090** (3149de052).
+  Faltan: 044 045 053 054 081 087 095 097 098 099 102 104 110 112 115 116 117 118 120, jefes V2 (Oogie,
+  Trickmaster, Maléfica 01), Darkside arena.
 - **Darkside r6 en la app (3f5f7c235):** 03 el ala (mechones que siguen su pendiente y se difuminan), 06 el brazo nace
   en el hombro (23 px más arriba), costura redibujada. Responde los envíos 052330 y 054756.
 - **Calidad HD (punto 7) cerrado:** calidad constante por GPU vs "Buena" en 5 videos (`build/hdprobe-2410.txt`):
