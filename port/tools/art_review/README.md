@@ -87,6 +87,12 @@ fuera del bloque original, comprueba los cinco frames y registra una propuesta h
 
 ## Catálogo y espacio de revisión
 
+Para recuperar arte histórico fuera de las escenas/jefes ya catalogados:
+`catalog_history.py` planifica en solo lectura y solo carga con `--apply`. Ver
+`port/progress/ARTE_HISTORICO.md` y el manifiesto `ARTE_HISTORICO.json`: capturas completas reales, hashes de
+fuente/binario/log/configuración, idempotencia y huecos de cobertura explícitos. No cambiar valoraciones ni
+asignar la aprobación de una versión antigua a una captura posterior. La carga conserva las familias existentes.
+
 Una tarjeta por pieza, no por versión, en una sola pestaña: `Pre` = la última propuesta
 espera tu revisión; `Rev` = ya enviaste nubes, trazos o comentario y se espera la versión
 nueva del agente (para no revisarla dos veces); `Aprobado`, con dos subpestañas:
