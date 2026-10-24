@@ -1,10 +1,11 @@
-param([switch]$NoBrowser)
+param([switch]$NoBrowser, [string]$Data)
 $ErrorActionPreference = 'Stop'
 $taskMutex = [System.Threading.Mutex]::new($false, 'Local\ReKHCoM-ArtReview-8766')
 if (-not $taskMutex.WaitOne(30000)) { throw 'El launcher ya esta actualizando la mesa. Intentalo en unos segundos.' }
 function Start-UnifiedReview {
 $taskProject = Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
-$taskData = Join-Path $taskProject 'build\art-review'
+# -Data: the reviews kept elsewhere (another checkout's build\art-review) without moving them
+$taskData = if ($Data) { (Resolve-Path -LiteralPath $Data).Path } else { Join-Path $taskProject 'build\art-review' }
 $taskUrl = 'http://127.0.0.1:8766'
 $taskVenv = Join-Path $taskData '.venv\Scripts\python.exe'
 $taskVersionPython = if (Test-Path -LiteralPath $taskVenv) { $taskVenv } else { (Get-Command python -ErrorAction Stop).Source }
@@ -19,11 +20,12 @@ function Open-ReviewDesk($taskState) {
 try {
     $taskExisting = Invoke-RestMethod "$taskUrl/api/state" -TimeoutSec 2
     if ($taskExisting.data_dir -ne $taskData) { throw 'Puerto 8766 ocupado por otra mesa de revision.' }
-    if ($taskExisting.app_build -eq $taskDiskBuild) {
+    $taskSameCode = $taskExisting.code_dir -eq $PSScriptRoot
+    if ($taskSameCode -and $taskExisting.app_build -eq $taskDiskBuild) {
         Open-ReviewDesk $taskExisting
         exit 0
     }
-    if ($taskExisting.auto_restart) {
+    if ($taskSameCode -and $taskExisting.auto_restart) {
         for ($taskAutoTry=0; $taskAutoTry -lt 50; $taskAutoTry++) {
             Start-Sleep -Milliseconds 200
             try {
@@ -40,7 +42,7 @@ try {
     $taskListener = Get-NetTCPConnection -LocalPort 8766 -State Listen -ErrorAction Stop | Where-Object LocalAddress -eq '127.0.0.1' | Select-Object -First 1
     $taskOwner = Get-CimInstance Win32_Process -Filter "ProcessId=$($taskListener.OwningProcess)"
     $taskServerPath = Join-Path $PSScriptRoot 'server.py'
-    if (-not $taskOwner.CommandLine.Contains($taskServerPath)) { throw 'No se pudo verificar el servidor existente; no se detuvo otro proceso.' }
+    if (-not ($taskOwner.CommandLine.Contains($taskServerPath) -or $taskOwner.CommandLine -match 'art_review[\\/]server\.py')) { throw 'No se pudo verificar el servidor existente; no se detuvo otro proceso.' }
     Stop-Process -Id $taskOwner.ProcessId -ErrorAction Stop
     for ($taskWait=0; $taskWait -lt 30; $taskWait++) {
         if (-not (Get-NetTCPConnection -LocalPort 8766 -State Listen -ErrorAction SilentlyContinue)) { break }

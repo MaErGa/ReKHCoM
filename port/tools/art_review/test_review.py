@@ -27,6 +27,24 @@ class ReviewTest(unittest.TestCase):
         return dict(id='nube-uno', x=.1, y=.25, w=.3, h=.5, comment='Reparar unión, conservar luz.',
                     category='seam', priority='high', expected='Sin corte', lesson='Respetar plano')
 
+    def test_queue_turns(self):
+        """a submission waits for the agent until a child version exists; an ordinary approval waits for honours"""
+        self.assertEqual(self.store.queue()[0]['turn'], 'humano')
+        self.a['annotations'] = [self.note()]
+        self.a = self.store.save(self.a)
+        self.store.submit([self.a['id']], {self.a['id']: self.a['revision']})
+        row = self.store.queue()[0]
+        self.assertEqual((row['turn'], len(row['unanswered'])), ('agente', 1))
+        self.assertTrue((Path(self.temp.name) / 'COLA_PARA_AGENTES.md').is_file())
+        raw = io.BytesIO()
+        Image.new('RGB', (100, 80), '#335544').save(raw, 'PNG')
+        child = self.store.add(raw.getvalue(), 'Prueba <script>', 'hija', parent_id=self.a['id'])
+        row = self.store.queue()[0]
+        self.assertEqual((row['turn'], row['unanswered'], row['latest']['id']), ('humano', [], child['id']))
+        child['status'] = 'approved'
+        self.store.save(child)
+        self.assertIn('honores', self.store.queue()[0]['todo'])
+
     def test_persistence_batch_crop_hash_and_learning(self):
         self.a['annotations'] = [self.note(), dict(self.note(),id='nube-dos',x=.6,w=.2)]
         self.a['general'] = 'Criterio humano: ñ y acentos'

@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-let assets = [], approvals = [], current = null, mode = 'draw', start = null, draft = null, editing = null, selected = null;
+let assets = [], approvals = [], queue = [], current = null, mode = 'draw', start = null, draft = null, editing = null, selected = null;
 let historical=false, chosenVerdict='pending';
 let followLatest=true, loadedBuild=null, pendingUpdate=null, checkingUpdate=false;
 let libraryTab='pending';
@@ -37,20 +37,25 @@ function gallery() {
   $('assetPicker').replaceChildren();
   const byId=new Map(assets.map(a=>[a.id,a])),groups=new Map();
   for(const a of assets){let root=a;const seen=new Set();while(root.parent_id&&byId.has(root.parent_id)&&!seen.has(root.id)){seen.add(root.id);root=byId.get(root.parent_id);}if(!groups.has(root.id))groups.set(root.id,{root,versions:[]});groups.get(root.id).versions.push(a);}
-  const search=$('searchPieces').value.trim().toLocaleLowerCase('es');let total=0;
+  const search=$('searchPieces').value.trim().toLocaleLowerCase('es');let total=0,counts={pending:0,accepted:0};
+  const pick=(tab,versions,family)=>tab==='accepted'?byId.get(family?.approved_version):(family?.build_version?null:versions.at(-1));
   for (const {root,versions} of groups.values()) {
-    const last=versions.at(-1),family=approvals.find(f=>f.family_id===root.id);
-    const a=libraryTab==='accepted'?byId.get(family?.approved_version):(['pending','changes_requested'].includes(last.status)?last:null);
+    const family=approvals.find(f=>f.family_id===root.id);
+    for(const tab of ['pending','accepted'])if(pick(tab,versions,family))counts[tab]++;
+    const a=pick(libraryTab,versions,family);
     if(!a||search&&!(`${root.title} ${a.version}`).toLocaleLowerCase('es').includes(search))continue;total++;
     const option=el('option','',root.title+' · '+a.version);option.value=a.id;option.selected=a.id===current?.id;$('assetPicker').append(option);
     const button = el('button','asset' + (versions.some(v=>v.id===current?.id) ? ' active' : ''));
-    const img = el('img'); img.src = a.image_url;img.loading='lazy';img.alt = ''; button.append(img,el('strong','',root.title),el('small',a.status==='honors'?'honors':'',labels[a.status]),el('small','',a.version),el('small','',versions.length+' revisión(es) · ver Historial'));
+    const img = el('img'); img.src = a.image_url;img.loading='lazy';img.alt = ''; button.append(img,el('strong','',root.title),el('small',a.status==='honors'?'honors':'',labels[a.status]+(a.status==='approved'&&libraryTab==='pending'?' · falta ★ para build':'')),el('small','',a.version),el('small','',versions.length+' revisión(es) · ver Historial'));
+    const turn=queue.find(q=>q.family_id===root.id);
+    if(turn&&libraryTab==='pending')button.append(el('small','turn '+(turn.turn==='humano'?'you':'agent'),turn.turn==='humano'?'● Te toca':'◌ Esperando al agente'+(turn.unanswered.length?` (${turn.unanswered.length} envío(s))`:'')));
     button.onclick = () => choose(a.id,{follow:libraryTab==='pending'}); $('gallery').append(button);
   }
   if(current&&!Array.from($('assetPicker').options).some(o=>o.value===current.id)){
     const pinned=el('option','',`En revisión: ${current.title} · ${labels[current.status]} (fuera del filtro)`);pinned.value=current.id;pinned.selected=true;$('assetPicker').prepend(pinned);
   }
   if(!total)$('gallery').append(el('p','subtle','No hay piezas en esta pestaña.'));
+  $('tabPending').textContent=`Preliminares (${counts.pending})`;$('tabAccepted').textContent=`Ya aceptados (${counts.accepted})`;
   $('tabPending').setAttribute('aria-selected',String(libraryTab==='pending'));$('tabAccepted').setAttribute('aria-selected',String(libraryTab==='accepted'));
 }
 function setLibraryTab(value){libraryTab=value;gallery();}
@@ -58,7 +63,7 @@ $('tabPending').onclick=()=>setLibraryTab('pending');$('tabAccepted').onclick=()
 async function choose(id, options={}) {
   try { await flushGeneral(); await saveChain; } catch(e) { return toast(e.message); }
   current = assets.find(a => a.id === id); selected = null;
-  libraryTab=['approved','honors'].includes(current.status)?'accepted':'pending';
+  libraryTab=current.status==='honors'?'accepted':'pending';
   followLatest=options.follow===true;
   const address=new URL(location.href);address.searchParams.set('image',id);address.searchParams.delete('latest');history.replaceState(null,'',address);
   if(followLatest)address.searchParams.delete('view');else address.searchParams.set('view','history');history.replaceState(null,'',address);
@@ -81,7 +86,7 @@ function showApproval(){
   $('approvalInfo').textContent=build?'★ Build conserva: '+build.version:approved?'✓ Aprobación conservada: '+approved.version+' · integración según política de honores':'';
   $('rate').textContent=historical?'Histórico':labels[current.status]+' ▾';
 }
-async function updateRegistry(){const state=await api('/api/state');approvals=state.approvals||[];showApproval();}
+async function updateRegistry(){const state=await api('/api/state');approvals=state.approvals||[];queue=state.queue||[];showApproval();}
 function resize() {
   if (!current) return;
   $('paper').style.width = current.width * scale + 'px'; $('paper').style.height = current.height * scale + 'px';
@@ -112,7 +117,7 @@ $('viewport').addEventListener('pointermove',e=>{if(pan){$('viewport').scrollLef
 $('viewport').addEventListener('pointerup',()=>pan=null);$('viewport').addEventListener('pointercancel',()=>pan=null);
 $('showNotes').onclick=()=>document.body.classList.toggle('notes-open');$('closeNotes').onclick=()=>document.body.classList.remove('notes-open');
 $('assetPicker').onchange=()=>choose($('assetPicker').value);
-$('refresh').onclick=async()=>{try{await flushGeneral();await saveChain;const state=await api('/api/state');assets=state.assets;approvals=state.approvals||[];await choose(current?.id||assets[0].id);toast('Versiones actualizadas');}catch(e){toast(e.message);}};
+$('refresh').onclick=async()=>{try{await flushGeneral();await saveChain;const state=await api('/api/state');assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];await choose(current?.id||assets[0].id);toast('Versiones actualizadas');}catch(e){toast(e.message);}};
 $('density').value=localStorage.getItem('atlas-density')||'compact';document.body.dataset.density=$('density').value;
 $('density').onchange=()=>{document.body.dataset.density=$('density').value;localStorage.setItem('atlas-density',$('density').value);if(fitMode)fit();};
 function setMode(value) { mode=value; $('draw').classList.toggle('active',value==='draw'); $('select').classList.toggle('active',value==='select'); $('overlay').classList.toggle('selecting',value==='select'); }
@@ -188,7 +193,7 @@ function persist() {
     const latest=assets.find(a=>a.id===snapshot.id);snapshot.revision=latest.revision;
     const saved=await api('/api/save',snapshot);assets[assets.findIndex(a=>a.id===saved.id)]=saved;
     if(current?.id===saved.id)current.revision=saved.revision;
-    changed=false;await updateRegistry();libraryTab=['approved','honors'].includes(current.status)?'accepted':'pending';gallery();showRevisions();$('saved').textContent='Guardado en este PC';return saved;
+    changed=false;await updateRegistry();libraryTab=current.status==='honors'?'accepted':'pending';gallery();showRevisions();$('saved').textContent='Guardado en este PC';return saved;
   });
   saveChain=task;task.catch(e=>{$('saved').textContent='Error al guardar';toast(e.message+' No cierres esta página.');});return task;
 }
@@ -232,7 +237,7 @@ $('closeRating').onclick=()=>$('rating').close();
 $('saveRating').onclick=async()=>{current.status=chosenVerdict;const comment=$('ratingComment').value.trim();if(comment)current.general+=(current.general?'\n\n':'')+'[Valoración: '+labels[chosenVerdict]+'] '+comment;$('status').value=chosenVerdict;$('general').value=current.general;$('rating').close();await persist();};
 $('history').onclick=async()=>{
   try{
-    await flushGeneral();await saveChain;const state=await api('/api/state');assets=state.assets;approvals=state.approvals||[];
+    await flushGeneral();await saveChain;const state=await api('/api/state');assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];
     const family=approvals.find(f=>f.version_ids.includes(current.id));$('familyVersions').replaceChildren();
     for(const id of family?.version_ids||[current.id]){
       const a=assets.find(x=>x.id===id);const b=el('button','history-entry',a.version+' · '+labels[a.status]+(id===family?.build_version?' · VIGENTE EN BUILD':''));
@@ -279,8 +284,8 @@ async function checkUpdates(){
       $('applyUpdate').textContent='Mostrar nueva versión';$('updates').hidden=false;
       if(followLatest&&safeToUpdate())await applyPendingUpdate();
     }else if(safeToUpdate()&&(state.assets.length!==assets.length||state.assets.some(a=>{const old=assets.find(x=>x.id===a.id);return old&&(old.revision!==a.revision||old.status!==a.status);}))) {
-      const previousStatus=current.status;assets=state.assets;approvals=state.approvals||[];current=assets.find(a=>a.id===current.id)||current;
-      if(current.status!==previousStatus)libraryTab=['approved','honors'].includes(current.status)?'accepted':'pending';
+      const previousStatus=current.status;assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];current=assets.find(a=>a.id===current.id)||current;
+      if(current.status!==previousStatus)libraryTab=current.status==='honors'?'accepted':'pending';
       $('status').value=current.status;$('general').value=current.general;gallery();renderNotes();showApproval();showRevisions();
     }
   }catch{/* A launcher restart can briefly make the server unavailable. Retry without touching edits. */}
@@ -289,7 +294,7 @@ async function checkUpdates(){
 setInterval(checkUpdates,5000);window.addEventListener('focus',checkUpdates);
 api('/api/state').then(state=>{
   document.title='Atlas '+state.app_version+' · Revisión de arte';
-  assets=state.assets;approvals=state.approvals||[];loadedBuild=state.disk_build;
+  assets=state.assets;approvals=state.approvals||[];queue=state.queue||[];loadedBuild=state.disk_build;
   const params=new URLSearchParams(location.search),requested=params.get('image'),remembered=localStorage.getItem('atlas-selected');
   if(assets.length){
     let id=assets.find(a=>a.id===(requested||remembered))?.id||assets.at(-1).id;

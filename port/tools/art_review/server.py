@@ -88,6 +88,66 @@ class Store:
                 build_policy='honors', pending_ids=[a['id'] for a in versions if a['status'] in ['pending','changes_requested']]))
         return result
 
+    def queue(self):
+        """What every piece waits for, for whoever picks the work up: a submission whose image has no child version
+        created after it is unanswered (the agent's turn); a pending latest version is the human's turn; an ordinary
+        approval waits for the human's honours; an honours version is the one to integrate."""
+        assets = self.all()
+        by_id = {a['id']: a for a in assets}
+        children = {}
+        for a in assets:
+            if a.get('parent_id'):
+                children.setdefault(a['parent_id'], []).append(a)
+        newest = {}  # image id -> its newest submission with feedback (clouds stay on the image: the newest has them all)
+        for path in sorted((self.root / 'envios').glob('*/comentarios.json')):
+            try:
+                payload = json.loads(path.read_text(encoding='utf-8'))
+            except (OSError, ValueError):
+                continue
+            for a in payload.get('assets', []):
+                if a.get('annotations') or str(a.get('general', '')).strip():
+                    newest[a['id']] = dict(submission=payload['submission_id'], created=payload['created'],
+                                           image_id=a['id'], version=a['version'], clouds=len(a['annotations']),
+                                           status_then=a['status'],
+                                           read=str(path.with_name('COMENTARIOS_PARA_CODEX.txt')))
+        rows = []
+        for fam in self.approvals():
+            versions = [by_id[i] for i in fam['version_ids'] if i in by_id]
+            latest = versions[-1]
+            unanswered = [n for i in fam['version_ids'] if (n := newest.get(i))
+                          and not any(c['created'] > n['created'] for c in children.get(i, []))]
+            if unanswered:
+                who, todo = 'agente', 'Responder cada envío con una versión hija (parent_id = image_id del envío) y su ficha'
+            elif latest['status'] in ('pending', 'changes_requested'):
+                who, todo = 'humano', 'Revisar la última versión'
+            elif not fam['build_version']:
+                who, todo = 'humano', 'Aprobada sin honores: dar ★ o pedir mejoras con nubes'
+            else:
+                who, todo = 'agente', 'Con honores: integrar build_version si aún no está en el juego (receta + GBA idéntico)'
+            rows.append(dict(family_id=fam['family_id'], title=versions[0]['title'], turn=who, todo=todo,
+                             latest=dict(id=latest['id'], version=latest['version'], status=latest['status']),
+                             approved_version=fam['approved_version'], build_version=fam['build_version'],
+                             unanswered=unanswered, versions=len(versions)))
+        rows.sort(key=lambda r: (r['turn'] != 'agente', not r['unanswered'], r['title']))
+        return rows
+
+    def write_queue(self):
+        """COLA_PARA_AGENTES.md/.json next to the data: the first thing to read when taking the work over."""
+        rows = self.queue()
+        (self.root / 'cola.json').write_text(json.dumps(dict(schema='rekhcom.art-queue/1', created=now(), pieces=rows),
+                                                         ensure_ascii=False, indent=2), encoding='utf-8')
+        md = ['# Cola de la mesa de revisión', '', 'Generada %s. Turno de cada pieza: **agente** (responder envíos o '
+              'integrar honores) o **humano** (revisar o dar ★). Solo se integra lo aprobado con honores.' % now(), '',
+              '| Pieza | Turno | Qué falta | Última versión | Estado | Envíos sin responder |', '|---|---|---|---|---|---|']
+        for r in rows:
+            md.append('| %s | %s | %s | %s | %s | %s |' % (r['title'], r['turn'], r['todo'], r['latest']['version'],
+                      r['latest']['status'], ', '.join('%s (%s, %d nubes)' % (u['submission'], u['version'], u['clouds'])
+                                                     for u in r['unanswered']) or '—'))
+        md += ['', 'Leer cada envío pendiente en `envios/<id>/COMENTARIOS_PARA_CODEX.txt` (o el .md con imágenes).',
+               'Una versión hija se carga con `import_image.py ... --parent <image_id>`; eso marca el envío como respondido.']
+        (self.root / 'COLA_PARA_AGENTES.md').write_text('\n'.join(md) + '\n', encoding='utf-8')
+        return rows
+
     def get(self, asset_id):
         with self.db() as db:
             row = db.execute('SELECT data FROM assets WHERE id=?', (asset_id,)).fetchone()
@@ -125,6 +185,7 @@ class Store:
             with self.db() as db:
                 db.execute('INSERT INTO assets VALUES(?,?)', (asset_id, json.dumps(item, ensure_ascii=False)))
                 self.event(db, 'image_imported', item)
+            self.write_queue()
             return item
 
     def save(self, data):
@@ -163,6 +224,7 @@ class Store:
             with self.db() as db:
                 db.execute('UPDATE assets SET data=? WHERE id=?', (json.dumps(item, ensure_ascii=False), item['id']))
                 self.event(db, 'human_review_saved', item)
+            self.write_queue()
             return item
 
     def submit(self, ids, expected_revisions=None, reexport_of=None):
@@ -289,6 +351,7 @@ class Store:
                         db.execute('UPDATE assets SET data=? WHERE id=?', (json.dumps(a, ensure_ascii=False), a['id']))
                 # Convenience pointer only; all previous submissions remain in envios/.
                 (self.root / 'ULTIMO_ENVIO.txt').write_text(str(dest / 'COMENTARIOS_PARA_CODEX.txt'), encoding='utf-8')
+                self.write_queue()  # every unanswered submission, not only the last one
                 return dict(id=sid, path=str(dest / 'COMENTARIOS_PARA_CODEX.txt'), markdown_url='/envios/' + sid + '/REVISION_PARA_CODEX.md',
                             url='/envios/' + sid + '/COMENTARIOS_PARA_CODEX.txt', count=len(records))
             except Exception:
@@ -327,9 +390,11 @@ def handler(store):
             if route == '/api/state':
                 assets=store.all()
                 delivered=[a for a in assets if not a.get('revision_info',{}).get('catalog_key')]
-                return self.reply(200, dict(assets=store.all(), approvals=store.approvals(), data_dir=str(store.root),
+                return self.reply(200, dict(assets=store.all(), approvals=store.approvals(), queue=store.queue(), data_dir=str(store.root), code_dir=str(Path(__file__).resolve().parent),
                     app_version='0.4.0', app_build=RUNNING_BUILD, disk_build=build_id(), auto_restart=True,
                     latest_delivery_id=(delivered or assets)[-1]['id'] if assets else None))
+            if route == '/api/queue':
+                return self.reply(200, dict(pieces=store.queue()))
             if route == '/api/history':
                 try:
                     return self.reply(200, dict(events=store.history(parse_qs(urlparse(self.path).query).get('id',[''])[0])))
@@ -387,7 +452,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=Path, default=ROOT / 'build/art-review')
     parser.add_argument('--port', type=int, default=8766)
+    parser.add_argument('--queue', action='store_true', help='write and print COLA_PARA_AGENTES.md, then exit')
     args = parser.parse_args()
+    if args.queue:
+        store = Store(args.data)
+        store.write_queue()
+        sys.stdout.reconfigure(encoding='utf-8')
+        print((store.root / 'COLA_PARA_AGENTES.md').read_text(encoding='utf-8'))
+        return
     server = ThreadingHTTPServer(('127.0.0.1', args.port), handler(Store(args.data)))
     print('Revisión de arte: http://127.0.0.1:%s — Datos: %s' % (args.port, args.data), flush=True)
     restart = threading.Event()
