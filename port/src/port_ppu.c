@@ -100,6 +100,7 @@ static BgWorld sBgWorld[4];
 static BgWorld sBgWorldLatched[4];
 static int sBgIso[4];
 static int sBgIsoLatched[4];
+int PortEventId(void); /* mode_event.c */
 static int sEventBackdropProfile = -1; /* derived at frame start, not saved */
 static int sUseSceneProfiles;
 static int sPreliminarV1;
@@ -3500,7 +3501,7 @@ void PortPpuBeginFrame(void) {
        never as a small picture at the world's zoom */
     {
         const char* aerithNativeFrame = getenv("KHCOM_AERITH_NATIVE_FRAME");
-        int keepAerithFrame = sEventBackdropProfile == 9 && aerithNativeFrame &&
+        int keepAerithFrame = PortEventId() == 9 && aerithNativeFrame &&
                               strcmp(aerithNativeFrame, "on") == 0;
         gPortScreen.wide = any && !sSceneNarrow && !keepAerithFrame &&
                        !(sSpotlight && !(sScreenBgMask & 2u))

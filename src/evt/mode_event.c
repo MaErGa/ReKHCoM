@@ -44,9 +44,23 @@ static u32 sEventId;
 static u8 sEventEndStep;
 
 #ifdef PLATFORM_PC
-/* Derived from game state, including after loading a checkpoint. */
+/* Derived from game state, including after loading a checkpoint. The scene whose backdrop this is: the first event
+   with the same background, so an event that reuses one (Riku's floors, follow-ups) gets its approved art too. */
 int PortEventBackdropProfile(void) {
-    return gEventState != NULL ? gEventState->eventId : -1;
+    s32 id, i;
+
+    if (gEventState == NULL)
+        return -1;
+    id = gEventState->eventId & 0x7FFF;
+    if (gEventBackgroundDefs[id] != NULL)
+        for (i = 0; i < id; i++)
+            if (gEventBackgroundDefs[i] == gEventBackgroundDefs[id])
+                return i;
+    return id;
+}
+/* the running event itself, for rules about one event rather than its backdrop */
+int PortEventId(void) {
+    return gEventState != NULL ? (int)(gEventState->eventId & 0x7FFF) : -1;
 }
 /* The opening's first 256x256 panel contains Riku's one circle. The
    adjacent panels are other artwork/empty space, not a repeating room. */

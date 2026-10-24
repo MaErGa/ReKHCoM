@@ -20,6 +20,9 @@ def fixtures():
  result.append(dict(name='evento-177-escena-053',scene=53,start=('KHCOM_EVENT','1:28')))
  # gEventBg054 is also reused for Riku's return to Destiny Islands.
  result.append(dict(name='evento-178-escena-054',scene=54,start=('KHCOM_EVENT','1:29')))
+ # Riku's floors reuse approved backdrops (user 24/10: what is approved applies to Riku too)
+ for n,scene in ((179,55),(181,55),(183,55),(186,44),(187,45),(188,45),(192,61)):
+  l,i=events[n];result.append(dict(name=f'evento-{n:03}-escena-{scene:03}',scene=scene,start=('KHCOM_EVENT',f'{l}:{i}')))
  # gEventBg087 is reused in Halloween Town's follow-up E0 event.
  list_id,index=events[88]
  result.append(dict(name='evento-088-escena-087',scene=87,
