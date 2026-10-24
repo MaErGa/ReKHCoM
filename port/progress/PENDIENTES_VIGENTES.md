@@ -23,6 +23,20 @@ Docker o VM). Instrucciones de las VMs/toolkit como texto (TOOLKIT_CONSOLAS.md),
 binarios grandes en git**; todo lo sintetizado < 50 MB. Las rutas de este PC (D:/01Claude, KHCoMPC/...) en los .md
 deben quedar como "carpeta de trabajo" con su equivalente relativo. Revisar el tamaño del repo (`git count-objects -vH`).
 
+**Pedido nuevo, ANTES de la v2.0 (usuario 24/10): launchers de Android y web iguales al de PC** en diseño y
+funciones (pestañas Inicio/Gráficos/Sonido/Mejoras/Controles/Editor de partidas/Logros, tarjeta HD, modos gráficos,
+partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
+- Relevado: **web** ya tiene las 7 pestañas (`port/web/index.html`, settings.js, editor-ui.js, achievements.js):
+  comparar a fondo con el de PC (estilo: blanco, barras grises, cursor rojo, fuentes KHMenu; opciones nuevas como
+  modo gráfico, borde GBA clásico, cartas/HUD HD, compresión) y completar lo que falte.
+- **Android** es una lista simple de 253 líneas (`port/android/.../LauncherActivity.java`): reemplazarla por **el
+  mismo launcher de PC** (`port/decompui/decompui.cpp`, ImGui + SDL3, ya en la APK) compilado para Android. Separar lo
+  de Windows: SHA-1 (BCrypt → sha1 portable), diálogos (SDL_ShowOpenFileDialog, que en Android usa el selector del
+  sistema), lanzar el juego (Intent a GameActivity por JNI en vez de CreateProcess), abrir URLs (SDL_OpenURL), sin
+  importador de Re:CoM (Media Foundation: Android copia la carpeta hd armada en PC, como hoy), sin accesos directos.
+  Táctil: botones grandes, desplazamiento con el dedo (ImGui con eventos táctiles de SDL). Probar en el emulador
+  (capturas con `screencap`, flujo ROM → jugar → volver) y en el arnés de PC (`DECOMPUI_SHOT`).
+
 **Hecho hoy (todo en main):**
 - v2.0-pre3 y pre4 internas (PC); issues #40 #42 #45 cerrados (0 abiertos).
 - Jafar APROBADO y encendido (`port_jafar.c`); Oogie y Marluxia en Preliminar V2 (`KHCOM_ARENAS_V2=1`), copia
