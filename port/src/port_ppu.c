@@ -1145,7 +1145,7 @@ static int ExtendedWorldEntry(const BgLatch* l, int wx, int wy) {
         return ok ? MapTile(l, tx, ty) : -1;
     }
     if (sAgrabahLayer[bg]) {
-        ok = PortAgrabahTileSource(sAgrabahLayer[bg], &tx, &ty);
+        ok = PortAgrabahTileSource(sAgrabahLayer[bg], &tx, &ty, sPreliminarV1);
         return ok ? MapTile(l, tx, ty) : -1;
     }
     if (!sBattleView && l->map && sUseSceneProfiles) {
