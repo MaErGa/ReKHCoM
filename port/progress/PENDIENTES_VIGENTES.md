@@ -32,6 +32,32 @@ Reglas del usuario:
 - El usuario pidió cerrar lógica y PR; conservar pausado el resto del carril artístico hasta nuevas instrucciones.
 
 
+## TRASPASO 24/10 madrugada (Claude) — LEER PRIMERO
+
+**Hecho y en main:**
+- Cuelgues pendientes: TODOS cerrados. Riku EU 153/154 = un `taskkill` mío (repetidos: ok); Android US 124 = emulador
+  con dos baterías (solo, 2/2 ok); 37 eventos US "BAD" del 23/10 = reinicio del PC (códigos 0x40010004/0xC000026B;
+  37/37 ok repetidos). Lección en DEBUG_WORKFLOW.md.
+- Android (bugs del usuario): la cruceta táctil en diagonal mandaba dos direcciones al menú (cambiaba la resolución
+  y abría Logros) → en menús solo el eje dominante (`TouchKeys(1)`, prueba `test_android_touch.py`). Opciones: las
+  filas del juego primero, las de imagen después. "Logros pegado" sin reproducir: pedir `kh_com.log` si vuelve.
+- Crash real hallado por `test_text_options.py` (existía antes): filtro "Suave" + pantalla completa con el render
+  por software de SDL → `PortSmoothScaleMode()` (también video, sprites y medidor HD). Las expectativas de esa
+  prueba (filas, claves de config) son viejas: arreglarlas o reescribirla.
+- Launcher: pestañas Inicio, Mejoras, Configuración (Gráficos/Sonido/Controles), Logros, Editor; mod HD arriba de
+  Mejoras (mosaicos de estado, "Cargar todo desde el juego" con peso, "Solo lo básico", elegir carpeta); oferta
+  del mod HD al detectar el 1.5+2.5; Inicio con "Modo 1.5 HD" y undub en gris con enlace; interruptores en gris
+  muestran No; "Instalar ROM..." mueve lo que haya en roms/ (zips, carpeta hd) y manda sobrantes a la papelera
+  (`rom_folder.inc`). test_launcher 11/11.
+- App de revisión (PR #48 integrado): Preliminares = sin honores; cola `COLA_PARA_AGENTES.md`; BAT con `-Data`.
+  Darkside r3 cargado en la app (03, 05, 06, 07; `darkside_revise.py`): **espera revisión del usuario**. Darkside
+  04 (garra) pide dibujo nuevo sin espejar: no hecho (no sale bien por reglas automáticas; dibujo a mano o Codex).
+
+**Esperan aprobación del usuario (no ir a jugadores antes):**
+- Temas de botones táctiles Clear/Dark/Color (`pruebas/Botones tactiles - *.png`).
+- Tablets: `KHCOM_TALL_FIT=1` (`pruebas/Tablets Android - antes (izq) y despues (der)*.png`): sin la franja negra
+  sobre el fondo en 16:10/plegable, encuadre vertical de 16:9.
+
 ## TRASPASO 24/10 noche (Claude, sesión nueva) — LEER PRIMERO
 
 **Hecho (main 62ff8d10d, 004e4260d):** opciones que necesitan archivos (partes del mod HD, ROM japonesa del undub)
