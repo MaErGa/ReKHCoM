@@ -229,6 +229,22 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
             int phase=PortSceneTileMod(ox,64);
             *x=phase<32?phase:63-phase; *y=8+PortSceneTileMod(oy-8,4); return 1;
         }
+        /* the maze behind each hedge and the hedge itself go on along their
+         * diagonals (user 24/10): left hedge from 2y+x=54 to 72, right hedge
+         * from 2y-x=-16 to 0; the lawn in front */
+        if (ox<0 && 2*oy+ox<72) {
+            if (2*oy+ox<54) sx=PortSceneTileMod(ox,12);    /* the maze */
+            else sx=8+PortSceneTileMod(ox-8,12);           /* the hedge and its topiaries */
+            sy=oy+(ox-sx)/2;
+            if (sy<12) sy=12+PortSceneTileMod(sy-12,8); /* the maze goes on upwards too */
+            if (sy<64) { *x=sx; *y=sy; return 1; }
+        }
+        if (ox>=w && 2*oy-ox<0) {
+            sx=58+PortSceneTileMod(ox-58,6); /* clear of the throne's cabinet */
+            sy=oy+(sx-ox)/2;
+            if (sy<12) sy=12+PortSceneTileMod(sy-12,8);
+            if (sy<64) { *x=sx; *y=sy; return 1; }
+        }
         /* BG3 is transparent below y=44. Fill the distant park with a broad,
          * mirrored sample of its clean grass margin, never the maze or path. */
         {
