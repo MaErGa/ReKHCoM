@@ -61,8 +61,8 @@ partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
   q5 ya no hace falta (720p quitado): cortar si corre. Poner el peso de Ahorro en `kScenesSize` (hd_import.inc).
 - `hd_quality_probe.py` (calidad constante vs VBR, VMAF) corriendo: resultados en `build/hd_quality_probe.log` y
   `D:/01Claude/ReKHCoM-build/hdprobe/results.json`; si baja peso sin perder VMAF, usarlo en Buena/Ahorro.
-- Batería #12 del port de Vita (`test_battles.py --stock`, EU): 136+ combates sin fallo; ver
-  `build/battletest-eu-stock.log` al terminar.
+- **Batería #12 del port de Vita: 209/209 combates EU sin fallo ni `bios:`** (`test_battles.py --stock`: guardar
+  cartas L+R todo el combate recibiendo golpes). Ese crash no está en el nuestro. Cerrado.
 - Dos baterías de combates JP duplicadas corrían (run_batteries.py): el usuario no dejó cortarlas.
 - Jafar en el emulador Android: pendiente (correr `test_android_scenarios.py --groups bosses` con el emulador libre).
 - Motor de Switch fase 1 (PPU en 3 núcleos del invitado): no empezado; plan en SWITCH_MOTOR.md.
