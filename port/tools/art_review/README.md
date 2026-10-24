@@ -107,3 +107,13 @@ El BAT raíz de un checkout puede llamar al `launch.ps1` de esta carpeta. En la 
 contenedora KHCoMPC el BAT local apunta al checkout `khcom-codex`. No requiere Node.
 
 Verificación: `python -m unittest discover -s port/tools/art_review -p "test_*.py"`.
+
+El botón derecho + arrastrar mueve la imagen en cualquier herramienta y también
+en una revisión histórica. El desplazamiento se limita a los bordes de la imagen;
+soltar el botón, cancelar el puntero o salir de la ventana termina el movimiento.
+También siguen disponibles la mano, Espacio + arrastrar y el botón del medio.
+
+La regresión de interacción usa Chromium con respuestas locales simuladas,
+sin abrir ni modificar el almacén de revisiones:
+`node port/tools/art_review/test_pan.cjs` (requiere Playwright y su Chromium en
+el entorno de pruebas; la app de revisión sigue requiriendo solo Python).
