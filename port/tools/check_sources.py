@@ -63,7 +63,7 @@ def hd_sprite_problems():
 
 
 # Codex's scene review script: lines scrambled by a merge (18/10), used by nothing; PENDIENTES_VIGENTES.md asks Codex
-KNOWN_BROKEN = {'scene_wide_review.py'}
+KNOWN_BROKEN = set()
 
 
 def tool_problems():

@@ -1142,11 +1142,14 @@ static bool Transcode(const fs::path& src, const fs::path& dst, const Quality& q
     static const GUID kRateControl = { 0x1c0608e9, 0x370c, 0x4710, { 0x8a, 0x58, 0xcb, 0x61, 0x81, 0xc4, 0x24, 0x23 } };
     static const GUID kQualityVsSpeed = { 0x98332df8, 0x03cd, 0x476b, { 0x89, 0xfa, 0x3f, 0x9e, 0x44, 0x2d, 0xec, 0x9f } };
     static const GUID kBFrames = { 0x8d390aac, 0xdc5c, 0x4200, { 0xb5, 0x7f, 0x81, 0x4d, 0x04, 0xba, 0xba, 0xb2 } };
+    static const GUID kCommonQuality = { 0xfcbf57a3, 0x7ea5, 0x4b0c, { 0x96, 0x44, 0x69, 0xb4, 0x0c, 0x39, 0xc3, 0x91 } };
     IMFAttributes* params = nullptr;
-    if (SUCCEEDED(hr) && SUCCEEDED(MFCreateAttributes(&params, 3))) {
+    if (SUCCEEDED(hr) && SUCCEEDED(MFCreateAttributes(&params, 4))) {
         params->SetUINT32(kRateControl, getenv("KHCOM_ENC_RC") ? atoi(getenv("KHCOM_ENC_RC")) : 2 /* unconstrained VBR */);
         params->SetUINT32(kQualityVsSpeed, getenv("KHCOM_ENC_QVS") ? atoi(getenv("KHCOM_ENC_QVS")) : 100);
         params->SetUINT32(kBFrames, getenv("KHCOM_ENC_B") ? atoi(getenv("KHCOM_ENC_B")) : 2);
+        if (const char* e = getenv("KHCOM_ENC_Q")) /* measurements: the quality level of the quality-based rate control (RC 3) */
+            params->SetUINT32(kCommonQuality, (UINT32)atoi(e));
     }
     if (SUCCEEDED(hr))
         hr = writer->SetInputMediaType(videoStream, videoIn, params);
