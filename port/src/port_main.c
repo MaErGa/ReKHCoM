@@ -2364,11 +2364,13 @@ static void PumpEvents(void) {
                 Quit();
                 break;
             case SDL_EVENT_KEY_DOWN:
-                if (!ev.key.repeat && ev.key.key == SDLK_F5) {
+                /* quick states only when turned on in Cheats (off by default, so a run plays as on the cartridge;
+                   no achievements while on): F5 save, F8 load, F6/F7 the slot */
+                if (!ev.key.repeat && ev.key.key == SDLK_F5 && gPortConfig.cheatSaveStates) {
                     PortStateRequestSave(NULL);
                     continue;
                 }
-                if (!ev.key.repeat && ev.key.key == SDLK_F9) {
+                if (!ev.key.repeat && ev.key.key == SDLK_F8 && gPortConfig.cheatSaveStates) {
                     PortStateRequestLoad(NULL);
                     continue;
                 }
@@ -2378,7 +2380,7 @@ static void PumpEvents(void) {
                     PortUiZoomStep(ev.key.key == SDLK_MINUS || ev.key.key == SDLK_KP_MINUS ? 1 : -1);
                     continue;
                 }
-                if (ev.key.key == SDLK_F6 || ev.key.key == SDLK_F7) {
+                if ((ev.key.key == SDLK_F6 || ev.key.key == SDLK_F7) && gPortConfig.cheatSaveStates) {
                     char msg[32];
                     gPortStateSlot = (gPortStateSlot + (ev.key.key == SDLK_F7 ? 1 : 8)) % 9;
                     if (gPortStateSlot == 0)

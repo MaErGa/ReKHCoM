@@ -99,6 +99,7 @@ static const Key sKeys[] = {
     { "cheat_unlock_riku", &gPortConfig.cheatUnlockRiku, 0, 1 },
     { "cheat_one_hit", &gPortConfig.cheatOneHit, 0, 1 },
     { "cheat_infinite_hp", &gPortConfig.cheatInfiniteHp, 0, 1 },
+    { "cheat_savestates", &gPortConfig.cheatSaveStates, 0, 1 },
     { "experimental_save_point_slot_select", &gPortConfig.savePointSlotSelect, 0, 1 },
     { "experimental_hide_touch_controls", &gPortConfig.hideTouchControls, 0, 1 },
     { "touch_theme", &gPortConfig.touchTheme, 0, 2 },

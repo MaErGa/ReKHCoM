@@ -15,7 +15,7 @@ OUT = ROOT / 'build/assets_ui'
 def items():
     """the ITEM_* numbers, from port_ui.c's enum"""
     src = (ROOT / 'port/src/port_ui.c').read_text(encoding='utf-8')
-    body = src[src.index('enum {\n    ITEM_'):]
+    body = src[re.search(r'enum \{\s*(/\*.*?\*/\s*)?ITEM_', src, re.S).start():]  # a comment may open the enum
     body = body[:body.index('};')]
     names, n = {}, 0
     for m in re.finditer(r'^\s*(ITEM_\w+)(\s*=\s*([^,]+))?,', body, re.M):
@@ -113,6 +113,14 @@ def main(cases):
                                                   'KHCOM_CONFIRM_KEYS': '4:1,6:2,8:2,14:1,16:2,18:1,20:2'},
                      frames=1000)
         print('   pictures', sorted(p.name for p in d.glob('options_*')))
+    if 'confirm_states' in cases:  # Cheats > quick states: "No" keeps them off, then yes turns them on, achievements paused
+        r = it['ITEM_CHEAT_STATES']
+        got, d = run('confirm_states', dict(BASE, game_language=5), {'KHCOM_OPTIONS_TOGGLE': '700', 'KHCOM_OPTIONS_HOLD': '40',
+                                                    'KHCOM_OPTIONS_ACTIONS': f'2:{r}:1,10:{r}:1',
+                                                    'KHCOM_CONFIRM_KEYS': '4:2,12:1,14:2'}, frames=1000)
+        log = (d / 'kh_com.log').read_text(encoding='utf-8', errors='replace')
+        print('   ini: cheat_savestates', got.get('cheat_savestates'), 'achievements paused',
+              'session paused' in log, 'pictures', sorted(p.name for p in d.glob('options_*')))
     if 'title_last' in cases:  # the main list scrolled to its end
         got, d = run('title_last', dict(BASE, game_language=5), {'KHCOM_OPTIONS_SHOT': '700', 'KHCOM_OPTIONS_CURSOR': str(it['ITEM_TITLE'])},
                      frames=720)

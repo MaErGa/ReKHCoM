@@ -121,6 +121,7 @@ enum {
     ITEM_CHEAT_RIKU,
     ITEM_CHEAT_ONEHIT,
     ITEM_CHEAT_INFHP,
+    ITEM_CHEAT_STATES,
     ITEM_CHEAT_MAXLEVEL,
     ITEM_CHEAT_MAPCARDS,
     ITEM_CHEAT_JOURNAL,
@@ -156,7 +157,7 @@ static int sPage;
 static int sTitleRequest; /* ITEM_TITLE: due once the menu has closed */
 /* a big window over Options that asks twice, as the scene pause asks before a skip: back to the title (ITEM_TITLE),
    or which mode's presets to go back to (ITEM_MODE_RESET) */
-enum { CONFIRM_NONE, CONFIRM_TITLE, CONFIRM_MODE };
+enum { CONFIRM_NONE, CONFIRM_TITLE, CONFIRM_MODE, CONFIRM_STATES };
 static int sConfirm, sConfirmStep, sConfirmCursor, sConfirmMode;
 static void ConfirmOpen(int what);
 static void ConfirmKey(int key);
@@ -331,6 +332,8 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Enemies fall in one hit", "Ennemis vaincus d'un coup", "Gegner fallen mit einem Treffer",
       "Nemici sconfitti con un colpo", "Enemigos caen de un golpe", "敵を一撃で倒す" },
     { "Infinite HP", "PV infinis", "Unendliche KP", "PS infiniti", "Vida infinita", "HP無限" },
+    { "Quick states (F5 save, F8 load)", "États rapides (F5 sauver, F8 charger)", "Schnellstände (F5 sichern, F8 laden)",
+      "Stati rapidi (F5 salva, F8 carica)", "Estados rápidos (F5 guarda, F8 carga)", "クイックステート (F5セーブ/F8ロード)" },
     { "Level 99 with every bonus", "Niveau 99 avec tous les bonus", "Stufe 99 mit allen Boni",
       "Livello 99 con tutti i bonus", "Nivel 99 con todos los bonos", "全ボーナスつきレベル99" },
     { "Every map card (9 each)", "Toutes les cartes de salle (9)", "Alle Raumkarten (je 9)",
@@ -1043,6 +1046,9 @@ static void ValueText(int item, char* out, size_t size) {
         case ITEM_CHEAT_INFHP:
             SDL_strlcpy(out, sOnOff[gPortConfig.cheatInfiniteHp != 0][l], size);
             break;
+        case ITEM_CHEAT_STATES:
+            SDL_strlcpy(out, sOnOff[gPortConfig.cheatSaveStates != 0][l], size);
+            break;
         case ITEM_CHEAT_GBA_MAP:
             SDL_strlcpy(out, sOnOff[gPortConfig.gbaMapLogic != 0][l], size);
             break;
@@ -1321,6 +1327,13 @@ static void Change(int item, int dir) {
         case ITEM_CHEAT_INFHP:
             gPortConfig.cheatInfiniteHp = !gPortConfig.cheatInfiniteHp;
             break;
+        case ITEM_CHEAT_STATES: /* off at once; on only through the warning */
+            if (gPortConfig.cheatSaveStates) {
+                gPortConfig.cheatSaveStates = 0;
+                break;
+            }
+            ConfirmOpen(CONFIRM_STATES);
+            return;
         case ITEM_CHEAT_GBA_MAP:
             gPortConfig.gbaMapLogic = !gPortConfig.gbaMapLogic;
             break;
@@ -3204,6 +3217,23 @@ static const char* const sConfirmModeRows[2][LANG_COUNT] = {
     { "No", "Non", "Nein", "No", "No", "いいえ" },
     { "Yes, reset", "Oui, rétablir", "Ja, zurücksetzen", "Sì, ripristina", "Sí, restablecer", "はい、戻す" },
 };
+/* Cheats > Quick states: one window, "No" first */
+static const char* const sConfirmStatesAsk[LANG_COUNT] = {
+    "Turn on quick states?", "Activer les états rapides ?", "Schnellstände einschalten?", "Attivare gli stati rapidi?",
+    "¿Activar los estados rápidos?", "クイックステートをオンにしますか？",
+};
+static const char* const sConfirmStatesWarn[LANG_COUNT] = {
+    "Only for testing or reproducing bugs. While they are on, no achievements unlock until you turn them off.",
+    "Uniquement pour tester ou reproduire des bugs. Tant qu'ils sont actifs, aucun succès ne se débloque.",
+    "Nur zum Testen oder Nachstellen von Fehlern. Solange sie an sind, werden keine Erfolge freigeschaltet.",
+    "Solo per test o per riprodurre bug. Finché sono attivi non si sblocca nessun obiettivo.",
+    "Solo para pruebas o para replicar errores. Mientras estén activos no se desbloquean logros.",
+    "テストやバグのさいげんのためだけです。オンのあいだはじっせきがかいじょされません。",
+};
+static const char* const sConfirmStatesRows[2][LANG_COUNT] = {
+    { "No", "Non", "Nein", "No", "No", "いいえ" },
+    { "Yes, turn them on", "Oui, activer", "Ja, einschalten", "Sì, attiva", "Sí, activarlos", "はい、オンにする" },
+};
 static const char* const sConfirmCancel[LANG_COUNT] = { "Cancel", "Annuler", "Abbrechen", "Annulla", "Cancelar",
                                                         "やめる" };
 
@@ -3232,7 +3262,7 @@ static void ConfirmOpen(int what) {
 static void ConfirmKey(int key) {
     extern void PortMenuSoundClick(void);
     extern void PortMenuSoundDecide(int confirm);
-    int rows = ConfirmRows(), last = sConfirm == CONFIRM_MODE ? 2 : 1;
+    int rows = ConfirmRows(), last = sConfirm == CONFIRM_MODE ? 2 : sConfirm == CONFIRM_STATES ? 0 : 1;
     if (key == 0 || key == 1) {
         int c = sConfirmCursor;
         do
@@ -3273,6 +3303,12 @@ static void ConfirmKey(int key) {
         sConfirmCursor = 0;
         return;
     }
+    if (sConfirm == CONFIRM_STATES) {
+        sConfirm = CONFIRM_NONE;
+        gPortConfig.cheatSaveStates = 1;
+        PortConfigSave();
+        return;
+    }
     if (sConfirm == CONFIRM_TITLE) {
         sConfirm = CONFIRM_NONE;
         sTitleRequest = 1;
@@ -3303,6 +3339,11 @@ static void DrawConfirm(int l, int width, int height) {
         labels[3] = sConfirmCancel[l];
         SDL_strlcpy(ask, sConfirmModeAsk[l], sizeof(ask));
         warn = sConfirmModeWarn[0][l];
+    } else if (sConfirm == CONFIRM_STATES) {
+        labels[0] = sConfirmStatesRows[0][l];
+        labels[1] = sConfirmStatesRows[1][l];
+        SDL_strlcpy(ask, sConfirmStatesAsk[l], sizeof(ask));
+        warn = sConfirmStatesWarn[l];
     } else {
         int last = sConfirmStep == (sConfirm == CONFIRM_MODE ? 2 : 1);
         for (i = 0; i < 2; i++)
