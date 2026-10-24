@@ -49,6 +49,7 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   (el mapa antes de que el juego borre sus filas fuera de pantalla). GBA idéntico 6/6 (`build/arena/mx_check.sh`,
   `KHCOM_NO_MARLUXIA_FIELD`).
 - **Launcher: "Comprimir lo instalado"** (pedido del usuario 24/10) hecho: HD_MOD.md "Comprimir lo instalado".
+- **Peso real medido: 1080p Buena = 3,7 GB** (escenas 3,1 GB, videos 0,5, música 82 MB, sprites 24 MB; 21 min).
 - **Pesos reales del mod HD por calidad**: `build/hd_sizes.sh` corre la importación completa en 1, 4, 2, 5 (resultados
   en `build/hd_sizes.txt`); pasar la tabla real al usuario y a HD_MOD.md / kScenesSize del launcher.
 - **720p casi no ahorra** (pregunta del usuario): las escenas ya son 720p; solo cambian los 6 videos 1080p. Probar
@@ -56,7 +57,8 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
 - **Migración al actualizar: hecha (24/10)**. `port/tools/test_update.py --new <paquete> [--olds <zips>]` instala cada
   estable vieja (y la v2.0-pre2, la que da Quiver) con ROM, partida, una opción cambiada y el HD en la estructura vieja,
   actualiza como un jugador o Quiver (que extrae y mezcla encima, sin borrar: leído en su código) y comprueba partida,
-  opción, ROM, escenas y que el juego arranque: 6/6 (1.9.8, 1.9.9, 1.9.10 con carpeta; 1.9.12, 1.9.14, 2.0-pre2 planos).
+  opción, ROM, escenas y que el juego arranque: 7/7 (1.9.8, 1.9.9, 1.9.10 con carpeta; 1.9.12, 1.9.14, 1.9.15-pre1 (la
+  verificada en Quiver), 2.0-pre2 (la que carga Quiver) planos). Zips de prueba en `respaldos/releases-prueba`.
   Arreglado en el launcher: adopta la instalación anterior si la nueva quedó al lado (zips hasta 1.9.10 con carpeta:
   copia partidas/opciones/ROMs/estados, mueve el HD, nunca pisa), escenas hd/movies → hd/scenes al iniciar (antes
   solo al abrir Sonido). Juego: quien actualiza desde antes de los modos y elige "GBA mejorado" conserva sus opciones.
@@ -551,8 +553,8 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
 5. Revisar issues abiertos al final, arreglar bugs, responder breve.
 
 ### Lista de verificación antes de publicar (no saltear)
-- Correr `port/tools/test_update.py` con el paquete nuevo contra las estables de `respaldos/releases-estables` y la
-  última de prueba (la que tenga Quiver): todo ok antes de publicar.
+- Correr `port/tools/test_update.py` con el paquete nuevo contra `respaldos/releases-estables` y
+  `--olds respaldos/releases-prueba` (las que Quiver tiene: v1.9.15-pre1 verificada, v2.0-pre2): todo ok antes de publicar.
 - **No se borra NINGÚN release ni archivo** (estables ni de prueba): Quiver nos aceptó el 24/10 y sus mantenedores dijeron
   que borrar parecía sospechoso. Publicar = solo agregar. README con la versión nueva.
 - Copiar los archivos de la estable publicada a `KHCoMPC/respaldos/releases-estables` (originales, mismo SHA).
