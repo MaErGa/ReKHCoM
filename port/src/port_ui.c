@@ -2801,22 +2801,37 @@ static void DrawWizard(int l, int width, int height) {
         int preview = sWizStep == WIZ_OPTIONS && WizOptions(kinds) > sWizCursor && kinds[sWizCursor] == WOPT_WIDE ? 1
                     : sWizStep == WIZ_MODE ? 1 : sWizStep == WIZ_MODE_GBA ? 1 + sWizCursor : 0;
         if (preview) {
-            /* a night sky fills the picture, so its width shows (the whole window, or only the GBA's screen) */
-            int yy, sx = 0, sy = 0, sw = width, sh = height;
-            if (preview == 2) {
-                int k = SDL_max(1, SDL_min(width / GBA_SCREEN_W, height / GBA_SCREEN_H)); /* at whole scale, as shown */
-                sw = GBA_SCREEN_W * k; sh = GBA_SCREEN_H * k;
-                sx = (width - sw) / 2; sy = (height - sh) / 2;
-                Fill(0, 0, width, height, 0xFF000000u);
-                Fill(sx - 2, sy - 2, sw + 4, sh + 4, MENU_GREY); /* the border around the GBA's screen */
+            /* a night sky fills the whole screen at any shape (user 24/10), so the width shows; on GBA classic it is the
+               decorative border, dimmed, around the GBA's screen where the game puts it: the hole at (72, 28) of the
+               384x216 border (port_main.c), the border as large as the screen lets it */
+            int yy, xx, sx = 0, sy = 0, sw = width, sh = height, dim = preview == 2;
+            if (dim) {
+                int bw = SDL_min(width, height * 384 / 216), bh = bw * 216 / 384;
+                sw = bw * GBA_SCREEN_W / 384; sh = bh * GBA_SCREEN_H / 216;
+                sx = (width - bw) / 2 + bw * 72 / 384; sy = (height - bh) / 2 + bh * 28 / 216;
             }
-            for (yy = 0; yy < sh; yy++) {
-                int t = yy * 255 / SDL_max(1, sh - 1);
-                Fill(sx, sy + yy, sw, 1, 0xFF000000u | (uint32_t)(16 + t * 32 / 255) << 16 | (uint32_t)(16 + t * 16 / 255) << 8 |
-                                            (uint32_t)(56 + t * 40 / 255));
+            for (yy = 0; yy < height; yy++) {
+                int t = yy * 255 / SDL_max(1, height - 1), in = yy >= sy && yy < sy + sh;
+                uint32_t c = 0xFF000000u | (uint32_t)(16 + t * 32 / 255) << 16 | (uint32_t)(16 + t * 16 / 255) << 8 |
+                             (uint32_t)(56 + t * 40 / 255);
+                uint32_t d = 0xFF000000u | (c >> 1 & 0x7F7F7Fu); /* the border: the same sky at half light */
+                if (!dim) { Fill(0, yy, width, 1, c); continue; }
+                Fill(0, yy, width, 1, d);
+                if (in) Fill(sx, yy, sw, 1, c);
             }
-            for (yy = 0; yy < 60; yy++) /* stars at fixed places, spread over the whole width */
-                Fill(sx + (yy * 97 + 13) % sw, sy + (yy * 53 + 7) % sh, 1, 1, 0xFFC0C8F0u);
+            /* stars on a fixed grid of 24-pixel cells, one at a hashed place in each: the same density at any size */
+            for (yy = 0; yy < height; yy += 24)
+                for (xx = 0; xx < width; xx += 24) {
+                    uint32_t hsh = (uint32_t)(xx * 73856093u ^ yy * 19349663u);
+                    int px = xx + (int)(hsh % 24), py = yy + (int)(hsh / 24 % 24);
+                    int in = px >= sx && px < sx + sw && py >= sy && py < sy + sh;
+                    if (hsh % 3 || px >= width || py >= height) continue; /* a third of the cells */
+                    Pixel(px, py, !dim || in ? 0xFFC0C8F0u : 0xFF606478u);
+                }
+            if (dim) { /* the frame around the GBA's screen */
+                Fill(sx - 2, sy - 2, sw + 4, 2, MENU_GREY); Fill(sx - 2, sy + sh, sw + 4, 2, MENU_GREY);
+                Fill(sx - 2, sy, 2, sh, MENU_GREY); Fill(sx + sw, sy, 2, sh, MENU_GREY);
+            }
         } else {
             Fill(0, 0, width, height, 0xFF000000u);
         }
