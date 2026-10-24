@@ -11,6 +11,23 @@ Reglas del usuario:
 - Nunca borrar carpetas ReKHCoM-vX sin que el usuario lo pida.
 - Publicar (releases, comentarios en issues) solo con el OK del usuario.
 
+## TRASPASO 23/10 noche (Claude; /goal del usuario: "acabar y depurar todos los pendientes hasta llegar a la 2.0") — LEER PRIMERO
+
+**Cómo seguir:** la cola del usuario está en "COLA del usuario" (abajo). Cada pieza: probar, subir a main enseguida,
+anotar aquí (qué, commit, cómo se probó, qué falta) y escribir la lógica aprendida en el .md de su tema
+(BATTLE_SCENERY_TECHNIQUE.md para arenas, ONLINE_ESTUDIO.md + GBANoCable para el online). Builds de lanzamiento de la
+v2.0 solo con el OK del usuario.
+
+**Estado:** escenas HD 97/97 y 97/97 (solo videos); baterías de escritorio relanzadas (`run_batteries.py --detach`;
+"battles eu" falló al no existir build/pc-eu/khcom.exe: ya compilado, relanzar ese paso al terminar la pasada);
+`debug_kit.py report`: el único sitio (evento 074, puntero basura en PlayEventCharaAnimSounds) arreglado con BUS_PTR.
+Online: rollback + lobby + indicador de red + abandonar + demora manual en main; falta Android real y sala privada por
+código en el juego. Arenas V2: Trickmaster, Maléfica y Úrsula hechas (apagadas, KHCOM_ARENAS_V2=1); faltan Oogie,
+Jafar, Marluxia final, Darkside (revisión de poses del usuario) y la copia jugable de la V2.
+**Herramientas nuevas:** `port/tools/arena_before_shots.py` (antes/después a x3), `netlink_pair.sh` (OUTSHOTS,
+LINK_ENV), `netlink_lobby.sh`, `netlink_android.sh`, `netlink_cleanup.ps1`, `KHCOM_ROLLBACK_TEST`,
+`KHCOM_NETLINK_GIVEUP`, `KHCOM_LOBBY(_KEYS/_SHOTS)`.
+
 ## TRASPASO 23/10 tarde (Claude, sesión nueva; el PC se reinició a mitad) — LEER PRIMERO
 
 **Hecho y en main esta sesión:** carteles HD de World Cards / World Warp en US (19/19 US) y VER BARAJA de Riku quieto;
