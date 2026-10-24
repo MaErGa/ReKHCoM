@@ -1,0 +1,1450 @@
+[
+ {
+  "en": "",
+  "es": "ROM "
+ },
+ {
+  "en": "  (demanding)",
+  "es": "  (exigente)"
+ },
+ {
+  "en": "  (integer x",
+  "es": "  (íntegra x"
+ },
+ {
+  "en": " ROM does not match the original dump (different SHA-1).",
+  "es": " no coincide con el volcado original (SHA-1 distinto)."
+ },
+ {
+  "en": " ROM installed",
+  "es": " instalada"
+ },
+ {
+  "en": " at once)",
+  "es": " a la vez)"
+ },
+ {
+  "en": " files imported.",
+  "es": " archivos importados."
+ },
+ {
+  "en": "%s%d HD mod files",
+  "es": "%s%d archivos del mod HD"
+ },
+ {
+  "en": "%u / %d · %u / %u points",
+  "es": "%u / %d · %u / %u puntos"
+ },
+ {
+  "en": "%u point · %s",
+  "es": "%u punto · %s"
+ },
+ {
+  "en": "%u points · %s",
+  "es": "%u puntos · %s"
+ },
+ {
+  "en": ", converted from another region",
+  "es": ", convertida de otra región"
+ },
+ {
+  "en": "1.5 HD mode",
+  "es": "Modo 1.5 HD"
+ },
+ {
+  "en": "; %d leftovers to the Recycle Bin",
+  "es": "; %d sobrantes a la papelera"
+ },
+ {
+  "en": "; a package was kept (it held other files)",
+  "es": "; un paquete se dejó (tenía otros archivos)"
+ },
+ {
+  "en": "A \"ReKHCoM\" shortcut that opens the game without the launcher.",
+  "es": "Un acceso \"ReKHCoM\" que abre el juego sin pasar por el launcher."
+ },
+ {
+  "en": "A decorative frame around the GBA picture, like the Super Game Boy's.",
+  "es": "Un marco decorativo alrededor de la imagen de GBA, como el del Super Game Boy."
+ },
+ {
+  "en": "A save from an emulator (mGBA, VBA, NO$GBA...) or GameShark / Action Replay. It is converted to this version if it comes from another region; the current one is backed up first.",
+  "es": "Una partida de emulador (mGBA, VBA, NO$GBA...) o de GameShark / Action Replay. Se convierte a esta versión si viene de otra región; la actual se guarda antes en backups."
+ },
+ {
+  "en": "ACHIEVEMENTS · KINGDOM HEARTS: CHAIN OF MEMORIES",
+  "es": "LOGROS · KINGDOM HEARTS: CHAIN OF MEMORIES"
+ },
+ {
+  "en": "ALREADY LOADED",
+  "es": "DATOS YA CARGADOS"
+ },
+ {
+  "en": "Achievements",
+  "es": "Logros"
+ },
+ {
+  "en": "Action",
+  "es": "Acción"
+ },
+ {
+  "en": "Add",
+  "es": "Añadir"
+ },
+ {
+  "en": "Add to Steam",
+  "es": "Añadir a Steam"
+ },
+ {
+  "en": "Added to Steam. If Steam is open, restart it to see it in the library.",
+  "es": "Añadido a Steam. Si Steam está abierto, reinícialo para verlo en la biblioteca."
+ },
+ {
+  "en": "Adds it to your Steam library as a non-Steam game, with its cover (to play with Steam Input, Big Picture or on a Steam Deck).",
+  "es": "Lo añade a tu biblioteca de Steam como juego externo, con su portada (para jugar con el mando de Steam o en Steam Deck / Big Picture)."
+ },
+ {
+  "en": "All",
+  "es": "Todos"
+ },
+ {
+  "en": "Ask at start",
+  "es": "Preguntar al empezar"
+ },
+ {
+  "en": "Aspect ratio",
+  "es": "Relación de aspecto"
+ },
+ {
+  "en": "At the save crystal, up/down switches between the character's two files. Saving to the other one makes it the current game. Off by default.",
+  "es": "En el cristal de guardado, arriba/abajo cambia entre las dos ranuras del personaje. Guardar en la otra la convierte en la partida actual. Desactivado por defecto."
+ },
+ {
+  "en": "Audio filter",
+  "es": "Filtro de audio"
+ },
+ {
+  "en": "Auto (fill window)",
+  "es": "Auto (llenar ventana)"
+ },
+ {
+  "en": "Auto adapts the view to the window.",
+  "es": "Auto adapta el encuadre a la ventana."
+ },
+ {
+  "en": "Auto view only. Leaving battle restores the main zoom.",
+  "es": "Solo en vista Auto. Al salir del combate vuelve al zoom principal."
+ },
+ {
+  "en": "BATTLE CARDS (99 EACH, 999 IN ALL)",
+  "es": "CARTAS DE COMBATE (99 POR CARTA, 999 EN TOTAL)"
+ },
+ {
+  "en": "Back up and save",
+  "es": "Copiar y guardar"
+ },
+ {
+  "en": "Back up save",
+  "es": "Copia de seguridad"
+ },
+ {
+  "en": "Backup saved to backups/",
+  "es": "Copia guardada en backups/"
+ },
+ {
+  "en": "Battle cards raised",
+  "es": "Subir cartas en combate"
+ },
+ {
+  "en": "Battle zoom",
+  "es": "Zoom en combate"
+ },
+ {
+  "en": "Being tested: expect visual glitches.",
+  "es": "En pruebas: pueden tener fallos visuales."
+ },
+ {
+  "en": "Border (Original view)",
+  "es": "Borde (vista Original)"
+ },
+ {
+  "en": "Button theme",
+  "es": "Tema de botones"
+ },
+ {
+  "en": "Buttons pressed and released: %d / 15",
+  "es": "Botones pulsados y liberados: %d / 15"
+ },
+ {
+  "en": "CHARACTER",
+  "es": "PERSONAJE"
+ },
+ {
+  "en": "CONTROLLER CHECK",
+  "es": "COMPROBAR MANDO"
+ },
+ {
+  "en": "CONTROLS",
+  "es": "CONTROLES"
+ },
+ {
+  "en": "COPY THE PC'S HD FOLDER",
+  "es": "COPIAR LA CARPETA HD DEL PC"
+ },
+ {
+  "en": "Cancel",
+  "es": "Cancelar"
+ },
+ {
+  "en": "Cancel test",
+  "es": "Cancelar prueba"
+ },
+ {
+  "en": "Card",
+  "es": "Carta"
+ },
+ {
+  "en": "Changes saved; the previous copy is in backups.",
+  "es": "Cambios guardados; la copia anterior está en backups."
+ },
+ {
+  "en": "Changes the level, stats and cards of a saved game. It stays off until you turn it on and accept the warning.",
+  "es": "Cambia nivel, estadísticas y cartas de una partida guardada. Está desactivado hasta que lo actives y confirmes el aviso."
+ },
+ {
+  "en": "Choose a folder outside this installation.",
+  "es": "Elige una carpeta fuera de esta instalación."
+ },
+ {
+  "en": "Choose folder...",
+  "es": "Elegir carpeta..."
+ },
+ {
+  "en": "Choose on start",
+  "es": "Escoger al empezar"
+ },
+ {
+  "en": "Choose the file at save points",
+  "es": "Elegir ranura en los puntos de guardado"
+ },
+ {
+  "en": "Choose your cartridge dump on the phone. Its SHA-1 is checked and it is copied into the app. No ROM is included.",
+  "es": "Elige tu volcado del cartucho en el teléfono. Se comprueba su SHA-1 y se copia a la app. No se incluye ninguna ROM."
+ },
+ {
+  "en": "Click a cell and press a key, button, or axis. Delete clears it, Esc cancels. Duplicate bindings are marked in red.",
+  "es": "Haz clic en una casilla y pulsa la tecla, botón o eje. Supr la deja vacía, Esc cancela. Las asignaciones repetidas se marcan en rojo."
+ },
+ {
+  "en": "Close and remove this import",
+  "es": "Cerrar y borrar lo de esta carga"
+ },
+ {
+  "en": "Close and resume later",
+  "es": "Cerrar y retomar después"
+ },
+ {
+  "en": "Compress what is installed to this quality",
+  "es": "Comprimir lo instalado a esta calidad"
+ },
+ {
+  "en": "Compressing ",
+  "es": "Comprimiendo "
+ },
+ {
+  "en": "Compressing...",
+  "es": "Comprimiendo..."
+ },
+ {
+  "en": "Conflict: another action uses this binding",
+  "es": "Conflicto: otra acción usa esta asignación"
+ },
+ {
+  "en": "Connect to RetroAchievements",
+  "es": "Conectar con RetroAchievements"
+ },
+ {
+  "en": "Controller disconnected; test interrupted.",
+  "es": "Mando desconectado; prueba interrumpida."
+ },
+ {
+  "en": "Controls",
+  "es": "Controles"
+ },
+ {
+  "en": "Copies",
+  "es": "Copias"
+ },
+ {
+  "en": "Copies everything (game, ROMs, saves, HD mod) to another folder, e.g. D:/Games/ReKHCoM. This folder is not deleted.",
+  "es": "Copia todo (juego, ROMs, partidas, mod HD) a otra carpeta, p. ej. D:/Games/ReKHCoM. Esta carpeta no se borra."
+ },
+ {
+  "en": "Copying ",
+  "es": "Copiando "
+ },
+ {
+  "en": "Could not copy the save.",
+  "es": "No se pudo copiar la partida."
+ },
+ {
+  "en": "Could not install the ROM.",
+  "es": "No se pudo instalar la ROM."
+ },
+ {
+  "en": "Could not read the file.",
+  "es": "No se pudo leer el archivo."
+ },
+ {
+  "en": "Could not save the report.",
+  "es": "No se pudo guardar el informe."
+ },
+ {
+  "en": "Could not start the game.",
+  "es": "No se pudo iniciar el juego."
+ },
+ {
+  "en": "Could not verify the destination.",
+  "es": "No se pudo verificar el destino."
+ },
+ {
+  "en": "Could not write the save (the backup is kept).",
+  "es": "No se pudo escribir la partida (la copia de seguridad se conserva)."
+ },
+ {
+  "en": "Could not write the save. Original preserved.",
+  "es": "No se pudo escribir la partida. Original conservado."
+ },
+ {
+  "en": "Could not write to the roms folder.",
+  "es": "No se pudo escribir en la carpeta roms."
+ },
+ {
+  "en": "Cubic sample interpolation and a gentle low-pass: less of the metallic edge the GBA's low sample rates leave in the treble.",
+  "es": "Interpolación cúbica de las muestras y un filtro paso bajo suave: menos aspereza metálica en los agudos que dejan las bajas frecuencias de muestreo de la GBA."
+ },
+ {
+  "en": "D-pad ",
+  "es": "Cruceta "
+ },
+ {
+  "en": "DISPLAY",
+  "es": "PANTALLA"
+ },
+ {
+  "en": "Desktop",
+  "es": "Escritorio"
+ },
+ {
+  "en": "Desktop shortcut",
+  "es": "Acceso directo"
+ },
+ {
+  "en": "Desktop uses the monitor's resolution, ultrawide included.",
+  "es": "Escritorio usa la resolución del monitor, también ultrawide."
+ },
+ {
+  "en": "Dialogue is drawn with a crisp font at the window's resolution, in the game's own places and colours.",
+  "es": "Los diálogos se dibujan con una fuente nítida a la resolución de la ventana, en el mismo lugar y colores del juego."
+ },
+ {
+  "en": "Discard changes",
+  "es": "Descartar cambios"
+ },
+ {
+  "en": "Discard that import",
+  "es": "Descartar lo de esa carga"
+ },
+ {
+  "en": "Discord status",
+  "es": "Estado en Discord"
+ },
+ {
+  "en": "Don't ask again",
+  "es": "No volver a preguntar"
+ },
+ {
+  "en": "Done: ",
+  "es": "Listo: "
+ },
+ {
+  "en": "Done: %d movies compressed, %.1f GB -> %.1f GB.",
+  "es": "Listo: %d videos comprimidos, %.1f GB -> %.1f GB."
+ },
+ {
+  "en": "ENHANCEMENTS",
+  "es": "MEJORAS"
+ },
+ {
+  "en": "EXPERIMENTAL",
+  "es": "EXPERIMENTALES"
+ },
+ {
+  "en": "Earned on your account",
+  "es": "Conseguido en tu cuenta"
+ },
+ {
+  "en": "Effects volume",
+  "es": "Volumen efectos"
+ },
+ {
+  "en": "Enhancements",
+  "es": "Mejoras"
+ },
+ {
+  "en": "Every map card at 9",
+  "es": "Todas las cartas de mapa a 9"
+ },
+ {
+  "en": "Exact pixels",
+  "es": "Píxel exacto"
+ },
+ {
+  "en": "Executable missing",
+  "es": "Falta el ejecutable"
+ },
+ {
+  "en": "Exp",
+  "es": "Exp"
+ },
+ {
+  "en": "Export save",
+  "es": "Exportar partida"
+ },
+ {
+  "en": "Extended 320x180",
+  "es": "Ampliada 320x180"
+ },
+ {
+  "en": "Field and battles with depth of field, bloom, colour grading and a vignette, in the manner of Octopath Traveler. Sprites stay sharp.",
+  "es": "Campo y combates con profundidad de campo, resplandor, gradación de color y viñeta, al estilo de Octopath Traveler. Los sprites quedan nítidos."
+ },
+ {
+  "en": "File",
+  "es": "Archivo"
+ },
+ {
+  "en": "Fill height",
+  "es": "Llenar altura"
+ },
+ {
+  "en": "Fill window",
+  "es": "Llenar ventana"
+ },
+ {
+  "en": "Filter",
+  "es": "Filtro"
+ },
+ {
+  "en": "Find achievement...",
+  "es": "Buscar logro..."
+ },
+ {
+  "en": "Find the game",
+  "es": "Buscar el juego"
+ },
+ {
+  "en": "First installs whatever you left in the roms folder (ROMs under any name, zips, the HD mod's hd folder); if there is nothing, choose the file (or drop it on this window). Its SHA-1 is checked. No ROM is included.",
+  "es": "Primero instala lo que hayas dejado en la carpeta roms (ROMs con cualquier nombre, zips, la carpeta hd del mod HD); si no hay nada, elige el archivo (o arrástralo a esta ventana). Se comprueba su SHA-1. No se incluye ninguna ROM."
+ },
+ {
+  "en": "Five banks of the game's two slots; bank 1 is the usual save.",
+  "es": "Cinco bancos de las dos ranuras del juego; el 1 es la partida de siempre."
+ },
+ {
+  "en": "Fixed: options F1 / Esc or Start + Select (on the title screen, Select alone), fullscreen F11 or Alt+Enter, states F5 / F8 (when turned on in Cheats), zoom (Auto view) + / - or Select + Up / Down on the gamepad.",
+  "es": "Fijos: Opciones F1 / Esc o Start + Select (en el inicio, solo Select), pantalla completa F11 o Alt+Enter, estados F5 / F8 (si se activan en Trucos), zoom (vista Auto) + / - o Select + arriba / abajo en el mando."
+ },
+ {
+  "en": "Force 21:9",
+  "es": "Forzar 21:9"
+ },
+ {
+  "en": "Force 32:9",
+  "es": "Forzar 32:9"
+ },
+ {
+  "en": "Force Nintendo layout",
+  "es": "Forzar mando Nintendo"
+ },
+ {
+  "en": "Found:",
+  "es": "Encontrado:"
+ },
+ {
+  "en": "Frames of delay on the keys. Auto: from the ping when linking (1-2); higher = fewer rollback corrections on a high ping. The host's choice counts.",
+  "es": "Cuadros de demora de las teclas. Auto: según el ping al conectar (1-2); más alto = menos correcciones del rollback con mucho ping. Lo elige quien aloja."
+ },
+ {
+  "en": "Full · Good quality, ~3.7 GB (suggested)",
+  "es": "Completo · Buena calidad, ~3,7 GB (sugerido)"
+ },
+ {
+  "en": "Full · Original quality, ~6.7 GB",
+  "es": "Completo · Calidad original, ~6,7 GB"
+ },
+ {
+  "en": "Full · Saving, ~2 GB",
+  "es": "Completo · Ahorro, ~2 GB"
+ },
+ {
+  "en": "Fullscreen",
+  "es": "Pantalla completa"
+ },
+ {
+  "en": "Fullscreen resolution",
+  "es": "Resolución completa"
+ },
+ {
+  "en": "GAME",
+  "es": "JUEGO"
+ },
+ {
+  "en": "GBA LCD colours",
+  "es": "Colores LCD GBA"
+ },
+ {
+  "en": "GBA classic",
+  "es": "GBA clásico"
+ },
+ {
+  "en": "GBA enhanced",
+  "es": "GBA mejorado"
+ },
+ {
+  "en": "GBA-size scenes",
+  "es": "Escenas tamaño GBA"
+ },
+ {
+  "en": "Game language",
+  "es": "Idioma del juego"
+ },
+ {
+  "en": "Game:",
+  "es": "Juego:"
+ },
+ {
+  "en": "Gamepad",
+  "es": "Mando"
+ },
+ {
+  "en": "Gamepad X, keyboard C: rolls toward the held direction or the way the character faces.",
+  "es": "X en el mando, C en el teclado: rueda hacia la dirección que mantienes o hacia donde mira el personaje."
+ },
+ {
+  "en": "Gamepad Y, keyboard D: stock cards or sleights without pressing L and R together.",
+  "es": "Y en el mando, D en el teclado: acumula cartas o trucos sin pulsar L y R a la vez."
+ },
+ {
+  "en": "Good (suggested)",
+  "es": "Buena (sugerido)"
+ },
+ {
+  "en": "Graphics",
+  "es": "Gráficos"
+ },
+ {
+  "en": "Graphics mode",
+  "es": "Modo gráfico"
+ },
+ {
+  "en": "HD HUD",
+  "es": "HUD HD"
+ },
+ {
+  "en": "HD HUD (pilot)",
+  "es": "HUD HD (piloto)"
+ },
+ {
+  "en": "HD MOD (BETA) · KINGDOM HEARTS 1.5+2.5",
+  "es": "MOD HD (BETA) · KINGDOM HEARTS 1.5+2.5"
+ },
+ {
+  "en": "HD MOD · IMPORT CUT SHORT",
+  "es": "MOD HD · CARGA A MEDIAS"
+ },
+ {
+  "en": "HD MOD · KINGDOM HEARTS 1.5+2.5",
+  "es": "MOD HD · KINGDOM HEARTS 1.5+2.5"
+ },
+ {
+  "en": "HD MOD · LOADING",
+  "es": "MOD HD · CARGANDO"
+ },
+ {
+  "en": "HD graphics: ",
+  "es": "Gráficos HD: "
+ },
+ {
+  "en": "HD intros",
+  "es": "Intros HD"
+ },
+ {
+  "en": "HD mode",
+  "es": "Modo HD"
+ },
+ {
+  "en": "HD music",
+  "es": "Música HD"
+ },
+ {
+  "en": "HD scenes (full mod)",
+  "es": "Escenas HD (mod completo)"
+ },
+ {
+  "en": "HD subtitles",
+  "es": "Subtítulos HD"
+ },
+ {
+  "en": "HD text",
+  "es": "Texto HD"
+ },
+ {
+  "en": "HD-2D look",
+  "es": "Estilo HD-2D"
+ },
+ {
+  "en": "HD: Re:CoM's cards, logo, music and movies (imported HD mod) and every improvement. GBA enhanced: wide view and improvements without HD extras. GBA classic: the GBA picture at a whole scale with a border, everything off. Choosing a mode sets its values; you can change any of them afterwards.",
+  "es": "HD: cartas, logo, música y videos de Re:CoM (mod HD importado) y todas las mejoras. GBA mejorado: vista amplia y mejoras sin extras HD. GBA clásico: la imagen de GBA a escala entera con borde, todo apagado. Elegir un modo pone sus valores; luego puedes cambiar cualquiera."
+ },
+ {
+  "en": "HUD size",
+  "es": "Tamaño del HUD"
+ },
+ {
+  "en": "Hide with a controller connected",
+  "es": "Ocultar con un mando conectado"
+ },
+ {
+  "en": "Home",
+  "es": "Inicio"
+ },
+ {
+  "en": "Host's IP",
+  "es": "IP de quien aloja"
+ },
+ {
+  "en": "IP: host",
+  "es": "IP: alojar"
+ },
+ {
+  "en": "IP: join",
+  "es": "IP: unirse"
+ },
+ {
+  "en": "Import GBA save... (experimental)",
+  "es": "Importar partida de GBA... (experimental)"
+ },
+ {
+  "en": "Import stopped.",
+  "es": "Carga detenida."
+ },
+ {
+  "en": "Importing...",
+  "es": "Importando..."
+ },
+ {
+  "en": "In the collection:",
+  "es": "En la colección:"
+ },
+ {
+  "en": "In the roms folder: ",
+  "es": "En la carpeta roms: "
+ },
+ {
+  "en": "Incomplete copy in",
+  "es": "Copia incompleta en"
+ },
+ {
+  "en": "Input delay (online)",
+  "es": "Retardo de entrada (en línea)"
+ },
+ {
+  "en": "Install ROM...",
+  "es": "Instalar ROM..."
+ },
+ {
+  "en": "Install in another folder...",
+  "es": "Instalar en otra carpeta..."
+ },
+ {
+  "en": "Install the Japanese ROM →",
+  "es": "Instalar la ROM japonesa →"
+ },
+ {
+  "en": "Install this version's ROM to play.",
+  "es": "Instala la ROM de esta versión para jugar."
+ },
+ {
+  "en": "Installed in",
+  "es": "Instalado en"
+ },
+ {
+  "en": "Invert card scrolling",
+  "es": "Invertir selección de cartas"
+ },
+ {
+  "en": "It takes a few minutes and the launcher stays usable; everything stays in Enhancements.",
+  "es": "Tarda unos minutos y puedes seguir usando el launcher; queda todo en Mejoras."
+ },
+ {
+  "en": "Just the basics: intros, music and HUD (~0.6 GB)",
+  "es": "Solo lo básico: intros, música y HUD (~0,6 GB)"
+ },
+ {
+  "en": "Just the basics: intros, music and HUD, ~0.6 GB",
+  "es": "Solo lo básico: intros, música y HUD, ~0,6 GB"
+ },
+ {
+  "en": "KINGDOM HEARTS HD 1.5+2.5 is installed on this PC. Load Re:Chain of Memories' movies, music, scenes and HUD? Choose how much space to use:",
+  "es": "Encontramos KINGDOM HEARTS HD 1.5+2.5 instalado en este PC. ¿Cargamos los videos, la música, las escenas y el HUD de Re:Chain of Memories? Elige cuánto espacio usar:"
+ },
+ {
+  "en": "KINGDOM HEARTS HD 1.5+2.5 was not found on Steam or Epic; if it is on another platform or folder, choose it.",
+  "es": "no se encontró KINGDOM HEARTS HD 1.5+2.5 en Steam ni Epic; si lo tienes en otra plataforma o carpeta, elígela."
+ },
+ {
+  "en": "Keep loading",
+  "es": "Seguir cargando"
+ },
+ {
+  "en": "Keyboard",
+  "es": "Teclado"
+ },
+ {
+  "en": "Keyboard 2",
+  "es": "Teclado 2"
+ },
+ {
+  "en": "Kind",
+  "es": "Tipo"
+ },
+ {
+  "en": "LOAD EVERYTHING FROM THE GAME",
+  "es": "CARGAR TODO DESDE EL JUEGO"
+ },
+ {
+  "en": "Large",
+  "es": "Grande"
+ },
+ {
+  "en": "Larger",
+  "es": "Más grande"
+ },
+ {
+  "en": "Later",
+  "es": "Más tarde"
+ },
+ {
+  "en": "Level",
+  "es": "Nivel"
+ },
+ {
+  "en": "Level (1-99)",
+  "es": "Nivel (1-99)"
+ },
+ {
+  "en": "Load again or change the quality...",
+  "es": "Volver a cargar o cambiar la calidad..."
+ },
+ {
+  "en": "Load the HD assets in Enhancements →",
+  "es": "Cargar los assets HD en Mejoras →"
+ },
+ {
+  "en": "Locked",
+  "es": "No conseguido"
+ },
+ {
+  "en": "Looking in roms...",
+  "es": "Buscando en roms..."
+ },
+ {
+  "en": "MAP CARDS (AT MOST 9 EACH)",
+  "es": "CARTAS DE MAPA (HASTA 9 POR CARTA)"
+ },
+ {
+  "en": "Map card",
+  "es": "Carta de mapa"
+ },
+ {
+  "en": "Master volume",
+  "es": "Volumen general"
+ },
+ {
+  "en": "Max HP",
+  "es": "HP máximo"
+ },
+ {
+  "en": "Max HP (up to 560)",
+  "es": "HP máximo (hasta 560)"
+ },
+ {
+  "en": "Maximum 384x216",
+  "es": "Máxima 384x216"
+ },
+ {
+  "en": "Media Foundation is not available: nothing was compressed.",
+  "es": "Media Foundation no está disponible: no se comprimió nada."
+ },
+ {
+  "en": "Moogle points",
+  "es": "Puntos moguri"
+ },
+ {
+  "en": "Moogle points notice",
+  "es": "Aviso de puntos moguri"
+ },
+ {
+  "en": "Movie compression",
+  "es": "Compresión de los videos"
+ },
+ {
+  "en": "Movies",
+  "es": "Videos"
+ },
+ {
+  "en": "Music",
+  "es": "Música"
+ },
+ {
+  "en": "Music volume",
+  "es": "Volumen música"
+ },
+ {
+  "en": "Music: ",
+  "es": "Música: "
+ },
+ {
+  "en": "NINTENDO CONTROLLER",
+  "es": "MANDO NINTENDO"
+ },
+ {
+  "en": "Network link (alpha)",
+  "es": "Enlace en red (alpha)"
+ },
+ {
+  "en": "Nintendo pads (Switch Pro, Joy-Con, 8BitDo in Switch mode) have A and B, X and Y the other way round from Xbox pads. ReKHCoM detects them; turn this on if yours is taken for an Xbox pad (e.g. through Steam or Lutris). On: the button labelled A is the game's A, B is B, X is X and Y is Y, in the game and in this launcher. The bindings in the table above stay as they are.",
+  "es": "Los mandos de Nintendo (Switch Pro, Joy-Con, 8BitDo en modo Switch) tienen A y B, X e Y al revés que los de Xbox. ReKHCoM los detecta solo; activa esta opción si el tuyo se toma por un mando de Xbox (por ejemplo con Steam o Lutris). Activada: el botón rotulado A es la A del juego, B es B, X es X e Y es Y, en el juego y en este launcher. Las asignaciones de la tabla de arriba no cambian."
+ },
+ {
+  "en": "No ROM",
+  "es": "Sin ROM"
+ },
+ {
+  "en": "No achievements match this filter.",
+  "es": "No hay logros con ese filtro."
+ },
+ {
+  "en": "No room left: 99 per card, 999 in the collection.",
+  "es": "No caben más: 99 por carta y 999 en la colección."
+ },
+ {
+  "en": "No save for this version yet.",
+  "es": "Sin partida guardada para esta versión."
+ },
+ {
+  "en": "Not loaded",
+  "es": "Sin cargar"
+ },
+ {
+  "en": "Not now",
+  "es": "Ahora no"
+ },
+ {
+  "en": "Nothing to import was found in that folder.",
+  "es": "No se encontró nada para importar en esa carpeta."
+ },
+ {
+  "en": "OFFICIAL ACHIEVEMENTS · EUROPEAN VERSION",
+  "es": "LOGROS OFICIALES · VERSIÓN EUROPEA"
+ },
+ {
+  "en": "Off",
+  "es": "No"
+ },
+ {
+  "en": "Off (cable)",
+  "es": "Desactivado (cable)"
+ },
+ {
+  "en": "On",
+  "es": "Sí"
+ },
+ {
+  "en": "On the phone the mod comes ready from the PC: copy to the phone the hd folder the PC launcher builds (in ReKHCoM's folder) and choose it here. The scenes take several GB: copy only what you want. A second copy only adds what is new.",
+  "es": "En el teléfono el mod llega armado desde el PC: copia al teléfono la carpeta hd que arma el launcher de PC (en la carpeta de ReKHCoM) y elígela aquí. Las escenas ocupan varios GB: copia solo lo que quieras. Una segunda copia solo agrega lo nuevo."
+ },
+ {
+  "en": "On wider monitors, 16:9 or 21:9 leave black bars at the sides.",
+  "es": "En monitores más anchos, 16:9 o 21:9 dejan bandas negras a los lados."
+ },
+ {
+  "en": "One-button dodge roll",
+  "es": "Voltereta con un botón"
+ },
+ {
+  "en": "One-button stock (L+R)",
+  "es": "Acumular con un botón (L+R)"
+ },
+ {
+  "en": "Only does what is missing, broken or at another quality.",
+  "es": "Solo hace lo que falte, esté roto o tenga otra calidad."
+ },
+ {
+  "en": "Open folder",
+  "es": "Abrir carpeta"
+ },
+ {
+  "en": "Open from there (closes this one)",
+  "es": "Abrir desde ahí (cierra este)"
+ },
+ {
+  "en": "Opens a GitHub report with the version and the end of the game's log; you review and submit it (needs a GitHub account).",
+  "es": "Abre un reporte en GitHub con la versión y el final del registro del juego; lo revisas y lo envías tú (necesitas una cuenta de GitHub)."
+ },
+ {
+  "en": "Optional: achievements are earned without an account too. With the account connected you also see its progress.",
+  "es": "Opcional: los logros se consiguen igual sin cuenta. Con la cuenta conectada también ves su progreso."
+ },
+ {
+  "en": "Original",
+  "es": "Original"
+ },
+ {
+  "en": "Original 240x160",
+  "es": "Original 240x160"
+ },
+ {
+  "en": "PLAY",
+  "es": "JUGAR"
+ },
+ {
+  "en": "PREVIEW · ACHIEVEMENT",
+  "es": "VISTA PREVIA · LOGRO"
+ },
+ {
+  "en": "Password",
+  "es": "Contraseña"
+ },
+ {
+  "en": "Picking up moogle points on the field shows how many and the total. Off by default.",
+  "es": "Al recoger puntos moguri en el campo, muestra cuántos y el total. Desactivado por defecto."
+ },
+ {
+  "en": "Pixel scale: x4 enlarges each pixel four times. Lower scales show more world and cost more CPU.",
+  "es": "Escala de píxeles: x4 amplía cada píxel cuatro veces. Menos aumento muestra más mundo y exige más al PC."
+ },
+ {
+  "en": "Points: %u · Softcore: %u",
+  "es": "Puntos: %u · Softcore: %u"
+ },
+ {
+  "en": "Press and release every button, move both sticks in every direction, and press/release LT and RT, together and separately. Use the mouse to finish.",
+  "es": "Pulsa y suelta cada botón, mueve ambos sticks en todas las direcciones y pulsa/suelta LT y RT, juntos y separados. Usa el ratón para terminar."
+ },
+ {
+  "en": "Press...",
+  "es": "Pulsa..."
+ },
+ {
+  "en": "ROM installed and verified: ",
+  "es": "ROM instalada y verificada: "
+ },
+ {
+  "en": "Re-encoding ",
+  "es": "Recodificando "
+ },
+ {
+  "en": "Re-encoding takes a few minutes (the full mod, about 10 min on a current PC; more on an older one).",
+  "es": "Recodificar lleva unos minutos (el mod completo, unos 10 min en un PC actual; más en uno antiguo)."
+ },
+ {
+  "en": "Re:Chain of Memories' HD music, movies and scenes: in Enhancements →",
+  "es": "La música, los videos y las escenas HD de Re:Chain of Memories: en Mejoras →"
+ },
+ {
+  "en": "Re:Chain of Memories' cards, HUD, music, movies and scenes, from your KINGDOM HEARTS HD 1.5+2.5.",
+  "es": "Las cartas, el HUD, la música, los videos y las escenas de Re:Chain of Memories, de tu KINGDOM HEARTS HD 1.5+2.5."
+ },
+ {
+  "en": "Re:Chain of Memories' opening, credits and Sora's and Riku's endings.",
+  "es": "La apertura, los créditos y los finales de Sora y Riku de Re:Chain of Memories."
+ },
+ {
+  "en": "Re:Chain of Memories' soundtrack in place of the GBA music.",
+  "es": "La banda sonora orquestada de Re:Chain of Memories en lugar de la música de GBA."
+ },
+ {
+  "en": "Re:Chain of Memories' story scenes in place of the GBA ones where they match, with subtitles in the game's language. Off by default.",
+  "es": "Las escenas de historia de Re:Chain of Memories en lugar de las de GBA donde coinciden, con subtítulos en el idioma del juego. Desactivado por defecto."
+ },
+ {
+  "en": "Re:Chain of Memories' subtitles over the HD movies and scenes, in the game's language.",
+  "es": "Los subtítulos de Re:Chain of Memories en los videos y escenas HD, en el idioma del juego."
+ },
+ {
+  "en": "Re:CoM mode",
+  "es": "Modo Re:CoM"
+ },
+ {
+  "en": "Redrawn HD enemy HP frame. Pilot for wide views; other elements keep their original graphics.",
+  "es": "Marco de vida del enemigo redibujado en HD. Piloto para vista panoramica; los demas elementos conservan sus graficos originales."
+ },
+ {
+  "en": "Relay: join a room",
+  "es": "Relay: unirse a una sala"
+ },
+ {
+  "en": "Relay: open a room",
+  "es": "Relay: crear sala"
+ },
+ {
+  "en": "Remember this account on Windows",
+  "es": "Recordar esta cuenta en Windows"
+ },
+ {
+  "en": "Report a problem...",
+  "es": "Reportar un problema..."
+ },
+ {
+  "en": "Report saved: controller_report.txt",
+  "es": "Informe guardado: controller_report.txt"
+ },
+ {
+  "en": "Requires the verified original Japanese ROM in roms/B8CJ.gba. Applied when starting the game; keeps European or English text.",
+  "es": "Requiere la ROM japonesa original verificada en roms/B8CJ.gba. Se aplica al iniciar el juego; conserva los textos europeos o ingleses."
+ },
+ {
+  "en": "Reset controls",
+  "es": "Restablecer controles"
+ },
+ {
+  "en": "Resume",
+  "es": "Retomar"
+ },
+ {
+  "en": "Resuming keeps what is loaded and goes on from there next time. Removing takes away only what this import copied: what you had before and your saves stay.",
+  "es": "Retomar conserva lo ya cargado y sigue desde ahí al abrir de nuevo. Borrar quita solo lo que copió esta carga: lo que ya tenías y tus partidas quedan."
+ },
+ {
+  "en": "RetroAchievements account (optional)",
+  "es": "Cuenta RetroAchievements (opcional)"
+ },
+ {
+  "en": "Return stocked cards",
+  "es": "Devolver cartas acumuladas"
+ },
+ {
+  "en": "Reverses L/R and right-stick horizontal card scrolling in battle. Menus and L+R combinations stay unchanged. Off by default.",
+  "es": "Invierte L/R y el movimiento horizontal del stick derecho al seleccionar cartas en combate. Los menús y L+R no cambian. Desactivado por defecto."
+ },
+ {
+  "en": "Review and save changes...",
+  "es": "Revisar y guardar cambios..."
+ },
+ {
+  "en": "Room code",
+  "es": "Código de sala"
+ },
+ {
+  "en": "Rooms in the game (Steam)",
+  "es": "Salas en el juego (Steam)"
+ },
+ {
+  "en": "Rooms in the game (server)",
+  "es": "Salas en el juego (servidor)"
+ },
+ {
+  "en": "SAVE",
+  "es": "PARTIDA"
+ },
+ {
+  "en": "SAVE EDITOR",
+  "es": "EDITOR DE PARTIDAS"
+ },
+ {
+  "en": "SCREEN",
+  "es": "PANTALLA"
+ },
+ {
+  "en": "SDL does not detect a controller. Connect one over USB or Bluetooth; it will appear here automatically.",
+  "es": "SDL no detecta ningún mando. Conecta uno por USB o Bluetooth; aparecerá aquí automáticamente."
+ },
+ {
+  "en": "SOUND",
+  "es": "SONIDO"
+ },
+ {
+  "en": "Same as main zoom",
+  "es": "Igual al zoom principal"
+ },
+ {
+  "en": "Save bank",
+  "es": "Banco de partidas"
+ },
+ {
+  "en": "Save imported into",
+  "es": "Partida importada en"
+ },
+ {
+  "en": "Save manager",
+  "es": "Gestor de partidas"
+ },
+ {
+  "en": "Save report and finish",
+  "es": "Guardar informe y terminar"
+ },
+ {
+  "en": "Save:",
+  "es": "Partida:"
+ },
+ {
+  "en": "Saving",
+  "es": "Ahorro"
+ },
+ {
+  "en": "Scenes",
+  "es": "Escenas"
+ },
+ {
+  "en": "Server",
+  "es": "Servidor"
+ },
+ {
+  "en": "Settings",
+  "es": "Configuración"
+ },
+ {
+  "en": "Sharp",
+  "es": "Nítido"
+ },
+ {
+  "en": "Shortcut created on the desktop: it opens the game without the launcher.",
+  "es": "Acceso directo creado en el escritorio: abre el juego sin el launcher."
+ },
+ {
+  "en": "Show FPS",
+  "es": "Mostrar FPS"
+ },
+ {
+  "en": "Show the network state",
+  "es": "Mostrar el estado de la red"
+ },
+ {
+  "en": "Sign in",
+  "es": "Iniciar sesión"
+ },
+ {
+  "en": "Sign out and forget the account",
+  "es": "Cerrar sesión y olvidar la cuenta"
+ },
+ {
+  "en": "Skip frames when slow",
+  "es": "Saltar cuadros si va lento"
+ },
+ {
+  "en": "Smooth",
+  "es": "Suave"
+ },
+ {
+  "en": "Sora only: hold V, the right-stick button or right stick down for half a second to cancel the stock and return those cards to the hand. Cannot cancel a sleight in progress. Off by default.",
+  "es": "Solo Sora: mantén V, pulsa el stick derecho o inclínalo hacia abajo durante medio segundo para cancelar la acumulación y devolver esas cartas a la mano. No cancela técnicas en curso. Desactivado por defecto."
+ },
+ {
+  "en": "Sound",
+  "es": "Sonido"
+ },
+ {
+  "en": "Source",
+  "es": "Fuente"
+ },
+ {
+  "en": "Source takes the most space (the full mod, about 6.7 GB); Good, about 3.7 GB.",
+  "es": "Fuente ocupa el máximo (el mod completo, unos 6,7 GB); Buena, unos 3,7 GB."
+ },
+ {
+  "en": "Source: as it is. Good: half the space, hardly a visible difference. Saving: a quarter of the space, somewhat visible in busy scenes. Applied when importing, or to what is installed with \"Compress what is installed\".",
+  "es": "Fuente: tal cual. Buena: la mitad de espacio, casi sin diferencia visible. Ahorro: un cuarto del espacio, se nota algo en escenas con mucho movimiento. Se aplica al importar, o a lo ya instalado con \"Comprimir lo instalado\"."
+ },
+ {
+  "en": "Start button and trigger test",
+  "es": "Iniciar prueba de botones y gatillos"
+ },
+ {
+  "en": "Steam was not found (or no account has signed in to it).",
+  "es": "No se encontró Steam (o ninguna cuenta ha iniciado sesión en él)."
+ },
+ {
+  "en": "Steam's game list could not be read; nothing was changed.",
+  "es": "No se pudo leer la lista de juegos de Steam; no se cambió nada."
+ },
+ {
+  "en": "Steam: join a friend",
+  "es": "Steam: unirse a un amigo"
+ },
+ {
+  "en": "Steam: open a room",
+  "es": "Steam: crear sala"
+ },
+ {
+  "en": "Sticks and centering: %s · LT+RT together: %s",
+  "es": "Sticks y centrado: %s · LT+RT simultáneos: %s"
+ },
+ {
+  "en": "Stopping the import...",
+  "es": "Deteniendo la carga..."
+ },
+ {
+  "en": "Subtitles",
+  "es": "Subtítulos"
+ },
+ {
+  "en": "Sure? Replaces your movies with the lighter ones (click again)",
+  "es": "¿Seguro? Reemplaza tus videos por los más livianos (pulsa de nuevo)"
+ },
+ {
+  "en": "TOUCH BUTTONS",
+  "es": "BOTONES TÁCTILES"
+ },
+ {
+  "en": "That file is not a 32 MiB cartridge dump.",
+  "es": "Ese archivo no es un volcado de cartucho de 32 MiB."
+ },
+ {
+  "en": "That folder is not empty: choose an empty one (nothing is overwritten).",
+  "es": "Esa carpeta ya tiene archivos: elige una vacía (no se sobrescribe nada)."
+ },
+ {
+  "en": "The ",
+  "es": "La ROM "
+ },
+ {
+  "en": "The HD mod is loading. Closing now is not ideal: it is best to wait until it finishes.",
+  "es": "El mod HD se está cargando. Cerrar ahora no es lo ideal: lo mejor es esperar a que termine."
+ },
+ {
+  "en": "The HD mod's import did not finish (closed, or the PC went off). %d files are ready: they are checked and it goes on from there.",
+  "es": "La carga del mod HD no terminó (se cerró o se apagó el PC). %d archivos ya están listos: se comprueban y se sigue desde ahí."
+ },
+ {
+  "en": "The RetroAchievements set (its authors at retroachievements.org). They are earned playing the European version, with or without an account, and kept on this computer. Cheats, rematches and loading a save state pause achievements until the game is restarted.",
+  "es": "El set de RetroAchievements (sus autores en retroachievements.org). Se consiguen al jugar la versión europea, con o sin cuenta, y quedan guardados en este equipo. Los trucos, las revanchas y cargar un savestate pausan los logros hasta reiniciar el juego."
+ },
+ {
+  "en": "The card hand sits partly below the screen edge; raising it shows more of each card.",
+  "es": "La mano de cartas queda en parte bajo el borde de la pantalla; subirla muestra más de cada carta."
+ },
+ {
+  "en": "The cards, the battle HUD and the title logo with Re:Chain of Memories' art. Needs the wide view.",
+  "es": "Las cartas, el HUD de combate y el logo del título con el arte de Re:Chain of Memories. Necesita la vista amplia."
+ },
+ {
+  "en": "The copies left are in a deck.",
+  "es": "Las copias que quedan están en un mazo."
+ },
+ {
+  "en": "The file holds no Chain of Memories save.",
+  "es": "El archivo no contiene una partida de Chain of Memories."
+ },
+ {
+  "en": "The game asks only the first time and remembers your choice; change it here.",
+  "es": "El juego pregunta solo la primera vez y recuerda tu elección; aquí puedes cambiarlo."
+ },
+ {
+  "en": "The game closed with an error; see kh_com.log.",
+  "es": "El juego se cerró con un error; revisa kh_com.log."
+ },
+ {
+  "en": "The link battle (Title > Link battle) over the internet instead of the cable. Steam: both with Steam open; one opens a room and the other joins (a Steam friend's room first). IP: the host opens the UDP port on the router; the other types the host's IP. Relay: both type the same server and room code (Android too).",
+  "es": "La batalla de enlace (Título > Batalla de enlace) por internet en vez del cable. Steam: los dos con Steam abierto; uno crea la sala y el otro se une (prefiere la sala de un amigo de Steam). IP: quien aloja abre el puerto UDP en su router; el otro escribe su IP. Relay: los dos escriben el mismo servidor y el mismo código de sala (también con Android)."
+ },
+ {
+  "en": "The original Japanese voices with your version's text. Needs the Japanese ROM.",
+  "es": "Las voces japonesas originales con los textos de tu versión. Necesita la ROM japonesa."
+ },
+ {
+  "en": "The password is sent to RetroAchievements over HTTPS and is never stored. Remembering your account stores a session token encrypted for your Windows user.",
+  "es": "La contraseña se envía por HTTPS a RetroAchievements y no se guarda. Si recuerdas la cuenta, Windows cifra el token de sesión para tu usuario."
+ },
+ {
+  "en": "The save changed on disk; it was read again and nothing was applied.",
+  "es": "La partida cambió en el disco; se volvió a leer sin aplicar nada."
+ },
+ {
+  "en": "The shortcut could not be created.",
+  "es": "No se pudo crear el acceso directo."
+ },
+ {
+  "en": "This card has no such value.",
+  "es": "Esta carta no existe con ese valor."
+ },
+ {
+  "en": "This file holds no saved game.",
+  "es": "Este archivo no tiene una partida guardada."
+ },
+ {
+  "en": "This is not a Kingdom Hearts: Chain of Memories ROM.",
+  "es": "No es una ROM de Kingdom Hearts: Chain of Memories."
+ },
+ {
+  "en": "This version's executable is missing.",
+  "es": "No se encontró el ejecutable de esta versión."
+ },
+ {
+  "en": "To move them: in the game, Options > Move touch buttons; drag them and tap the tick.",
+  "es": "Para moverlos: en el juego, Opciones > Mover botones táctiles; arrástralos y toca el visto."
+ },
+ {
+  "en": "Top left during the link: ping, delay and the last rollback.",
+  "es": "Arriba a la izquierda durante el enlace: ping, retardo y el último rollback."
+ },
+ {
+  "en": "Turn on",
+  "es": "Activar"
+ },
+ {
+  "en": "Turn the editor on...",
+  "es": "Activar el editor..."
+ },
+ {
+  "en": "UDP port",
+  "es": "Puerto UDP"
+ },
+ {
+  "en": "Undub (Japanese voices)",
+  "es": "Undub (voces japonesas)"
+ },
+ {
+  "en": "Unlocked",
+  "es": "Conseguido"
+ },
+ {
+  "en": "Username",
+  "es": "Usuario"
+ },
+ {
+  "en": "Uses Valve's test app (Spacewar, 480): you do not need to own it.",
+  "es": "Usa la app de pruebas de Valve (Spacewar, 480): no hace falta tenerla."
+ },
+ {
+  "en": "Uses the Re:Chain of Memories movies and soundtrack of your PC Kingdom Hearts HD 1.5+2.5 ReMIX (Steam or Epic). ReKHCoM ships none of it: it copies them from your installation.",
+  "es": "Usa los videos y la banda sonora de Re:Chain of Memories de tu Kingdom Hearts HD 1.5+2.5 ReMIX de PC (Steam o Epic). ReKHCoM no incluye nada de ese juego: lo copia de tu instalación."
+ },
+ {
+  "en": "VERSIONS",
+  "es": "VERSIONES"
+ },
+ {
+  "en": "Value",
+  "es": "Valor"
+ },
+ {
+  "en": "Verified",
+  "es": "Verificada"
+ },
+ {
+  "en": "Version",
+  "es": "Versión"
+ },
+ {
+  "en": "View",
+  "es": "Vista"
+ },
+ {
+  "en": "WINDOW",
+  "es": "VENTANA"
+ },
+ {
+  "en": "Warning: editing a save can leave it in a state the game does not expect (for example, skipping the balance of its battles). A copy is kept in backups/ before every change, and the game should be closed while you edit.",
+  "es": "Aviso: editar una partida puede dejarla en un estado que el juego no espera (por ejemplo, saltarse el equilibrio de las batallas). Antes de cada cambio se guarda una copia en backups/, y conviene cerrar el juego mientras editas."
+ },
+ {
+  "en": "When starting a new game you can choose the version: the original GBA one or Re:CoM, with improvements from Kingdom Hearts Re:Chain of Memories (PS2) such as difficulty levels and faster dialogue. Each game remembers its own. Off, everything stays as the original cartridge.",
+  "es": "Al empezar una partida nueva puedes elegir la versión: la original de GBA o la Re:CoM, con mejoras de Kingdom Hearts Re:Chain of Memories (PS2) como niveles de dificultad y diálogos rápidos. Cada partida recuerda la suya. Apagado, todo queda como el cartucho original."
+ },
+ {
+  "en": "When the device falls behind, that frame is not drawn: the logic and the sound keep the original speed. Verified: the logic stays identical. On by default.",
+  "es": "Si el equipo no llega a tiempo, ese cuadro no se dibuja: la lógica y el sonido siguen a la velocidad original. Comprobado: la lógica queda idéntica. Activado por defecto."
+ },
+ {
+  "en": "Wide 284x160",
+  "es": "Panorámica 284x160"
+ },
+ {
+  "en": "Will change",
+  "es": "Se cambiará"
+ },
+ {
+  "en": "Window size",
+  "es": "Tamaño de ventana"
+ },
+ {
+  "en": "With Discord open, your profile shows the world, floor, character and level.",
+  "es": "Con Discord abierto, tu perfil muestra el mundo, el piso, el personaje y el nivel."
+ },
+ {
+  "en": "With no controller connected the menu button stays: it is the way into the options.",
+  "es": "Sin mando conectado, el botón de menú sigue visible: es la forma de abrir las opciones."
+ },
+ {
+  "en": "Yes",
+  "es": "Sí"
+ },
+ {
+  "en": "Your name",
+  "es": "Tu nombre"
+ },
+ {
+  "en": "Your saves, settings and ROMs were brought over from the previous install: ",
+  "es": "Se trajeron tus partidas, opciones y ROMs de la instalación anterior: "
+ },
+ {
+  "en": "Zoom (Auto view)",
+  "es": "Zoom (vista Auto)"
+ },
+ {
+  "en": "bank",
+  "es": "banco"
+ },
+ {
+  "en": "blocks",
+  "es": "bloques"
+ },
+ {
+  "en": "by",
+  "es": "por"
+ },
+ {
+  "en": "checked",
+  "es": "comprobado"
+ },
+ {
+  "en": "graphics",
+  "es": "gráficos"
+ },
+ {
+  "en": "movies",
+  "es": "videos"
+ },
+ {
+  "en": "now",
+  "es": "ahora"
+ },
+ {
+  "en": "pending",
+  "es": "pendiente"
+ },
+ {
+  "en": "scenes",
+  "es": "escenas"
+ },
+ {
+  "en": "steam_api.dll is missing next to the game.",
+  "es": "Falta steam_api.dll junto al juego."
+ },
+ {
+  "en": "tracks",
+  "es": "pistas"
+ }
+]

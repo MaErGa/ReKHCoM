@@ -296,8 +296,7 @@ static void RomFolderPoll(SDL_Window* window) {
             r = romdir::sResult;
         }
         ScanInstall();
-        if (!r.versions.empty())
-            sSelected = r.versions.back();
+        KeepSelection(); /* what it installed never changes the version chosen (decompui.cpp) */
         if (r.roms || r.hdFiles || r.recycled) {
             std::string text = T("En la carpeta roms: ", "In the roms folder: ");
             for (size_t i = 0; i < r.versions.size(); i++)
@@ -332,6 +331,7 @@ static void RomFolderPoll(SDL_Window* window) {
 }
 
 static void SaveLauncherState();
+static void KeepSelection();
 
 static void HdOfferPopup() {
     if (sHdOfferOpen) {

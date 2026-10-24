@@ -44,6 +44,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #define PORT_PAD_AXIS_BASE 100
@@ -113,8 +114,25 @@ static bool ReplaceWith(const std::filesystem::path& from, const std::filesystem
 
 static bool sSpanish;
 
+/* The launcher in the game's languages (the user, 24/10): Spanish and English in the code, French, German, Italian
+   and Japanese from i18n_table.inc, keyed by the English text; a text not translated yet stays in English. */
+#include "i18n_table.inc"
+static int sUiColumn; /* kI18n's column: 0 English (and Spanish), 1 fr, 2 de, 3 it, 4 ja */
+static std::unordered_map<std::string, const char*> sUiTable;   /* English text -> this language's */
+static std::unordered_map<const char*, const char*> sUiSeen;    /* the same by address, once looked up */
+
 static const char* T(const char* es, const char* en) {
-    return sSpanish ? es : en;
+    if (sSpanish)
+        return es;
+    if (sUiColumn == 0)
+        return en;
+    auto seen = sUiSeen.find(en);
+    if (seen != sUiSeen.end())
+        return seen->second;
+    auto it = sUiTable.find(en);
+    const char* text = it != sUiTable.end() ? it->second : en;
+    sUiSeen.emplace(en, text);
+    return text;
 }
 
 /* ---- cartridge versions ---------------------------------------------------- */
@@ -144,6 +162,7 @@ struct VersionState {
 static fs::path sRoot;
 static VersionState sState[kVersionCount];
 static int sSelected;
+static void KeepSelection(); /* the version chosen: European first, then the last chosen */
 static std::string sNotice;
 static bool sNoticeError;
 static double sNoticeTime;
@@ -376,7 +395,7 @@ static void InstallRom(const fs::path& path) {
             return;
         }
         sState[v].installed = true;
-        sSelected = v;
+        KeepSelection();
         Notice(std::string(T("ROM instalada y verificada: ", "ROM installed and verified: ")) +
                    T(kVersions[v].regionEs, kVersions[v].regionEn),
                false);
@@ -600,22 +619,47 @@ static void SaveIni() {
 /* Language the European game starts in (the language screen's cursor):
    0 = the player chooses, then English, French, German, Italian, Spanish. */
 static const char* const kGameLanguageIds[] = { "", "en", "fr", "de", "it", "es" };
-static int sUiLanguage; /* 1 = Spanish, 2 = English; 0 until chosen */
+/* The launcher's languages: 1 Spanish, 2 English, then the European cartridge's other three and Japanese; 0 until
+   chosen. ids[] as kh_com's and the flags' (LanguageFlag). */
+enum { UI_LANGUAGE_COUNT = 6 };
+static const char* const kUiLanguageIds[UI_LANGUAGE_COUNT + 1] = { "", "es", "en", "fr", "de", "it", "ja" };
+static const char* const kUiLanguageNames[UI_LANGUAGE_COUNT + 1] = {
+    "", "Espa\xC3\xB1ol", "English", "Fran\xC3\xA7" "ais", "Deutsch", "Italiano", "\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E" };
+static const char* const kUiLanguageFlags[UI_LANGUAGE_COUNT + 1] = { "", "es", "gb", "fr", "de", "it", "jp" };
+static int sUiLanguage;
 
 static void ApplyUiLanguage() {
-    /* the first time, the system's language is chosen and kept */
-    if (sUiLanguage != 1 && sUiLanguage != 2)
-    {
+    /* the first time, the system's language is chosen and kept (English when it is none of these) */
+    if (sUiLanguage < 1 || sUiLanguage > UI_LANGUAGE_COUNT) {
+        std::string system;
 #ifdef _WIN32
-        sUiLanguage = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_SPANISH ? 1 : 2;
+        switch (PRIMARYLANGID(GetUserDefaultUILanguage())) {
+            case LANG_SPANISH: system = "es"; break;
+            case LANG_FRENCH: system = "fr"; break;
+            case LANG_GERMAN: system = "de"; break;
+            case LANG_ITALIAN: system = "it"; break;
+            case LANG_JAPANESE: system = "ja"; break;
+        }
 #else
         int count = 0;
         SDL_Locale** locales = SDL_GetPreferredLocales(&count);
-        sUiLanguage = locales && count > 0 && locales[0]->language && strcmp(locales[0]->language, "es") == 0 ? 1 : 2;
+        if (locales && count > 0 && locales[0]->language)
+            system = locales[0]->language;
         SDL_free(locales);
 #endif
+        sUiLanguage = 2;
+        for (int i = 1; i <= UI_LANGUAGE_COUNT; i++)
+            if (system == kUiLanguageIds[i])
+                sUiLanguage = i;
     }
     sSpanish = sUiLanguage == 1;
+    sUiColumn = sUiLanguage >= 3 ? sUiLanguage - 2 : 0;
+    sUiTable.clear();
+    sUiSeen.clear();
+    if (sUiColumn)
+        for (const auto& row : kI18n)
+            if (row[sUiColumn])
+                sUiTable.emplace(row[0], row[sUiColumn]);
 }
 
 static bool sHdOfferDeclined; /* "Don't ask again" on the HD mod's offer (rom_folder.inc) */
@@ -638,7 +682,7 @@ static void LoadLauncherState() {
                     SaveIni();
                 }
         } else if (line.rfind("ui_language=", 0) == 0) {
-            sUiLanguage = std::clamp(std::atoi(line.c_str() + 12), 0, 2);
+            sUiLanguage = std::clamp(std::atoi(line.c_str() + 12), 0, (int)UI_LANGUAGE_COUNT);
         }
     }
     ApplyUiLanguage();
@@ -650,6 +694,22 @@ static void SaveLauncherState() {
     f << "ui_language=" << sUiLanguage << "\n";
     if (sHdOfferDeclined)
         f << "hd_offer=0\n"; /* "Don't ask again" on the HD mod's offer */
+}
+
+/* The version chosen (the user, 24/10): the European one the first time, then always the last one chosen, saved at
+   once. A scan of roms/ or a new ROM never changes it; only when the chosen one is not installed does it move, to the
+   European one if it is there, else the first installed. */
+static void KeepSelection() {
+    if (sState[sSelected].installed)
+        return;
+    int pick = -1;
+    for (int v = 0; v < kVersionCount && pick < 0; v++)
+        if (sState[v].installed)
+            pick = v; /* kVersions[0] is the European one */
+    if (pick >= 0 && pick != sSelected) {
+        sSelected = pick;
+        SaveLauncherState();
+    }
 }
 
 /* ---- saves -------------------------------------------------------------------- */
@@ -932,6 +992,41 @@ static void LoadFonts() {
             sFontMenuSmall = load(Px(15));
             if (ImFont* title = load(Px(34)))
                 sFontTitle = title;
+        }
+    }
+    /* Japanese: the system's Japanese font merged into every one, with only the characters the launcher's Japanese
+       texts use (and the language's own name, shown in every language's picker), so the atlas stays small and no
+       rebuild is needed when the language changes */
+    {
+#ifdef _WIN32
+        std::string jp = (fonts / "YuGothM.ttc").string();
+        if (!fs::exists(jp))
+            jp = (fonts / "msgothic.ttc").string();
+#else
+        std::string jp = "/system/fonts/NotoSansCJK-Regular.ttc";
+#endif
+        static ImVector<ImWchar> jpRanges;
+        if (jpRanges.empty()) {
+            ImFontGlyphRangesBuilder b;
+            b.AddText(kUiLanguageNames[6]);
+            for (const auto& row : kI18n)
+                if (row[4])
+                    b.AddText(row[4]);
+            b.BuildRanges(&jpRanges);
+        }
+        if (fs::exists(jp)) {
+            ImFontConfig merge = cfg;
+            merge.MergeMode = true;
+            merge.OversampleH = 1;
+            ImFont* const all[] = { sFontBody, sFontSmall, sFontTitle, sFontMenu, sFontMenuSmall };
+            float sizes[5] = {}; /* read first: adding a font may move the atlas' sources */
+            for (int i = 0; i < 5; i++)
+                sizes[i] = all[i] && all[i]->Sources ? all[i]->Sources->SizePixels : 0;
+            for (int i = 0; i < 5; i++)
+                if (sizes[i] > 0) {
+                    merge.DstFont = all[i];
+                    io.Fonts->AddFontFromFileTTF(jp.c_str(), sizes[i], &merge, jpRanges.Data);
+                }
         }
     }
     if (sFontBody == nullptr) {
@@ -1228,7 +1323,6 @@ static void DrawCover(float w, float h) {
 static void CreateDesktopShortcut();
 static void AddToSteam();
 static void InstallElsewhereRow();
-static void ReportProblemRow();
 
 static void ApplyGraphicsMode(int mode);
 static void PickRom(SDL_Window* window);
@@ -1238,32 +1332,97 @@ namespace romdir { static bool Busy(); }
 /* A switch on Home for an enhancement that needs files (the HD mod, the Japanese ROM): always shown so players
    know it exists, greyed until its files are there, with a link to where they are loaded (24/10). */
 static bool HomeFeatureRow(const char* label, const char* description, int& value, bool available, const char* link) {
-    bool changed = GatedToggle(label, description, value, available);
-    if (!available && link != nullptr) {
+    ImVec2 start = ImGui::GetCursorScreenPos();
+    float labelW = ImGui::CalcTextSize(label).x, labelH = ImGui::GetTextLineHeight();
+    bool changed = GatedToggle(label, nullptr, value, available); /* the description as a tooltip: Home fits one screen */
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("%s", description);
+    if (!available && link != nullptr) { /* on the label's line, after it */
+        ImVec2 after = ImGui::GetCursorScreenPos();
         ImGui::PushFont(sFontSmall);
+        ImGui::SetCursorScreenPos(ImVec2(start.x + labelW + Px(16), start.y + (labelH - ImGui::GetTextLineHeight()) * 0.5f));
         ImGui::PushStyleColor(ImGuiCol_TextLink, kAccent);
         if (ImGui::TextLink(link))
             changed = true; /* the caller reads the click from here */
         ImGui::PopStyleColor();
         ImGui::PopFont();
+        ImGui::SetCursorScreenPos(after);
+        ImGui::Dummy(ImVec2(0, 0));
     }
     return changed;
 }
 
+/* A header control drawn like the version rows: panel, a rule under it (black when on), the game's square and an
+   optional flag before the label (the user, 24/10: the old grey buttons in the game's style). */
+static bool HeaderChip(const char* id, const char* label, const char* flag, ImVec2 size, bool on, float indent = 0) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 p = ImGui::GetCursorScreenPos(), mx(p.x + size.x, p.y + size.y);
+    bool clicked = ImGui::InvisibleButton(id, size, ImGuiButtonFlags_EnableNav);
+    bool hover = ImGui::IsItemHovered();
+    dl->AddRectFilled(p, mx, ImGui::GetColorU32(on ? kPanelHover : (hover ? kControl : kPanel)));
+    dl->AddRectFilled(ImVec2(p.x, mx.y - Px(3)), mx, ImGui::GetColorU32(on || hover ? kText : kBorder));
+    if (ImGui::IsItemFocused() && ImGui::GetIO().NavVisible) /* the pad's or keyboard's cursor only, not the mouse's */
+        dl->AddRect(ImVec2(p.x - Px(2), p.y - Px(2)), ImVec2(mx.x + Px(2), mx.y + Px(2)), ImGui::GetColorU32(kFocus), 0, 0,
+                    Px(2));
+    float x = p.x + Px(14) + indent, cy = p.y + size.y * 0.5f - Px(1);
+    if (flag != nullptr) {
+        GameSquare(dl, ImVec2(x + Px(2), cy), Px(12), on);
+        x += Px(16);
+        float fh = Px(11);
+        LanguageFlag(dl, ImVec2(x, cy - fh * 0.5f), fh, flag);
+        x += fh * 1.5f + Px(8);
+    }
+    float th = sFontMenuSmall->FontSize;
+    dl->AddText(sFontMenuSmall, th, ImVec2(x, cy - th * 0.5f), ImGui::GetColorU32(kText), label);
+    return clicked;
+}
+
+/* The launcher's language: the chosen one in the header, its flag and a ▼; a click lists all six as the same chips */
+static void LauncherLanguagePicker(ImVec2 size) {
+    if (HeaderChip("##uilang", kUiLanguageNames[sUiLanguage], kUiLanguageFlags[sUiLanguage], size, true) ||
+        (sPage == PAGE_HOME && SDL_getenv("DECOMPUI_LANG_LIST"))) /* harness: the list open on Home's shot */
+        ImGui::OpenPopup("##uilang-list");
+    { /* the list's caret, drawn (no font has it) */
+        ImVec2 mx = ImGui::GetItemRectMax(), mn = ImGui::GetItemRectMin();
+        float cx = mx.x - Px(18), cy = (mn.y + mx.y) * 0.5f - Px(1), s = Px(5);
+        ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(cx - s, cy - s * 0.5f), ImVec2(cx + s, cy - s * 0.5f),
+                                                      ImVec2(cx, cy + s * 0.6f), ImGui::GetColorU32(kText));
+    }
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x - ImGui::GetStyle().WindowPadding.x,
+                                   ImGui::GetItemRectMax().y + Px(4))); /* the list's chips under the chosen one */
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, Px(4)));
+    if (ImGui::BeginPopup("##uilang-list")) {
+        for (int i = 1; i <= UI_LANGUAGE_COUNT; i++) {
+            ImGui::PushID(i);
+            if (HeaderChip("##lang", kUiLanguageNames[i], kUiLanguageFlags[i], size, sUiLanguage == i)) {
+                sUiLanguage = i;
+                ApplyUiLanguage();
+                SaveLauncherState();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleVar();
+}
+
 static void PageHome(SDL_Window* window) {
-    float avail = ImGui::GetContentRegionAvail().x;
+    float avail = ImGui::GetContentRegionAvail().x, availH = ImGui::GetContentRegionAvail().y;
     float coverW = std::clamp(avail * 0.28f, Px(220), Px(330));
 
+    /* one screen (the user, 24/10): the cover shrinks to the height the page has */
     BeginCard("cover", ImVec2(coverW + Px(48), 0));
     Eyebrow(T("JUEGO", "GAME"));
-    DrawCover(coverW, coverW * 1.25f);
+    float below = Px(34) + ImGui::GetStyle().WindowPadding.y * 2 + Px(16);
+    DrawCover(coverW, std::clamp(availH - below, Px(200), coverW * 1.25f));
     ImGui::EndChild();
     ImGui::SameLine(0, Px(20));
 
     ImGui::BeginGroup();
     /* play first: visible from the start, without scrolling */
     bool ready = GameReady(sSelected);
-    if (PlayButton(T("JUGAR", "PLAY"), ImVec2(ImGui::GetContentRegionAvail().x, Px(76)), ready))
+    if (PlayButton(T("JUGAR", "PLAY"), ImVec2(ImGui::GetContentRegionAvail().x, Px(64)), ready))
         sLaunch = true;
     /* the two secondary actions side by side, under the play bar */
     {
@@ -1277,9 +1436,11 @@ static void PageHome(SDL_Window* window) {
         ImGui::EndDisabled();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
             ImGui::SetTooltip("%s", T("Primero instala lo que hayas dejado en la carpeta roms (ROMs con cualquier nombre, zips, "
-                                      "la carpeta hd del mod HD); si no hay nada, elige el archivo.",
+                                      "la carpeta hd del mod HD); si no hay nada, elige el archivo (o arrástralo a esta "
+                                      "ventana). Se comprueba su SHA-1. No se incluye ninguna ROM.",
                                       "First installs whatever you left in the roms folder (ROMs under any name, zips, the HD "
-                                      "mod's hd folder); if there is nothing, choose the file."));
+                                      "mod's hd folder); if there is nothing, choose the file (or drop it on this window). "
+                                      "Its SHA-1 is checked. No ROM is included."));
 #ifndef LAUNCHER_ANDROID /* a desktop's: no shortcuts or Steam on a phone */
         if (ready) {
             ImGui::SameLine(0, gap);
@@ -1316,7 +1477,7 @@ static void PageHome(SDL_Window* window) {
         bool selected = sSelected == v;
         ImVec2 rowMin = ImGui::GetCursorScreenPos();
         float rowW = ImGui::GetContentRegionAvail().x;
-        float rowH = Px(58);
+        float rowH = Px(50);
         ImDrawList* dl = ImGui::GetWindowDrawList();
         if (ImGui::InvisibleButton("##row", ImVec2(rowW, rowH), ImGuiButtonFlags_EnableNav) && sState[v].installed) {
             sSelected = v;
@@ -1334,11 +1495,11 @@ static void PageHome(SDL_Window* window) {
         GameSquare(dl, ImVec2(rowMin.x + Px(22), rowMin.y + rowH * 0.5f), Px(16), selected);
         /* region, code and languages */
         float tx = rowMin.x + Px(44);
-        dl->AddText(sFontMenu, sFontMenu->FontSize, ImVec2(tx, rowMin.y + Px(7)), ImGui::GetColorU32(kText),
+        dl->AddText(sFontMenu, sFontMenu->FontSize, ImVec2(tx, rowMin.y + Px(4)), ImGui::GetColorU32(kText),
                     T(ver.regionEs, ver.regionEn));
         {
             /* the code, then each language with its flag */
-            float fs = sFontSmall->FontSize, y = rowMin.y + Px(33), x = tx;
+            float fs = sFontSmall->FontSize, y = rowMin.y + Px(28), x = tx;
             dl->AddText(sFontSmall, fs, ImVec2(x, y), ImGui::GetColorU32(kMuted), ver.code);
             x += sFontSmall->CalcTextSizeA(fs, FLT_MAX, 0, ver.code).x + Px(14);
             for (const char* l = ver.languages; *l; ) {
@@ -1422,26 +1583,25 @@ static void PageHome(SDL_Window* window) {
             }
         }
     }
+#ifdef LAUNCHER_ANDROID /* no tooltips on a phone: the line stays (on a desktop it is Install ROM's tooltip) */
     ImGui::Spacing();
     ImGui::PushFont(sFontSmall);
     ImGui::PushStyleColor(ImGuiCol_Text, kMuted);
-#ifdef LAUNCHER_ANDROID
     ImGui::TextWrapped("%s", T("Elige tu volcado del cartucho en el teléfono. Se comprueba su SHA-1 y se copia a la "
                                "app. No se incluye ninguna ROM.",
                                "Choose your cartridge dump on the phone. Its SHA-1 is checked and it is copied into "
                                "the app. No ROM is included."));
-#else
-    ImGui::TextWrapped("%s", T("Elige tu volcado del cartucho (o arrástralo a esta ventana). Se comprueba su SHA-1 "
-                               "y se copia a la carpeta roms. No se incluye ninguna ROM.",
-                               "Choose your cartridge dump (or drop it on this window). Its SHA-1 is checked and "
-                               "it is copied into the roms folder. No ROM is included."));
-#endif
     ImGui::PopStyleColor();
     ImGui::PopFont();
+#endif
     ImGui::EndChild();
 
-    ImGui::Spacing();
-    ImGui::Spacing();
+    ImGui::EndGroup();
+}
+
+/* The save's card: bank, file, folder, backup, import, and installing the whole folder elsewhere. On the Saves tab
+   (the user, 24/10: Home fits one screen; the saves go to their own manager). */
+static void SaveCard(SDL_Window* window) {
     BeginCard("save");
     Eyebrow(T("PARTIDA", "SAVE"));
     {
@@ -1518,11 +1678,8 @@ static void PageHome(SDL_Window* window) {
 #ifndef LAUNCHER_ANDROID
         InstallElsewhereRow();
 #endif
-        ReportProblemRow();
     }
     ImGui::EndChild();
-
-    ImGui::EndGroup();
 }
 
 static bool ZoomRow(const char* label, const char* help, int& value, bool inherit) {
@@ -1717,8 +1874,8 @@ static void PageSound() {
     
     ImGui::Separator();
     ImGui::PushStyleColor(ImGuiCol_TextLink, kAccent);
-    if (ImGui::TextLink(T("La música, los videos y las escenas HD de Re:Chain of Memories: en Mejoras â",
-                          "Re:Chain of Memories' HD music, movies and scenes: in Enhancements â")))
+    if (ImGui::TextLink(T("La música, los videos y las escenas HD de Re:Chain of Memories: en Mejoras →",
+                          "Re:Chain of Memories' HD music, movies and scenes: in Enhancements →")))
         sPage = PAGE_EXTRAS;
     ImGui::PopStyleColor();
     ImGui::EndChild();
@@ -2262,13 +2419,15 @@ static void PageControls() {
 
 /* ---- header and frame ---------------------------------------------------------- */
 
-/* One band, as the web page's header: the logo, the project line beside it, the interface language on the right;
+static void ReportProblemChip(ImVec2 size);
+
+/* One band, as the web page's header: the logo and the project line beside it, report and language on the right;
    then the tabs between two rules (the active one boxed, with the game's red square). */
 static void Header() {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImVec2 top = ImGui::GetCursorScreenPos();
     float right = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-    float logoH = Px(78);
+    float logoH = Px(58);
     float x = top.x;
     if (sLogo != 0) {
         float lw = logoH * sLogoW / sLogoH;
@@ -2290,29 +2449,27 @@ static void Header() {
         dl->AddText(ImVec2(x, y + lh + Px(4)), ImGui::GetColorU32(kMuted), by);
         ImGui::PopFont();
     }
-    /* the interface language, at the right end of the band */
+    /* at the right end of the band: report a problem, and the launcher's language (the user, 24/10: both up here, in
+       the game's style) */
     {
-        const char* uis[] = { "", "Idioma: Espa\xC3\xB1ol", "Language: English" };
-        ImGui::PushFont(sFontSmall);
-        float w = ImGui::CalcTextSize(uis[sUiLanguage]).x + Px(36);
-        float h = ImGui::GetFrameHeight();
         ImVec2 after = ImGui::GetCursorScreenPos();
-        ImGui::SetCursorScreenPos(ImVec2(right - w, top.y + (logoH - h) * 0.5f));
-        if (ImGui::Button(uis[sUiLanguage], ImVec2(w, 0))) {
-            sUiLanguage = sUiLanguage == 1 ? 2 : 1;
-            ApplyUiLanguage();
-            SaveLauncherState();
-        }
+        float h = Px(40), langW = Px(170), gap = Px(10);
+        float y = top.y + (logoH - h) * 0.5f;
+        ImGui::PushFont(sFontMenuSmall);
+        float reportW = ImGui::CalcTextSize(T("Reportar un problema...", "Report a problem...")).x + Px(28) + Px(32);
         ImGui::PopFont();
+        ImGui::SetCursorScreenPos(ImVec2(right - langW - gap - reportW, y));
+        ReportProblemChip(ImVec2(reportW, h));
+        ImGui::SetCursorScreenPos(ImVec2(right - langW, y));
+        LauncherLanguagePicker(ImVec2(langW, h));
         ImGui::SetCursorScreenPos(after);
     }
-
     static int lastSettings = PAGE_GRAPHICS; /* Settings reopens on its last tab */
     if (SettingsPage(sPage))
         lastSettings = sPage;
     enum { TAB_COUNT = 5 };
     const char* tabs[TAB_COUNT] = { T("Inicio", "Home"), T("Mejoras", "Enhancements"), T("Configuración", "Settings"),
-                                    T("Logros", "Achievements"), T("Editor de partidas", "Save editor") };
+                                    T("Logros", "Achievements"), T("Gestor de partidas", "Save manager") };
     const int tabPage[TAB_COUNT] = { PAGE_HOME, PAGE_EXTRAS, -1, PAGE_ACHIEVEMENTS, PAGE_EDITOR };
     ImGui::SetCursorScreenPos(ImVec2(top.x, top.y + logoH + Px(10)));
     ImVec2 band = ImGui::GetCursorScreenPos();
@@ -2425,7 +2582,7 @@ static void Frame(SDL_Window* window) {
             PageControls();
             break;
         case PAGE_EDITOR:
-            PageEditor();
+            PageEditor(window);
             break;
         case PAGE_ACHIEVEMENTS:
             PageAchievements();
@@ -2877,15 +3034,38 @@ static std::string UrlEncode(const std::string& s) {
     return out;
 }
 
-static void ReportProblemRow() {
-    if (!SDL_getenv("DECOMPUI_REPORT_URL") && !ImGui::Button(T("Reportar un problema...", "Report a problem..."), ImVec2(-FLT_MIN, 0))) {
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("%s", T("Abre un reporte en GitHub con la versión y el final del registro del juego; lo "
-                                      "revisas y lo envías tú (necesitas una cuenta de GitHub).",
-                                      "Opens a GitHub report with the version and the end of the game's log; you "
-                                      "review and submit it (needs a GitHub account)."));
-        return;
+static void ReportProblem();
+
+/* The header's button: drawn as the language picker beside it (HeaderChip) */
+static void ReportProblemChip(ImVec2 size) {
+    float icon = Px(26);
+    if (HeaderChip("##report", T("Reportar un problema...", "Report a problem..."), nullptr, size, false, icon + Px(6)))
+        ReportProblem();
+    { /* a wrench before the label (the user, 24/10), in the game's square's colours: black, red in its head */
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        ImVec2 mn = ImGui::GetItemRectMin(), mx = ImGui::GetItemRectMax();
+        ImVec2 c(mn.x + Px(14) + icon * 0.5f, (mn.y + mx.y) * 0.5f - Px(1));
+        ImVec2 d(0.7071f, -0.7071f), n(0.7071f, 0.7071f); /* along the handle (to the head, up right), across it */
+        auto at = [&](float along, float across) {
+            return ImVec2(c.x + d.x * along + n.x * across, c.y + d.y * along + n.y * across);
+        };
+        ImU32 ink = ImGui::GetColorU32(kText), paper = ImGui::GetColorU32(ImGui::IsItemHovered() ? kControl : kPanel);
+        dl->AddLine(at(-Px(10), 0), at(Px(4), 0), ink, Px(4));       /* the handle */
+        dl->AddCircleFilled(at(-Px(10), 0), Px(2.6f), ink);          /* its rounded end */
+        dl->AddCircleFilled(at(Px(6), 0), Px(6.5f), ink);            /* the head */
+        dl->AddQuadFilled(at(Px(6), -Px(2.6f)), at(Px(14), -Px(2.6f)), /* its open jaw, out along the handle */
+                          at(Px(14), Px(2.6f)), at(Px(6), Px(2.6f)), paper);
+        dl->AddRectFilled(ImVec2(at(Px(3), 0).x - Px(1.6f), at(Px(3), 0).y - Px(1.6f)),
+                          ImVec2(at(Px(3), 0).x + Px(1.6f), at(Px(3), 0).y + Px(1.6f)), ImGui::GetColorU32(kAccent));
     }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", T("Abre un reporte en GitHub con la versión y el final del registro del juego; lo "
+                                  "revisas y lo envías tú (necesitas una cuenta de GitHub).",
+                                  "Opens a GitHub report with the version and the end of the game's log; you "
+                                  "review and submit it (needs a GitHub account)."));
+}
+
+static void ReportProblem() {
     std::vector<std::string> lines;
     {
         std::ifstream f(sRoot / "kh_com.log");
@@ -3165,20 +3345,14 @@ int main(int argc, char** argv) {
     LoadIni();
     LoadLauncherState();
     SaveLauncherState(); /* the first time, keeps the language chosen from the system */
-    if (!sState[sSelected].installed) {
-        for (int v = 0; v < kVersionCount; v++)
-            if (sState[v].installed) {
-                sSelected = v;
-                break;
-            }
-    }
+    KeepSelection();
 
     if (SDL_getenv("DECOMPUI_SHORTCUT")) { /* harness: the shortcut alone, then exit */
         CreateDesktopShortcut();
         return 0;
     }
     if (SDL_getenv("DECOMPUI_REPORT_URL")) { /* harness: the report's address alone, then exit */
-        ReportProblemRow();
+        ReportProblem();
         return 0;
     }
     if (SDL_getenv("DECOMPUI_STEAM")) { /* harness: "Add to Steam" into that folder, then exit */
@@ -3300,9 +3474,7 @@ int main(int argc, char** argv) {
                 if (seen >= 0) {
                     ScanInstall();
                     LoadIni();
-                    for (int v = 0; v < kVersionCount; v++)
-                        if (sState[v].installed && !sState[sSelected].installed)
-                            sSelected = v;
+                    KeepSelection();
                     if (!st.text.empty())
                         Notice(st.text, st.error);
                 }
