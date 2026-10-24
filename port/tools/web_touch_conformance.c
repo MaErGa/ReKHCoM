@@ -31,9 +31,9 @@ int main(void) {
         assert(SDL_fabsf((layoutX+layoutW*.5f)-w*.5f)<.1f);
         assert(SDL_fabsf((layoutY+layoutH*.5f)-h*.5f)<.1f);
         assert(layoutX>=0 && layoutY>=0);
-        point(1,(layoutX+layoutW*.896f)/w,(layoutY+layoutH*.64f)/h);
+        point(1,(layoutX+layoutW*(buttons[2].x+buttons[2].ox/aspect))/w,(layoutY+layoutH*buttons[2].y)/h);
         assert(PortAndroidTouchKeys()==1);PortAndroidTouchClear();
-        point(2,(layoutX+layoutW*.07f)/w,(layoutY+layoutH*.63f)/h);
+        point(2,(layoutX+layoutW*(kGroupHome[G_DPAD][0]-.06f))/w,(layoutY+layoutH*(kGroupHome[G_DPAD][1]-.10f))/h);
         assert(PortAndroidTouchKeys()==(0x20|0x40));PortAndroidTouchClear();
         /* Every labelled and shortcut button uses the same geometry as drawing. */
         for(int b=0;b<(int)SDL_arraysize(buttons)-1;b++) {
@@ -41,8 +41,8 @@ int main(void) {
             assert(PortAndroidTouchKeys()==buttons[b].bits);
             release(10,SDL_EVENT_FINGER_UP);assert(!PortAndroidTouchKeys());
         }
-        point(20,(layoutX+layoutW*.896f)/w,(layoutY+layoutH*.64f)/h);
-        point(21,(layoutX+layoutW*.87f)/w,(layoutY+layoutH*.34f)/h);
+        point(20,(layoutX+layoutW*(buttons[2].x+buttons[2].ox/aspect))/w,(layoutY+layoutH*buttons[2].y)/h);
+        point(21,(layoutX+layoutW*buttons[1].x)/w,(layoutY+layoutH*buttons[1].y)/h);
         assert(PortAndroidTouchKeys()==(1|0x100));
         release(20,SDL_EVENT_FINGER_CANCELED);assert(PortAndroidTouchKeys()==0x100);
         SDL_Event lost={0};lost.type=SDL_EVENT_WINDOW_FOCUS_LOST;
