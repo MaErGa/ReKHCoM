@@ -1252,14 +1252,30 @@ static void TiledBackdropCoordinates(int bg, int* wx, int* wy) {
  * Fill only its transparent added-view pixels from plain floor or water
  * tiles, leaving the original composition and its diagonal trim untouched. */
 static uint16_t Preliminar102Underlay(const uint8_t* chars, int bpp8, int wx, int wy) {
-    int sea = 2 * wy - wx < -18 * 8;
-    /* Use a small contiguous floor patch, not one repeating tile: its native
-     * texture remains varied while avoiding the diagonal trim and props. */
-    int sx = sea ? 30 : 24 + (((wx >> 3) % 8 + 8) % 8);
-    int sy = sea ? 4 : 18 + (((wy >> 3) % 4 + 4) % 4);
-    int entry = MapTile(&sBgLatch[3], sx, sy);
-    int px = ((wx % 8) + 8) % 8, py = ((wy % 8) + 8) % 8;
-    int ci, pal, tile;
+    /* The raised path (lighter, between the ledges at 2y-x=-4 and 304), the
+     * darker floor on both sides and the sea go on along their diagonal (user
+     * 24/10): each pixel slides along 2y-x, two tiles at a time, into a
+     * clean strip of the map, the path's back from columns 32..33, its front
+     * from columns 12..13. The back ledge curves away up-left at the map's
+     * top (along 2x-y=224..287): it goes on that way from row 4, and left of
+     * it the path is open. Past the second step below the path (2y-x=400)
+     * the floor is one plain colour (columns 0..1, row 29). */
+    int d = 2 * wy - wx, k = 2 * wx - wy, x0 = d < 150 ? 256 : 96, n = wx - x0;
+    int sx, sy, entry, px, py, ci, pal, tile;
+    n = n >= 0 ? n / 16 : -((-n + 15) / 16);
+    if (wy < 32 && k >= 224 && k < 288) {
+        n = (32 - wy + 15) / 16;
+        wx += 8 * n; wy += 16 * n;
+    } else if (d >= 416) {
+        wx &= 15; wy = 232 + (wy & 7);
+    } else {
+        wx -= 16 * n; wy -= 8 * n;
+        if (d < 56 && k < 224) wy += 16 * ((56 - d + 31) / 32);   /* the open path */
+        else if (d < -152) wy += 16 * ((-152 - d + 31) / 32);    /* the open sea */
+    }
+    sx = wx >> 3; sy = wy >> 3;
+    entry = MapTile(&sBgLatch[3], sx, sy);
+    px = wx & 7; py = wy & 7;
     if (entry < 0) return PLTT16[0] & 0x7FFF;
     tile = entry & 0x3FF;
     if (entry & 0x400) px = 7 - px;
