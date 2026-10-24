@@ -136,7 +136,10 @@ def mutate(state, a):
                 lock["updated_at"] = stamp
         return
     if a.command == "next":
+        # a piece this worker released stays out of its own `next` (r3b looped on 057), so it moves on to the rest
         free = [t for t in state["tasks"].values() if t["status"] == "pendiente" and t["owner"] is None
+                and not any(e.get("owner") == a.owner and e.get("detail", "").startswith("released:")
+                            for e in t.get("evidence", []))
                 and any(t["id"].startswith(prefix) for prefix in (a.prefix or [""]))]
         require(free, "No pending piece" + (" with prefix " + ", ".join(a.prefix) if a.prefix else ""))
         a.id = free[0]["id"]

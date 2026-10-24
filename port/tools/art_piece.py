@@ -7,6 +7,7 @@ strokes, the reviewed image, the code that draws that scene, and the commands to
 
 Reads the shared review desk (--data, default the folder "Revisar preliminares.bat" uses). Never writes.
 """
+import os
 import argparse
 import json
 import re
@@ -14,7 +15,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-DESK = REPO.parent / 'khcom-codex' / 'build' / 'art-review'
+DESK = Path(os.environ.get('ART_DESK') or REPO.parent / 'khcom-codex' / 'build' / 'art-review')
 
 # What draws each kind of scene (found by the first worker round; LOGICA_APROBADOS has the rules)
 MECHANISMS = [

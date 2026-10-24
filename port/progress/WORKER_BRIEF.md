@@ -30,3 +30,4 @@ repeticiones US/JP salvo que la pieza lo pida, no tocar `jugar/`, `ReKHCoM-vX` n
 
 Fricción conocida: en bash las rutas van como `/d/01Claude/...`, no `D:/...`. Un worker que muere por límite de sesión deja la pieza
 `en_curso`: el coordinador la libera con `release <id> --owner <el que la tenía>` y la relanza.
+`art_piece.py` lee la mesa de `$ART_DESK` (desde un worktree en D: exportarla, p. ej. `/d/01Claude/ReKHCoM-build/w3-desk`). `prelim_shot.sh` usa `build/pc/`; si tu build está en `build/pc-eu/`, copia el script con `sed`. `next` ya no te devuelve una pieza que tú liberaste.
