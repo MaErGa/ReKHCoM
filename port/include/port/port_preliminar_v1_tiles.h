@@ -2,6 +2,7 @@
 #define PORT_PRELIMINAR_V1_TILES_H
 #include <stdint.h>
 #include "port_scene_wide_tiles.h"
+#include "port_scene053_plateau.inc"
 
 /* Every profile is attached to map content, including decompressed EU maps.
  * Source rectangles never contain copied ROM pixels or fixed RGB colours. */
@@ -289,6 +290,13 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         *x=8+PortSceneTileMod(ox-8,40); *y=PortSceneTileMod(oy,40); return 1;
     }
     if (ox >= 0 && ox < w && oy >= 0 && oy < h) return 1;
+    if (v[0]==53 && v[1]==3 && (ox<0 || ox>=w || oy<0) && 2*oy-ox<-1 &&
+        ox>=SCENE053_PLATEAU_X0 && ox<SCENE053_PLATEAU_X0+SCENE053_PLATEAU_W &&
+        oy>=SCENE053_PLATEAU_Y0 && oy<SCENE053_PLATEAU_Y0+SCENE053_PLATEAU_H) {
+        /* the plateau laid out with whole tufts (gen_scene053_plateau.py, user 24/10) */
+        const uint8_t* t=kScene053Plateau[oy-SCENE053_PLATEAU_Y0][ox-SCENE053_PLATEAU_X0];
+        *x=t[0]; *y=t[1]; return 1;
+    }
     if (!v[20]) return 0; /* characters, furniture and unique landmarks */
     if (v[0]==112 && v[1]==2 && ox<0) return 0;
     if (ox < 0 || ox >= w) {
