@@ -20,8 +20,12 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   D:/01Claude/ReKHCoM-build/hd-completo). Combate de prueba EU/US/JP (`KHCOM_BATTLE=10:4`) sin crash.
 - **Issues: 0 abiertos.** #40, #42, #45 cerrados con un comentario: el arreglo sale en la v2.0, pronto; #42 pide un
   issue nuevo con qué pista suena dónde si las pistas HD siguen cambiadas (el video no lo dice).
-- Siguiente: Preliminar V2 de Oogie (usuario: "máxima lógica, píxel a píxel, prediciendo el escenario completo y
-  usando tiles donde sirvan"), luego Jafar y Marluxia, copia jugable de la V2 y esperar los comentarios del usuario
+- **Oogie hecho** (Preliminar V2, `port/src/port_oogie.c`, `KHCOM_ARENAS_V2=1`): la sala como una bahía de un salón
+  largo con sus propios tiles (columnas, ladrillos, guirnaldas, calabazas, escenario, baranda), sin la reja de
+  dientes ni los contadores fuera de la bahía del combate; ladrillos y columnas hacia arriba; delante el campo verde
+  en bloques espejados y corridos; abajo el camino sigue sus líneas y el antebrazo. Rectángulo GBA idéntico 6/6
+  (16:9 y 32:9, `arena_before_shots.py --only oogie [--v2]`). Lógica en BATTLE_SCENERY_TECHNIQUE.md 9-11.
+- Siguiente: Jafar y Marluxia, copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 
 ## TRASPASO 23/10 noche (Claude; /goal del usuario: "acabar y depurar todos los pendientes hasta llegar a la 2.0") — LEER PRIMERO

@@ -1498,6 +1498,8 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
         PortArenasV2();
     /* Ursula's cave (1) goes on below its floor; her own layer (2) shows one Ursula */
     int ursLayer = PortArenasV2() && sBgLatch[bg].valid ? PortUrsulaLayer((const void* const*)sBgLatch[bg].map) : 0;
+    /* Oogie's room goes on as one bay of a long hall */
+    int oogieHall = PortArenasV2() && sBgLatch[bg].valid && PortOogieLayer((const void* const*)sBgLatch[bg].map);
     /* Maleficent's hall (1) goes on by its bays; her dragon's layer (2) shows one dragon */
     int mdLayer = 0;
     if (PortArenasV2() && sBgLatch[bg].valid) {
@@ -1581,6 +1583,15 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
             }
             if (mdLayer == 2 && !PortMaleficentDragonVisible(wx, wy, cx, cy)) {
                 out[x] = TRANSPARENT;
+                continue;
+            }
+        }
+        if (oogieHall && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
+            const BgLatch* l = &sBgLatch[bg];
+            int wx = l->x + gx + (hofs - l->hofs), wy = l->y + gy + (vofs - l->vofs);
+            int cx = l->x + GBA_SCREEN_W / 2 + (hofs - l->hofs), cy = l->y + GBA_SCREEN_H / 2 + (vofs - l->vofs);
+            if (PortOogieHallPixel(wx, wy, cx, cy, &out[x])) {
+                sInWorld[x] = 1;
                 continue;
             }
         }

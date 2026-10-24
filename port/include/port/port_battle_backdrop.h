@@ -25,6 +25,10 @@ int PortArenasV2(void);
 int PortUrsulaLayer(const void* const* maps);
 int PortUrsulaFloorPixel(int x, int y, int cy, uint16_t* color);
 
+/* Oogie Boogie's hall (port_oogie.c): the room goes on as one bay of a long hall, its path and green field in front */
+int PortOogieLayer(const void* const* maps);
+int PortOogieHallPixel(int x, int y, int cx, int cy, uint16_t* color);
+
 /* Darkside's beach (port_darkside.c): 1 the beach layer, 2 Darkside's body, 0 neither. */
 int PortDarksideLayer(const void* const* maps);
 /* cx, cy: the map tile at the middle of the original picture (the body's single copy is the one nearest it) */

@@ -87,3 +87,15 @@ Comprobación de cada arena: el rectángulo GBA idéntico píxel a píxel antes/
 7. **Arriba no siempre es lo mismo que abajo.** En Trickmaster el ciclo vertical del mapa ya pone suelo por encima de
    la imagen: la extensión se limita a debajo de ella (`gy >= 160`).
 8. Pendiente de arte nuevo (como Darkside): el ala del dragón se corta en el borde de su bloque.
+9. **Leer el mapa en tiles, no en píxeles** (Oogie, 24/10): la sala (30 x 35 tiles, x 256..495, y 192..471) está
+   armada simétrica y con pocas piezas: columnas de 2 tiles, ladrillo liso en dos filas de tiles alternadas
+   (filas 232 y 256), guirnaldas cada 64 px, calabazas cada 128, escenario/baranda espejados en el centro (x 376).
+   Leída como **una bahía de un salón largo**: al costado otra bahía con sus mismos tiles. Su paleta sale de la
+   entrada del mapa (copiar la entrada entera, no el número de tile).
+10. **Lo que es de la pelea no se repite**: la reja de dientes del centro y los tres contadores (su brillo se apaga
+    con cada dado roto, `BosMapanime`) solo en la bahía del combate; en las otras, la cornisa y el panel del hueco
+    entre dos contadores. Las rejas son sprites del jefe (`BosBoogieSaku`): no se tocan.
+11. **Campo con figuras**: repetir 4 tiles en espejo da caleidoscopio; bloques de 8 x 7 tiles (las columnas verdes
+    exteriores, 29 pegada a 0 como en el mapa), uno sí uno no en espejo y cada banda corrida 4 tiles, se lee como
+    un estampado. Debajo del camino: sus líneas siguen su pendiente medida (filas 408..470) y los dientes negros del
+    rojo van pegados a su línea; el antebrazo del esqueleto sigue hacia abajo con su última fila.
