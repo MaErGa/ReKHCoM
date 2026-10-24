@@ -190,3 +190,16 @@ Por qué:
 Regla desde ahora: el arte lo hace el agente principal (con contexto), en serie, con la base del generador Python y su
 mejora propia; otros agentes (Codex) toman piezas en paralelo por la cola. Los workers solo para tareas mecánicas
 (capturas, baterías, limpieza), nunca para decidir arte.
+
+## Escena 095: comentario posterior sobre laberinto y castillo (24/10, propuesta Codex)
+
+Referencia humana: versión `063184fedd8043a492e2fe4b5ea34b25`, envío `20261024-130959-c53dec`; nubes
+`c97b37ea-0aeb-48ad-a8bc-5f8975e97205` (prolijidad del patrón) y `d6b9f5ce-4dc7-45bf-9daa-9f2357f6849b`
+(patrón y castillo único). La receta anterior no constituye un modelo aprobado.
+
+El laberinto del fondo y los setos del primer plano necesitan donantes separados: el plano lejano no se
+sesga con la diagonal del seto. El módulo de seto izquierdo conserva sus doce columnas; ampliarlo a dieciséis
+introduce el hueco de la puerta. La derecha debe reutilizar un módulo completo reflejado a nivel de píxel,
+no una tira que copie parte del trono ni cuatro columnas que produzcan escalones. El horizonte añadido
+repite una ladera sin la silueta del castillo; el dibujo original dentro del mapa y el rectángulo GBA se conservan.
+Esta entrega es una propuesta pendiente de valoración; no hereda honores ni habilita arte nuevo para jugadores.
