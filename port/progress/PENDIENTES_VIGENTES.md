@@ -42,9 +42,14 @@ video de YouTube; averiguar cuáles: pedir nombres al reportero si hace falta).
    `claude/arenas` 744d8fadc, worktree `D:/01Claude/arenas-wt`). Espera los comentarios del usuario. Lectura propia:
    1 de pie bien; 2/5/7 bien con costura leve; 3 pelo cortado y escalón en el hombro; 4 espejo rígido; 6 puñetazo
    con huecos y pedazos sueltos (rehacer).
-2. **Preliminar V2: arenas de todos los jefes** (pedido del usuario, en esta sesión, después de Darkside): copia
-   jugable + .bat con cada jefe en vista ancha, método de WORKFLOW_ARTE_AMPLIO.md / BATTLE_SCENERY_TECHNIQUE.md, de a
-   uno con antes/después; base: auditoría BATTLE_SCENERY_AUDIT.md y lo aprobado (Guard Armor 008, Agrabah).
+2. **Preliminar V2: arenas de todos los jefes** (pedido del usuario, en esta sesión): todo con `KHCOM_ARENAS_V2=1`
+   (apagado hasta aprobar), lógica en BATTLE_SCENERY_TECHNIQUE.md "Preliminar V2". Hecho y en main (23/10 noche):
+   **Trickmaster** (ajedrez hacia abajo en su perspectiva, 3a830e2ff), **Maléfica** (salón por bahías, un solo
+   dragón, 1a43939b2), **Úrsula** (bajo el suelo lo que trae el mapa, una sola Úrsula, lomo continuo, 1a07929b6);
+   rectángulo GBA idéntico en todas. Falta: **Oogie** (sala angosta: pared, rejas y suelo a los costados), **Jafar**
+   y **Marluxia final** (hoy en vista Original dentro de la ancha: habilitar su vista ancha y extender), **Darkside**
+   (espera la revisión de las 7 poses), y armar la copia jugable `pruebas/ReKHCoM-preliminarV2` + .bat (selector de
+   jefe, antes/después).
 3. v2.0 para todas las plataformas: depurar, cerrar issues, lista de verificación de abajo; builds solo con su OK.
 
 ## ONLINE — avance (usuario 23/10: "ir haciendo % de avances"; metas de ping: 20-150 ms local, 150-250 bien)

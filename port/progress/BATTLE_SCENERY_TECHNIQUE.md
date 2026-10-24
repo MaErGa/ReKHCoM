@@ -59,3 +59,31 @@ falta el suelo inferior: no reconstruir paredes ni chimenea. En Darkside,
 Úrsula y Maléfica separar especialmente la capa del jefe de la del escenario.
 En Jafar preservar pilares animados y límites jugables. Revisar cada propuesta
 antes de adoptar sus períodos: la receta es el proceso, no las constantes.
+
+## Preliminar V2 de las arenas de jefes (23/10 noche) — lógica aprendida
+
+Todo detrás de `KHCOM_ARENAS_V2=1` (apagado para los jugadores hasta la aprobación del usuario); capturas antes /
+después a x3 con `py -3 port/tools/arena_before_shots.py [--v2] [--only arena]` (`build/arena/v2-before|v2-after`).
+Comprobación de cada arena: el rectángulo GBA idéntico píxel a píxel antes/después en 16:9 y 32:9.
+
+1. **Medir antes de dibujar.** `bgdecode.py` (scratchpad; receta: los símbolos de `build/eu/pc/rom_symbols.s`, mapa
+   de 32x32 entradas por bloque, tiles 4bpp, paleta 16 colores por entrada) muestra qué parte del mapa está
+   dibujada: Maléfica solo x 64..447; Trickmaster el mapa entero; Úrsula todo el ancho.
+2. **Perspectivas: geometría del propio cartucho.** El ajedrez de Trickmaster es un suelo en perspectiva real: las
+   columnas se ensanchan linealmente con y hacia un punto de fuga (y = 33,3) y las filas son equiespaciadas en
+   profundidad (1/(y - fuga) baja 0,000564 por fila). Medido de los cambios de color de sus filas; repetir filas no
+   sirve (las cuadrículas crecen hacia el frente).
+3. **Bandas regulares: el período de su dibujo.** Los arcos de Maléfica se repiten cada 72 px (arco + pilar con
+   gárgola): fuera de lo dibujado cada fila sigue con una bahía completa propia; arriba el cielo liso, abajo el
+   borde de piedra (sus 32 filas, las últimas 16 envueltas a la fila 0 del mapa).
+4. **Lo que el mapa ya trae debajo.** Úrsula: las primeras 64 filas del mapa son lo que hay bajo su suelo (borde de
+   pinchos y el resplandor rojo); usarlas es arte del cartucho, no inventado.
+5. **Una sola criatura.** El dragón y Úrsula viven en una capa propia (sus mapas por pose en un bloque; los otros
+   tres vacíos): fuera de la imagen solo se dibuja la copia más cercana a ella (`PortMaleficentDragonVisible`); antes
+   la repetición lateral de la capa mostraba dos o tres.
+6. **No todo es fondo.** El lomo de roca de Úrsula son dos sprites (mitades izquierda y derecha en x 128 y 384 del
+   mundo, `task_bos_ursula_border_2`): se continúa dentro de la función del juego, dibujando las mismas mitades un
+   período del fondo (512) a cada lado, solo en la V2.
+7. **Arriba no siempre es lo mismo que abajo.** En Trickmaster el ciclo vertical del mapa ya pone suelo por encima de
+   la imagen: la extensión se limita a debajo de ella (`gy >= 160`).
+8. Pendiente de arte nuevo (como Darkside): el ala del dragón se corta en el borde de su bloque.
