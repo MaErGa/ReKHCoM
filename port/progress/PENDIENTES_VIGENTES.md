@@ -31,6 +31,13 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
 - **Editor de posición de botones táctiles (2e613ab45):** Opciones > "Mover botones táctiles": juego en pausa,
   se arrastra cada grupo, ✓ guarda (`touch_<grupo>_x/_y` en kh_com.ini), ↺ restablece. test_android_touch lo
   recorre. Captura en la app de revisión (Pre). Falta verlo en el emulador Android y en la web (punto 5).
+- **TRASPASO de Codex (24/10 ~14:30, Claude):** Codex sin commits ni cambios desde 02:15 (último commit 395beb69d hace
+  8 h; su árbol khcom-codex con WIP sin commitear de escena 124 en port_ppu.c y preliminar_v1_*). Por la regla de los
+  10 min, Claude toma su cola de la app de revisión (escenas V1 044-120 con nubes, jefes V2 Oogie/Trickmaster/Maléfica,
+  Darkside arena). Su WIP queda como está (no se toca su árbol).
+- **Darkside r6 en la app (3f5f7c235):** 03 el ala (mechones que siguen su pendiente y se difuminan), 06 el brazo nace
+  en el hombro (23 px más arriba), costura redibujada. Responde los envíos 052330 y 054756.
+- **Calidad HD (punto 7):** midiendo Q 75/80/85 por GPU (`build/hdprobe-2410.txt`, hd_quality_probe.py a8aed0058).
 - **Launcher de Android = el de PC (e7223a862):** decompui compilado para Android (LAUNCHER_ANDROID, liblauncher.so en
   LauncherActivity, que ahora es SDLActivity): mismas pestañas, horizontal, desplazamiento con el dedo; selectores del
   sistema por JNI (ROM con SHA-1, partidas, carpeta hd del PC), juego en su proceso. Probado en el emulador: páginas,
