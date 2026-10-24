@@ -301,11 +301,11 @@ void PortConfigAutoView(int outW, int outH, int battle, int* w, int* h, int* sca
                        : PortConfigZoomScaleF(battle && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom);
     /* a screen taller than 16:9 (Android tablets 16:10 and 4:3, a foldable opened): the same rows as a 16:9 screen
        of its width at this zoom, so the floor below the fight and the HUD's distance stay as designed (less width
-       instead). Preview until the user approves it: KHCOM_TALL_FIT=1 (24/10). */
+       instead). Approved by the user 24/10; KHCOM_TALL_FIT=0 turns it off (tests). */
     if (!PortUiMenuCanvas() && outW > 0 && outH * 16 > outW * 9) {
         static int tall = -1;
         if (tall < 0)
-            tall = SDL_getenv("KHCOM_TALL_FIT") && SDL_getenv("KHCOM_TALL_FIT")[0] == '1';
+            tall = !(SDL_getenv("KHCOM_TALL_FIT") && SDL_getenv("KHCOM_TALL_FIT")[0] == '0');
         if (tall)
             f *= (outH * 16.0f) / (outW * 9.0f);
     }

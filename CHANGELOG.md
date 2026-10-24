@@ -65,6 +65,8 @@ HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes
   dump or the HD mod's folders, an hd folder) by moving it, and sends leftovers to the Recycle Bin; a zip with other
   files (a backup) is kept.
 - Options: the game's settings first (roll, stock, volumes, save bank, undub), the picture's after.
+- Tablets and foldables (screens taller than 16:9): the picture is framed as on a 16:9 screen, bigger and without
+  the black band above the backdrop.
 - No more crash going fullscreen with the "smooth" filter on PCs without a GPU (SDL's software renderer).
 - Touch controls in menus take the d-pad's main direction only: going down in Options no longer changed a value or
   opened Achievements by itself.

@@ -102,3 +102,8 @@ Workflow completo (tiles, píxeles, pixel art, pruebas en x3 entero): WORKFLOW_A
   `KHCOM_AGRABAH109_WIDE=0` las apagan en las pruebas. Regla: lo aprobado (o con honores) va encendido, nunca detrás
   de una variable de prueba.
 
+
+## Tablets y plegables (aprobado 24/10)
+
+En pantallas más altas que 16:9 la vista Auto usa las filas de una pantalla 16:9 del mismo ancho (`PortConfigAutoView`,
+port_config.c): más grande, sin franja negra sobre el fondo, el HUD cerca de la acción. `KHCOM_TALL_FIT=0` lo apaga.

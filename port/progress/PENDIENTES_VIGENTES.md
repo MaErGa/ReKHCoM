@@ -55,8 +55,7 @@ Reglas del usuario:
 
 **Esperan aprobación del usuario (no ir a jugadores antes):**
 - Temas de botones táctiles Clear/Dark/Color (`pruebas/Botones tactiles - *.png`).
-- Tablets: `KHCOM_TALL_FIT=1` (`pruebas/Tablets Android - antes (izq) y despues (der)*.png`): sin la franja negra
-  sobre el fondo en 16:10/plegable, encuadre vertical de 16:9.
+- ~~Tablets~~ APROBADO 24/10 y encendido para todos (`KHCOM_TALL_FIT=0` lo apaga).
 
 ## TRASPASO 24/10 noche (Claude, sesión nueva) — LEER PRIMERO
 
