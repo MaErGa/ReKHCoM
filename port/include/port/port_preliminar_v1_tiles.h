@@ -347,6 +347,27 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
          * them from floor/water swatches outside the unchanged GBA viewport. */
         return ox >= 0 && ox < w && oy >= 0 && oy < h;
     }
+    if (v[0]==104 && v[1]==3 && 2*oy-ox>=48) {
+        /* Solid purple below the front edge, from an opaque wall tile. */
+        *x=0; *y=25; return 1;
+    }
+    if (v[0]==104 && v[1]==3 && (ox<0 || ox>=w || oy<0) && 2*oy-ox<16) {
+        /* the floor's back edge, its arcs whole and the stripes behind (user
+         * 24/10): the floor repeats along (4,2); columns 40..43 hold whole
+         * arcs (the vase hides the top of the arc at 36), the map's left
+         * columns have theirs cut by its top */
+        sx=40+PortSceneTileMod(ox-40,4); sy=oy+(sx-ox)/2;
+        if (sy<0) sy=PortSceneTileMod(sy,4);
+        *x=sx; *y=sy; return 1;
+    }
+    if (v[0]==104 && v[1]==3 && (ox<0 || ox>=w || oy<0 || oy>=31)) {
+        /* Continue the floor and its front edge along (8,4). Row 31 is
+         * already blank in this map; the old lower swatch crossed its edge. */
+        sx=PortSceneTileMod(ox,8); sy=oy+(sx-ox)/2;
+        if (sy>=32) sy=31;
+        if (sy<0) sy=0;
+        *x=sx; *y=sy; return 1;
+    }
     if (v[0] == 97) {
         if (ox >= 8 && ox < 48 && oy >= 0 && oy < 40) return 1;
         if (!v[20]) return 0;
@@ -408,6 +429,22 @@ static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==104 && p->v[1]==2 && wy<0) {
+        /* the kelp cut by the map's top goes on up its 6-row cycle and ends
+         * in its own bottom tip, reflected (user 24/10); each at its height */
+        static const int8_t kKelp[][3]={{8,-4,12},{10,-2,9},{21,-3,9},{24,-5,13},
+                                        {25,-3,10},{27,-4,11},{35,-2,11},{36,-4,15}};
+        int col=wx>>3, row=wy>>3;
+        unsigned i;
+        for (i=0; i<sizeof(kKelp)/sizeof(kKelp[0]); i++) {
+            if (kKelp[i][0]!=col || row<kKelp[i][1]) continue;
+            *sx=wx;
+            *sy=row==kKelp[i][1]?kKelp[i][2]*8+7-(wy&7):PortSceneTileMod(row,6)*8+(wy&7);
+            return 1;
+        }
+        *sx=504; *sy=248; /* an empty cell of the map */
+        return 1;
+    }
     if (p && p->v[0]==99 && p->v[1]==3 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
         int tx=wx>>3, ty=wy>>3;
         if (PortPreliminar099Floor(wx,wy,sx,sy)) return 1;

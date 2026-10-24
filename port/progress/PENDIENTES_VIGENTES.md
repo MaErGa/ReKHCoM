@@ -11,6 +11,29 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
 - La validación en hardware real no es pendiente: llega como reporte. Publicar (releases, comentarios) solo con OK.
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release (Quiver nos aceptó el 24/10).
 
+## TRASPASO 24/10 13:14 (Chile, Codex — retoma tras cierre de Claude)
+
+- Base recuperada: main `bfaa5e76c`; 098, 099 y 102 ya respondidas en la app (faltaban en el resumen).
+  Trabajo aislado en `khcom-resume`, rama `codex/resume-20261024`. Los dos archivos WIP de Claude (104,
+  última escritura 12:45) se copiaron para completarlos; su árbol y el WIP viejo de `khcom-codex` quedan intactos.
+- **104 respondida en la app**: hija `52df9ff43f4e48b4a722240c723bc2f8` de
+  `b462df0229ba4e74bd8e9854356fbfc9`, responde las cinco nubes del envío `20261024-055457-55b960`.
+  Brillos/arcos completos desde columnas 40..43, algas cerradas con sus puntas; suelo y borde delantero
+  prolongados en diagonal, sin tomar la fila vacía 31 ni el rectángulo inferior que generaba cortes negros.
+  Activadas las dos filas 104 de la tabla **solo para Preliminar V1**: estaban apagadas y las últimas capturas
+  de Claude eran iguales con/sin receta. No se añade 104 a la lista de honores: espera valoración humana.
+  Prueba EU: `python port/tools/test_preliminar_v1.py --build build/pc --out build/resume-104-verified
+  --only escena-104,evento-106-escena-104 --subject 104`: 2 eventos × 4 anchos × 3 cuadros = **24/24**, GBA idéntico,
+  márgenes distintos, 0 CRASH. Revisión visual a x3 de la captura 3440x1440. `check_sources.py`: ok.
+  Evidencia local en `khcom-resume/build/resume-104-verified`; captura entregada en `build/prelim/104-after.png`.
+- **Siguiente pieza: 110**, después 112, 115, 116, 117, 118, 120; también 081 (ventana), 097 (sprites),
+  Darkside arena y jefes V2 (Oogie, Trickmaster, Maléfica 01). Leer la cola viva de la app antes de cada pieza.
+- Las baterías sobrevivieron a Claude: **dos coordinadores** (PID 31852/31856) comparten la salida de skip JP;
+  no se lanzó una tercera ni se detuvo ninguna. Al retomar: monkey EU/US/JP y skip EU/US terminados,
+  skip JP en curso; siguen sin cerrar rooms EU, battles EU y Android. Revisar `run_batteries.py --status`
+  en `khcom-claude-int`, que es donde viven sus resultados (los de este checkout aislado empiezan vacíos).
+- No se publicó ningún release ni se cambiaron copias de `jugar/`. La v2.0 estable sigue esperando OK.
+
 ## Estado (24/10 ~06:30, Claude — sesión nueva, /goal: terminar todo lo de antes de la v2.0)
 
 - **App de revisión 0.5.0 (b32647332, en main; la app abierta se actualiza sola):** pestañas Pre / Rev / Aprobado
@@ -43,7 +66,7 @@ Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
   gen_scene053_plateau.py), **054** (ab3753b8a), **087** (0872e65d1), **095** (df97e8cf8).
   **081** revertida: el patrón no repite bien con la ventana actual (necesita extender la ventana; queda para después).
   **097** (gato de Cheshire visible fuera de la zona GBA): es lógica de sprites, no de receta; anotada.
-  Faltan: 098 099 102 104 110 112 115 116 117 118 120, 081, 097, jefes V2 (Oogie, Trickmaster, Maléfica 01),
+  Faltan: 110 112 115 116 117 118 120, 081, 097, jefes V2 (Oogie, Trickmaster, Maléfica 01),
   Darkside arena.
 - **Darkside r6 en la app (3f5f7c235):** 03 el ala (mechones que siguen su pendiente y se difuminan), 06 el brazo nace
   en el hombro (23 px más arriba), costura redibujada. Responde los envíos 052330 y 054756.
