@@ -940,6 +940,8 @@ static int HudRaise(void) {
 
 void PortSetBattleView(int on) {
     sBattleView = on;
+    if (!on)
+        PortMarluxiaField(0);
     memset(sBgClip, 0, sizeof(sBgClip));
     memset(sArenaBands, 0, sizeof(sArenaBands));
 }
@@ -1504,6 +1506,8 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
     int ursLayer = PortArenasV2() && sBgLatch[bg].valid ? PortUrsulaLayer((const void* const*)sBgLatch[bg].map) : 0;
     /* Jafar's room (1) goes on by its periods; the genie's layer (2) shows one genie */
     int jfLayer = PortJafarWide() && sBgLatch[bg].valid ? PortJafarLayer((const void* const*)sBgLatch[bg].map) : 0;
+    /* Marluxia's last fight: the field (BG0) wraps beyond the picture as on the hardware, the body (BG1) once */
+    int mxField = PortMarluxiaExtendOn() && (bg == 0 || bg == 1);
     /* Oogie's room goes on as one bay of a long hall */
     int oogieHall = PortArenasV2() && sBgLatch[bg].valid && PortOogieLayer((const void* const*)sBgLatch[bg].map);
     /* Maleficent's hall (1) goes on by its bays; her dragon's layer (2) shows one dragon */
@@ -1591,6 +1595,19 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
                 out[x] = TRANSPARENT;
                 continue;
             }
+        }
+        if (mxField && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
+            if (bg == 0)
+                goto picture;
+            entry = PortMarluxiaBodyEntry(gx, gy, hofs, vofs);
+            if (entry <= 0) { /* beside the body, or a cell the game left empty */
+                out[x] = TRANSPARENT;
+                continue;
+            }
+            tile = entry & 0x3FF;
+            fx = (entry & 0x400) ? 7 - ((gx + hofs) & 7) : ((gx + hofs) & 7);
+            fyy = (entry & 0x800) ? 7 - fy : fy;
+            goto pixel;
         }
         if (jfLayer && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
             const BgLatch* l = &sBgLatch[bg];
@@ -1782,6 +1799,7 @@ scalar_world:
             fy = py & 7;
             goto pixel;
         }
+    picture:
         px = (gx + hofs) & wmask;
         tx = px >> 3;
         block = 0;
@@ -3357,6 +3375,9 @@ void PortPpuBeginFrame(void) {
             if (p->src == (const void*)gMapGmkAgrabah01Palette) sAgrabah109ShopPal[1] = p->index;
         }
     }
+    /* Marluxia's last fight: the wide view all along (not only while its effect layer is on) */
+    if (PortMarluxiaFieldOn())
+        any = 1;
     /* Large affine stages (battle arenas) are fully in VRAM and extend as is. */
     for (b = 2; b < 4; b++) {
         int mode = dispcnt & 7;

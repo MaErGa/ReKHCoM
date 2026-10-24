@@ -36,6 +36,11 @@ int PortJafarMapBuffer(const void* block);
 int PortJafarHallPixel(int x, int y, int cx, int cy, uint16_t* color);
 int PortJafarGenieCleared(int x, int y);
 
+/* Marluxia's last fight (port_marluxia.c): the field wraps beyond the picture, the body drawn once and whole */
+int PortMarluxiaFieldOn(void);
+int PortMarluxiaExtendOn(void);
+int PortMarluxiaBodyEntry(int gx, int gy, int hofs, int vofs);
+
 /* Darkside's beach (port_darkside.c): 1 the beach layer, 2 Darkside's body, 0 neither. */
 int PortDarksideLayer(const void* const* maps);
 /* cx, cy: the map tile at the middle of the original picture (the body's single copy is the one nearest it) */

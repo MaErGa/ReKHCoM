@@ -2799,6 +2799,9 @@ void task_bos_lst_2(BosLstWork* work) {
             DmaCopy16(3, src + 169, &work->bgMap[10 * 32 + 18], 0x1C);
         }
 
+#ifdef PLATFORM_PC
+        PortMarluxiaBodyMap(work->bgMap); /* whole, before the rows off the screen are cleared */
+#endif
         if (sy < 0) {
             CpuFastFill(0, work->bgMap, ((-sy) >> 3) * 64);
         } else if (sy <= DISPLAY_HEIGHT - 1) {

@@ -43,7 +43,12 @@ hasta el checkpoint de la Preliminar V2 de jefes y sus comentarios antes de la v
   hardware: agregar uno igual a nuestro log en consolas.
 - **Pista de su #12 (EU, crash al recibir daño mientras se guardan cartas)**: acceso NULL (addr 0x10); probar el
   mismo caso en nuestro EU (PC "bios:" + Android 64) con la batería; si aparece, arreglarlo y buscar parientes.
-- Siguiente: Marluxia, copia jugable de la V2 y esperar los comentarios del usuario
+- **Marluxia final hecho** (Preliminar V2, espera aprobación, `KHCOM_ARENAS_V2=1`; `port/src/port_marluxia.c` + ganchos
+  de presentación en bos_lst.c / bos_lst_fld.c): vista ancha toda la pelea (antes saltaba de tamaño al prenderse
+  BG2), el fondo de pantalla envuelve como en el hardware en sus 4 modos, el cuerpo (BG1) una sola copia y entero
+  (el mapa antes de que el juego borre sus filas fuera de pantalla). GBA idéntico 6/6 (`build/arena/mx_check.sh`,
+  `KHCOM_NO_MARLUXIA_FIELD`).
+- Siguiente: copia jugable de la V2 y esperar los comentarios del usuario
   (checkpoint antes de la v2.0).
 
 ## TRASPASO 23/10 noche (Claude; /goal del usuario: "acabar y depurar todos los pendientes hasta llegar a la 2.0") — LEER PRIMERO

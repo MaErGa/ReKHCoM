@@ -114,6 +114,11 @@ void PortBgSplitBands(int bg, int enabled);
 void PortBgClip(int bg, int on);
 /* Battles: world-map layers repeat sideways past their edge. */
 void PortSetBattleView(int on);
+/* Marluxia's last fight (bos_lst*.c), presentation only: its field is a screen background that wraps like the
+   hardware's, and the body's map as built before the game clears its rows off the screen (the wide view shows one
+   body, whole). Cleared with the battle view. */
+void PortMarluxiaField(int on);
+void PortMarluxiaBodyMap(const void* map);
 /* Authored arena bounds and repeatable side bands; screen margins only. */
 void PortSetBattleArenaBands(int left, int right, int leftStart, int leftWidth,
                              int rightStart, int rightWidth);
