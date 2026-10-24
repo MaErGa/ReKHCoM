@@ -4,12 +4,57 @@
 # file name): the region is read from the ROM header.
 #   ./ReKHCoM.sh                 first ROM found in roms/
 #   ./ReKHCoM.sh --region us     a specific version (eu, us or jp)
-DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P) || exit 1
+
+# Desktop Entry Exec has two escaping passes (string, then quoted argument),
+# unlike a shell command. In particular, %% is a literal percent sign.
+desktop_exec_arg() {
+    printf '%s' "$1" | sed -e 's/\\/\\\\\\\\/g' -e 's/["$`]/\\\\&/g' -e 's/%/%%/g'
+}
+desktop_string() {
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/ /\\s/g' -e 's/	/\\t/g'
+}
+steam_help() {
+    printf 'Native Linux shortcut (Compatibility: do not force Proton):\n'
+    printf 'Target: /bin/sh\nStart In: "%s"\nLaunch Options: ' "$DIR"
+    printf '"%s"\n' "$(printf '%s' "$DIR/ReKHCoM.sh" | sed 's/[\\"$`]/\\&/g')"
+    printf 'Keep these quotes. Add game arguments after the quoted script path.\n'
+}
+
+case "$1" in
+    --install-desktop|--steam-help)
+        # Multiline paths cannot be represented safely in Steam's UI fields.
+        CR=$(printf '\r')
+        case "$DIR${XDG_DATA_HOME:-$HOME/.local/share}" in
+            *'
+'*|*"$CR"*) echo 'Move the game to a path without newline/carriage-return characters.' >&2; exit 1 ;;
+        esac
+        if [ "$1" = "--steam-help" ]; then steam_help; exit 0; fi
+        APPS=${XDG_DATA_HOME:-$HOME/.local/share}/applications
+        case "$APPS" in /*) ;; *) echo 'XDG_DATA_HOME must be an absolute path.' >&2; exit 1 ;; esac
+        mkdir -p "$APPS" || exit 1
+        ENTRY=$(mktemp "$APPS/.rekhcom-XXXXXX") || exit 1
+        trap 'rm -f "$ENTRY"' EXIT HUP INT TERM
+        {
+            printf '[Desktop Entry]\nType=Application\nName=ReKHCoM\n'
+            printf 'Comment=Kingdom Hearts: Chain of Memories (native Linux)\n'
+            printf 'Exec=/bin/sh "%s"\n' "$(desktop_exec_arg "$DIR/ReKHCoM.sh")"
+            printf 'Path=%s\nIcon=%s\n' "$(desktop_string "$DIR")" "$(desktop_string "$DIR/ReKHCoM.png")"
+            printf 'Terminal=false\nCategories=Game;\n'
+        } > "$ENTRY" || exit 1
+        chmod 644 "$ENTRY" && mv -f "$ENTRY" "$APPS/rekhcom.desktop" || exit 1
+        trap - EXIT HUP INT TERM
+        printf 'Installed %s\nIn Steam: Games > Add a Non-Steam Game > select ReKHCoM.\n' "$APPS/rekhcom.desktop"
+        steam_help
+        exit 0 ;;
+esac
 REGION=
 ROM=
-if [ "$1" = "--region" ] && [ -n "$2" ]; then
-    REGION=$2
-    shift 2
+if [ "$1" = "--region" ]; then
+    case "$2" in
+        eu|us|jp) REGION=$2; shift 2 ;;
+        *) echo 'Usage: ReKHCoM.sh [--region eu|us|jp] [game arguments]' >&2; exit 2 ;;
+    esac
 fi
 
 code_of() {
@@ -33,7 +78,7 @@ done
 
 # Everything this script and the game print goes to ReKHCoM.log next to it (Steam's Game Mode shows no terminal).
 exec >"$DIR/ReKHCoM.log" 2>&1
-echo "ReKHCoM.sh: $(date), folder $DIR, region ${REGION:-auto}"
+echo "ReKHCoM.sh: $(date), native Linux, folder $DIR, region ${REGION:-auto}"
 
 if [ -z "$ROM" ]; then
     # No dump found: the game itself says so in its own window, which Steam's Game Mode shows (zenity is not there).

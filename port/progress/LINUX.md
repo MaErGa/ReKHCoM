@@ -95,3 +95,18 @@ Steam Deck, ni ninguna Anbernic.
   distro/Steam Deck real.
 - No hay launcher gráfico en Linux (el de Windows usa APIs de Windows); los
   ajustes están en el menú de opciones del juego.
+
+## Steam Deck, issue 49 (24/10/2026)
+
+El paquete ya no genera un .desktop relativo antes de saber dónde se extraerá.
+`sh ./ReKHCoM.sh --install-desktop` instala la entrada XDG con `/bin/sh` y rutas
+absolutas; `--steam-help` imprime los campos para el acceso manual de Steam.
+Ambas opciones funcionan sin ROM. La guía empaquetada distingue el wrapper
+nativo de la versión Windows por Proton y explica cómo reparar accesos viejos.
+No se modifica Steam automáticamente. Receta, fuentes y límites:
+[STEAM_DECK_49.md](STEAM_DECK_49.md).
+
+`python port/tools/test_linux_launcher.py --shell /bin/sh`: 4/4 en Debian 12
+x86_64, con parser y lanzamiento GLib y desktop-file-validate; 4/4 también con
+Git sh en Windows. Son pruebas de arranque y rutas con stubs, no una prueba
+real de Gaming Mode ni una resolución del antiguo reporte Proton Experimental.
