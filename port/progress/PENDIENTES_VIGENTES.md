@@ -5,6 +5,14 @@
 Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola: COLA_COLABORATIVA.md. Estado vivo de piezas:
 `python port/tools/art_queue.py --quiet list`.
 
+## TRASPASO ACTIVO — 25/10, Codex (continuar antes del ZIP)
+
+Estado verificable y siguientes pasos: [TRASPASO_CARGAS_ZIP_20261025.md](TRASPASO_CARGAS_ZIP_20261025.md).
+El usuario dejó el arte pendiente a Claude; Codex integra los aprobados y termina
+los pendientes técnicos, todos los PR y un ZIP **local**. Registrar y pushear cada
+avance verificado. La autorización directa del 25/10 incluye las versiones
+aprobadas de 102/115/116/117/118 sin cambiar su valoración a honores.
+
 ## Jafar — corrección técnica 25/10/2026
 
 Blinkeo reproducido y corregido en `codex/jafar-blink`: origen conservado al reenlazar

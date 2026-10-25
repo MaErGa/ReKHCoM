@@ -15,6 +15,11 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Integración 25/10: escena 117, versión `ff9f8d6e16a149708fb8a08c5c80d431` aprobada en Atlas.
+El usuario autorizó integrar los aprobados antes del ZIP; se conserva
+la valoración sin elevarla a honores. Los comentarios nuevos permanecen
+en la app para una hija posterior, a cargo del carril de Claude.
+
 Integración 25/10: escena 116, versión `4767d7d89689440084a12cf7beeab8b9` aprobada en Atlas.
 El usuario autorizó integrar los aprobados antes del ZIP; se conserva
 la valoración sin elevarla a honores. Los comentarios nuevos permanecen
@@ -45,6 +50,13 @@ el muro posterior y la baranda delantera, trasladando módulos completos de
 ventanas, molduras y faroles sobre sus diagonales. El casco rojo continúa bajo
 la baranda; no sustituir el exterior por suelo ni repetir los faroles en vertical.
 La esquina plana del fondo mantiene su fase propia al girar el muro derecho.
+
+Propuesta 25/10, escena 117 (valoración pendiente): cerrar la tapa cortada de
+una caja con otra tapa equivalente de su propio fondo. Cuando el donante cruza
+el mapa, conservar el reflejo y la fase por píxel de su punta completa.
+Para la pared diagonal, escoger una banda cuyo encuentro con el suelo esté
+entero dentro del mapa y una muestra superior completamente opaca; una banda
+cortada por el borde genera escalones y fragmentos repetidos.
 
 1. **Solo píxeles del juego.** Nada se dibuja nuevo: se reutilizan los tiles de
    la propia sala/escena, volteados o repetidos (bits 0x400 hflip / 0x800 vflip
