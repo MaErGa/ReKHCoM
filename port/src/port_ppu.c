@@ -1661,7 +1661,7 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
                 continue;
             }
         }
-        if (mdLayer && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
+        if (mdLayer && (mdLayer == 2 || outside || gx < 0 || gx >= GBA_SCREEN_W)) {
             const BgLatch* l = &sBgLatch[bg];
             int wx = l->x + gx + (hofs - l->hofs), wy = l->y + gy + (vofs - l->vofs);
             int cx = l->x + GBA_SCREEN_W / 2 + (hofs - l->hofs), cy = l->y + GBA_SCREEN_H / 2 + (vofs - l->vofs);
@@ -1669,7 +1669,12 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
                 sInWorld[x] = 1;
                 continue;
             }
-            if (mdLayer == 2 && !PortMaleficentDragonVisible(wx, wy, cx, cy)) {
+            if (mdLayer == 2 && PortMaleficentDragonPixel(l->map[3], wx, wy, cx, cy, &out[x])) {
+                sInWorld[x] = 1;
+                continue;
+            }
+            if (mdLayer == 2 && (outside || gx < 0 || gx >= GBA_SCREEN_W) &&
+                !PortMaleficentDragonVisible(wx, wy, cx, cy)) {
                 out[x] = TRANSPARENT;
                 continue;
             }

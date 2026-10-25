@@ -50,4 +50,6 @@ int PortDarksideTileSource(int layer, int* tx, int* ty, int cx, int cy);
 int PortDarksideShorePixel(int x, int y, uint16_t* color);
 int PortDarksideBodyPixel(const void* const* maps, int x, int y, int cx, int cy, uint16_t* color);
 
+int PortMaleficentDragonPixel(const void* map, int x, int y, int cx, int cy, uint16_t* color);
+
 #endif
