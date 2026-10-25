@@ -2889,6 +2889,12 @@ void PortSoftReset(void) {
 typedef struct PortPowerThrottling { ULONG Version, ControlMask, StateMask; } PortPowerThrottling;
 
 static void PortWindowsPerformance(void) {
+    /* Hidden regression/profiling jobs keep their caller's low priority and
+       never join MMCSS Games while the user is playing another game. */
+    if (SDL_getenv("KHCOM_BACKGROUND_TEST")) {
+        PortLog("Windows: background test keeps caller scheduling");
+        return;
+    }
     HMODULE kernel = GetModuleHandleA("kernel32.dll");
     HMODULE winmm = LoadLibraryA("winmm.dll");
     HMODULE avrt = LoadLibraryA("avrt.dll");
