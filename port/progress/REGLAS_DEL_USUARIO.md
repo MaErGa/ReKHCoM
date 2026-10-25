@@ -17,6 +17,12 @@ Sintetizadas de sus pedidos hasta el 24/10/2026. Hablarle en español, breve y d
   timeout o cuelgue en una batería es un bug: replicarlo hasta resolverlo. Nada de crashes en una estable.
 
 ## Juego
+
+- Excepción directa 25/10: el usuario aprobó en la app las nuevas versiones de
+  102, 115, 116, 117 y 118 y pidió «integra los aprobados antes de ese zip».
+  Integrar esas versiones exactas aunque estén aprobadas sin honores; conservar
+  su valoración y registrar sus comentarios como mejoras de la siguiente hija.
+  Esta autorización no aprueba automáticamente otras piezas ni futuras hijas.
 - Velocidad original del cartucho (una actualización por VBlank, 59,7275 Hz); nunca modos de velocidad.
 - No inventar objetos ni vidas del juego desde el port: arreglar dentro del flujo del juego (`#ifdef PLATFORM_PC`).
 - Toda mejora (QoL) opcional: en Opciones del juego, el launcher y `kh_com.ini`. Estética de los menús del propio juego.

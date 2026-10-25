@@ -106,7 +106,7 @@ static int sUseSceneProfiles;
 static int sPreliminarV1;
 static int sPreliminarApprovedOnly; /* only the Preliminar V1 scenes approved with honours, for everyone */
 /* Preliminar V1 scenes approved with honours in the review app; KHCOM_SCENEnnn_WIDE=0 turns one off */
-static const int kPreliminarApproved[] = {53, 54, 55, 121, 122};
+static const int kPreliminarApproved[] = {53, 54, 55, 102, 121, 122};
 static int sPreliminarApprovedOn[sizeof(kPreliminarApproved)/sizeof(kPreliminarApproved[0])];
 /* harness switches, read once per frame on the main thread: getenv in the per-row/per-pixel drawing is slow on
    Windows (a frame a second at 32:9) and not safe to call while the cores draw */
@@ -1268,6 +1268,20 @@ static uint16_t Preliminar102Underlay(const uint8_t* chars, int bpp8, int wx, in
      * the floor is one plain colour (columns 0..1, row 29). */
     int d = 2 * wy - wx, k = 2 * wx - wy, x0 = d < 150 ? 256 : 96, n = wx - x0;
     int sx, sy, entry, px, py, ci, pal, tile;
+    /* The original corner changes direction before joining the diagonal
+       wall. Keep its opaque authored pixels even in the extra viewport;
+       replacing them with the straight donor strip cuts a notch at y=32. */
+    if (wx >= 112 && wy >= 32 && wx < 192 && wy < 80) {
+        entry = MapTile(&sBgLatch[3], wx >> 3, wy >> 3);
+        if (entry >= 0) {
+            px = entry & 0x400 ? 7 - (wx & 7) : wx & 7;
+            py = entry & 0x800 ? 7 - (wy & 7) : wy & 7;
+            tile = entry & 0x3FF;
+            ci = bpp8 ? chars[tile * 64 + py * 8 + px] :
+                 (chars[tile * 32 + py * 4 + (px >> 1)] >> ((px & 1) * 4)) & 15;
+            if (ci) return PLTT16[(bpp8 ? 0 : (entry >> 12) * 16) + ci] & 0x7FFF;
+        }
+    }
     n = n >= 0 ? n / 16 : -((-n + 15) / 16);
     if (wy < 32 && k >= 224 && k < 288) {
         n = (32 - wy + 15) / 16;

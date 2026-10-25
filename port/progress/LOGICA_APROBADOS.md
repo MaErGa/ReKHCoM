@@ -15,6 +15,15 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Escena 102, versión `dd5a82c201a84ca29180026bc7cf064a`, aprobada 25/10 e
+integrada por autorización directa del usuario antes del ZIP (sin elevar su
+valoración a honores). En el encuentro entre una pared que gira y su
+continuación diagonal se conserva primero la curva opaca original; el donante
+recto solo continúa después del encuentro. Los cuatro pilares cortados por el
+mapa siguen su espiral de cinco filas hasta salir del viewport, sin boca plana
+suspendida. Centro GBA intacto. Las tres nubes nuevas sobre los pilares cortos
+quedan para la siguiente hija; no se altera la aprobación de esta versión.
+
 1. **Solo píxeles del juego.** Nada se dibuja nuevo: se reutilizan los tiles de
    la propia sala/escena, volteados o repetidos (bits 0x400 hflip / 0x800 vflip
    de la entrada). Si de verdad no hay tile adecuado, se puede dibujar uno, con
