@@ -530,6 +530,14 @@ static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==117 && p->v[1]==2 && wy<0 && wy>=-56 && wx>=40 && wx<152) {
+        /* Complete the top-cut crate from the matching cap at (152,8).
+         * Its last eight pixels cross the donor map's right edge: reflect
+         * the cap's intact left tip, including the within-tile pixel phase. */
+        *sx=wx+112; *sy=wy+56;
+        if (*sx>=256) *sx=415-*sx;
+        return 1;
+    }
     if (p && p->v[0]==95 && p->v[1]==3 && (wx<0 || wx>=512 || wy<0 || wy>=512)) {
         int tx=wx>>3, ty=wy>>3;
         if (wy>=48 && wy<96) {

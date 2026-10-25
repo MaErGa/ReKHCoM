@@ -106,7 +106,7 @@ static int sUseSceneProfiles;
 static int sPreliminarV1;
 static int sPreliminarApprovedOnly; /* only the Preliminar V1 scenes approved with honours, for everyone */
 /* Preliminar V1 scenes approved with honours in the review app; KHCOM_SCENEnnn_WIDE=0 turns one off */
-static const int kPreliminarApproved[] = {53, 54, 55, 102, 115, 116, 121, 122};
+static const int kPreliminarApproved[] = {53, 54, 55, 102, 115, 116, 117, 121, 122};
 static int sPreliminarApprovedOn[sizeof(kPreliminarApproved)/sizeof(kPreliminarApproved[0])];
 /* harness switches, read once per frame on the main thread: getenv in the per-row/per-pixel drawing is slow on
    Windows (a frame a second at 32:9) and not safe to call while the cores draw */
@@ -1735,7 +1735,7 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
             if (sPreliminarRecipe[bg] &&
                 ((bg==2 && (sPreliminarRecipe[bg]->v[0]==44 || sPreliminarRecipe[bg]->v[0]==45)) ||
                  sPreliminarRecipe[bg]->v[0]==95 || sPreliminarRecipe[bg]->v[0]==99 || (bg==2 && sPreliminarRecipe[bg]->v[0]==104) ||
-                 sPreliminarRecipe[bg]->v[0]==110 ||
+                 sPreliminarRecipe[bg]->v[0]==110 || (bg==2 && sPreliminarRecipe[bg]->v[0]==117) ||
                  sPreliminarRecipe[bg]->v[0]==121 || sPreliminarRecipe[bg]->v[0]==122 ||
                  sPreliminarRecipe[bg]->v[0]==124)) {
                 int sx,sy;
