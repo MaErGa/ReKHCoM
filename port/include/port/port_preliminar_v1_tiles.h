@@ -28,6 +28,40 @@ static inline const PortPreliminarRecipe* PortPreliminarFind(uint32_t hash, int 
 static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x, int* y) {
     const int16_t* v = p->v;
     int ox=*x, oy=*y, sx=ox, sy=oy, w=v[4], h=v[5];
+    if (v[0]==116) {
+        if (ox>=0 && ox<w && oy>=0 && oy<h) return 1;
+        if (v[1]==2) {
+            if (2*oy+ox>=60) {
+                /* Front rail: a whole gold/lantern module, translated along
+                 * the deck diagonal; never repeat it down the hull. */
+                sx=16+PortSceneTileMod(ox-16,8);
+                sy=oy+(ox-sx)/2;
+            } else if (ox<8) {
+                sx=PortSceneTileMod(ox,8); sy=oy+(ox-sx)/2;
+            } else if (ox>=28) {
+                /* The far wall turns behind the flat back wall: its right
+                 * window module is eight rows above the left one's phase. */
+                sx=PortSceneTileMod(ox,8); sy=oy+(ox-sx)/2-8;
+            } else {
+                return 0; /* no lamps/windows above the authored back wall */
+            }
+            if (sy<0 || sy>=32) return 0;
+        } else {
+            if (ox<8) {
+                sx=PortSceneTileMod(ox,8); sy=oy+(ox-sx)/2;
+            } else if (ox>=28) {
+                sx=28+PortSceneTileMod(ox-28,4); sy=oy+(ox-sx)/2;
+            }
+            if (sy<0 && ox>=8 && ox<28) {
+                sx=8+PortSceneTileMod(ox-8,8); sy=PortSceneTileMod(oy,2);
+            } else if (sy<0 || sy>=32) {
+                /* Clean diagonal red hull beyond either horizontal map end. */
+                sx=24+PortSceneTileMod(ox-24,8);
+                sy=24+PortSceneTileMod(oy+(ox-sx)/2-24,2);
+            }
+        }
+        *x=sx; *y=sy; return 1;
+    }
     if (v[0]==115) {
         if (ox>=0 && ox<w && oy>=0 && oy<h) return 1;
         sx=PortSceneTileMod(ox,8);
