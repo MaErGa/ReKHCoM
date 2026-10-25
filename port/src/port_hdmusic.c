@@ -21,13 +21,15 @@
 extern MusicPlayerInfo gMPlayInfo_BGM;
 
 /* Cartridge song (include/songs.h, 1..43) → Re:CoM track (STREAM/0001/<name>.win32.scd). */
+/* Matched by ear-free audio comparison (25/10, #42): the cartridge's EVENT3, EVENT4 and EVENT_SILENCE are Re:CoM's
+   Odayaka, Yuttari and Event4 respectively; their names suggested the opposite and the tracks were swapped. */
 static const char* const kTracks[44] = {
     NULL,
-    "21_Alice_Battle", "19_Alice_Field", "Boss1", "Event1_Kinpak", "Event2_", "Title", "12_Event_Yuttari",
+    "21_Alice_Battle", "19_Alice_Field", "Boss1", "Event1_Kinpak", "Event2_", "Title", "14_Event_Odayaka",
     "24_Pinocchio_Field", "27_Pinocchio_B", "22_PeterPan_Field", "23_PeterPan_Battle", "01F_Town_B", "01F_Town_F",
     "16_XIIIBoss1", "17_Halloween_F", "18_Helloween_B", "39_LittleMermaid_B", "15_Event_XIII", "13_Event_Namine",
-    "03F_Hercules_B", "03F_Hercul", "38_UnderTheSea", "26_Aladdin_B", "Event4", "42_Hollow_F", "43_Hollow_B",
-    "14_Event_Odayaka", "Event_Unrest", "34_Boss_RikuAnsem", "20_Event_13thFloor", "25_Aladdin_F",
+    "03F_Hercules_B", "03F_Hercul", "38_UnderTheSea", "26_Aladdin_B", "12_Event_Yuttari", "42_Hollow_F", "43_Hollow_B",
+    "Event4", "Event_Unrest", "34_Boss_RikuAnsem", "20_Event_13thFloor", "25_Aladdin_F",
     "36_WinnieThePooh", "32_Destiny_F", "44_PooGame1", "35_Boss_NiseRiku", "30_Twilight_F", "37_LastBoss1",
     "28_Forget_F", "29_Forget_B", "33_Destiny_B", "Boss2_World", "40_LastBoss2", "31_Twilight_B",
 };
