@@ -58,6 +58,12 @@ Para la pared diagonal, escoger una banda cuyo encuentro con el suelo esté
 entero dentro del mapa y una muestra superior completamente opaca; una banda
 cortada por el borde genera escalones y fragmentos repetidos.
 
+Propuesta 25/10, escena 118 (valoración pendiente): las vigas transversales y
+el casco siguen diagonales opuestas y se muestrean por separado. Continuar el
+casco, la filigrana y los módulos completos de cañón/cuerda, conservando el grosor
+de ambas vigas y un solo mástil en su posición. Una cuerda que cruza el antiguo
+límite rectangular del mapa debe terminar completa en la vista añadida.
+
 1. **Solo píxeles del juego.** Nada se dibuja nuevo: se reutilizan los tiles de
    la propia sala/escena, volteados o repetidos (bits 0x400 hflip / 0x800 vflip
    de la entrada). Si de verdad no hay tile adecuado, se puede dibujar uno, con

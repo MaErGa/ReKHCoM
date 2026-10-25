@@ -538,6 +538,41 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
         if (*sx>=256) *sx=415-*sx;
         return 1;
     }
+    if (p && p->v[0]==118 && (wx<0 || wx>=512 || wy<0 || wy>=512 ||
+        (p->v[1]==2 && wx>=0 && wx<32 && 2*wy+wx>=96*8 && 2*wy+wx<128*8))) {
+        int fore=2*wy+wx, beam=2*wy-wx;
+        if (p->v[1]==3) {
+            if (fore>=116*8) {
+                /* The complete rail/scrollwork/hull module follows the
+                 * opposite diagonal to the beams crossing the deck. */
+                *sx=384+PortSceneTileMod(wx-384,128);
+                *sy=wy+(wx-*sx)/2;
+                if (*sy>=512) *sy=448+PortSceneTileMod(*sy-448,16);
+            } else if ((beam>=8*8 && beam<16*8) || (beam>=64*8 && beam<72*8)) {
+                /* Continue both authored beams, with their whole thickness. */
+                *sx=PortSceneTileMod(wx,64); *sy=wy+(*sx-wx)/2;
+            } else {
+                *sx=128+PortSceneTileMod(wx-128,64);
+                *sy=192+PortSceneTileMod(wy+(wx-*sx)/2-192,32);
+            }
+        } else if (p->v[1]==2) {
+            *sx=0; *sy=0; /* empty authored cell */
+            if (wy<0 && wx>=112 && wx<176) {
+                *sx=wx; *sy=PortSceneTileMod(wy,64); /* the existing mast */
+            } else if (fore>=96*8 && fore<128*8) {
+                /* Whole cannon/rope bays along the rail, not clipped strips
+                 * of their silhouettes at the old map boundary. */
+                *sx=128+PortSceneTileMod(wx-128,128);
+                *sy=wy+(wx-*sx)/2;
+                /* Finish the last repeated rope's tip across the old map
+                 * boundary too. This sampler is only used outside the GBA
+                 * picture; a rectangular map cut must not cut its circle. */
+                if (wx>=0 && wx<32) { *sx=wx+256; *sy=wy-128; }
+                if (*sy<0 || *sy>=512) { *sx=0; *sy=0; }
+            }
+        } else return 0;
+        return 1;
+    }
     if (p && p->v[0]==95 && p->v[1]==3 && (wx<0 || wx>=512 || wy<0 || wy>=512)) {
         int tx=wx>>3, ty=wy>>3;
         if (wy>=48 && wy<96) {
