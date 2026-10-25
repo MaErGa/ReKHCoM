@@ -384,8 +384,11 @@ static int RingLoad(void) {
         return 0;
     for (k = 0; k < w * h; k++) {
         float dx = (k % w) * 592.0f / w - RING_CX, dy = (k / w) * 360.0f / h - RING_CY;
-        if (dx * dx + dy * dy < RING_HOLE * RING_HOLE)
-            px[k * 4 + 3] = 0; /* the baked face: the game's own (HD) face shows there */
+        float d = SDL_sqrtf(dx * dx + dy * dy) - RING_HOLE;
+        /* the baked face: the game's own (HD) face shows there; a soft edge of a picture pixel and a half, not a
+           cut that left the green's inner rim jagged (art review, 24/10) */
+        if (d < 1.5f)
+            px[k * 4 + 3] = d <= 0.0f ? 0 : (unsigned char)(px[k * 4 + 3] * d / 1.5f);
     }
     dark = SDL_malloc((size_t)w * h * 4);
     if (dark) {
@@ -408,6 +411,9 @@ static int RingLoad(void) {
     }
     SDL_free(dark);
     stbi_image_free(px);
+    /* drawn smaller than the picture: filtered, or its round edges show steps */
+    if (sRingFull) SDL_SetTextureScaleMode(sRingFull, (SDL_ScaleMode)PortSmoothScaleMode());
+    if (sRingEmpty) SDL_SetTextureScaleMode(sRingEmpty, (SDL_ScaleMode)PortSmoothScaleMode());
     if (!sRingFull || !sRingEmpty) {
         if (sRingFull) SDL_DestroyTexture(sRingFull);
         if (sRingEmpty) SDL_DestroyTexture(sRingEmpty);
