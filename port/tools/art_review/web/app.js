@@ -13,7 +13,7 @@ function positionDeskControls(){
 }
 positionDeskControls();
 let scale = 1, saveChain = Promise.resolve(), changed = false, generalTimer, lastPath = '', fitMode = true;
-const labels = {pending:'Pendiente de revisión', changes_requested:'Necesita mejoras', approved:'Aprobado', honors:'★ Aprobado con honores'};
+const labels = {pending:'Pendiente de revisión', changes_requested:'Aprobado (mejorar)', approved:'Aprobado', honors:'★ Aprobado con honores'};
 const categories = {general:'General', silhouette:'Silueta / anatomía', seam:'Corte / unión', tiles:'Tiles', palette:'Color / luz', perspective:'Perspectiva', provenance:'Procedencia', app:'Aplicación'};
 function toast(message) { $('toast').textContent = message; $('toast').hidden = false; setTimeout(() => $('toast').hidden = true, 6500); }
 async function api(path, data) {
@@ -35,7 +35,7 @@ nextRevision.onclick=()=>{const list=pieceVersions(),i=list.findIndex(a=>a.id===
 /* the library's tabs (the user, 24/10): Pre = waiting for your review, Rev = you sent clouds and wait for the new
    version (so they are not reviewed twice), Aprobado = Aprobados / Honores. Each piece is in one tab. */
 let acceptedSub='approved';
-const accepted=a=>a&&(a.status==='approved'||a.status==='honors');
+const accepted=a=>a&&(a.status==='approved'||a.status==='honors'||a.status==='changes_requested'); /* mejorar: approved too */
 const hasFeedback=a=>a&&(a.annotations.length||(a.doodles||[]).length||a.general.trim());
 function pieceGroups(){
   const byId=new Map(assets.map(a=>[a.id,a])),groups=new Map();
@@ -45,8 +45,10 @@ function pieceGroups(){
     g.turn=turn;
     if(accepted(latest)){
       const honors=family?.build_version&&byId.get(family.build_version);
-      g.tab='accepted';g.sub=honors||latest.status==='honors'?'honors':'approved';
-      g.shown=g.sub==='honors'?(honors||latest):(byId.get(family?.approved_version)||latest);
+      /* approved but still being improved (its grade, or comments not answered yet) goes under Aprobado (mejorar) */
+      const improving=latest.status==='changes_requested'||!!turn?.unanswered?.length;
+      g.tab='accepted';g.sub=improving?'improve':latest.status==='honors'?'honors':'approved';
+      g.shown=byId.get(family?.build_version)||byId.get(family?.approved_version)||latest;
     }else{
       const sent=latest.submitted_revision!=null&&latest.submitted_revision===latest.revision&&hasFeedback(latest);
       g.tab=(turn?.turn==='agente'&&turn.unanswered.length)||sent?'review':'pending';g.shown=latest;
@@ -58,14 +60,14 @@ function tabOf(id){for(const g of pieceGroups().values())if(g.versions.some(v=>v
 function gallery() {
   $('gallery').replaceChildren();
   $('assetPicker').replaceChildren();
-  const search=$('searchPieces').value.trim().toLocaleLowerCase('es');let total=0;const counts={pending:0,review:0,accepted:0,approved:0,honors:0};
+  const search=$('searchPieces').value.trim().toLocaleLowerCase('es');let total=0;const counts={pending:0,review:0,accepted:0,improve:0,approved:0,honors:0};
   for (const {root,versions,tab,sub,shown:a,turn} of pieceGroups().values()) {
     counts[tab]++;if(tab==='accepted')counts[sub]++;
     if(tab!==libraryTab||tab==='accepted'&&sub!==acceptedSub)continue;
     if(search&&!(`${root.title} ${a.version}`).toLocaleLowerCase('es').includes(search))continue;total++;
     const option=el('option','',root.title+' · '+a.version);option.value=a.id;option.selected=a.id===current?.id;$('assetPicker').append(option);
     const button = el('button','asset' + (versions.some(v=>v.id===current?.id) ? ' active' : ''));
-    const img = el('img'); img.src = a.image_url;img.loading='lazy';img.alt = ''; button.append(img,el('strong','',root.title),el('small',a.status==='honors'?'honors':'',labels[a.status]+(a.status==='approved'&&tab==='accepted'?' · falta ★ para build':'')),el('small','',a.version),el('small','',versions.length+' revisión(es) · ver Historial'));
+    const img = el('img'); img.src = a.image_url;img.loading='lazy';img.alt = ''; button.append(img,el('strong','',root.title),el('small',a.status==='honors'?'honors':'',labels[a.status]+(sub==='improve'?' · en el juego mientras se mejora':'')),el('small','',a.version),el('small','',versions.length+' revisión(es) · ver Historial'));
     if(tab==='pending')button.append(el('small','turn you','● Te toca'));
     if(tab==='review')button.append(el('small','turn agent','◌ Enviado · esperando versión nueva'+(turn?.unanswered.length?` (${turn.unanswered.length} envío(s))`:'')));
     button.onclick = () => choose(a.id,{follow:tab!=='accepted'}); $('gallery').append(button);
@@ -75,14 +77,14 @@ function gallery() {
   }
   if(!total)$('gallery').append(el('p','subtle','No hay piezas en esta pestaña.'));
   $('tabPending').textContent=`Pre (${counts.pending})`;$('tabReview').textContent=`Rev (${counts.review})`;$('tabAccepted').textContent=`Aprobado (${counts.accepted})`;
-  $('tabApproved').textContent=`Aprobados (${counts.approved})`;$('tabHonors').textContent=`★ Honores (${counts.honors})`;
-  for(const [id,on] of [['tabPending',libraryTab==='pending'],['tabReview',libraryTab==='review'],['tabAccepted',libraryTab==='accepted'],['tabApproved',acceptedSub==='approved'],['tabHonors',acceptedSub==='honors']])$(id).setAttribute('aria-selected',String(on));
+  $('tabImprove').textContent=`Aprobado (mejorar) (${counts.improve})`;$('tabApproved').textContent=`Aprobados (${counts.approved})`;$('tabHonors').textContent=`★ Honores (${counts.honors})`;
+  for(const [id,on] of [['tabPending',libraryTab==='pending'],['tabReview',libraryTab==='review'],['tabAccepted',libraryTab==='accepted'],['tabImprove',acceptedSub==='improve'],['tabApproved',acceptedSub==='approved'],['tabHonors',acceptedSub==='honors']])$(id).setAttribute('aria-selected',String(on));
   $('acceptedTabs').hidden=libraryTab!=='accepted';
 }
 function setLibraryTab(value,sub){libraryTab=value;if(sub)acceptedSub=sub;gallery();}
 function tabForPiece(id){const g=tabOf(id);if(g){libraryTab=g.tab;if(g.sub)acceptedSub=g.sub;}}
 $('tabPending').onclick=()=>setLibraryTab('pending');$('tabReview').onclick=()=>setLibraryTab('review');$('tabAccepted').onclick=()=>setLibraryTab('accepted');
-$('tabApproved').onclick=()=>setLibraryTab('accepted','approved');$('tabHonors').onclick=()=>setLibraryTab('accepted','honors');$('searchPieces').oninput=gallery;
+$('tabImprove').onclick=()=>setLibraryTab('accepted','improve');$('tabApproved').onclick=()=>setLibraryTab('accepted','approved');$('tabHonors').onclick=()=>setLibraryTab('accepted','honors');$('searchPieces').oninput=gallery;
 async function choose(id, options={}) {
   try { await flushGeneral(); await saveChain; } catch(e) { return toast(e.message); }
   current = assets.find(a => a.id === id); selected = null;
