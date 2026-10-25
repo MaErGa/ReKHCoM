@@ -164,7 +164,7 @@ Workflow completo (tiles, píxeles, pixel art, pruebas en x3 entero): WORKFLOW_A
   `MapTopEdgeTile`, `MapPlainBaseTile`).
 - 061 hielo, 074 Monstro y 057 playa (18/10) y 004: **aprobadas antes de tiempo** (usuario 24/10). Ya no son
   modelo; ver «Aprobaciones tempranas corregidas» abajo. Guard Armor y las ventanas 1-17 siguen valiendo
-  (REPARTO.md, ESCENAS_REVISION_AMPLIA.md).
+  (archivo/REPARTO.md, ESCENAS_REVISION_AMPLIA.md).
 
 - 59 retratos: aprobado el 18/10. La vista amplia exponía las posiciones de espera
   X=449/-299 antes de aplicar la silueta. Ocultar la espera en `msgface_2` y

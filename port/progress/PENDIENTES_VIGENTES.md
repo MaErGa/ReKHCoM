@@ -5,8 +5,8 @@
 Ver [META_V2_0.md](META_V2_0.md): arena Trickmaster → escena099 →004 → Síntesis (carta HD dinámica) → Añadir naipes (cantidades detrás del selector); después el resto de piezas comentadas y verificaciones técnicas vigentes. Este orden sustituye órdenes históricos. PR111/114 integrados; propuestas nuevas121/122/123/124 en Atlas y en revisión, no cerradas por subirlas. El documento conserva las mejoras futuras fuera de bloqueantes por defecto. Publicar la estable requiere OK.
 
 
-Única cola de trabajo. Lo anterior completo (traspasos, borradores, detalle): **PENDIENTES_ARCHIVO_20261025.md**
-y PENDIENTES_ARCHIVO_20261024.md. Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola:
+Única cola de trabajo. Lo anterior completo (traspasos, borradores, detalle): **archivo/PENDIENTES_ARCHIVO_20261025.md**
+y archivo/PENDIENTES_ARCHIVO_20261024.md. Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola:
 COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --quiet list`.
 
 ## Reglas del usuario (completas en REGLAS_DEL_USUARIO.md)

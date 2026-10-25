@@ -536,7 +536,7 @@
       "key": "language-copyright",
       "piece": "Idioma y copyright · márgenes",
       "reason": "No se localizó captura nativa con procedencia suficiente en los conjuntos inspeccionados; no sustituir por una pantalla de título.",
-      "evidence": "port/progress/REPARTO.md (17 ventanas)"
+      "evidence": "port/progress/archivo/REPARTO.md (17 ventanas)"
     },
     {
       "key": "menu-deck-subpages",

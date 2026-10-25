@@ -1,7 +1,7 @@
 # Reparto vigente — cola colaborativa, 24/10/2026
 
-Leer primero [COLA_COLABORATIVA.md](COLA_COLABORATIVA.md) y la tabla superior de
-[PENDIENTES_VIGENTES.md](PENDIENTES_VIGENTES.md). Claude y Codex toman piezas distintas mediante reserva remota;
+Leer primero [COLA_COLABORATIVA.md](../COLA_COLABORATIVA.md) y la tabla superior de
+[PENDIENTES_VIGENTES.md](../PENDIENTES_VIGENTES.md). Claude y Codex toman piezas distintas mediante reserva remota;
 no hay exclusividad permanente por agente. Mantener varios carriles mientras haya trabajo independiente.
 Cada pieza se marca tomada antes de editar, se entrega por rama y PR con evidencia y se integra solo con la
 reserva de integrador. Si está libre, cualquiera puede tomarla y fusionar los PR verificados de uno en uno.
@@ -14,7 +14,7 @@ sustituidas por la regla de arriba. La lista de tareas vigente está en PENDIENT
 
 ## CIERRE DE WORKERS Y COLA ÚNICA (histórico)
 
-Abrir [PENDIENTES_VIGENTES.md](PENDIENTES_VIGENTES.md): 44 puntos y responsables.
+Abrir [PENDIENTES_VIGENTES.md](../PENDIENTES_VIGENTES.md): 44 puntos y responsables.
 Cierres comprobados en [CIERRE_WORKERS.md](CIERRE_WORKERS.md).
 Primero recoger los workers actuales; no abrir otra tanda.
 Los apartados siguientes son historial y no otra cola vigente.
@@ -50,7 +50,7 @@ escenas del otro chat en una nueva nightly y después continuar con Darkside.
 
 ## Actualización: auditoría de escenarios de combate — 18/10/2026
 
-Inventario y contador en [BATTLE_SCENERY_AUDIT.md](BATTLE_SCENERY_AUDIT.md),
+Inventario y contador en [BATTLE_SCENERY_AUDIT.md](../BATTLE_SCENERY_AUDIT.md),
 con estado estructurado en `BATTLE_SCENERY_AUDIT.json`.
 **28/28 escenarios distintos inspeccionados inicialmente; 0/8 mejoras terminadas.**
 56/56 ejecuciones cortas EU/Sora en 16:9 y 32:9 (168 capturas), más 8/8
@@ -81,7 +81,7 @@ Claude sigue con los fondos de escenas en lotes de 10 con el usuario.
 ### Actualización Codex — 18/10/2026
 
 La rama local `codex/issues` contiene el primer bloque de issues y mejoras del
-encargo en [CODEX_TAREAS.md](CODEX_TAREAS.md); el detalle de estado y pruebas
+encargo en [CODEX_TAREAS.md](../CODEX_TAREAS.md); el detalle de estado y pruebas
 está al final de ese archivo. Build Windows EU/US/JP PASS; launcher 11/11,
 Re:CoM 80 combinaciones, zoom 56 y aspecto 56 PASS. Undub está implementado;
 `port/tools/test_undub.py` verifica dumps de dos voces en EU/US (OFF conserva
@@ -102,7 +102,7 @@ no se cerró ninguno ni se creó una release.
 El usuario confirmó como referencia el repositorio abierto
 [RaceWave46](https://github.com/DomazinUS/RaceWave46) (GPL-3.0). La
 investigación y límites de los sets están en
-[RETROACHIEVEMENTS.md](RETROACHIEVEMENTS.md); no se debe presentar el diseño
+[RETROACHIEVEMENTS.md](../RETROACHIEVEMENTS.md); no se debe presentar el diseño
 de popup como una integración funcional hasta que estén conectados los sets.
 
 Estable pública: **v1.9.2** (Windows + Android alpha + Web alpha, un archivo
@@ -222,7 +222,7 @@ decomp revisados (2 corregidos para PC), lógicas atadas a la pantalla GBA
 
 ## Riku: persistencia, carga y textura corregidas (17/10/2026)
 
-- Detalle y reproduccion: [RIKU_BUGS_V19.md](RIKU_BUGS_V19.md).
+- Detalle y reproduccion: [RIKU_BUGS_V19.md](../RIKU_BUGS_V19.md).
 - Launcher conserva el truco; carga muestra Riku solo con truco ON o Sora completado.
   Titulo actualiza acceso al cerrar opciones. No fabrica Sora completado.
 - Copia del save del usuario: carga y guardado nativo de Riku comprobados;
@@ -351,11 +351,11 @@ decomp revisados (2 corregidos para PC), lógicas atadas a la pantalla GBA
 - Android EU/US/JP combate en emulador x86 PASS; no equivale a ARM fisico/SAF.
 - Objetivo Linux confirmado RG34XX: ARM64, 720x480, 3:2; Steam Deck x86-64 aparte.
 - NO hay build Linux/ARM64 todavia. Cheats/editor de cartas y menus relativos pendientes.
-- Reparto detallado: [PLATFORM_ALPHA_PLAN.md](PLATFORM_ALPHA_PLAN.md).
+- Reparto detallado: [PLATFORM_ALPHA_PLAN.md](../PLATFORM_ALPHA_PLAN.md).
 
 ## Android, Linux / Steam Deck y nuevos pedidos (17/10/2026)
 
-Reparto vigente: [PLATFORM_ALPHA_PLAN.md](PLATFORM_ALPHA_PLAN.md).
+Reparto vigente: [PLATFORM_ALPHA_PLAN.md](../PLATFORM_ALPHA_PLAN.md).
 Android primero; Linux y Steam Deck despues. Todo salvo Windows marcado alpha.
 Importacion .sav/.srm por contenido, region y banco; cheats OFF, modo Riku,
 editor de cartas y 4:3 con zoom/HD pendientes. Menus relativos fuera de stable.
@@ -515,7 +515,7 @@ editor de cartas y 4:3 con zoom/HD pendientes. Menus relativos fuera de stable.
   Persistencia y mobile están implementados pero pendientes de pruebas completas.
 - PC EU/US/JP recompilado; oracle PPU 206/206 PASS:
   build/ppu-conformance/20261016_130024_063894/report.json.
-- Lista específica y prioridades futuras: [WEB_PENDIENTES.md](WEB_PENDIENTES.md).
+- Lista específica y prioridades futuras: [WEB_PENDIENTES.md](../WEB_PENDIENTES.md).
   Consultarla antes de retomar HD, guardados, móviles y rendimiento.
 - Publicación en preparación con publish_web.py: allowlist de archivos, hashes y
   árbol gh-pages aislado. No ROMs/SRAM/config. La estable PC sigue v1.8.3.
@@ -730,7 +730,7 @@ El usuario pide dejar continuidad para Claude y pushear cada bloque. Esta secci�
 reemplaza los repartos históricos de abajo. Rama local `claude/windows-5`, remoto
 `origin/codex/v1.5-fixes`. No trabajar simultáneamente sobre render/menús.
 
-**Leer primero [CONTINUIDAD_V15_HUD.md](CONTINUIDAD_V15_HUD.md).**
+**Leer primero [CONTINUIDAD_V15_HUD.md](../CONTINUIDAD_V15_HUD.md).**
 Codex entrega el bloque actual; Claude puede asumir los pendientes siguientes.
 No se ha publicado v1.5 ni retirado v1.4. Guardados del usuario intactos.
 

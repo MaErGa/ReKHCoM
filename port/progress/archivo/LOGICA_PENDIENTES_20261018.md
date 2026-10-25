@@ -1,10 +1,10 @@
 # Lógica de continuación — pendientes Codex
 
 Este documento es la guía de trabajo junto a la cola única
-[`PENDIENTES_VIGENTES.md`](PENDIENTES_VIGENTES.md). Cada bloque indica el método,
+[`PENDIENTES_VIGENTES.md`](../PENDIENTES_VIGENTES.md). Cada bloque indica el método,
 la evidencia necesaria y el criterio para cambiar su estado. No sustituye código,
-capturas ni cierres verificables. Editor/cheats: [`SAVE_EDITOR_LOGICA.md`](SAVE_EDITOR_LOGICA.md).
-Controles: [`CONTROLADOR_LOGICA.md`](CONTROLADOR_LOGICA.md).
+capturas ni cierres verificables. Editor/cheats: [`SAVE_EDITOR_LOGICA.md`](../SAVE_EDITOR_LOGICA.md).
+Controles: [`CONTROLADOR_LOGICA.md`](../CONTROLADOR_LOGICA.md).
 
 ## 4 — Sincorazones pequeños fuera de pantalla
 

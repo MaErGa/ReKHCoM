@@ -77,7 +77,7 @@ las tareas de Codex a **`claude-relevo`** (`recover-task`, con esa autorización
 - Las 77 versiones que ya había en la mesa permanecieron idénticas al comparar antes/después; sus aprobados,
   honores, comentarios y parentescos se conservaron. Segunda carga: 17 preservadas, cero duplicados.
   Las nuevas van a Pre como «Histórica»: no hay aprobación exacta de esas capturas HD posteriores.
-- Inventario, procedencia y 12 huecos explícitos en [ARTE_HISTORICO.md](ARTE_HISTORICO.md); manifiesto verificable
+- Inventario, procedencia y 12 huecos explícitos en [ARTE_HISTORICO.md](../ARTE_HISTORICO.md); manifiesto verificable
   en `ARTE_HISTORICO.json`, importador `port/tools/art_review/catalog_history.py`. No se declara reconstruido
   todo el historial desde v0.1. Siguiente tanda: regenerar los casos factibles con fixtures actuales, registrados
   como capturas actuales, sin heredar aprobación antigua. Tomar cada pieza antes en la cola remota.
@@ -87,7 +87,7 @@ están en **PENDIENTES_HISTORIAL_2026-10.md** (evidencia, comandos, hallazgos). 
 
 Reglas del usuario (completas en REGLAS_DEL_USUARIO.md):
 - Varios carriles, toma inmediata en la reserva remota, rama y PR por entrega; un solo integrador con token.
-  Regla vigente: [COLA_COLABORATIVA.md](COLA_COLABORATIVA.md). No push directo a main ni robos por tiempo.
+  Regla vigente: [COLA_COLABORATIVA.md](../COLA_COLABORATIVA.md). No push directo a main ni robos por tiempo.
 - Lo visual que necesite ojo humano va a la app de revisión (`Revisar preliminares.bat`, `import_image.py ... --parent
   <id>`); solo se integra lo aprobado ahí (con honores para el arte). Lógica aprobada: LOGICA_APROBADOS.md.
 - La validación en hardware real no es pendiente: llega como reporte. Publicar (releases, comentarios) solo con OK.
@@ -386,7 +386,7 @@ anteriores quedan sustituidas por esta cola y COLA_COLABORATIVA.md. No recuperar
 5. **Android antes de la v2.0**: título con "Nueva partida Riku" sin truco ni partida terminada (comprobar en el
    emulador con instalación limpia); "Logros pegado" (pedir `kh_com.log` si vuelve); rendimiento en gama baja (línea
    `timing:`, toques tomados una sola vez con el juego lento); tablets: artes/fondos con el encuadre nuevo
-   (LOGICA_APROBADOS.md); Jafar en el emulador (`test_android_scenarios.py --groups bosses`).
+   (../LOGICA_APROBADOS.md); Jafar en el emulador (`test_android_scenarios.py --groups bosses`).
 6. ~~`test_text_options.py`~~ hecho (9e8316f06): por nombre de fila, corrida base + ruta; 7/7 EU/US/JP.
 7. ~~Mod HD: calidad constante por hardware~~ (cerrado 24/10: se queda Buena) (`hd_quality_probe.py`, probar Q 75/80/85 y elegir la que pese menos que
    Buena con su VMAF; la VMAF de ROP está desalineada); peso real de Ahorro en `kScenesSize` (hd_import.inc).
@@ -421,10 +421,10 @@ anteriores quedan sustituidas por esta cola y COLA_COLABORATIVA.md. No recuperar
 ## Después de la v2.0
 
 - Switch fuera de la v2.0 (queda en la última pre): motor nuevo (SWITCH_MOTOR.md: fase 0 medir, fase 1 PPU en 3
-  núcleos del invitado). Vita/PS4 a la GPU (RENDIMIENTO.md). PPU de GBA en varios núcleos para 60 fps a x1.
+  núcleos del invitado). Vita/PS4 a la GPU (../RENDIMIENTO.md). PPU de GBA en varios núcleos para 60 fps a x1.
 - Online (~70 %, tabla en el historial y ONLINE_ESTUDIO.md): prueba real entre dos personas, relay en un VPS,
   rollback y lobby en Android, sockets en Switch.
-- Menús de Re:CoM en HD uno por uno (HUD_HD_RECOM.md), fondos de menús, números de cartas HD vs Re:CoM, más assets
+- Menús de Re:CoM en HD uno por uno (../HUD_HD_RECOM.md), fondos de menús, números de cartas HD vs Re:CoM, más assets
   (MelonMIX y similares), datos de Re:CoM para el modo Re:CoM, rendimiento de consolas medible y sin riesgo.
 - Guard Armor (008) con `bosskill` del arnés no cierra (BgFxIsActive): ver si es del arnés o del juego.
 
