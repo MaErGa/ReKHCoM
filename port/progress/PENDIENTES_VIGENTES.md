@@ -45,6 +45,12 @@ Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlo
   avanzó desde 05:44), parpadeo del deck al lanzar invocaciones (Simba), Android (batalla 123 US con timeout, gama
   baja, táctiles), pre nueva con zip limpio.
 - Atlas (arte en la app) lo toma GPT por orden del usuario.
+- 25/10 tarde, más: #112 Opciones con las filas de mods en gris + aviso «impórtalo desde el launcher» (donde el mod
+  existe). #83 tomado por Claude (recover-task desde codex-jafar83).
+- test_hd_scenes en main (pre14): **86/97**; 11 escenas «nunca pedidas» (ver build/scenes-base.txt en khcom-recom-art):
+  bug de lógica de escenas a investigar. La rama linux-hd-movies se repite para descartar que sea suya (71/97 con carga).
+- Pendientes del usuario para Opciones: hechos (secciones, HD junto, solo A, salir del juego, mods en gris).
+
 
 ## TRASPASO (25/10 mediodía, claude-integrador)
 
