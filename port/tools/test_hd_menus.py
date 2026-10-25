@@ -73,17 +73,23 @@ CASES = {
 GAUGE = [100, 75, 50, 25, 10, 3]
 
 
+EXTRA_CONFIG = ''  # --config
+
+
 def run(build, hd, save, out, name, lang, env_extra, check, expect):
     work = ROOT / 'build' / f'hdm_{name}_{lang}'  # two levels under the repository, where the exe finds ../../roms
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True)
     for f in ('khcom.exe', 'SDL3.dll'):
         shutil.copy2(build / f, work / f)
+    # the HD text's fonts, as the packaged game has them: without them it falls back to Segoe UI and the shots
+    # do not show the game's lettering (art review, 24/10: 'asegurarse que se use la fuente')
+    shutil.copytree(ROOT / 'port/assets/fonts', work / 'assets/fonts')
     for save_name in ('kh_com.sav', 'kh_com_us.sav', 'kh_com_jp.sav'):  # each version reads its own (23/10)
         shutil.copy2(save, work / save_name)
     (work / 'kh_com.ini').write_text('config_version=2\nview_mode=4\n')
     env = dict(os.environ, SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='dummy', KHCOM_FAST='1',
-               KHCOM_CONFIG='hd_cards=1;hd_text=1', KHCOM_HD_SPRITES=str(hd), KHCOM_WINDOW='1920x1080',
+               KHCOM_CONFIG='hd_cards=1;hd_text=1' + EXTRA_CONFIG, KHCOM_HD_SPRITES=str(hd), KHCOM_WINDOW='1920x1080',
                KHCOM_HDDRAWLOG=str(check), KHCOM_OUTPUT_SHOT=str(check), KHCOM_QUIT=str(check + 20), **env_extra)
     try:
         code = subprocess.run([str(work / 'khcom.exe'), '--language', lang], cwd=str(work), env=env, timeout=400,
@@ -110,8 +116,11 @@ def main():
     ap.add_argument('--only')
     ap.add_argument('--save', default=str(SAVE))
     ap.add_argument('--out', default=str(ROOT / 'build/hdmenus'))
+    ap.add_argument('--config', default='', help='more settings for every case, e.g. hd_font=1')
     args = ap.parse_args()
     # the game runs in its own folder: a relative HD path would point nowhere and every case would fall back
+    global EXTRA_CONFIG
+    EXTRA_CONFIG = (';' + args.config) if args.config else ''
     build, hd, save, out = Path(args.build), Path(args.hd).resolve(), Path(args.save), Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     only = set(args.only.split(',')) if args.only else None

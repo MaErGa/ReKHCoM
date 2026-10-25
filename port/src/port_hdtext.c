@@ -155,7 +155,8 @@ static void FontRelease(HdFont* f) {
 }
 
 static HdFont* FontForScale(float scale, int style) {
-    int key = (int)(scale * 16.0f + 0.5f);
+    int key = (int)(scale * 16.0f + 0.5f) + SDL_clamp(gPortConfig.hdFont, 0, 2) * 100000; /* the face chosen too */
+    const WCHAR* face;
     HdFont* f;
     int i;
 
@@ -171,8 +172,9 @@ static HdFont* FontForScale(float scale, int style) {
     FontRelease(f);
     f->key = key;
     f->cap = HD_TEXT_CAP * scale;
+    /* menus and dialogue in the face chosen in Options (KHMenu, Comic Hearts or the system's); subtitles keep theirs */
+    face = style == 1 ? sFace[1] : gPortConfig.hdFont == 1 ? sFace[1] : gPortConfig.hdFont == 2 ? L"Segoe UI" : sFace[0];
     {
-        const WCHAR* face = sFace[style == 2 ? 0 : style];
         f->font = FontWithCap(face, f->cap, scale, face[0] == L'S' ? FW_SEMIBOLD : FW_NORMAL);
         {
             WCHAR selected[128];
@@ -183,7 +185,7 @@ static HdFont* FontForScale(float scale, int style) {
                 PortLog("HD text: selected style=%d face=%s", style, actual);
         }
     }
-    f->fallback = sFace[style == 2 ? 0 : style][0] == L'S' ? f->font
+    f->fallback = face[0] == L'S' ? f->font
                                           : FontWithCap(style ? L"Comic Sans MS" : L"Segoe UI", f->cap, scale,
                                                         style ? FW_NORMAL : FW_SEMIBOLD);
     return f;
