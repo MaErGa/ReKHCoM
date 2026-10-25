@@ -15,6 +15,18 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Síntesis de estancias, envío `20261025-011932-34d062`, propuesta
+`dbdb82b983fc4a178d46ce70edf44c6b`: «veo el assset pero no remplaznadolo bien».
+Una carta HD colocada junto a la GBA no demuestra sustitución. La hija debe
+mostrar el reemplazo en una captura real del juego, en la misma posición y
+con las mismas capas. El requisito sigue `kind/color/rule/value`; una suma
+muestra el saldo realmente preparado por `UpdateEventKeyTotal`, no el valor
+inicial ni un dígito pintado en una captura. Mantener geometría, prioridad,
+transformación y oclusión OAM; HD apagado o assets ausentes conservan el
+original completo. Una plancha del generador sólo revisa assets: no sustituye
+la captura runtime ni concede aprobación o ★. Implementación aislada
+`codex/sintesis-requisito-hd`; pruebas seriales y captura hija aún pendientes.
+
 Trickmaster, envío `20261025-052021-8546de`: «todo bien», sólo completar
 el muro hacia arriba. Prolongar el período vertical del papel rosa, no la
 franja beige del techo. Conservar suelo y objetos ya aceptados; la única
