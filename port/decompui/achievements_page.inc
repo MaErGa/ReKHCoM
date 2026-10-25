@@ -285,6 +285,29 @@ static void AchievementListTabs() {
     ImGui::Spacing();
 }
 
+/* the emblem beside the account (port/tools/gen_ra_emblem.py: our own trophy, not RetroAchievements' logo) */
+static const unsigned char sRaEmblemPng[] = {
+#include "port/ra_emblem_png.inc"
+};
+static GLuint RaEmblem() {
+    static GLuint texture;
+    static bool tried;
+    if (!tried) {
+        tried = true;
+        int w = 0, h = 0, channels;
+        unsigned char* rgba = stbi_load_from_memory(sRaEmblemPng, (int)sizeof(sRaEmblemPng), &w, &h, &channels, 4);
+        if (rgba) {
+            glGenTextures(1, &texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+            stbi_image_free(rgba);
+        }
+    }
+    return texture;
+}
+
 static void PageAchievements() {
     Eyebrow(T("LOGROS · KINGDOM HEARTS: CHAIN OF MEMORIES", "ACHIEVEMENTS · KINGDOM HEARTS: CHAIN OF MEMORIES"));
     /* the account reads the set with the European cartridge, when installed */
@@ -295,9 +318,28 @@ static void PageAchievements() {
         else KhRaSetRom(sRaUi, nullptr, 0);
         sRaRomRegion = catalogRegion;
     }
-    if (sRaAccountShot) ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader(T("Cuenta RetroAchievements (opcional)", "RetroAchievements account (optional)")))
+    /* the account always in sight (25/10): our emblem and the title, then the account's rows */
+    {
+        GLuint emblem = RaEmblem();
+        float h = Px(40);
+        ImVec2 at = ImGui::GetCursorScreenPos();
+        if (emblem) {
+            ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)emblem, at, ImVec2(at.x + h, at.y + h));
+            ImGui::Dummy(ImVec2(h, h));
+            ImGui::SameLine(0, Px(12));
+        }
+        ImGui::BeginGroup();
+        ImGui::TextColored(kAccentDim, "%s", "RetroAchievements");
+        ImGui::PushFont(sFontSmall);
+        ImGui::TextColored(kMuted, "%s", T("Cuenta opcional: los logros oficiales también en retroachievements.org.",
+                                           "Optional account: the official achievements on retroachievements.org too."));
+        ImGui::PopFont();
+        ImGui::EndGroup();
+        ImGui::Spacing();
         PageAchievementAccount();
+        ImGui::Separator();
+        ImGui::Spacing();
+    }
     AchievementListTabs();
     if (sAchievementList == 1) PageRecomAchievements();
     else PageOfficialAchievements();
