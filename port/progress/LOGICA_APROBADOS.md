@@ -19,6 +19,10 @@ Trickmaster, envío `20261025-052021-8546de`: «todo bien», sólo completar
 el muro hacia arriba. Prolongar el período vertical del papel rosa, no la
 franja beige del techo. Conservar suelo y objetos ya aceptados; la única
 chimenea conserva su fuste de piedra donde cruza la prolongación del muro.
+Corrección del envío `20261025-060416-21533f`: al prolongar hacia arriba,
+los postes de madera mantienen su x original a ambos lados de la chimenea.
+El período donante termina antes del travesaño horizontal; copiarlo introduce
+una franja cortada. El panel derecho se toma limpio, sin repetir reloj ni ventana.
 
 Escena 112, envío `20261024-054012-207689`: la franja superior que falta
 en BG2 se rellena con la pared lisa de esa misma capa; una muestra superior
