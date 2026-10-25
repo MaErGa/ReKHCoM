@@ -15,6 +15,11 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Trickmaster, envío `20261025-052021-8546de`: «todo bien», sólo completar
+el muro hacia arriba. Prolongar el período vertical del papel rosa, no la
+franja beige del techo. Conservar suelo y objetos ya aceptados; la única
+chimenea conserva su fuste de piedra donde cruza la prolongación del muro.
+
 Escena 112, envío `20261024-054012-207689`: la franja superior que falta
 en BG2 se rellena con la pared lisa de esa misma capa; una muestra superior
 vacía no significa que termine el edificio. Completar la puerta única con
