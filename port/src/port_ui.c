@@ -2339,7 +2339,7 @@ static const char* const sVersionNote[LANG_COUNT] = {
     "Diese Wahl ändert nur das Gameplay. Beide Versionen haben alle Verbesserungen: Komfort, Undub, HD-Szenen usw.",
     "Questa scelta cambia solo il gameplay. Entrambe le versioni hanno tutti i miglioramenti: comodità, undub, scene HD e altro.",
     "Esta elección solo cambia la jugabilidad. Ambas versiones tienen todas las mejoras: QoL, undub, escenas HD y demás.",
-    "この選択で変わるのはゲームプレイだけです。どちらでも快適機能・オリジナル音声・HDシーンなど全ての改良を使えます。",
+    "この選択で変わるのはゲームプレイだけです。どちらでもQoL・オリジナル音声・HDシーンなど全ての改良を使えます。",
 };
 static const char* const sWizConfirm[LANG_COUNT] = { "Confirm", "Confirmer", "Bestätigen", "Conferma", "Confirmar",
     "決定" };

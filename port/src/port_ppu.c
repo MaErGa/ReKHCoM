@@ -2230,8 +2230,8 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
     int sceneActorFrame = gPortScreen.wide && sEventBackdropProfile == 97 && !sEnvActorFrameOff;
     /* Jafar: a view wider than the 512-pixel sprite space showed each sprite twice, 512 apart (his attacks
        mirrored in the margin, user 24/10); his fight's sprites live in the 512 columns around the picture */
-    int objLeft = sJafarFight ? SDL_max(sLeft, GBA_SCREEN_W / 2 - 256) : sLeft;
-    int objRight = sJafarFight ? SDL_min(sRight, GBA_SCREEN_W / 2 + 256) : sRight;
+    int objLeft = sJafarFight && sLeft < GBA_SCREEN_W / 2 - 256 ? GBA_SCREEN_W / 2 - 256 : sLeft;
+    int objRight = sJafarFight && sRight > GBA_SCREEN_W / 2 + 256 ? GBA_SCREEN_W / 2 + 256 : sRight;
     /* Same rule for Preliminar V1 scenes whose actors wait beyond the camera (user 24/10: 112 Aladdin, 120 Pepito) */
     if (gPortScreen.wide && !sEnvActorFrameOff) {
         int pb;
