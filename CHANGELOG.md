@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.0-pre17 — 2026-10-25
+
+Test build: pre16 plus
+
+- Android: the crash when picking up the card Jafar drops should be gone (#83); please confirm.
+- HD mod as one file for Android and consoles: on the PC, Mod HD > "Take the HD mod to another platform" makes
+  ReKHCoM-HD.zip; copy it to the game's folder there (Android: Install ROM...) and it installs itself.
+- RetroAchievements: the account is always in sight in the launcher; a portable copy on this PC signs in with the
+  last account used here (for a year).
+
 ## v2.0-pre16 — 2026-10-25
 
 Test build: pre15 plus
