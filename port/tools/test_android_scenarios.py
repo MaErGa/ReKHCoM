@@ -115,8 +115,7 @@ def scenarios(groups, only, riku, from_battle=0):
         # hitting him and walking over his gimmick cards (Riku drops them on card breaks, Sora on Blizzard hits)
         for riku in (1, 0):
             out.append((f'issue83-jafar-{"riku" if riku else "sora"}', 14000, 600,
-                        f'KHCOM_BATTLE=204:8:{riku}
-KHCOM_KEYS={battle_keys(14000)}'))
+                        f'KHCOM_BATTLE=204:8:{riku}\nKHCOM_KEYS={battle_keys(14000)}'))
     if 'issues' in groups:
         keys = ','.join(f'{f}-{f + 3}:A' for f in range(30, 2400, 40))
         for name, env in ISSUES.items():
