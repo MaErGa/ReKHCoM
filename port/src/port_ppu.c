@@ -14,6 +14,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "port/port.h"
 #include "port/port_hd2d.h"
@@ -5071,7 +5072,6 @@ int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud) {
                         (occBg[at]==priority && occLayer[at]<bg) || occObj[at]<(priority+1)*128) continue;
                     best=distance; inkX=ix; inkY=iy;
                 }
-                if (best==100) continue;
                 px=glyph->x+inkX; py=glyph->y+inkY;
                 out[n] = *glyph;
                 /* a window over part of the cell (a menu opened beside the
@@ -5085,6 +5085,36 @@ int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud) {
                     out[n].clip0 = (uint8_t)c0;
                     out[n].clip1 = (uint8_t)(c0 == 0 && c1 == 8 ? 0 : c1);
                 }
+                /* A visible ink pixel does not expose the rest of an HD
+                 * glyph. Keep the selector/window silhouette in both axes,
+                 * from this frame's actual BG/OBJ priorities. Include the
+                 * font overhang and shadow, not just the native ink box. */
+                out[n].coverage = 0;
+                for (iy=0; iy<16; iy++) {
+                    uint16_t visible = 0;
+                    for (ix=0; ix<16; ix++) {
+                        px=glyph->x+ix-4; py=glyph->y+iy-4;
+                        if (px<0 || px>=width || py<0 || py>=height) continue;
+                        at=py*width+px;
+                        if ((occBg[at]==0 && occObj[at]==0) || occBg[at]<priority ||
+                            (occBg[at]==priority && occLayer[at]<bg) ||
+                            occObj[at]<(priority+1)*128) continue;
+                        visible |= (uint16_t)(1u<<ix);
+                    }
+                    out[n].visible[iy]=visible;
+                    if (visible!=0xffff) out[n].coverage=1;
+                }
+                {
+                    const char* trace=getenv("KHCOM_HD_TEXT_COVERAGE");
+                    if (trace && glyph->style==2 && PortFrameCount()>=(uint32_t)atoi(trace)) {
+                        char rows[65];
+                        for (iy=0;iy<16;iy++) snprintf(rows+iy*4,5,"%04x",out[n].visible[iy]);
+                        PortLog("text-cover: frame=%u layer=%d x=%d y=%d code=%u ink=%d rows=%s",
+                                (unsigned)PortFrameCount(),layer,glyph->x,glyph->y,
+                                (unsigned)glyph->code,best!=100,rows);
+                    }
+                }
+                if (best==100) continue;
                 face = (uint16_t)glyph->face; shadow = (uint16_t)glyph->shadow;
                 if (bldcnt & (1 << bg)) {
                     if (effect == 2) { face = Brighten(face, evy); shadow = Brighten(shadow, evy); }
@@ -5181,6 +5211,7 @@ int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud) {
         }
         out[n].code = tag->text;
         out[n].clip0 = out[n].clip1 = 0;
+        out[n].coverage = 0; /* OBJ glyphs retain their own coverage path. */
         out[n].style = tag->style;
         out[n].semi = 0;
         if (((a0 >> 10) & 3) == 1) {

@@ -8,7 +8,8 @@ static int CompareGlyphs(const void* a, const void* b) {
     return p->x - q->x;
 }
 
-static void DrawGlyph(SDL_Renderer* r, HdGlyph* g, float x, float y, uint32_t color, int alpha) {
+static void DrawGlyph(SDL_Renderer* r, HdGlyph* g, float x, float y, uint32_t color, int alpha,
+                      const PortTextGlyph* cell, float originX, float originY, float scale) {
     SDL_FRect d;
 
     if (g->tex == NULL)
@@ -19,7 +20,42 @@ static void DrawGlyph(SDL_Renderer* r, HdGlyph* g, float x, float y, uint32_t co
     d.h = (float)g->h;
     SDL_SetTextureColorMod(g->tex, (color >> 16) & 255, (color >> 8) & 255, color & 255);
     SDL_SetTextureAlphaMod(g->tex, (Uint8)alpha);
-    SDL_RenderTexture(r, g->tex, NULL, &d);
+    if (!cell->coverage) {
+        SDL_RenderTexture(r, g->tex, NULL, &d);
+    } else {
+        SDL_Rect saved;
+        int hadClip=SDL_RenderClipEnabled(r), row=0;
+        SDL_GetRenderClipRect(r, &saved);
+        /* Merge equal rows and contiguous columns. This clips the actual
+         * glyph texture (including its shadow) behind the game's selector;
+         * its alpha and reveal timing still come from the original frame. */
+        while (row<16) {
+            int end=row+1, col=0;
+            uint16_t bits=cell->visible[row];
+            while (end<16 && cell->visible[end]==bits) end++;
+            while (col<16) {
+                int first;
+                SDL_Rect clip, intersection;
+                while (col<16 && !(bits&(1u<<col))) col++;
+                first=col;
+                while (col<16 && (bits&(1u<<col))) col++;
+                if (first==col) break;
+                clip.x=(int)SDL_floorf(originX+(cell->x+first-4)*scale);
+                clip.y=(int)SDL_floorf(originY+(cell->y+row-4)*scale);
+                clip.w=(int)SDL_floorf(originX+(cell->x+col-4)*scale)-clip.x;
+                clip.h=(int)SDL_floorf(originY+(cell->y+end-4)*scale)-clip.y;
+                if (clip.w<=0 || clip.h<=0) continue;
+                if (hadClip) {
+                    if (!SDL_GetRectIntersection(&clip,&saved,&intersection)) continue;
+                    clip=intersection;
+                }
+                SDL_SetRenderClipRect(r,&clip);
+                SDL_RenderTexture(r,g->tex,NULL,&d);
+            }
+            row=end;
+        }
+        SDL_SetRenderClipRect(r,hadClip?&saved:NULL);
+    }
 }
 
 /* Experimental card digits: outline glyphs fitted to their native ink box,
@@ -76,8 +112,8 @@ static void DrawFlowing(SDL_Renderer* renderer, PortTextGlyph* glyphs, int n, fl
             float x = originX + glyphs[i].x * scale + (HD_TEXT_JP_CELL * scale - g->advance) * 0.5f;
             float base = originY + (glyphs[i].y + HD_TEXT_BASELINE) * scale;
             int alpha = glyphs[i].semi ? glyphs[i].semi : 0xFF;
-            DrawGlyph(renderer, g, x + shadow, base + shadow, glyphs[i].shadow, alpha);
-            DrawGlyph(renderer, g, x, base, glyphs[i].face, alpha);
+            DrawGlyph(renderer, g, x + shadow, base + shadow, glyphs[i].shadow, alpha, &glyphs[i], originX, originY, scale);
+            DrawGlyph(renderer, g, x, base, glyphs[i].face, alpha, &glyphs[i], originX, originY, scale);
         } else {
             glyphs[j++] = glyphs[i];
         }
@@ -116,9 +152,9 @@ static void DrawFlowing(SDL_Renderer* renderer, PortTextGlyph* glyphs, int n, fl
                 HdGlyph* g = Glyph(renderer, font, glyphs[t].code);
                 int alpha = glyphs[t].semi ? glyphs[t].semi : 0xFF;
                 if (pass == 0)
-                    DrawGlyph(renderer, g, pen + shadow, baseline + shadow, glyphs[t].shadow, alpha);
+                    DrawGlyph(renderer, g, pen + shadow, baseline + shadow, glyphs[t].shadow, alpha, &glyphs[t], originX, originY, scale);
                 else
-                    DrawGlyph(renderer, g, pen, baseline, glyphs[t].face, alpha);
+                    DrawGlyph(renderer, g, pen, baseline, glyphs[t].face, alpha, &glyphs[t], originX, originY, scale);
                 pen += g->advance;
             }
         }
@@ -163,14 +199,14 @@ static void DrawSubtitles(SDL_Renderer* renderer, PortTextGlyph* glyphs, int n, 
             if (jp) {
                 HdGlyph* g = GlyphJp(renderer, font, glyphs[t].code);
                 float x = pen + (HD_TEXT_JP_CELL * scale - g->advance) * 0.5f;
-                DrawGlyph(renderer, g, x + shadow, baseline + shadow, glyphs[t].shadow, alpha);
-                DrawGlyph(renderer, g, x, baseline, glyphs[t].face, alpha);
+                DrawGlyph(renderer, g, x + shadow, baseline + shadow, glyphs[t].shadow, alpha, &glyphs[t], originX, originY, scale);
+                DrawGlyph(renderer, g, x, baseline, glyphs[t].face, alpha, &glyphs[t], originX, originY, scale);
                 pen += HD_TEXT_JP_CELL * scale;
                 prevEnd = glyphs[t].x + HD_TEXT_JP_CELL;
             } else {
                 HdGlyph* g = Glyph(renderer, font, glyphs[t].code);
-                DrawGlyph(renderer, g, pen + shadow, baseline + shadow, glyphs[t].shadow, alpha);
-                DrawGlyph(renderer, g, pen, baseline, glyphs[t].face, alpha);
+                DrawGlyph(renderer, g, pen + shadow, baseline + shadow, glyphs[t].shadow, alpha, &glyphs[t], originX, originY, scale);
+                DrawGlyph(renderer, g, pen, baseline, glyphs[t].face, alpha, &glyphs[t], originX, originY, scale);
                 pen += g->advance;
                 prevEnd = glyphs[t].x + widths[glyphs[t].code == 0x97 ? 25 : glyphs[t].code & 255];
             }
@@ -196,19 +232,8 @@ static void DrawSmallNumbers(SDL_Renderer* renderer, PortTextGlyph* glyphs, int 
         x = originX + glyphs[i].x * scale + (8.0f * scale - glyph->advance) * 0.5f;
         baseline = originY + (glyphs[i].y + base) * scale;
         int alpha = glyphs[i].semi ? glyphs[i].semi : 0xFF;
-        if (glyphs[i].clip1) {
-            /* part of the cell is under a window: draw only the rest */
-            SDL_Rect clip;
-            clip.x = (int)SDL_floorf(originX + (glyphs[i].x + glyphs[i].clip0) * scale);
-            clip.w = (int)SDL_ceilf(originX + (glyphs[i].x + glyphs[i].clip1) * scale) - clip.x;
-            clip.y = (int)SDL_floorf(originY + (glyphs[i].y - 4) * scale);
-            clip.h = (int)SDL_ceilf(16 * scale);
-            SDL_SetRenderClipRect(renderer, &clip);
-        }
-        DrawGlyph(renderer, glyph, x + shadow, baseline + shadow, glyphs[i].shadow, alpha);
-        DrawGlyph(renderer, glyph, x, baseline, glyphs[i].face, alpha);
-        if (glyphs[i].clip1)
-            SDL_SetRenderClipRect(renderer, NULL);
+        DrawGlyph(renderer, glyph, x + shadow, baseline + shadow, glyphs[i].shadow, alpha, &glyphs[i], originX, originY, scale);
+        DrawGlyph(renderer, glyph, x, baseline, glyphs[i].face, alpha, &glyphs[i], originX, originY, scale);
     }
 }
 

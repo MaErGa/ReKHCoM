@@ -367,6 +367,8 @@ typedef struct PortTextGlyph {
     uint8_t style; /* 0 dialogue / menu font, 1 movie subtitles, 2 numbers in cells */
     uint8_t cap, base; /* style 2: digit height and baseline row in the cell (0: 5 and 7) */
     uint8_t clip0, clip1; /* visible columns [clip0, clip1) of the 8-pixel cell; 0,0: all */
+    uint8_t coverage; /* partial native occlusion, sampled in this exact frame */
+    uint16_t visible[16]; /* rows y-4..y+11, bits x-4..x+11 */
     uint32_t face, shadow;
 } PortTextGlyph;
 int PortPpuTextGlyphs(PortTextGlyph* out, int max, int hud);

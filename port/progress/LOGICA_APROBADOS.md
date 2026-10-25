@@ -339,3 +339,7 @@ La propuesta se ve con KHCOM_PRELIMINAR_V1=1 y espera valoración propia; no her
   escalones en el muro, hueco marrón en 120) quedan en la cola de arte; nada de esto llega a jugadores sin aprobación.
 - Comprobar que `port_preliminar_v1_data.inc` lleva `ready=1` en la escena: con `ready=0` la receta no se aplica ni
   con `KHCOM_PRELIMINAR_V1` y la captura sale sin extensión.
+
+## Añadir naipes: selector y cantidades HD (25/10)
+
+Envío `20261024-195741-61a4e3`, nube `fa6724d2-6a43-4eb2-8ce3-df94c8a0b457`: taparse y aparecer en los mismos frames que el número GBA. Que quede un píxel de tinta visible no permite dibujar entero el glifo HD. Para texto BG, recortar tinta y sombra con la silueta bidimensional de BG/OBJ del mismo frame, incluidas ventanas y prioridades; no inferirla de una fila ni inventar un temporizador. La prueba compara capturas GBA/HD de cada frame del ciclo, incluidas coberturas parciales, en vez de exigir un conteo constante de glifos.
