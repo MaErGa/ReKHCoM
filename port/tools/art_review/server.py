@@ -25,6 +25,7 @@ from tile_editor import TileEditor
 ROOT = Path(__file__).resolve().parents[3]
 WEB = Path(__file__).with_name('web')
 STATUSES = ['pending', 'changes_requested', 'approved', 'honors']
+ACCEPTED = ('changes_requested', 'approved', 'honors')  # changes_requested: "Aprobado (mejorar)"
 # the pen's colours (the user, 24/10: like Windows' screenshot markup): red, orange, yellow, green, cyan, blue,
 # magenta, black; names go into the deliveries so the agent can read "the yellow scribble"
 DOODLE_COLORS = {'#e53935': 'rojo', '#fb8c00': 'naranja', '#fdd835': 'amarillo', '#43a047': 'verde',
@@ -133,15 +134,16 @@ class Store:
             groups.setdefault(family(a), []).append(a)
         result = []
         for root, versions in groups.items():
-            accepted = [a for a in versions if a['status'] in ['approved','honors']]
-            honored = [a for a in versions if a['status'] == 'honors']
+            # 'changes_requested' is shown as "Aprobado (mejorar)": approved, still being improved (user, 25/10).
+            # Every accepted grade goes into the game meanwhile: the newest accepted version is the build one.
+            accepted = [a for a in versions if a['status'] in ACCEPTED]
             key = lambda a:a.get('decision_at', a['created'])
-            build = max(honored,key=key) if honored else None
+            build = max(accepted,key=key) if accepted else None
             result.append(dict(family_id=root, version_ids=[a['id'] for a in versions],
                 approved_version=max(accepted,key=key)['id'] if accepted else None,
                 build_version=build['id'] if build else None,
                 build_reference={k:build[k] for k in ['id','version','sha256','status','image_url','parent_id']} if build else None,
-                build_policy='honors', pending_ids=[a['id'] for a in versions if a['status'] in ['pending','changes_requested']]))
+                build_policy='accepted', pending_ids=[a['id'] for a in versions if a['status'] == 'pending']))
         return result
 
     def queue(self):
@@ -178,12 +180,12 @@ class Store:
                           and not (n['cloud_ids'] and set(n['cloud_ids']) <= answered)]  # a general comment alone waits for a child
             if unanswered:
                 who, todo = 'agente', 'Responder cada envío con una versión hija (parent_id = image_id del envío) y su ficha'
-            elif latest['status'] in ('pending', 'changes_requested'):
+            elif latest['status'] == 'pending':
                 who, todo = 'humano', 'Revisar la última versión'
-            elif not fam['build_version']:
-                who, todo = 'humano', 'Aprobada sin honores: dar ★ o pedir mejoras con nubes'
+            elif fam['build_version']:
+                who, todo = 'agente', 'Aprobada: integrar build_version si aún no está en el juego (receta + GBA idéntico)'
             else:
-                who, todo = 'agente', 'Con honores: integrar build_version si aún no está en el juego (receta + GBA idéntico)'
+                who, todo = 'humano', 'Revisar la última versión'
             rows.append(dict(family_id=fam['family_id'], title=versions[0]['title'], turn=who, todo=todo,
                              latest=dict(id=latest['id'], version=latest['version'], status=latest['status']),
                              approved_version=fam['approved_version'], build_version=fam['build_version'],
