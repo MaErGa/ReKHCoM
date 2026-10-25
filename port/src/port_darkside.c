@@ -233,6 +233,37 @@ static int PoseIndex(int slot) {
     return -1;
 }
 
+static int PosePixel(const DarksidePose* pose, int x, int y) {
+    if (x < 0 || x >= pose->stride * 2 || y < 0 || y >= pose->rows)
+        return 0;
+    return (pose->art[y * pose->stride + (x >> 1)] >> ((x & 1) * 4)) & 15;
+}
+
+/* Atlas 25/10: the reaching arm's ordered dither read as horizontal teeth.
+ * Close only tiny enclosed holes in the existing added silhouette, then
+ * dissolve it with stable, two-dimensional coverage instead of row stripes. */
+static int ReachDissolve(const DarksidePose* pose, int x, int y, int v) {
+    int d = x + DARKSIDE_ART_LEFT - 256, left = 0, right = 0, k, a;
+    uint32_t noise;
+    if (d < 0) return v;
+    if (d >= 28) return 0;
+    if (!v) {
+        for (k = 1; k <= 4 && (!left || !right); k++) {
+            if (!left) left = PosePixel(pose, x - k, y);
+            if (!right) right = PosePixel(pose, x + k, y);
+        }
+        if (left && right) v = left;
+    }
+    if (!v || d < 2) return v;
+    a = (28 - d) * 255 / 26;
+    a = a * a * (765 - 2 * a) / (255 * 255);
+    noise = (uint32_t)(x + DARKSIDE_ART_LEFT) * 0x1f123bb5u ^ (uint32_t)(y + pose->top) * 0x5f356495u;
+    noise ^= noise >> 16;
+    noise *= 0x7feb352du;
+    noise ^= noise >> 15;
+    return (int)(noise & 255) < a ? v : 0;
+}
+
 /* The body frame's own pixel (palette index) in its block, x < 256. */
 static int FramePixel(const uint16_t* frame, const uint8_t* tiles, int x, int y) {
     unsigned entry = frame[(y >> 3) * 32 + (x >> 3)];
@@ -264,6 +295,8 @@ int PortDarksideBodyPixel(const void* const* maps, int x, int y, int cx, int cy,
     if (mx < 0 || mx >= pose->stride * 2 || my < 0 || my >= pose->rows)
         return 0;
     v = (pose->art[my * pose->stride + (mx >> 1)] >> ((mx & 1) * 4)) & 15;
+    if (pi == 3)
+        v = ReachDissolve(pose, mx, my, v);
     if (!v || ((x & 511) < BEACH_W && FramePixel(frame, tiles, x & 511, (y & 511) - 256)))
         return 0; /* the cartridge's own pixel stays */
     *color = ((const uint16_t*)(uintptr_t)GBA_PLTT)[v] & 0x7FFF; /* the body's bank 0, live */
