@@ -4734,7 +4734,7 @@ void PortPpuRenderHud(uint32_t* buf) {
     int effect = (bldcnt >> 6) & 3, evy = IO16(0x54) & 31;
     int mapping1d = (dispcnt >> 6) & 1;
     int w = gPortHudW, h = gPortHudH;
-    int i;
+    int i, seeThrough = 0, frontSolid[4];
 
     sEnemyHudRect[0] = w; sEnemyHudRect[1] = h;
     PortHdHudSpriteBegin();
@@ -4785,6 +4785,22 @@ void PortPpuRenderHud(uint32_t* buf) {
         return;
     if (evy > 16)
         evy = 16;
+    {
+        /* backgrounds in front that the GBA blends over the sprites (alpha, they first target, the sprites second:
+           Simba's roar puts one over the whole screen) do not hide a HUD sprite: it shows through them there too */
+        int bg, p;
+        seeThrough = 0;
+        if (effect == 1 && (bldcnt & 0x1000))
+            for (bg = 0; bg < 4; bg++)
+                if (bldcnt & (1 << bg))
+                    seeThrough |= 1 << bg;
+        for (p = 0; p < 4; p++) {
+            frontSolid[p] = 0;
+            for (bg = 0; bg < 4; bg++)
+                if ((dispcnt & (0x100 << bg)) && (IO16(0x08 + bg * 2) & 3) < p && !(seeThrough & (1 << bg)))
+                    frontSolid[p] = 1;
+        }
+    }
 
     for (i = 127; i >= 0; i--) {
         uint16_t a0 = OAM16[i * 4 + 0], a1 = OAM16[i * 4 + 1], a2 = OAM16[i * 4 + 2];
@@ -4907,7 +4923,7 @@ void PortPpuRenderHud(uint32_t* buf) {
                     int prio = (a2 >> 10) & 3;
                     if (cx >= 0 && cy >= 0 && cx < gPortScreen.width && cy < gPortScreen.height) {
                         int k = cy * gPortScreen.width + cx;
-                        if (sOccBg[k] < prio || sOccObj[k] < prio * 128 + i)
+                        if ((sOccBg[k] < prio && frontSolid[prio]) || sOccObj[k] < prio * 128 + i)
                             continue;
                     }
                 }
