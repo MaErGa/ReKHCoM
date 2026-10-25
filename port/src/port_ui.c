@@ -86,21 +86,21 @@ enum {
     ITEM_HIDE_TOUCH,
     ITEM_TOUCH_THEME,  /* the touch buttons' look: Clear, Dark, Color */
     ITEM_TOUCH_EDIT,   /* the layout editor: drag the touch buttons where the player wants them */
-    ITEM_RECOM_EXTRAS, /* section heading, not selectable */
+    ITEM_RECOM_EXTRAS, /* the HD section's heading (every HD row together, 25/10), not selectable */
     ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): shown only once imported */
     ITEM_HD_MUSIC,
     ITEM_HD_SCENES,
     ITEM_HD_SUBTITLES,
     ITEM_HD_CARDS,     /* HD cards, faces and battle words (port_hdsprites.c), once imported */
     ITEM_HD_TITLE,     /* the title's HD logo */
-    ITEM_PS2_MODE,
-    ITEM_PS2_MENU,     /* opens the Re:CoM page */
-    ITEM_EXPERIMENTAL, /* section heading, not selectable */
-    ITEM_BATTLE_ZOOM,
     ITEM_HDTEXT,
     ITEM_HDFONT,
     ITEM_HDHUD,
     ITEM_HD2D,
+    ITEM_PS2_MODE,
+    ITEM_PS2_MENU,     /* opens the Re:CoM page */
+    ITEM_EXPERIMENTAL, /* section heading, not selectable */
+    ITEM_BATTLE_ZOOM,
     ITEM_SMOOTHAUDIO,
     ITEM_SAVE_SLOT_EXPERIMENTAL,
     ITEM_MOOGLE_NOTICE,
@@ -330,22 +330,22 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Tema de botones", "タッチボタンのテーマ" },
     { "Move touch buttons", "Déplacer les boutons tactiles", "Touch-Tasten verschieben", "Sposta i tasti touch",
       "Mover botones táctiles", "タッチボタンを移動" },
-    { "Re:CoM improvements", "Améliorations Re:CoM", "Re:CoM-Verbesserungen", "Miglioramenti Re:CoM", "Mejoras de Re:CoM", "Re:CoMの改善" },
+    { "HD", "HD", "HD", "HD", "HD", "HD" },
     { "HD intros", "Intros HD", "HD-Intros", "Intro HD", "Intros HD", "HDイントロ" }, /* opening, credits, endings */
     { "HD music", "Musique HD", "HD-Musik", "Musica HD", "Música HD", "HDミュージック" },
     { "HD scenes", "Scènes HD", "HD-Szenen", "Scene HD", "Escenas HD", "HDシーン" },
     { "HD subtitles", "Sous-titres HD", "HD-Untertitel", "Sottotitoli HD", "Subtítulos HD", "HDじまく" },
     { "HD HUD", "ATH HD", "HD-HUD", "HUD HD", "HUD HD", "HD HUD" }, /* cards, battle HUD and title logo together */
     { "HD title logo", "Logo de titre HD", "HD-Titellogo", "Logo del titolo HD", "Logo del título HD", "HDタイトルロゴ" },
+    { "HD text", "Texte HD", "HD-Text", "Testo HD", "Texto HD", "HDテキスト" },
+    { "HD text font", "Police du texte HD", "Schrift des HD-Texts", "Font del testo HD", "Fuente del texto HD", "HDテキストのフォント" },
+    { "HD HUD (pilot)", "HUD HD (pilote)", "HD-HUD (Pilot)", "HUD HD (pilota)", "HUD HD (piloto)", "HD HUD (試験)" },
+    { "HD-2D look", "Style HD-2D", "HD-2D-Optik", "Stile HD-2D", "Estilo HD-2D", "HD-2D表示" },
     { "Re:CoM mode", "Mode Re:CoM", "Re:CoM-Modus", "Modalità Re:CoM", "Modo Re:CoM", "Re:CoMモード" },
     { "Re:CoM settings", "Réglages Re:CoM", "Re:CoM-Einstellungen", "Impostazioni Re:CoM", "Ajustes Re:CoM",
       "Re:CoMオプション" },
     { "Experimental", "Expérimental", "Experimentell", "Sperimentale", "Experimentales", "実験的機能" },
     { "Battle zoom", "Zoom en combat", "Kampfzoom", "Zoom battaglia", "Zoom en combate", "バトルズーム" },
-    { "HD text", "Texte HD", "HD-Text", "Testo HD", "Texto HD", "HDテキスト" },
-    { "HD text font", "Police du texte HD", "Schrift des HD-Texts", "Font del testo HD", "Fuente del texto HD", "HDテキストのフォント" },
-    { "HD HUD (pilot)", "HUD HD (pilote)", "HD-HUD (Pilot)", "HUD HD (pilota)", "HUD HD (piloto)", "HD HUD (試験)" },
-    { "HD-2D look", "Style HD-2D", "HD-2D-Optik", "Stile HD-2D", "Estilo HD-2D", "HD-2D表示" },
     { "Audio filter", "Filtre audio", "Audiofilter", "Filtro audio", "Filtro de audio", "オーディオフィルター" },
     { "Choose save slot at save points", "Choisir un emplacement aux points de sauvegarde",
       "Speicherplatz am Speicherpunkt wählen", "Scegli uno slot ai punti di salvataggio",
