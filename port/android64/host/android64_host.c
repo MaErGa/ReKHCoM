@@ -383,6 +383,8 @@ static void GamePush(const int16_t* frames, uint32_t count) {
 /* HD music: the host decodes the track the game names and mixes it into the game's blocks (shared/hd_music_host.h) */
 #define HD_MUSIC_LOG Log
 #include "hd_music_host.h"
+/* the HD mod copied as one file: files/ReKHCoM-HD.zip (the launcher's Install ROM...), unpacked into hd on start */
+#include "hd_pack_host.h"
 /* the network link's socket (shared/udp_host.h): BSD sockets */
 #define UDP_HOST_POSIX
 #include "udp_host.h"
@@ -848,6 +850,7 @@ int main(int argc, char** argv) {
     SDL_snprintf(logPath, sizeof(logPath), "%s/kh_com_host.log", sData);
     sLog = fopen(logPath, "w");
     Log("ReKHCoM (Android 64-bit) starting");
+    HdPackInstall(sData, Log);
     LogDevice();
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD))
         Fatal(SDL_GetError());
