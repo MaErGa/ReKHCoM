@@ -28,6 +28,31 @@ static inline const PortPreliminarRecipe* PortPreliminarFind(uint32_t hash, int 
 static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x, int* y) {
     const int16_t* v = p->v;
     int ox=*x, oy=*y, sx=ox, sy=oy, w=v[4], h=v[5];
+    if (v[0]==115) {
+        if (ox>=0 && ox<w && oy>=0 && oy<h) return 1;
+        sx=PortSceneTileMod(ox,8);
+        sy=oy+(ox-sx)/2;
+        if (v[1]==3) {
+            /* A plank has four rows, not the old two-row upper swatch.
+             * Keep its diagonal phase and avoid copying wall pixels. */
+            if (sy<0 || sy>=32) sy=20+PortSceneTileMod(sy-20,4);
+        } else if (v[1]==2) {
+            if (2*oy+ox>=32) {
+                int cx=ox+4-PortSceneTileMod(ox+4,8);
+                int base=22-cx/2;
+                int cy=oy+1-PortSceneTileMod(oy+1-base,8);
+                /* A candidate centred in an authored empty cell must not
+                 * leave a half hatch outside that cell's map edge. */
+                if (cx>=0 && cx<32 && cy>=0 && cy<32 &&
+                    (cy>=29 || 2*cy+cx>=76)) return 0;
+                /* Complete hatch diamonds on their staggered (16,-8),
+                 * (0,8) lattice instead of wrapping clipped edge shards. */
+                sx=8+PortSceneTileMod(ox-8,16);
+                sy=16+PortSceneTileMod(oy+(ox-sx)/2-16,8);
+            } else if (sy<0 || sy>=32) return 0;
+        }
+        *x=sx; *y=sy; return 1;
+    }
     if (v[0]==45) {
         if (v[1]==2) {
             if (ox>=0 && ox<64 && oy>=0 && oy<64) return 1;
