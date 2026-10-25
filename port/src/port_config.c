@@ -156,6 +156,7 @@ static const Key sKeys[] = {
     { "debug_gba_map_logic", &gPortConfig.gbaMapLogic, 0, 2 },
     { "experimental_unstock", &gPortConfig.unstockButton, 0, 1 },
     { "hd_text", &gPortConfig.hdText, 0, 1 },
+    { "hd_font", &gPortConfig.hdFont, 0, 2 },
     { "card_hud_raise", &gPortConfig.cardHudRaise, 0, 16 },
     { "save_bank", &gPortConfig.saveBank, 1, PORT_SAVE_BANKS },
     { "hd2d", &gPortConfig.hd2d, 0, 1 },

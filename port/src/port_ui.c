@@ -78,6 +78,7 @@ enum {
     ITEM_EXPERIMENTAL, /* section heading, not selectable */
     ITEM_BATTLE_ZOOM,
     ITEM_HDTEXT,
+    ITEM_HDFONT,
     ITEM_HDHUD,
     ITEM_HD2D,
     ITEM_SMOOTHAUDIO,
@@ -187,6 +188,7 @@ static int PageEnd(void) {
 /* rows shown only where they apply */
 static int ItemVisible(int item) {
     switch (item) {
+        case ITEM_HDFONT: return gPortConfig.hdText; /* with the HD text only */
 #if !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(PORT_ANDROID64) && !defined(PORT_TOUCH)
         case ITEM_HIDE_TOUCH:
         case ITEM_TOUCH_THEME:
@@ -274,6 +276,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Experimental", "Expérimental", "Experimentell", "Sperimentale", "Experimentales", "実験的機能" },
     { "Battle zoom", "Zoom en combat", "Kampfzoom", "Zoom battaglia", "Zoom en combate", "バトルズーム" },
     { "HD text", "Texte HD", "HD-Text", "Testo HD", "Texto HD", "HDテキスト" },
+    { "HD text font", "Police du texte HD", "Schrift des HD-Texts", "Font del testo HD", "Fuente del texto HD", "HDテキストのフォント" },
     { "HD HUD (pilot)", "HUD HD (pilote)", "HD-HUD (Pilot)", "HUD HD (pilota)", "HUD HD (piloto)", "HD HUD (試験)" },
     { "HD-2D look", "Style HD-2D", "HD-2D-Optik", "Stile HD-2D", "Estilo HD-2D", "HD-2D表示" },
     { "Audio filter", "Filtre audio", "Audiofilter", "Filtro audio", "Filtro de audio", "オーディオフィルター" },
@@ -952,6 +955,15 @@ static void ValueText(int item, char* out, size_t size) {
         case ITEM_HDTEXT:
             SDL_strlcpy(out, sOnOff[gPortConfig.hdText != 0][l], size);
             break;
+        case ITEM_HDFONT: {
+            static const char* const kFonts[3][LANG_COUNT] = {
+                { "KHMenu", "KHMenu", "KHMenu", "KHMenu", "KHMenu", "KHMenu" },
+                { "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts" },
+                { "System", "Système", "System", "Sistema", "Sistema", "システム" },
+            };
+            SDL_strlcpy(out, kFonts[SDL_clamp(gPortConfig.hdFont, 0, 2)][l], size);
+            break;
+        }
         case ITEM_CARDS:
             if (gPortConfig.cardHudRaise == 0)
                 SDL_strlcpy(out, sOnOff[0][l], size);
@@ -1203,6 +1215,9 @@ static void Change(int item, int dir) {
             break;
         case ITEM_HDTEXT:
             gPortConfig.hdText = !gPortConfig.hdText;
+            break;
+        case ITEM_HDFONT:
+            gPortConfig.hdFont = Wrap(gPortConfig.hdFont + dir, 3);
             break;
         case ITEM_CARDS:
             gPortConfig.cardHudRaise = Wrap(gPortConfig.cardHudRaise / 4 + dir, 5) * 4;

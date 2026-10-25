@@ -24,6 +24,7 @@ static size_t sizes[2];
 static HdFont fonts[3][2];
 static int nextFont[3], tried, ready;
 static FT_Face fallback, japanese;
+static char sFallbackPath[1024]; /* the fallback face's file: Options can choose it for the menus (hd_font=2) */
 const uint16_t* PortLatinGlyphWidths(void);
 uint32_t PortFrameCount(void);
 unsigned PortSjisToCodepoint(unsigned code);
@@ -86,8 +87,10 @@ int PortPortableHdReady(void) {
         FT_Done_Face(face);
     }
     /* Optional platform fallbacks; no platform fonts are redistributed. */
-    FT_New_Face(library,"/system/fonts/Roboto-Regular.ttf",0,&fallback);
-    if (!fallback) FT_New_Face(library,"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",0,&fallback);
+    if (!FT_New_Face(library,"/system/fonts/Roboto-Regular.ttf",0,&fallback))
+        SDL_strlcpy(sFallbackPath,"/system/fonts/Roboto-Regular.ttf",sizeof(sFallbackPath));
+    if (!fallback && !FT_New_Face(library,"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",0,&fallback))
+        SDL_strlcpy(sFallbackPath,"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",sizeof(sFallbackPath));
     {
         /* Comic Hearts has no accents: without a fallback face the first accented letter turns HD text
            off (#77, Bazzite/Fedora keep DejaVu elsewhere) */
@@ -99,7 +102,8 @@ int PortPortableHdReady(void) {
             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "C:/Windows/Fonts/arial.ttf"
         };
         size_t k;
-        for (k=0;!fallback && k<SDL_arraysize(paths);k++) FT_New_Face(library,paths[k],0,&fallback);
+        for (k=0;!fallback && k<SDL_arraysize(paths);k++)
+            if (!FT_New_Face(library,paths[k],0,&fallback)) SDL_strlcpy(sFallbackPath,paths[k],sizeof(sFallbackPath));
     }
 #if defined(__linux__) && !defined(__ANDROID__)
     if (!fallback) {
@@ -108,6 +112,7 @@ int PortPortableHdReady(void) {
             char path[1024]; size_t n=fread(path,1,sizeof(path)-1,pipe); path[n]=0;
             pclose(pipe);
             if (n && FT_New_Face(library,path,0,&fallback)) fallback=NULL;
+            else if (n) SDL_strlcpy(sFallbackPath,path,sizeof(sFallbackPath));
         }
     }
 #endif
@@ -129,12 +134,16 @@ static void Release(HdFont* f) {
 static HdFont* FontForScale(float scale,int style) {
     static const char sample[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const uint16_t* widths=PortLatinGlyphWidths();
-    int key=(int)(scale*16+.5f),i,top,bottom,px;float natural=0,game=0;
+    int choice=SDL_clamp(gPortConfig.hdFont,0,2);
+    int key=(int)(scale*16+.5f)+choice*100000,i,top,bottom,px;float natural=0,game=0; /* the face chosen too */
     HdFont* f;
     for(i=0;i<2;i++)if(fonts[style][i].font && fonts[style][i].key==key)return &fonts[style][i];
     f=&fonts[style][nextFont[style]];nextFont[style]^=1;Release(f);
     if(!PortPortableHdReady())return f;
-    if(FT_New_Memory_Face(library,data[style==1],sizes[style==1],0,&f->font))return f;
+    /* menus and dialogue in the face chosen in Options (KHMenu, Comic Hearts or the system's); subtitles keep theirs */
+    if(style!=1 && choice==2 && sFallbackPath[0]) { if(FT_New_Face(library,sFallbackPath,0,&f->font))f->font=NULL; }
+    else if(FT_New_Memory_Face(library,data[style==1 || choice==1],sizes[style==1 || choice==1],0,&f->font))f->font=NULL;
+    if(!f->font)return f;
     f->key=key;f->style=style;f->scale=scale;f->cap=HD_TEXT_CAP*scale;
     FT_Load_Char(f->font,'H',FT_LOAD_NO_SCALE);
     top=(int)f->font->glyph->metrics.height;

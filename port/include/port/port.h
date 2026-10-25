@@ -139,6 +139,7 @@ typedef struct PortConfig {
     int dodgeButton;      /* one button for the battle dodge roll */
     int stockButton;      /* one button for L + R (stock a card / sleight) */
     int hdText;           /* dialogue text drawn with an outline font at output resolution */
+    int hdFont;           /* its face for menus and dialogue: 0 KHMenu (the default), 1 Comic Hearts, 2 the system's */
     int cardHudRaise;     /* battle: card hand lifted by this many GBA pixels (0..16) */
     int unstockButton;    /* experimental return-stocked-cards control; opt-in, off by default */
     int saveBank;         /* 1..PORT_SAVE_BANKS: which save file holds the game's two slots */

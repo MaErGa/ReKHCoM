@@ -448,7 +448,7 @@ static const Setting kSettings[] = {
     { "graphics_mode", 0 }, { "graphics_mode_applied", 0 }, { "gba_border", 0 },
     { "window_scale", 4 },   { "fullscreen_width", 0 }, { "fullscreen_height", 0 },
     { "master_volume", 100 }, { "music_volume", 100 }, { "sfx_volume", 100 },
-    { "dodge_button", 1 },   { "stock_button", 1 }, { "pad_layout", 0 }, { "experimental_moogle_notice", 0 }, { "hd_text", 0 },
+    { "dodge_button", 1 },   { "stock_button", 1 }, { "pad_layout", 0 }, { "experimental_moogle_notice", 0 }, { "hd_text", 0 }, { "hd_font", 0 },
     { "invert_card_scroll", 0 }, { "game_language", 0 }, { "experimental_battle_zoom", 0 },
     { "card_hud_raise", 8 }, { "save_bank", 1 }, { "hd2d", 0 }, { "smooth_audio", 0 }, { "experimental_unstock", 0 },
     { "ps2_mode", 0 }, { "ps2_difficulty", 0 }, { "ps2_fast_text", 0 }, { "hd_hud", 0 }, { "aspect", 0 }, { "integer_zoom", 0 },
@@ -2158,6 +2158,15 @@ static void PageExtras() {
                            "Dialogue is drawn with a crisp font at the window's resolution, in the game's own "
                            "places and colours."),
                          Ini("hd_text"));
+    if (Ini("hd_text")) {
+        /* the HD text's face (art review, 24/10): the user's KHMenu by default, two others to choose from */
+        static const char* fontsEs[3] = { "KHMenu", "Comic Hearts", "Sistema" };
+        static const char* fontsEn[3] = { "KHMenu", "Comic Hearts", "System" };
+        changed |= CycleRow(T("Fuente del texto HD", "HD text font"),
+                            T("KHMenu es la del juego; Comic Hearts, más fina; Sistema, la del equipo.",
+                              "KHMenu is the game's; Comic Hearts is thinner; System is the computer's own."),
+                            Ini("hd_font"), 3, sSpanish ? fontsEs : fontsEn);
+    }
     ImGui::Separator();
 #ifdef REKHCOM_SHOW_HD_HUD /* HD HUD pending: hidden, and the game forces it off (KHCOM_HD_HUD_DEV=1 for development) */
     changed |= ToggleRow(T("HUD HD (piloto)", "HD HUD (pilot)"),
