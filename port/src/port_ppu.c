@@ -106,7 +106,7 @@ static int sUseSceneProfiles;
 static int sPreliminarV1;
 static int sPreliminarApprovedOnly; /* only the Preliminar V1 scenes approved with honours, for everyone */
 /* Preliminar V1 scenes approved with honours in the review app; KHCOM_SCENEnnn_WIDE=0 turns one off */
-static const int kPreliminarApproved[] = {53, 54, 55, 102, 115, 121, 122};
+static const int kPreliminarApproved[] = {53, 54, 55, 102, 115, 116, 121, 122};
 static int sPreliminarApprovedOn[sizeof(kPreliminarApproved)/sizeof(kPreliminarApproved[0])];
 /* harness switches, read once per frame on the main thread: getenv in the per-row/per-pixel drawing is slow on
    Windows (a frame a second at 32:9) and not safe to call while the cores draw */
