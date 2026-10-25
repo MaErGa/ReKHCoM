@@ -3567,8 +3567,24 @@ static void DrawConfirm(int l, int width, int height) {
     DrawText(sWizHelp[l], x0 + 8, y0 + h - 12, MENU_DIM, 0xFFFFFFFFu);
 }
 
+/* beside a greyed row: a small white sign with the red "!" saying what the launcher must bring first */
+static void DrawNeedNote(const char* text, int width, int height, int left, int rowY) {
+    int panelW = SDL_min(170, width - left - 6), x0 = left, textW, lines, h, y0;
+    if (panelW < 100)
+        return;
+    textW = panelW - 26;
+    lines = DrawWrapped(text, 0, 0, textW, 0, 0);
+    h = lines * 11 + 8;
+    y0 = SDL_clamp(rowY - 4, 2, height - h - 18);
+    Fill(x0 - 1, y0 - 1, panelW + 2, h + 2, MENU_GREY);
+    Fill(x0, y0, panelW, h, 0xFFFFFFFFu);
+    Fill(x0, y0, 3, h, MENU_RED_DARK); /* a sign's edge, not a row's bar */
+    DrawGlyph('!', x0 + 8, y0 + 3, MENU_RED_DARK, 0xFFD8D8D8u);
+    DrawWrapped(text, x0 + 20, y0 + 3, textW, MENU_INK, 1);
+}
+
 static void DrawMenu(int l, int width, int height) {
-    int rows, i, x, y, labelW = 0, valueW = 0, barX = 10, barW, top = MENU_TOP, artX;
+    int rows, i, x, y, labelW = 0, valueW = 0, barX = 10, barW, top = MENU_TOP, artX, selY = -1;
     int rowH = sPage == PAGE_CONTROLS && sControlPad ? 14 : 16;
     char value[64];
     int focus = sPage * 1024 + (sPage == PAGE_NEWGAME ? sWizStep * 16 + sWizCursor : sCursor);
@@ -3633,6 +3649,7 @@ static void DrawMenu(int l, int width, int height) {
     DrawText(sPage == PAGE_REMATCH ? sRematchTitle[l] : sPage == PAGE_CHEATS ? sCheatsTitle[l] : sPage == PAGE_PS2 ? sPs2Title[l] : sPage == PAGE_CONTROLS ? (l == LANG_ES ? (sControlPad ? "Controles - Mando" : "Controles - Teclado") : (sControlPad ? "Controls - Gamepad" : "Controls - Keyboard")) : sPage == PAGE_NEWGAME ? sNgTitle[l] : sTitle[l], barX, MENU_TITLE_Y, MENU_INK, 0xFFD8D8D8u);
     if (sScroll > PageFirst())
         DrawText("\xE2\x86\x91", barX + barW - 8, 2, MENU_INK, 0xFFD8D8D8u);
+    selY = -1;
     for (i = sScroll, y = top; y < top + rows * rowH && i < PageEnd(); i++, y += rowH) {
         int on = ItemEnabled(i), sel = i == sCursor;
         if (!ItemVisible(i)) {
@@ -3648,6 +3665,8 @@ static void DrawMenu(int l, int width, int height) {
             continue;
         }
         MenuBar(barX, y, barW, sel);
+        if (sel)
+            selY = y;
         DrawText(sLabels[i][l], barX + 16, y - 2, face, 0xFFD8D8D8u);
         if (i == ITEM_CLOSE || i == ITEM_PS2_BACK || i == ITEM_CHEATS_BACK || i == ITEM_REMATCH_BACK ||
             i == ITEM_CONTROLS_BACK || i == ITEM_NG_START)
@@ -3678,9 +3697,9 @@ static void DrawMenu(int l, int width, int height) {
     if (sPage == PAGE_CONTROLS && sCursor == ITEM_PAD_LAYOUT)
         DrawNintendoNote(l, width, height, barX + barW + 8);
     int zoom = sCursor == ITEM_BATTLE_ZOOM && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom;
-    if (NeedsLauncher(sCursor) && ItemVisible(sCursor))
-        MenuButton(barX, height - 15, NeedsLauncher(sCursor) == NEED_JP ? sNeedJp[l] : sNeedHd[l], '!');
-    else if (sPage == PAGE_MAIN && (sCursor == ITEM_ZOOM || sCursor == ITEM_BATTLE_ZOOM) &&
+    if (NeedsLauncher(sCursor) && ItemVisible(sCursor) && selY >= 0)
+        DrawNeedNote(NeedsLauncher(sCursor) == NEED_JP ? sNeedJp[l] : sNeedHd[l], width, height, barX + barW + 8, selY);
+    if (sPage == PAGE_MAIN && (sCursor == ITEM_ZOOM || sCursor == ITEM_BATTLE_ZOOM) &&
         ItemEnabled(sCursor) && PortConfigZoomHeavy(zoom))
         /* a demanding zoom: say so where the help line is */
         MenuButton(barX, height - 15, sZoomHeavy[l], '!');
