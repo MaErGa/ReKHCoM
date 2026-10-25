@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.0-pre15 — 2026-10-25
+
+Test build: pre14 plus
+
+- Options in sections (Gameplay, Video, Audio, General, HD, Experimental, More); rows that open a page enter with A;
+  mod rows show greyed with a note until the launcher imports them; new last row: Quit the game (closes the launcher too).
+- Android: picking up the card Jafar drops no longer closes the game (#83).
+- The card deck no longer blinks away during summons such as Simba's roar (wide view).
+- Linux: HD movies and scenes play through the system's ffmpeg.
+- New approved art: Trickmaster, Oogie, Darkside poses, scenes 112 and 120.
+
 ## v2.0-pre14 — 2026-10-25
 
 Test build: pre13 plus
