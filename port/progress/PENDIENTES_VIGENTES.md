@@ -40,7 +40,7 @@ Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlo
 - Pendiente de aprobar en la app y por eso fuera: Darkside arena (bloquea Darkside 01), Maléfica 01-03, Oogie, Trickmaster.
   Aprobado que pide implementación: borde/insignias de Logros Re:CoM (embeber y dibujar).
 - WIP de la sesión anterior guardado en la rama `claude/hd-font-option` (fuente del texto HD en Opciones), sin PR.
-- Copia interna v2.0-pre13 (Windows) en preparación: `jugar/ReKHCoM-v2.0-pre13`.
+- Copia interna **v2.0-pre13** (Windows, main e379bb0a2): `jugar/ReKHCoM-v2.0-pre13` + «Probar ReKHCoM v2.0 pre13.bat», partidas de la pre12, HD enlazado; humo 9/9. No publicada.
 
 ## TRASPASO (25/10 madrugada, claude-integrador; el usuario duerme y pidió decidir solo, sin preguntar)
 
