@@ -339,3 +339,7 @@ La propuesta se ve con KHCOM_PRELIMINAR_V1=1 y espera valoración propia; no her
   escalones en el muro, hueco marrón en 120) quedan en la cola de arte; nada de esto llega a jugadores sin aprobación.
 - Comprobar que `port_preliminar_v1_data.inc` lleva `ready=1` en la escena: con `ready=0` la receta no se aplica ni
   con `KHCOM_PRELIMINAR_V1` y la captura sale sin extensión.
+
+## Escenas004/005: pared derecha de primer plano (25/10)
+
+El envío `20261024-174616-2db556` pide completar la muralla derecha y revisar la otra escena de León. La pared delantera pertenece a BG2, no al suelo BG3. Prolongar el módulo limpio de seis columnas por `(6,+3)`, con la base inclinada hacia abajo a la derecha; la pared trasera de BG3 sigue la diagonal contraria. No repetir el borde izquierdo del pilar, cajas ni alfombra.004 y005 comparten `gEventBg004` y deben revisarse juntas; misma receta por contenido del mapa, sin heredar valoración de una hija.
