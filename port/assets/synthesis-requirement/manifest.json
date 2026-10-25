@@ -1,7 +1,9 @@
 {
-  "reference": "dbdb82b983fc4a178d46ce70edf44c6b",
-  "submission": "20261025-011932-34d062",
-  "status": "proposal-awaiting-runtime-capture",
+  "reference": "c08283ad450f4455937a3f1e1ead3302",
+  "submission": "20261025-125559-473c1c",
+  "status": "fix-prepared-awaiting-serial-capture",
+  "digit_provider": "KHMenu fallback; staging prefers local mod",
+  "local_digit_hashes": {},
   "scale": 4,
   "pieces": [
     {

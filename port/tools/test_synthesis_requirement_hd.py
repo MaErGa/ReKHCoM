@@ -13,7 +13,7 @@ import shutil
 import subprocess
 
 from PIL import Image
-from synthesis_requirement_hd import ASSETS, ROOT, specs
+from synthesis_requirement_hd import ROOT, stage_assets
 
 FRAMES = (300, 380, 470, 510)
 
@@ -28,8 +28,7 @@ def prepare(build, out, hd_source, enabled, fixture=None):
         shutil.copytree(hd_source, sprites)
     else:
         sprites.mkdir(parents=True)
-    for _, name, _, _, _ in specs():
-        shutil.copy2(ASSETS / (name + '.png'), sprites / (name + '.png'))
+    stage_assets(sprites)
     (out / 'kh_com.ini').write_text(
         f'config_version=11\nview_mode=4\nzoom=8\nhd_text=1\nhd_cards={enabled}\nvsync=0\n',
         encoding='utf-8')

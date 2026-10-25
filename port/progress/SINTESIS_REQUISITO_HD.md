@@ -4,6 +4,56 @@ Tarea `sintesis-requisito-hd`, owner `codex-sintesis`.
 Referencia `dbdb82b983fc4a178d46ce70edf44c6b`, envío
 `20261025-011932-34d062`. Base del worktree: `d47dbeab6`.
 
+## Corrección preparada para el nuevo turno serial
+
+Feedback `20261025-125559-473c1c`, padre
+`c08283ad450f4455937a3f1e1ead3302`: sólo se corrigen las nubes
+`a849c7d8-4d91-484e-ba31-1c186915558c` (desborde/distancias/fuente) y
+`23d13c7a-d2c6-4911-914a-246099bbafe7` (relleno interior de color).
+
+El generador 405 existente centra y ajusta la tinta de todo el grupo de
+dígitos/operador a x=-11..11, dejando margen con el contorno x=±14; no cambia
+las cajas OAM ni la lógica dinámica. La banda inferior vuelve a gris neutro
+para todas las condiciones; el color queda en el contorno. El centro sigue
+transparente. Se observaron la captura GBA `hdm_synthesis_es/out_00470.bmp`,
+la propuesta histórica `dbdb82...` y `hdm-check/req_r1.json`: no se ha visto
+una captura del propio menú de 1.5HD y no se afirma exactitud con ella.
+
+Hay diez dígitos locales autorizados en
+`../khcom-claude-int/build/hdfull/hd/sprites/gCardValueDigitTiles_*.png`.
+El staging ahora regenera las piezas con esos dígitos cuando están en el
+directorio HD de captura, registra sus hashes y conserva su aspecto/alpha.
+No publica los glifos privados del mod como assets del repo: los PNG
+versionados son el fallback code-native, también contenido. Con `--hd` al
+directorio anterior, la captura usará los dígitos del mod en vez de KHMenu.
+
+Preparados por generación de assets, sin ejecutar tests, compilación ni juego:
+- `build/synthesis-fix-assets/`: piezas con los dígitos locales y manifiesto.
+- `build/synthesis-fix-assets/asset-preview.png`: sólo plancha de assets,
+  no captura runtime ni evidencia nueva de Atlas.
+- `synthesis_requirement_evidence.py`: preparada la respuesta a ambas nubes
+  del nuevo envío; no se ejecutó ni se subió hija todavía.
+
+La lógica del adaptador, sus 2.000 casos y el pago TOTAL 10→9 no se modifican;
+la evidencia ejecutada anteriormente figura más abajo. El fix visual nuevo
+queda pendiente del turno serial del coordinador. No se hizo push ni se
+actualizó el PR125 antes de una hija real nueva.
+
+Comandos preparados para cuando se asigne turno (NO ejecutados ahora):
+
+```powershell
+python port/tools/test_synthesis_requirement_hd.py --build build/pc-atlas --out build/synthesis-fix-final --hd ../khcom-claude-int/build/hdfull/hd/sprites --baseline build/synthesis-final-r2/baseline-off --run
+# El binario fixture ya conservado permite reutilizar el pipeline sin recompilar:
+python port/tools/test_synthesis_requirement_hd.py --build build/synthesis-variants-r3/blue/hd-on --out build/synthesis-fix-variants/red --hd ../khcom-claude-int/build/hdfull/hd/sprites --fixture red-at-most-7 --run
+python port/tools/test_synthesis_requirement_hd.py --build build/synthesis-variants-r3/blue/hd-on --out build/synthesis-fix-variants/green --hd ../khcom-claude-int/build/hdfull/hd/sprites --fixture green-exact-12 --run
+python port/tools/test_synthesis_requirement_hd.py --build build/synthesis-variants-r3/blue/hd-on --out build/synthesis-fix-variants/blue --hd ../khcom-claude-int/build/hdfull/hd/sprites --fixture blue-total-10to9 --run
+python port/tools/synthesis_requirement_evidence.py
+```
+
+El fixture ya fija dummy, PPU1 y mando `0xffff/0xffff`. Tras captura y revisión
+visual única, subir hija real con parent `c08283ad450f4455937a3f1e1ead3302`
+y las dos respuestas del nuevo envío, ANTES de pushear/actualizar PR125.
+
 ## Qué cambia
 
 `MapSelect_2` cubre la puerta normal y `SELMAP_EVKEY_0/2` las llaves de evento,

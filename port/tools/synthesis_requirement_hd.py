@@ -8,9 +8,10 @@ An explicit KHCOM_HD_SPRITES can point at that staged directory. Other HD assets
 must also be staged there for a complete review. This never launches the game.
 """
 import argparse
+from functools import lru_cache
+import hashlib
 import json
 import re
-import shutil
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -22,8 +23,12 @@ SCALE = 4
 SUPERSAMPLE = 4
 RULES = ('at_least', 'at_most', 'exact', 'total')
 COLORS = ('none', 'green', 'red', 'blue', 'gold')
-# gMapCardBackDefs[GOLD] uses the white outline, just like the cartridge.
-BANDS = ('#dedee3', '#48945b', '#b94b4c', '#5078b2', '#dedee3')
+# The condition lives on the outline. The GBA/old proposal's bottom is neutral;
+# a solid condition-colored slab was rejected in the 20261025-125559 review.
+CONDITION_COLORS = ('#ededf3', '#48945b', '#b94b4c', '#5078b2', '#ededf3')
+NEUTRAL_BAND = '#dedee3'
+REVIEW_PARENT = 'c08283ad450f4455937a3f1e1ead3302'
+REVIEW_SUBMISSION = '20261025-125559-473c1c'
 
 
 def specs():
@@ -63,49 +68,74 @@ def body(box, color):
     # Open body: alpha inside shows the actual spotlight, not a painted backdrop.
     path = [(-14, 17.5), (-14, -16.5), (-7, -12), (0, -19), (7, -12),
             (14, -16.5), (14, 17.5), (-14, 17.5)]
-    c.polygon([(-14, 12), (14, 12), (14, 17.5), (-14, 17.5)], BANDS[color])
+    c.polygon([(-14, 12), (14, 12), (14, 17.5), (-14, 17.5)], NEUTRAL_BAND)
     c.line(path, '#8d8d9b', 1.4)
-    c.line(path, '#ededf3' if color in (0, 4) else BANDS[color], .75)
+    c.line(path, CONDITION_COLORS[color], .75)
     c.line([(-13.5, 12), (13.5, 12)], '#ededf3', .7)
     return c.finish()
 
 
-def digit(c, value, x):
-    # Existing bundled game lettering; no system font or external mod required.
-    font = ImageFont.truetype(str(ROOT / 'port/assets/fonts/KHMenu.otf'), 24 * c.s)
-    glyph = Image.new('RGBA', (40 * c.s, 40 * c.s))
-    d = ImageDraw.Draw(glyph)
-    d.text((5 * c.s, 5 * c.s), str(value), font=font, fill='white',
-           stroke_width=round(.7 * c.s), stroke_fill='#121217')
-    glyph = glyph.crop(glyph.getbbox())
-    target_h = 12 * c.s
-    target_w = min(12 * c.s, round(glyph.width * target_h / glyph.height))
-    glyph = glyph.resize((target_w, target_h), Image.Resampling.LANCZOS)
-    c.image.alpha_composite(glyph, (round((x - c.x + (16 - target_w / c.s) / 2) * c.s),
-                                    round((-3 - c.y) * c.s)))
+def local_digits(folder):
+    """Only use a complete, explicitly staged local mod set; never fetch it."""
+    folder = Path(folder)
+    return folder if all((folder / f'gCardValueDigitTiles_{i}.png').is_file()
+                         for i in range(10)) else None
 
 
-def requirement(box, rule, value):
-    c = Canvas(box)
-    if rule == 3:
-        xs = [-8] if value < 10 else [-15, -1]
+@lru_cache(maxsize=20)
+def digit_image(value, scale, digits=None):
+    if digits is not None:
+        with Image.open(Path(digits) / f'gCardValueDigitTiles_{value}.png') as source:
+            glyph = source.convert('RGBA')
     else:
-        xs = [-12] if value < 10 else [-19, -5]
-    for x, character in zip(xs, str(value)):
-        digit(c, int(character), x)
+        # Committed code-native fallback only. Staging prefers local mod glyphs.
+        font = ImageFont.truetype(str(ROOT / 'port/assets/fonts/KHMenu.otf'), 24 * scale)
+        glyph = Image.new('RGBA', (40 * scale, 40 * scale))
+        ImageDraw.Draw(glyph).text((5 * scale, 5 * scale), str(value), font=font,
+                                  fill='white', stroke_width=round(.7 * scale),
+                                  stroke_fill='#121217')
+    glyph = glyph.crop(glyph.getchannel('A').getbbox())
+    target_h = 11 * scale
+    target_w = max(1, round(glyph.width * target_h / glyph.height))
+    return glyph.resize((target_w, target_h), Image.Resampling.LANCZOS)
+
+
+def operator_image(rule):
+    c = Canvas((0, 0, 6, 11))
+    if rule == 2:
+        for y in (3.5, 7):
+            c.line([(1, y), (5, y)], '#858594', 1.8)
+            c.line([(1, y), (5, y)], '#f5f5fa', 1)
+    else:
+        arrow = [(.5, 4), (3, .5), (5.5, 4), (4, 4), (4, 10), (2, 10), (2, 4)]
+        if rule == 1:
+            arrow = [(x, 10.5 - y) for x, y in arrow]
+        c.polygon(arrow, '#f5f5fa')
+        c.line(arrow + arrow[:1], '#858594', .5)
+    return c.image
+
+
+def requirement(box, rule, value, digits=None):
+    c = Canvas(box)
+    parts = [digit_image(int(character), c.s, str(digits) if digits else None)
+             for character in str(value)]
     if rule != 3:
-        x = 0 if value < 10 else 7
-        if rule == 2:
-            for y in (1, 5):
-                c.line([(x + 3, y), (x + 11, y)], '#858594', 2.4)
-                c.line([(x + 3, y), (x + 11, y)], '#f5f5fa', 1.3)
-        else:
-            arrow = [(3, 2), (7, -3), (11, 2), (8.5, 2), (8.5, 9), (5.5, 9), (5.5, 2)]
-            if rule == 1:
-                arrow = [(a, 6 - b) for a, b in arrow]
-            arrow = [(x + a, b) for a, b in arrow]
-            c.polygon(arrow, '#f5f5fa')
-            c.line(arrow + arrow[:1], '#858594', .6)
+        parts.append(operator_image(rule))
+    gap = c.s
+    group = Image.new('RGBA', (sum(p.width for p in parts) + gap * (len(parts) - 1), 11 * c.s))
+    x = 0
+    for part in parts:
+        group.alpha_composite(part, (x, (group.height - part.height) // 2))
+        x += part.width + gap
+    # OAM boxes stay intact for clipping/occlusion. Their visible ink is fitted
+    # as one group, inside x=-11..11 with clearance from the x=+-14 silhouette.
+    factor = min(1, 22 * c.s / group.width)
+    if factor < 1:
+        group = group.resize((round(group.width * factor), round(group.height * factor)),
+                             Image.Resampling.LANCZOS)
+    x = round((-group.width / c.s / 2 - c.x) * c.s)
+    y = round((3 - group.height / c.s / 2 - c.y) * c.s)
+    c.image.alpha_composite(group, (x, y))
     return c.finish()
 
 
@@ -139,24 +169,37 @@ def check_oam_boxes():
             assert x <= px and y <= py and px + pw <= x + w and py + ph <= y + h, name
 
 
-def generate():
-    ASSETS.mkdir(parents=True, exist_ok=True)
+def generate(out=ASSETS, digits=None, write_table=True):
+    out.mkdir(parents=True, exist_ok=True)
     manifest = []
     for index, name, box, rule, value in specs():
-        image = body(box, value) if rule is None else requirement(box, rule, value)
-        image.save(ASSETS / (name + '.png'))
+        image = body(box, value) if rule is None else requirement(box, rule, value, digits)
+        image.save(out / (name + '.png'))
         manifest.append(dict(id=index, file=name + '.png', box=box))
-    ENTRIES.write_text(table_text(), encoding='utf-8', newline='\n')
-    (ASSETS / 'manifest.json').write_text(json.dumps(dict(
-        reference='dbdb82b983fc4a178d46ce70edf44c6b',
-        submission='20261025-011932-34d062', status='proposal-awaiting-runtime-capture',
-        scale=SCALE, pieces=manifest), indent=2) + '\n', encoding='utf-8')
-    print(f'Generated {len(manifest)} transparent pieces and OAM lookup table')
+    if write_table:
+        ENTRIES.write_text(table_text(), encoding='utf-8', newline='\n')
+    provider = 'local gCardValueDigitTiles' if digits else 'KHMenu fallback; staging prefers local mod'
+    source_hashes = {f'gCardValueDigitTiles_{i}.png':
+                     hashlib.sha256((Path(digits) / f'gCardValueDigitTiles_{i}.png').read_bytes()).hexdigest()
+                     for i in range(10)} if digits else {}
+    filename = 'manifest.json' if write_table else 'synthesis_manifest.json'
+    (out / filename).write_text(json.dumps(dict(
+        reference=REVIEW_PARENT, submission=REVIEW_SUBMISSION,
+        status='fix-prepared-awaiting-serial-capture', digit_provider=provider,
+        local_digit_hashes=source_hashes, scale=SCALE, pieces=manifest), indent=2) + '\n', encoding='utf-8')
+    print(f'Generated {len(manifest)} transparent pieces: {provider}; table updated={write_table}')
+
+
+def stage_assets(folder):
+    """Build into this capture's directory, using its authorized local HD set."""
+    generate(Path(folder), digits=local_digits(folder), write_table=False)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--stage', type=Path)
+    parser.add_argument('--digits', type=Path, help='Authorized local gCardValueDigitTiles set')
+    parser.add_argument('--out', type=Path, help='Private generated assets; does not change the committed table')
     parser.add_argument('--check', action='store_true', help='Static asset/table validation only')
     args = parser.parse_args()
     if args.check:
@@ -170,14 +213,21 @@ def main():
             with Image.open(ASSETS / piece['file']) as im:
                 assert im.mode == 'RGBA' and im.size == (box[2] * SCALE, box[3] * SCALE)
                 assert im.getchannel('A').getextrema() == (0, 255)
+                if rule is not None:
+                    bounds = im.getchannel('A').point(lambda a: 255 if a >= 16 else 0).getbbox()
+                    assert bounds and box[0] + bounds[0] / SCALE >= -12, name
+                    assert box[0] + bounds[2] / SCALE <= 12, name
         print('PASS: 405 identities, boxes, dimensions and transparent RGBA assets; no game run')
     elif args.stage:
         args.stage.mkdir(parents=True, exist_ok=True)
-        for _, name, _, _, _ in specs():
-            shutil.copy2(ASSETS / (name + '.png'), args.stage / (name + '.png'))
+        stage_assets(args.stage)
         print(f'Staged 405 synthesis pieces in {args.stage}; no game launched')
     else:
-        generate()
+        if args.digits and not local_digits(args.digits):
+            parser.error('--digits requires all ten local gCardValueDigitTiles PNGs')
+        if args.digits and not args.out:
+            parser.error('Use --out for private mod-derived assets; do not publish them with fallback assets')
+        generate(args.out or ASSETS, args.digits, write_table=args.out is None)
 
 
 if __name__ == '__main__':

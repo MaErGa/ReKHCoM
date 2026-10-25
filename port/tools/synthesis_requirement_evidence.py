@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--normal', type=Path, default=ROOT / 'build/synthesis-final-r2')
-    parser.add_argument('--variants', type=Path, default=ROOT / 'build/synthesis-variants-r3')
-    parser.add_argument('--out', type=Path, default=ROOT / 'build/synthesis-delivery')
+    parser.add_argument('--normal', type=Path, default=ROOT / 'build/synthesis-fix-final')
+    parser.add_argument('--variants', type=Path, default=ROOT / 'build/synthesis-fix-variants')
+    parser.add_argument('--out', type=Path, default=ROOT / 'build/synthesis-fix-delivery')
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     checks = []
@@ -44,13 +44,16 @@ if __name__ == '__main__':
     draw.text((8, 724), 'Recortes sin retoque; fixtures controlados. Pago real probado en arnes.', fill='white')
     sheet.save(args.out / 'synthesis-runtime-variants.png')
     info = dict(
-        response_to=[dict(submission='20261025-011932-34d062',
-                          image_id='dbdb82b983fc4a178d46ce70edf44c6b',
-                          cloud_id='13c9d20d-c78f-4ba3-8431-cd894028c7c0')],
+        response_to=[dict(submission='20261025-125559-473c1c',
+                          image_id='c08283ad450f4455937a3f1e1ead3302', cloud_id=cloud)
+                     for cloud in ('a849c7d8-4d91-484e-ba31-1c186915558c',
+                                   '23d13c7a-d2c6-4911-914a-246099bbafe7')],
         changes=[
             'Captura real de puerta normal: la carta HD sustituye al dorso y requisito GBA en su misma posicion; no se coloca a un lado.',
             'Seleccion dinamica por regla, valor y color; TOTAL usa drawnTotal. Fixtures con InitEventKeyCard real: rojo <=7, verde =12 y azul TOTAL 10->9.',
-            'Silueta code-native 4x y digitos KHMenu: propuesta nueva, distinta del numeral de la propuesta historica; pendiente valoracion humana.',
+            'Numeros y operadores ajustados como grupo dentro de la silueta, con margen lateral; el 12= ya no usa todo el ancho de su caja OAM.',
+            'Staging prefiere los diez gCardValueDigitTiles del mod local autorizado; no se afirma una reproduccion exacta de 1.5HD.',
+            'Banda inferior neutra segun la comparacion GBA y propuesta anterior; color de condicion solo en el contorno, centro transparente para conservar la luz.',
         ],
         technique='Identidades HD sobre copias de entradas ObjTiles; OAM, VRAM, paletas, geometria, afines y prioridades originales. Sin cambios PPU/texto.',
         checks=['Build EU Ninja -j1; dummy y PPU 1 thread; mando filtrado 0xffff/0xffff',
@@ -61,7 +64,7 @@ if __name__ == '__main__':
             'Las variantes son fixtures de un build con PORT_SYNTHESIS_TEST_FIXTURE; no una partida natural. La captura principal usa build normal sin ese define.',
             'El fixture de TOTAL fuerza el nuevo saldo y ejecuta UpdateEventKeyTotal real; PayEventKey real se verifica aparte en el arnes con asignadores/DMA simulados.',
             'Rango 0..99; fuera de rango o assets ausentes conserva GBA. Kind especifico conserva su renderer existente.',
-            'No se declara cobertura completa de todas las puertas ni de cancelacion/reapertura. Assets pendientes de revision y staging explicito.',
+            'No se declara cobertura completa de todas las puertas ni de cancelacion/reapertura. Assets pendientes de revision y staging explicito. No se ha visto una captura del menu de 1.5HD para afirmar distancias exactas.',
         ], sources=sources)
     (args.out / 'revision.json').write_text(json.dumps(info, indent=2, ensure_ascii=False), encoding='utf-8')
     (args.out / 'report.json').write_text(json.dumps(dict(checks=checks, variants=sources), indent=2), encoding='utf-8')
