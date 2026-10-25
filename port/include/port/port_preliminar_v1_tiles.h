@@ -530,6 +530,35 @@ static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==120 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
+        if (p->v[1]==1) {
+            /* One foreground roof: continue its two slopes and the solid
+             * ochre body below it, not a floating triangular cutout. */
+            *sx=wx; *sy=wy;
+            if (wx<0) { *sx=0; *sy=wy+wx/2; }
+            else if (wx>=256) { *sx=255; *sy=wy-(wx-255)/2; }
+            if (*sy<0) *sy=0;
+            if (*sy>=256) *sy=255;
+        } else if (p->v[1]==3) {
+            if (wx>=0 && wx<32 && wy<0) {
+                *sx=wx; *sy=PortSceneTileMod(wy,16); /* the original corner shaft, once */
+            } else if (2*wy+wx<192) {
+                *sx=32+PortSceneTileMod(wx-32,16);
+                *sy=16+PortSceneTileMod(wy-16,16); /* plain masonry, no repeated shafts */
+            } else {
+                *sx=64+PortSceneTileMod(wx-64,32);
+                *sy=160+PortSceneTileMod(wy-160,32); /* the room's clean ground */
+            }
+        } else if (p->v[1]==2) {
+            int diagonal=2*wy+wx;
+            *sx=255; *sy=255; /* unique lamps, sign and barrels remain in their authored positions */
+            if (diagonal>=208 && diagonal<256) {
+                *sx=64+PortSceneTileMod(wx-64,16);
+                *sy=wy+(wx-*sx)/2; /* plain footing, along the wall's diagonal */
+            }
+        } else return 0;
+        return 1;
+    }
     if (p && p->v[0]==117 && p->v[1]==2 && wy<0 && wy>=-56 && wx>=40 && wx<152) {
         /* Complete the top-cut crate from the matching cap at (152,8).
          * Its last eight pixels cross the donor map's right edge: reflect

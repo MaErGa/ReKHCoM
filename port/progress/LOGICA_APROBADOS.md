@@ -15,6 +15,14 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Escena 120, envío `20261024-053718-1ee415`: la silueta ocre de BG1
+es parte del tejado delantero original, no un donante de suelo. Completar
+sus pendientes laterales y su cuerpo inferior evita que quede una pieza
+flotante con base horizontal cortada. El muro de BG3 continúa con sus
+ladrillos limpios y un único pilar original; BG2 sólo prolonga el zócalo
+por su diagonal, sin copiar lámparas ni adornos. Los actores siguen la
+regla del rectángulo GBA (Pepito fuera de escena no se anticipa).
+
 Integración 25/10: arenas de jefe aprobadas en Atlas (Maléfica `0cdb9c54`, Úrsula `fc418e25`, Marluxia `c333e5cd`)
 quedan encendidas para todos (`PortArenasApproved`, `KHCOM_ARENAS_V2=0` las apaga). Las que siguen pendientes en la app
 (Trickmaster, Oogie) quedan detrás de `KHCOM_ARENAS_V2=1`: una arena se enciende sola cuando su familia se aprueba.

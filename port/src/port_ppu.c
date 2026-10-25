@@ -1744,7 +1744,7 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
                 ((bg==2 && (sPreliminarRecipe[bg]->v[0]==44 || sPreliminarRecipe[bg]->v[0]==45)) ||
                  sPreliminarRecipe[bg]->v[0]==95 || sPreliminarRecipe[bg]->v[0]==99 || (bg==2 && sPreliminarRecipe[bg]->v[0]==104) ||
                  sPreliminarRecipe[bg]->v[0]==110 || (bg==2 && sPreliminarRecipe[bg]->v[0]==117) || sPreliminarRecipe[bg]->v[0]==118 ||
-                 sPreliminarRecipe[bg]->v[0]==121 || sPreliminarRecipe[bg]->v[0]==122 ||
+                 sPreliminarRecipe[bg]->v[0]==120 || sPreliminarRecipe[bg]->v[0]==121 || sPreliminarRecipe[bg]->v[0]==122 ||
                  sPreliminarRecipe[bg]->v[0]==124)) {
                 int sx,sy;
                 if (sPreliminarRecipe[bg]->v[0]==45 && PreliminarFirPixel(wx,wy,&out[x])) {
