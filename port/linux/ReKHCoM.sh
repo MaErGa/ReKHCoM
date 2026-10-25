@@ -95,6 +95,16 @@ fi
 # The game's interpreter is lib/rekhcom (the bundled loader), a path relative
 # to this folder: run it from here.
 # Libraries that SDL opens later (ALSA, PulseAudio, X11) come from lib/ too.
-export LD_LIBRARY_PATH="$DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# REKHCOM_GPU=1 (test, 25/10; Steam: Launch Options "REKHCOM_GPU=1 %command%"): also offer SDL the system's 32-bit
+# GPU drivers (Steam's lib32 Mesa on SteamOS/Arch, i386 on Debian/Ubuntu). If they do not load with the bundled C
+# library, SDL goes back to its software renderer by itself; the log says which one drew ("Renderer:").
+GPU_LIBS=
+if [ "${REKHCOM_GPU:-0}" = 1 ]; then
+    for d in /usr/lib32 /usr/lib/i386-linux-gnu; do
+        [ -e "$d/libGL.so.1" ] || [ -e "$d/libvulkan.so.1" ] && GPU_LIBS="$GPU_LIBS:$d"
+    done
+    echo "ReKHCoM.sh: GPU test on, system 32-bit libraries:${GPU_LIBS:- none found}"
+fi
+export LD_LIBRARY_PATH="$DIR/lib$GPU_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 cd "$DIR" || exit 1
 exec "./bin/khcom_$REGION" --data-dir "$DIR" --rom "$ROM" "$@"
