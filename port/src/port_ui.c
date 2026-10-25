@@ -1557,6 +1557,8 @@ static void CheckNewAssets(void);
 
 void PortUiInit(void) {
     Uint64 start = SDL_GetPerformanceCounter();
+    extern void PortHdPackCheck(void);
+    PortHdPackCheck(); /* <data folder>/ReKHCoM-HD.zip, copied as one file: into hd first */
     /* Asset discovery also validates the optional Japanese cartridge's CRC.
        Do that before the game starts, rather than blocking the first visible
        title frame for a full 32 MB scan (even with undub switched off).

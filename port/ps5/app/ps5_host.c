@@ -57,6 +57,9 @@ static void Log(const char *fmt, ...)
     }
 }
 
+#define HD_PACK_HAVE_MINIZ /* platform/miniz_unit.c */
+#include "../shared/hd_pack_host.h"
+
 /* ---- frame interpolation is not used: the presenter links against these ---- */
 
 FgInterpolator *ssfg_create(PFN_vkVoidFunction (*get)(VkInstance, const char *), VkInstance i, VkPhysicalDevice g, VkDevice d,
@@ -992,6 +995,7 @@ int main(void)
     ps5_crash_install(log_path);
     ps5_klog_capture_stderr("");
     Log("ReKHCoM starting; /data %s (%s)", unlocked ? "unlocked" : "sandboxed", error);
+    HdPackInstall(DATA_ROOT, Log); /* ReKHCoM-HD.zip copied to /data/ReKHCom: into hd first */
     Log("screen: %s", plat_screen_info());
     update_init(Log);
 
