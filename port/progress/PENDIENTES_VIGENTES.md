@@ -22,8 +22,11 @@ COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --q
 
 ## 1. Código (Claude)
 
-- **#83 confirmar:** reproducción en PC en curso (log de la recogida con la selección vacía, build vieja contra la
-  nueva). Luego, el emulador Android con la build nueva. Cerrar el issue solo cuando el jugador lo confirme.
+- **#83 sin reproducir en PC:** 24 peleas largas con Jafar (build anterior a #115, con y sin HD, recogidas forzadas):
+  0 fallos y nunca una recogida con la selección vacía. El código lo explica: todo lo que vacía `sSoraSelectedCard`
+  marca una recarga, y la recogida espera a que no haya recarga. #115 queda como protección, no como causa probada.
+  Siguiente: `test_android_scenarios.py --groups jafar83` en el emulador (build nueva y anterior) o el `kh_com.log`
+  del jugador. El issue sigue abierto.
 - **Android (con el emulador de las baterías):** repetir la batalla 123 US (timeout; en PC no se reproduce),
   rendimiento en gama baja (línea `timing:`), tablets con el encuadre nuevo, botones táctiles (también web),
   elección de modo al primer arranque.
