@@ -18,7 +18,7 @@ from synthesis_requirement_hd import ASSETS, ROOT, specs
 FRAMES = (300, 380, 470, 510)
 
 
-def prepare(build, out, hd_source, enabled):
+def prepare(build, out, hd_source, enabled, fixture=None):
     out.mkdir(parents=True, exist_ok=False)
     for name in ('khcom.exe', 'SDL3.dll'):
         shutil.copy2(build / name, out / name)
@@ -34,11 +34,15 @@ def prepare(build, out, hd_source, enabled):
         f'config_version=11\nview_mode=4\nzoom=8\nhd_text=1\nhd_cards={enabled}\nvsync=0\n',
         encoding='utf-8')
     env = dict(SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='dummy', KHCOM_FAST='1',
+               SDL_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT='0xffff/0xffff',
+               KHCOM_PPU_THREADS='1',
                KHCOM_HD_SPRITES=str(sprites.resolve()), KHCOM_WINDOW='1920x1080',
                KHCOM_CONFIG=f'hd_cards={enabled};hd_text=1',
                KHCOM_MODE='60:room:10901,120:fieldfreeze,200:doorpose:0',
-               KHCOM_KEYS='240-242:A', KHCOM_HDDRAWLOG='470',
+               KHCOM_KEYS='240-242:A', KHCOM_HDDRAWLOG='470,510',
                KHCOM_OUTPUT_SHOT=','.join(map(str, FRAMES)), KHCOM_QUIT='512')
+    if fixture:
+        env['KHCOM_SYNTHESIS_FIXTURE'] = fixture
     command = [str((out / 'khcom.exe').resolve()), '--language', 'es', '--rom',
                str((ROOT / 'roms/B8CP.gba').resolve())]
     (out / 'capture.json').write_text(json.dumps(dict(command=command, env=env), indent=2),
@@ -53,11 +57,16 @@ def main():
     parser.add_argument('--hd', type=Path, help='Existing sprites to merge with synthesis pieces')
     parser.add_argument('--baseline', type=Path)
     parser.add_argument('--run', action='store_true', help='Explicitly launch serial captures')
+    parser.add_argument('--fixture', choices=('red-at-most-7', 'green-exact-12', 'blue-total-10to9'),
+                        help='Requires a PORT_SYNTHESIS_TEST_FIXTURE build; one HD-on run only')
     args = parser.parse_args()
     jobs = []
-    for name, build, enabled in [('hd-on', args.build, 1), ('hd-off', args.build, 0)]:
+    cases = [('hd-on', args.build, 1)]
+    if not args.fixture:
+        cases.append(('hd-off', args.build, 0))
+    for name, build, enabled in cases:
         folder = args.out / name
-        jobs.append((name, folder, *prepare(build, folder, args.hd, enabled)))
+        jobs.append((name, folder, *prepare(build, folder, args.hd, enabled, args.fixture)))
     if args.baseline:
         folder = args.out / 'baseline-off'
         jobs.append(('baseline-off', folder, *prepare(args.baseline, folder, args.hd, 0)))
@@ -72,8 +81,17 @@ def main():
         log = (folder / 'kh_com.log').read_text(errors='replace')
         assert 'CRASH' not in log and 'outside its box' not in log, name
         if name == 'hd-on':
-            for asset in ('synthesis_body_none', 'synthesis_at_least_01'):
+            expected = {
+                None: ('synthesis_body_none', 'synthesis_at_least_01'),
+                'red-at-most-7': ('synthesis_body_red', 'synthesis_at_most_07'),
+                'green-exact-12': ('synthesis_body_green', 'synthesis_exact_12'),
+                'blue-total-10to9': ('synthesis_body_blue', 'synthesis_total_10'),
+            }[args.fixture]
+            for asset in expected:
                 assert f'hd draw 470 {asset} ' in log, (name, asset)
+            if args.fixture == 'blue-total-10to9':
+                assert 'real UpdateEventKeyTotal 10->9 frame=490' in log
+                assert 'hd draw 510 synthesis_total_09 ' in log
         else:
             assert 'hd draw 470 synthesis_' not in log, name
     if args.baseline:
@@ -81,7 +99,7 @@ def main():
             with Image.open(args.out / 'hd-off' / f'out_{frame:05d}.bmp') as actual, \
                  Image.open(args.out / 'baseline-off' / f'out_{frame:05d}.bmp') as before:
                 assert actual.size == before.size and actual.tobytes() == before.tobytes(), frame
-    print('PASS serial first-door capture; inspect HD-on screenshots before Atlas submission')
+    print(f'PASS serial capture: {args.fixture or "natural first door + HD off"}; inspect before Atlas')
 
 
 if __name__ == '__main__':

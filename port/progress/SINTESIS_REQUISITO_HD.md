@@ -1,4 +1,4 @@
-# Síntesis: requisito HD dinámico, implementación pendiente de captura
+# Síntesis: requisito HD dinámico, validado con captura runtime
 
 Tarea `sintesis-requisito-hd`, owner `codex-sintesis`.
 Referencia `dbdb82b983fc4a178d46ce70edf44c6b`, envío
@@ -6,8 +6,9 @@ Referencia `dbdb82b983fc4a178d46ce70edf44c6b`, envío
 
 ## Qué cambia
 
-Sólo `SELMAP_EVKEY_0/2` usan el adaptador PC de
-`src/card/synthesis_requirement_hd.inc`. Se guarda una copia del requisito
+`MapSelect_2` cubre la puerta normal y `SELMAP_EVKEY_0/2` las llaves de evento,
+con el adaptador PC de `src/card/synthesis_requirement_hd.inc`.
+Se guarda una copia del requisito
 de cada carta al iniciar la tarea. Después de los DrawSprite originales,
 se identifican las entradas de dorso y requisito de esa carta. Copias
 persistentes de sus ObjTiles cambian únicamente `src`, usado como identidad
@@ -58,31 +59,72 @@ El primer comando comprueba 405 identidades, cajas, dimensiones RGBA y alpha,
 y que las cajas incluyan todas las partes de los frames OAM de los YAML.
 No demuestra todavía el resultado del renderer ni la sincronía del saldo.
 
-## Prueba serial futura: sólo tras autorización del coordinador
+## Reproducir la prueba serial
 
 `port/tools/test_synthesis_requirement_hd.py --build <build-nuevo> --out <dir-nuevo>`
 prepara capturas aisladas sin ejecutar; `--hd <sprites-existentes>` mezcla el
-resto de los assets HD. Añadir `--run` sólo después de recibir autorización.
+resto de los assets HD. Añadir `--run` para ejecutar (usuario autorizó la
+prueba serial después de finalizar 004 y Añadir naipes).
 `--baseline <build-anterior>` añade una comparación píxel a píxel con HD
 apagado. Todo se ejecuta en serie; nunca modifica la partida del usuario.
 
 Fixture: sala 10901 en frame 60, freeze 120, doorpose 200, A 240..242;
-capturas 300/380/470/510 a 1920x1080. Comprueba logs de las dos piezas nuevas
-en 470 y ausencia de ellas en HD off. Revisar visualmente que la carta GBA
-ya no se duplique, el foco atraviese el centro transparente y la mano/panel
-conserven su oclusión. El fixture sólo cubre la primera puerta `1 >=`.
+capturas 300/380/470/510 a 1920x1080. Logs de ambas piezas nuevas en 470 y
+ausencia de ellas en HD off. Captura revisada: sustituye la carta GBA en su
+posición, con el foco visible por el centro transparente. Esta puerta es
+normal: el primer intento que sólo cubría SELMAP_EVKEY no la reemplazaba;
+la captura permitió corregir la ruta real antes de entregar.
 
-Antes de cerrar faltan casos reales para `<=`, igualdad, TOTAL con pago que
-cambie 10→9, diferentes colores, carta de `kind` específico, varios requisitos,
-cancelación/reapertura, transición/mosaico y assets ausentes. Comparar HD off
-con el binario base. Después capturar y subir hija real en Atlas con parent
+También se ejecutaron fixtures runtime para rojo `<=7`, verde `=12` y azul
+TOTAL 10→9. Se compilan únicamente al definir `PORT_SYNTHESIS_TEST_FIXTURE`:
+`prepare_synthesis_fixture.py` crea un Ninja local que cambia sólo el comando
+de `card_worldselect.c`; el build normal no incluye el fixture. Inicializan
+recursos con `InitEventKeyCard` real, dibujan por `DrawLayeredCardSprite` y el
+adaptador real. TOTAL ejecuta `UpdateEventKeyTotal` en frame490 y sus logs
+muestran `total_10` en 470 y `total_09` en 510. Este fixture fuerza el saldo;
+no se presenta como una partida natural o un pago de jugador.
+
+El arnés `test_synthesis_requirement_hd_logic.c` usa estructuras reales y el
+adaptador incluido directamente. `prepare_synthesis_logic.py` extrae sin
+reescribir los cuerpos de `InitEventKeyCard`, `UpdateEventKeyTotal`,
+`GetEventKey` y `PayEventKey`, y guarda sus hashes. Asignación y DMA son
+dobles controlados; verifica 2.000 selecciones, 20 inicializaciones de
+regla/color, HD off/assets ausentes, tipo específico, y la secuencia real
+Init TOTAL10 → Pay1 → remaining9 → GetEventKey → Update → selección HD9.
+Un pago posterior de 9 completa el requisito real.
+
+```powershell
+python port/tools/prepare_synthesis_logic.py
+../toolchain/bin/ninja.exe -f build/pc-atlas/synthesis-logic.ninja -j1 build/pc-atlas/test_synthesis_logic.exe
+./build/pc-atlas/test_synthesis_logic.exe
+```
+
+Build EU completo propio: Ninja `-j1`; generación EU y ROM copiadas mediante
+lectura del checkout de referencia. Nunca se compiló sobre un enlace a su
+build. Todos los procesos del juego usaron dummy, `KHCOM_PPU_THREADS=1` y
+`SDL_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT=0xffff/0xffff`.
+
+Evidencia local:
+- `build/synthesis-final-r2/`: build normal, HD on/off y baseline off;
+  los cuatro frames HD off son píxel idénticos al binario de referencia.
+- `build/synthesis-variants-r3/{red,green,blue}/`: capturas y logs de variantes;
+  son fixtures controlados con inicialización real, no montajes de assets.
+- `build/pc-atlas/synthesis_logic_provenance.json`: hashes de funciones reales.
+- `synthesis_requirement_evidence.py`: compara de nuevo HD off, crea captura
+  principal PNG, plancha de recortes runtime sin retoque y ficha de Atlas en
+  `build/synthesis-delivery/`.
+
+La hija real de Atlas usa parent
 `dbdb82b983fc4a178d46ce70edf44c6b`, atendiendo nube
-`13c9d20d-c78f-4ba3-8431-cd894028c7c0`. Sólo entonces preparar el PR.
+`13c9d20d-c78f-4ba3-8431-cd894028c7c0` del envío
+`20261025-011932-34d062`. Registrar su ID antes de preparar el PR.
 
 ## Límites honestos
 
-No compilado ni ejecutado por instrucción del usuario (RAM/prueba serial).
-La separación y oclusión reutilizan código existente, pero necesitan
-comprobación visual runtime. La forma y fuente nuevas son una propuesta,
+Build y pruebas dirigidas ejecutados tras autorización serial. La separación
+y oclusión reutilizan código existente; no se declara una batería de todas
+las puertas, varias llaves simultáneas o cancelación/reapertura. El pago
+real se comprueba en el arnés; la actualización visual se comprueba en un
+fixture runtime controlado. La forma y fuente nuevas son una propuesta,
 no una reproducción exacta del montaje previo. No se tocó `port_ppu.c`,
 `port_hdtext_layout.inc` ni las fuentes/render de texto.

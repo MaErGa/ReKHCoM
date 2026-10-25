@@ -25,7 +25,11 @@ inicial ni un dígito pintado en una captura. Mantener geometría, prioridad,
 transformación y oclusión OAM; HD apagado o assets ausentes conservan el
 original completo. Una plancha del generador sólo revisa assets: no sustituye
 la captura runtime ni concede aprobación o ★. Implementación aislada
-`codex/sintesis-requisito-hd`; pruebas seriales y captura hija aún pendientes.
+`codex/sintesis-requisito-hd`. La puerta normal se dibuja por `MapSelect_2`
+y las llaves de evento por `SELMAP_EVKEY_2`: cubrir sólo la segunda ruta
+deja intacta la carta GBA de la captura histórica. Validación dirigida:
+puerta normal runtime, variantes de regla/color con inicialización real,
+actualización TOTAL 10→9 y HD off comparado píxel a píxel con el binario base.
 
 Trickmaster, envío `20261025-052021-8546de`: «todo bien», sólo completar
 el muro hacia arriba. Prolongar el período vertical del papel rosa, no la
