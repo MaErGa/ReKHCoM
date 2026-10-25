@@ -1335,7 +1335,17 @@ u8 Premire_Chance_1(PremireChanceWork* work, void* task) {
     return 1;
 }
 
+#ifdef PLATFORM_PC
+/* the title banner starts at the window's left edge in the wide view, as the other menus' banners do */
+extern int PortScreenMarginX(void);
+#define PREMIRE_TITLE_SHIFT PortScreenMarginX()
+#else
+#define PREMIRE_TITLE_SHIFT 0
+#endif
 void Premire_Chance_2(PremireChanceWork* work) {
+#ifdef PLATFORM_PC
+    PortScreenBegin(); /* menu: drawn on the screen layer, at the window's height (as Level Up) */
+#endif
     if (work->cursorHidden == 0) {
         DrawSprite(62, 50, work->gfx, work->tiles2, work->palette2, NULL, 0, 0);
         DrawSprite(53, 64, work->gfx2, work->tiles3, work->palette3, NULL, 0, 0);
@@ -1346,14 +1356,29 @@ void Premire_Chance_2(PremireChanceWork* work) {
     }
 
 #ifdef VERSION_EU
-    DrawSprite(work->titleX, 0, gPremireChanceTitles[gLanguage][0], work->tiles, work->palette, NULL, 0, 0);
+    DrawSprite(work->titleX - PREMIRE_TITLE_SHIFT, 0, gPremireChanceTitles[gLanguage][0], work->tiles, work->palette, NULL, 0, 0);
 #else
-    DrawSprite(work->titleX, 0, gPremireChanceTitleFrames[0], work->tiles, work->palette, NULL, 0, 0);
+    DrawSprite(work->titleX - PREMIRE_TITLE_SHIFT, 0, gPremireChanceTitleFrames[0], work->tiles, work->palette, NULL, 0, 0);
 #endif
     DrawSprite(120, work->topY >> 8, gPremireChanceBarFrames[0], work->tiles5, work->palette, NULL, 0, 60);
     DrawSprite(120, work->bottomY >> 8, gPremireChanceBarFrames[1], work->tiles5, work->palette, NULL, 0, 60);
+#ifdef PLATFORM_PC
+    {
+        /* the wide view: the bars go on to the window's edges (copies a screen to each side, the window's margin at most) */
+        int k, margin = PortScreenMarginX();
+        for (k = 1; k * 240 - 120 < margin + 240 && k <= 4; k++) {
+            DrawSprite(120 - k * 240, work->topY >> 8, gPremireChanceBarFrames[0], work->tiles5, work->palette, NULL, 0, 60);
+            DrawSprite(120 + k * 240, work->topY >> 8, gPremireChanceBarFrames[0], work->tiles5, work->palette, NULL, 0, 60);
+            DrawSprite(120 - k * 240, work->bottomY >> 8, gPremireChanceBarFrames[1], work->tiles5, work->palette, NULL, 0, 60);
+            DrawSprite(120 + k * 240, work->bottomY >> 8, gPremireChanceBarFrames[1], work->tiles5, work->palette, NULL, 0, 60);
+        }
+    }
+#endif
     TaskPoolDraw(&work->tasks);
     TaskPoolDraw(&gCardListWork->effectTasks);
+#ifdef PLATFORM_PC
+    PortScreenEnd();
+#endif
 }
 
 void Premire_Chance_3(PremireChanceWork* work) {

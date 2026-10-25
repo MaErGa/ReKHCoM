@@ -756,6 +756,11 @@ int PortHarnessMode(const char* name, int arg) {
     }
     /* battlewin: every enemy leaves as Oogie Boogie's helpers do, so the game
        ends the battle by its own route (white fade, rewards, back to the room) */
+    /* premirewin: as battlewin, with a premire prize collected: the game opens Bonus Elite at the rewards */
+    if (strcmp(name, "premirewin") == 0 && gBtlWork != NULL && strcmp(PortHarnessModeName(), "mode_battle") == 0) {
+        gBtlWork->flags |= BTL_FLAG_PREMIRE_COLLECTED;
+        return PortHarnessMode("battlewin", 0);
+    }
     if (strcmp(name, "battlewin") == 0 && gBtlWork != NULL
         && strcmp(PortHarnessModeName(), "mode_battle") == 0) {
         BtlObj* obj = ListPoolFirst(&gBtlWork->pool);
