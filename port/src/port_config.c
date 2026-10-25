@@ -33,6 +33,7 @@ PortConfig gPortConfig = {
     1,                  /* dodgeButton */
     1,                  /* stockButton */
     0,                  /* hdText */
+    0,                  /* hdFont: KHMenu */
     8,                  /* cardHudRaise */
     0,                  /* experimental unstock: off by default */
     1,                  /* saveBank */
