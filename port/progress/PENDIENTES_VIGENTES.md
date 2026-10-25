@@ -32,6 +32,18 @@ Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlo
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release. Trabajar solo en KHCoMPC (C:) y D:/01Claude/ReKHCoM-build.
 - Cada PR de arte mejora LOGICA_APROBADOS.md. Toda falla o timeout de batería es un bug: reproducir.
 
+## TRASPASO (25/10 mediodía, claude-integrador)
+
+- Integrados #99 (fuente del texto HD en Opciones), #100 (logros Re:CoM: borde dorado + 7 insignias propias, fila 9 del
+  atlas, `gen_recom_badges.py`), #101 (catálogo histórico cerrado como no recuperable), #102 (#42: tres pistas HD de
+  eventos intercambiadas, halladas comparando audio), #103 (versión pre14). Sin PR abiertos.
+- **v2.0-pre14** (main f41a8b178): zip limpio en KHCoMPC + copia `jugar/ReKHCoM-v2.0-pre14` con partidas de la pre13; humo 9/9.
+- Lista de la app: nada espera al usuario; Oogie, Trickmaster, Darkside arena y Maléfica 01-03 son turno del agente (arte, al final).
+- #83 lo tiene Codex (`issue83-jafar-recogida`). Android US batalla 123 (timeout): no se reproduce en PC; repetir en el emulador.
+- Baterías en curso (`run_batteries.py --status`): combates EU y luego Android. Faltan en Android: gama baja, tablets,
+  botones táctiles, elección de modo al primer arranque.
+- Worktrees abandonados (catalog-*, tile-backend, hdfont) quitados; sus restos en ramas `backup/*-20261025`.
+
 ## TRASPASO (25/10 mañana, claude-integrador, por orden del usuario «cerrar todos los PR e integrar»)
 
 - Integrados #90 (pre13), #95 (117) y #96 (118; conflicto resuelto: 115-117 quedan como en main). Sin PR abiertos.
