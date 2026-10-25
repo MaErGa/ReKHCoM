@@ -32,6 +32,16 @@ Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlo
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release. Trabajar solo en KHCoMPC (C:) y D:/01Claude/ReKHCoM-build.
 - Cada PR de arte mejora LOGICA_APROBADOS.md. Toda falla o timeout de batería es un bug: reproducir.
 
+## TRASPASO (25/10 mañana, claude-integrador, por orden del usuario «cerrar todos los PR e integrar»)
+
+- Integrados #90 (pre13), #95 (117) y #96 (118; conflicto resuelto: 115-117 quedan como en main). Sin PR abiertos.
+- Arenas de jefe aprobadas en Atlas encendidas para todos: Maléfica, Úrsula, Marluxia (`PortArenasApproved`).
+  Trickmaster y Oogie siguen pendientes en la app (detrás de `KHCOM_ARENAS_V2=1`). Humo: 19 arenas sin crash.
+- Pendiente de aprobar en la app y por eso fuera: Darkside arena (bloquea Darkside 01), Maléfica 01-03, Oogie, Trickmaster.
+  Aprobado que pide implementación: borde/insignias de Logros Re:CoM (embeber y dibujar).
+- WIP de la sesión anterior guardado en la rama `claude/hd-font-option` (fuente del texto HD en Opciones), sin PR.
+- Copia interna v2.0-pre13 (Windows) en preparación: `jugar/ReKHCoM-v2.0-pre13`.
+
 ## TRASPASO (25/10 madrugada, claude-integrador; el usuario duerme y pidió decidir solo, sin preguntar)
 
 - Todos los PR integrados (#70-#89; #71 cerrado con la mejor solución). Cola online al día; permiso liberado.
