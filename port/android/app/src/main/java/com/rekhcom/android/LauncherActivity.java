@@ -65,12 +65,27 @@ public class LauncherActivity extends SDLActivity {
             }catch(Exception e){finish(t("No se pudo completar: ","Could not complete: ")+e.getMessage(),true);}
         },"launcher-copy").start();
     }
+    private String importHdPack(Uri uri)throws Exception{
+        File part=new File(getFilesDir(),"ReKHCoM-HD.zip.part"),pack=new File(getFilesDir(),"ReKHCoM-HD.zip");
+        try(InputStream in=getContentResolver().openInputStream(uri);FileOutputStream out=new FileOutputStream(part)){
+            if(in==null)throw new IOException("Archivo no accesible");copy(in,out,Long.MAX_VALUE);out.getFD().sync();
+        }
+        if(pack.exists()&&!pack.delete()){part.delete();throw new IOException("No se pudo reemplazar el mod HD");}
+        if(!part.renameTo(pack)){part.delete();throw new IOException("No se pudo guardar el mod HD");}
+        return t("Mod HD copiado: se instala al abrir el juego.","HD mod copied: it installs when the game starts.");
+    }
     private File rom(int index){return new File(getFilesDir(),"roms/"+CODES[index]+".gba");}
     private static void copy(InputStream in,OutputStream out,long limit)throws Exception{
         byte[] buf=new byte[65536];long count=0;int n;
         while((n=in.read(buf))!=-1){if(count+n>limit)throw new IOException("Archivo demasiado grande");out.write(buf,0,n);count+=n;}
     }
     private String importRom(Uri uri)throws Exception{
+        /* the HD mod made on the PC as one file (ReKHCoM-HD.zip, port/portable/hd_pack.c): copied whole to files/,
+           the game unpacks it into files/hd on its next start */
+        try(InputStream peek=getContentResolver().openInputStream(uri)){
+            byte[] head=new byte[4];
+            if(peek!=null&&peek.read(head)==4&&head[0]=='P'&&head[1]=='K'&&head[2]==3&&head[3]==4)return importHdPack(uri);
+        }
         File dir=new File(getFilesDir(),"roms");if(!dir.exists()&&!dir.mkdirs())throw new IOException("No hay carpeta de ROM");
         File temp=File.createTempFile("import-",".tmp",dir);
         try {
