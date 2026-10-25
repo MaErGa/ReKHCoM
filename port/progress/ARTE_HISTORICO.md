@@ -58,7 +58,15 @@ en `missing`; un hash distinto detiene todo el plan antes de escribir. Si aparec
 entregarla por el flujo normal de hija y revisión. No sobrescribir el manifiesto para esconder una discrepancia.
 Los archivos grandes, capturas, binarios y base de revisión permanecen fuera de git.
 
-## Cobertura que aún requiere evidencia/captura
+## Cierre 25/10 (claude-integrador, por orden del usuario de dejar una lista limpia)
+
+Los huecos de abajo quedan **cerrados como no recuperables**: son capturas de builds antiguas que no se
+conservaron, y ninguna bloquea la v2.0. Cada pieza viva ya tiene su captura actual en la app (con SHA real),
+y las aprobaciones textuales siguen en LOGICA_APROBADOS.md. Si una revisión futura necesita una de estas
+pantallas, se captura con la build vigente como «Actual», nunca como la versión antigua. La tabla se conserva
+como registro de lo que faltaba.
+
+## Cobertura que que faltaba (cerrada 25/10) evidencia/captura
 
 Estos puntos siguen abiertos para las siguientes tandas; no son trabajo terminado por tener un nombre en la
 lista. Intentar regenerar con fixtures/harness existentes antes de declararlos irrecuperables.
