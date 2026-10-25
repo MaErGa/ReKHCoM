@@ -5,6 +5,8 @@
 
 enum { RECOM_SORA_BEGINNER, RECOM_SORA_STANDARD, RECOM_SORA_PROUD, RECOM_RIKU_BEGINNER, RECOM_RIKU_STANDARD,
        RECOM_RIKU_PROUD, RECOM_MASTER, RECOM_EXTRA_COUNT };
+/* their art in the badge atlas (port/tools/gen_recom_badges.py): row 9, the frame after them */
+enum { kRecomBadgeCell = 90, kRecomFrameCell = 97 };
 
 /* en fr de it es ja: title, description */
 static const char* const kRecomExtraText[RECOM_EXTRA_COUNT][6][2] = {

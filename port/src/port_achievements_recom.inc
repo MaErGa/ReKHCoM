@@ -128,12 +128,12 @@ static void RecomNoticesFrame(void) {
     for (i = 0; i < KhOfficialCount(); ++i)
         if (sRecomNotices[i / 64] & (1ull << (i % 64))) {
             sRecomNotices[i / 64] &= ~(1ull << (i % 64));
-            PortAchievementToast(KhOfficialText(KhOfficialAt(i), l, 0), KhOfficialText(KhOfficialAt(i), l, 1), kLabel[l], i);
+            PortAchievementToast(KhOfficialText(KhOfficialAt(i), l, 0), KhOfficialText(KhOfficialAt(i), l, 1), kLabel[l], i | 0x10000 /* TOAST_FRAMED */);
         }
     for (i = 0; i < RECOM_EXTRA_COUNT; ++i)
         if (sRecomExtraNotices & (1u << i)) {
             sRecomExtraNotices &= ~(1u << i);
-            PortAchievementToast(kRecomExtraText[i][l][0], kRecomExtraText[i][l][1], kLabel[l], -1);
+            PortAchievementToast(kRecomExtraText[i][l][0], kRecomExtraText[i][l][1], kLabel[l], (kRecomBadgeCell + i) | 0x10000);
         }
 }
 
