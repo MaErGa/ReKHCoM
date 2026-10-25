@@ -14,27 +14,39 @@ Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola: COLA_COLABORATI
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release. Trabajar solo en KHCoMPC (C:) y D:/01Claude/ReKHCoM-build.
 - Cada PR de arte mejora LOGICA_APROBADOS.md. Toda falla o timeout de batería es un bug: reproducir.
 
-## TRASPASO (24/10 noche, claude-integrador)
+## TRASPASO (25/10 madrugada, claude-integrador; el usuario duerme y pidió decidir solo, sin preguntar)
 
-- Main verificado tras integrar todos los PR menos #71: build PC, combate, sala 10901, Jafar, launcher: sin fallos.
-- Cola online al día (12 piezas `integrado`); permiso de integrador liberado.
-- Issues: #78 logros (aviso «Logros en pausa», en main), #77 texto HD Linux (en main, falta confirmación del
-  reportero), #83 Jafar Android y espejo del genio en la vista ancha (rama `claude/jafar-genie-wip`, en curso), #49
-  Steam Deck (arreglo en main, respuesta espera OK).
-- Lógica GBA «Mejorado»: voladores también se desvanecen (en main). Windows: prioridad alta y anti-tirones (en main).
-- Seguir: Jafar (#83 + espejo), luego Android (táctiles, primer arranque), catálogo, limpieza.
+- Todos los PR integrados (#70-#89; #71 cerrado con la mejor solución). Cola online al día; permiso liberado.
+- En main desde el último traspaso: Jafar sin espejo del genio ni sprites duplicados ni parpadeo del recuadro;
+  Riku hereda el arte aprobado de los fondos que reutiliza (192→061, 179/181/183→055, 186→044, 187/188→045);
+  logros Re:CoM (lista propia, offline; ver §3); aviso en la elección de versión; check_sources ok.
+- Copia de prueba interna **v2.0-pre12** (main 741196d7f): `jugar/ReKHCoM-v2.0-pre12` + «Probar ReKHCoM v2.0
+  pre12.bat», partidas de la pre11, HD enlazado; humo 9/9. (pre10 y pre11 eran de otra sesión: sus carpetas intactas;
+  sus zips sueltos en la raíz se sobrescribieron por error y se borraron: se regeneran desde sus commits.)
+- **Issues: el usuario pidió esperar a la v2.0** para responder y cerrar. Borradores abajo (§1).
+- En curso: APK de prueba x86 con EU/US/JP (`build/android-smoke-2510.log`) para repetir la batería Android US/JP
+  (falló porque el APK instalado cambió a mitad y no traía la imagen US) y reproducir #83 en el emulador.
 
 ## 1. Espera al usuario (decisión, revisión o OK)
 
 - **Integrados 24/10 por orden del usuario** (sin aprobación en la app; quedan para comentar en la app si hace falta): #70, #75, #76, #79, #80, #81, #82, #84, #85, #86, #87. HUD HD y 112/120 siguen esperando revisión.
-- **PR #71 (112/120): NO integrar** hasta resolver: recuadro negro junto a la puerta, escalones en el muro, hueco marrón
-  en 120, y enciende recetas 115-118 no aprobadas.
-- **Probar jugando la lógica GBA de 3 estados** (Sí / No (Mejorado) / No, ya en main): el fade de «Mejorado» no se
-  pudo ver en el arnés (la sala de prueba cae en combate). Otros enemigos de campo (`MapEnm01/03`) aún desaparecen de golpe.
+- PR #71 cerrado 24/10: entró la regla de actores fuera de cámara (112/120) y la vista previa de 112/120; los defectos de
+  arte (recuadro negro, escalones, hueco marrón) siguen en la cola de arte, 115-118 apagadas.
+- **Respuestas a issues para publicar con la v2.0** (cortas, sin decir que no se probó en hardware):
+  - #78: «No era un fallo: en el modo Re:CoM los logros oficiales esperan. Desde la v2.0 el modo Re:CoM tiene su
+    propia lista (los mismos logros + los del modo, por dificultad), solo en tu equipo, y un aviso al empezar.» Cerrar.
+  - #77: «Debería estar arreglado en la v2.0 (si la fuente HD no carga, se ve el texto original; además busca la fuente
+    de respaldo en Bazzite/Fedora). ¿Puedes probar?» Cerrar al confirmar.
+  - #49: respuesta del borrador anterior (arreglo del lanzador Linux/Steam Deck). Cerrar al confirmar.
+  - #83: el cambio de aspecto durante Jafar está arreglado; el cierre al tomar la carta del jefe sigue en estudio.
+- **Probar jugando la lógica GBA de 3 estados** (Sí / No (Mejorado) / No): voladores (`MapEnm01/04`) ya se desvanecen
+  también (probado en arnés con el contacto desactivado: 7 desvanecidos completos).
+- **Logros Re:CoM — arte en la app** (`f59d55cee2bc419c819f57ad107c79ae`): borde de filigrana dorado para toda la lista
+  Re:CoM e insignias de los 7 propios (historia + 1-3 estrellas). Al aprobarse: embeber el borde (como badges_png.inc) y
+  dibujarlo en el menú del juego, el aviso y el launcher.
 - **Darkside 01 con honores:** receta en main; se activa para todos cuando se apruebe «Darkside · arena y contexto».
 - Preliminar V2 de jefes (`KHCOM_ARENAS_V2=1`): Trickmaster, Oogie, Maléfica, Úrsula, Marluxia final esperan comentarios.
 - Maléfica 02/03 esperan revisión; Maléfica arena aprobada con comentario general pendiente.
-- Issue #49 (Steam Deck, modo Juego): arreglo en main sin publicar; borrador de respuesta espera OK.
 - Diseños que piden decisión: videos HD en Linux nativo, HUD HD a lo Re:CoM sin equivalente 1:1 (contador CARDS, título).
 - **v2.0 estable solo con tu OK** (lista de verificación al final).
 
@@ -51,6 +63,12 @@ Flujo del worker: WORKER_BRIEF.md (imagen a la app primero; `--sent` obligatorio
 
 ## 3. Funciones y código abiertos
 
+- **Logros Re:CoM (en main, #78):** las partidas Re:CoM evalúan los 90 oficiales en `achievements_recom_eu.dat`
+  (79 de mundos/historia/jefes piden toda la partida en Experto: la dificultad más baja usada se guarda por archivo en
+  kh_com_recom.ini, bits 11-12) + 7 propios en `achievements_recom_extra.dat` (Sora/Riku por dificultad, la mayor
+  desbloquea las menores; ambos en Experto). Nunca online; la lista oficial y la cuenta esperan en partidas Re:CoM.
+  Menú del juego: Y/Tab alterna Oficiales/Re:CoM; launcher: pestañas. Arnés: `KHCOM_CREDITS=frame:movie` con
+  `KHCOM_ACHIEVEMENTS_LIVE=1`. Falta solo el arte (§1).
 - **Editor de tiles:** en main (app de revisión → «Editor de tiles»): escenas del cartucho, lápiz, cuentagotas, borrar, rellenar, bloques, voltear, capas, deshacer, guardar por revisión, exportar a Tiled. Falta: sprites.
 - **Catálogo histórico:** 12 huecos en ARTE_HISTORICO.md; regenerar casos factibles con fixtures actuales (tareas
   `catalogo-*` de `claude-relevo`).
@@ -61,8 +79,8 @@ Flujo del worker: WORKER_BRIEF.md (imagen a la app primero; `--sent` obligatorio
   (LOGICA_APROBADOS), Jafar en el emulador (`test_android_scenarios.py --groups bosses`), «Logros pegado» (pedir
   `kh_com.log` si vuelve).
 - Honores verificados 24/10: 53, 54, 55, 121, 122 (+ eventos 177/178) encendidos y GBA intacto en EU/US/JP (21/21).
-- **Baterías:** consultar `run_batteries.py --status` en `khcom-claude-int` (no relanzar). Faltan rooms eu, battles eu,
-  monkey eu/us/jp, skip eu/us/jp y pasos android; luego `--hd`. `debug_kit.py report` sin sitios nuevos.
+- **Baterías:** consultar `run_batteries.py --status` en `khcom-claude-int`. Hechas: todo menos rooms eu, battles eu
+  (no arrancaron) y Android US/JP menús (APK sin imagen US: repetir con el APK nuevo); luego `--hd`. `debug_kit.py report` sin sitios nuevos.
   Caso skip JP `1_039` (0xC0000135) fue de las copias duplicadas del coordinador, no del juego: repetirlo solo.
 - **Limpieza** de restos de pruebas en C: y D: (quitar enlaces antes de borrar; nunca carpetas ReKHCoM-vX).
 - **Cuando haya cola en la app** (`COLA_PARA_AGENTES.md`, turno «agente»): responder cada envío con una versión hija.
