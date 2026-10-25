@@ -18,6 +18,11 @@ static void SecureZeroMemory(void* p, size_t n) {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#endif
 
 #include "ra_client.h"
 #include "../third_party/rcheevos/src/rc_client_internal.h"
@@ -92,14 +97,135 @@ static FILE* DataFile(KhRa* ra, const char* name, const char* mode) {
 #define RA_MODE(m) m
 #endif
 
+/* The session of this computer's user (25/10): the last account signed in with any ReKHCoM on this PC, for a year, so a
+ * portable copy elsewhere (another disk) signs in by itself. A copy with its own account keeps it (it wins) and that
+ * becomes the last one. Per user of the system: %APPDATA%\ReKHCoM (DPAPI, this Windows user only) or
+ * ~/.config/ReKHCoM (0600). Cleared on a sign-out of the same account. */
+#define RA_CACHE_DAYS 365
+typedef struct { char user[128], token[128]; long long saved; } RaCached;
+
+static int CachePath(char* out, size_t size) {
+#ifdef __ANDROID__
+    (void)out; (void)size;
+    return 0; /* the phone's app keeps one data folder: nothing to share */
+#endif
+#ifdef _WIN32
+    const char* base = getenv("APPDATA");
+    if (!base || !base[0]) return 0;
+    snprintf(out, size, "%s\\ReKHCoM", base);
+    _mkdir(out);
+    snprintf(out, size, "%s\\ReKHCoM\\retroachievements_last.auth", base);
+#else
+    const char* xdg = getenv("XDG_CONFIG_HOME");
+    const char* home = getenv("HOME");
+    char dir[900];
+    if (xdg && xdg[0]) snprintf(dir, sizeof(dir), "%s/ReKHCoM", xdg);
+    else if (home && home[0]) snprintf(dir, sizeof(dir), "%s/.config/ReKHCoM", home);
+    else return 0;
+    mkdir(dir, 0700);
+    snprintf(out, size, "%s/retroachievements_last.auth", dir);
+#endif
+    return 1;
+}
+
+static FILE* CacheFile(const char* mode) {
+    char path[1024];
+    if (!CachePath(path, sizeof(path))) return NULL;
+#ifdef _WIN32
+    {
+        wchar_t* wide = Wide(path), wmode[8];
+        FILE* f;
+        if (!wide) return NULL;
+        MultiByteToWideChar(CP_UTF8, 0, mode, -1, wmode, 8);
+        f = _wfopen(wide, wmode);
+        free(wide);
+        return f;
+    }
+#else
+    {
+        FILE* f = fopen(path, mode);
+        if (f && mode[0] == 'w') chmod(path, 0600);
+        return f;
+    }
+#endif
+}
+
+static void CacheWrite(const char* user, const char* token) {
+    RaCached c;
+    FILE* f;
+    memset(&c, 0, sizeof(c));
+    snprintf(c.user, sizeof(c.user), "%s", user);
+    snprintf(c.token, sizeof(c.token), "%s", token);
+    c.saved = (long long)time(NULL);
+#ifdef _WIN32
+    {
+        DATA_BLOB in, out = {0};
+        in.pbData = (BYTE*)&c; in.cbData = sizeof(c);
+        if (CryptProtectData(&in, L"ReKHCoM RetroAchievements (this PC)", NULL, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out)) {
+            if ((f = CacheFile("wb")) != NULL) { fwrite(out.pbData, 1, out.cbData, f); fclose(f); }
+            SecureZeroMemory(out.pbData, out.cbData);
+            LocalFree(out.pbData);
+        }
+    }
+#else
+    if ((f = CacheFile("wb")) != NULL) { fwrite(&c, 1, sizeof(c), f); fclose(f); }
+#endif
+    SecureZeroMemory(&c, sizeof(c));
+}
+
+/* 1: the last account of this PC's user, still within its year */
+static int CacheRead(RaCached* c) {
+    FILE* f = CacheFile("rb");
+    int ok = 0;
+    memset(c, 0, sizeof(*c));
+    if (!f) return 0;
+#ifdef _WIN32
+    {
+        BYTE bytes[4096];
+        size_t size = fread(bytes, 1, sizeof(bytes), f);
+        DATA_BLOB in, out = {0};
+        in.pbData = bytes; in.cbData = (DWORD)size;
+        if (size && size < sizeof(bytes) && CryptUnprotectData(&in, NULL, NULL, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out)) {
+            if (out.cbData == sizeof(*c)) { memcpy(c, out.pbData, sizeof(*c)); ok = 1; }
+            SecureZeroMemory(out.pbData, out.cbData);
+            LocalFree(out.pbData);
+        }
+        SecureZeroMemory(bytes, sizeof(bytes));
+    }
+#else
+    ok = fread(c, 1, sizeof(*c), f) == sizeof(*c);
+#endif
+    fclose(f);
+    ok = ok && c->user[0] && c->token[0] && c->user[127] == 0 && c->token[127] == 0 &&
+         (long long)time(NULL) - c->saved < (long long)RA_CACHE_DAYS * 86400;
+    if (!ok) SecureZeroMemory(c, sizeof(*c));
+    return ok;
+}
+
+static void CacheForget(const char* user) {
+    RaCached c;
+    if (CacheRead(&c) && strcmp(c.user, user) == 0) {
+        FILE* f = CacheFile("wb");
+        if (f) fclose(f);
+    }
+    SecureZeroMemory(&c, sizeof(c));
+}
+
 static void ForgetToken(KhRa* ra) {
     FILE* file = DataFile(ra, "retroachievements.auth", RA_MODE("wb"));
     if (file) fclose(file);
+    if (ra->username[0]) CacheForget(ra->username); /* signed out: this PC forgets it too */
     SecureZeroMemory(ra->token, sizeof(ra->token));
     SecureZeroMemory(ra->username, sizeof(ra->username));
 }
 
+static int SaveTokenFile(KhRa* ra);
 static int SaveToken(KhRa* ra) {
+    if (ra->username[0] && ra->token[0]) CacheWrite(ra->username, ra->token);
+    return SaveTokenFile(ra);
+}
+
+static int SaveTokenFile(KhRa* ra) {
     struct { char user[128], token[128]; } credentials;
 #ifndef _WIN32
     FILE* plain;
@@ -412,6 +538,20 @@ KhRa* KhRaCreate(const char* directory, KhRaRead read, void* userdata, KhRaTrans
     file = DataFile(ra, "retroachievements.ini", RA_MODE("r"));
     if (file) { int value = 0; if (fscanf(file, "enabled=%d", &value) == 1) ra->enabled = value == 1; fclose(file); }
     ReadToken(ra);
+    if (!ra->token[0]) {
+        RaCached c;
+        if (CacheRead(&c)) {
+            FILE* own = DataFile(ra, "retroachievements.ini", RA_MODE("r"));
+            snprintf(ra->username, sizeof(ra->username), "%s", c.user);
+            snprintf(ra->token, sizeof(ra->token), "%s", c.token);
+            ra->remember = 1;
+            if (own) fclose(own); /* the copy said on or off: it keeps that */
+            else ra->enabled = 1; /* a new copy: signed in like the rest of this PC */
+            SecureZeroMemory(&c, sizeof(c));
+        }
+    } else if (ra->remember) {
+        CacheWrite(ra->username, ra->token); /* its own account wins and becomes this PC's last one */
+    }
     if (ra->enabled && ra->token[0]) {
         ra->busy = 1;
         SetStatus(ra, "Signing in...", 0);
