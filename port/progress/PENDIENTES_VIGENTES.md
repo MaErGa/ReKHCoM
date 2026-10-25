@@ -32,6 +32,20 @@ Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlo
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release. Trabajar solo en KHCoMPC (C:) y D:/01Claude/ReKHCoM-build.
 - Cada PR de arte mejora LOGICA_APROBADOS.md. Toda falla o timeout de batería es un bug: reproducir.
 
+## TRASPASO (25/10 tarde, claude-integrador)
+
+- Integrados: #104 (capture_catalog.py recuperado de un respaldo), #105 Trickmaster, #106 Darkside (poses), #107 Oogie,
+  #108 escena 120 (aprobados en Atlas), #109 Opciones por secciones + solo A para entrar + «Salir del juego» (cierra
+  también el launcher: código de salida REKHCOM_EXIT_QUIT_ALL), #110 sección HD única.
+- Hecho sin integrar aún: `claude/linux-hd-movies` (videos HD en Linux nativo con el ffmpeg del sistema; VM Debian ok).
+  Falta solo comparar test_hd_scenes contra main (71/97 en la rama: fallos «escena nunca pedida», de la lógica).
+- Jafar: la columna negra de la subida de nivel y el recuadro de la escena son del propio cartucho (con
+  KHCOM_JAFAR_WIDE=0 también salen): rellenarlos es arte dentro de la imagen GBA → Atlas/GPT si el usuario lo quiere.
+- Siguen (en este orden, pedido del usuario): #83 crash al tomar la carta de Jafar (reproducir y arreglar; Codex no
+  avanzó desde 05:44), parpadeo del deck al lanzar invocaciones (Simba), Android (batalla 123 US con timeout, gama
+  baja, táctiles), pre nueva con zip limpio.
+- Atlas (arte en la app) lo toma GPT por orden del usuario.
+
 ## TRASPASO (25/10 mediodía, claude-integrador)
 
 - Integrados #99 (fuente del texto HD en Opciones), #100 (logros Re:CoM: borde dorado + 7 insignias propias, fila 9 del
