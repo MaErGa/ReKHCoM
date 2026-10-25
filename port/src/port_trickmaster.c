@@ -47,6 +47,18 @@ int PortTrickmasterBackdropPixel(int x, int y, int cx, int cy, uint16_t* color) 
      * Keep the one under the native viewport, rather than the first block. */
     x -= cx - PositiveMod(cx, 256);
     y -= cy - PositiveMod(cy, 256);
+    if (y < 24) {
+        int sx = PositiveMod(x, 56), sy = 24 + PositiveMod(y - 24, 64);
+        /* Atlas: continue the pink wallpaper upwards, not the beige ceiling
+         * strip. Keep only the existing chimney's stone shaft through it. */
+        if (x >= 120 && x < 144) {
+            sx = x;
+            sy = 24 + PositiveMod(y - 24, 16);
+        }
+        index = SourceIndex(sx, sy);
+        *color = index ? ((const uint16_t*)(uintptr_t)GBA_PLTT)[index] & 0x7FFF : 0x8000;
+        return 1;
+    }
     if (y < BOARD_END) {
         int sx, sy;
         if (x >= 0 && x < 256 && y >= 0)

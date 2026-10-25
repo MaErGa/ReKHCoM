@@ -15,6 +15,11 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Trickmaster, envío `20261025-052021-8546de`: «todo bien», sólo completar
+el muro hacia arriba. Prolongar el período vertical del papel rosa, no la
+franja beige del techo. Conservar suelo y objetos ya aceptados; la única
+chimenea conserva su fuste de piedra donde cruza la prolongación del muro.
+
 Escena 120, envío `20261024-053718-1ee415`: la silueta ocre de BG1
 es parte del tejado delantero original, no un donante de suelo. Completar
 sus pendientes laterales y su cuerpo inferior evita que quede una pieza
