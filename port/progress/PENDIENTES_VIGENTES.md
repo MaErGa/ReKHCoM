@@ -1,5 +1,10 @@
 # Pendientes vigentes hacia la v2.0 (lista limpia, 25/10/2026 noche)
 
+## Meta vigente del usuario — 25/10/2026
+
+Ver [META_V2_0.md](META_V2_0.md): arena Trickmaster → escena099 →004 → Síntesis (carta HD dinámica) → Añadir naipes (cantidades detrás del selector); después el resto de piezas comentadas y verificaciones técnicas vigentes. Este orden sustituye órdenes históricos. PR111/114 integrados; propuestas nuevas121/122/123/124 en Atlas y en revisión, no cerradas por subirlas. El documento conserva las mejoras futuras fuera de bloqueantes por defecto. Publicar la estable requiere OK.
+
+
 Única cola de trabajo. Lo anterior completo (traspasos, borradores, detalle): **PENDIENTES_ARCHIVO_20261025.md**
 y PENDIENTES_ARCHIVO_20261024.md. Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola:
 COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --quiet list`.
@@ -15,15 +20,18 @@ COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --q
 ## Estado (25/10 noche)
 
 - Traspaso activo de Codex (arte aprobado, ZIP local): TRASPASO_CARGAS_ZIP_20261025.md.
-- Sin PR abiertos. Última copia interna: **v2.0-pre15** (zip limpio en KHCoMPC + `jugar/ReKHCoM-v2.0-pre15`).
+- Propuestas Atlas abiertas: #121 (Trickmaster), #122 (099), #123 (004/005), #124 (selector HD), más #120 (esta meta). Última copia interna: **v2.0-pre15** (zip limpio en KHCoMPC + `jugar/ReKHCoM-v2.0-pre15`).
 - Hoy en main: Opciones por secciones (solo A para entrar, Salir del juego, mods en gris con cartel), logros Re:CoM
   con borde e insignias, #83 (carta de Jafar: BIOS_PTR), mazo sin parpadeo en invocaciones, videos HD en Linux,
   #42 (3 pistas HD de eventos), arenas aprobadas (Maléfica, Úrsula, Marluxia, Trickmaster, Oogie, Darkside, 112, 120).
 
 ## 1. Código (Claude)
 
-- **#83 confirmar:** reproducción en PC en curso (log de la recogida con la selección vacía, build vieja contra la
-  nueva). Luego, el emulador Android con la build nueva. Cerrar el issue solo cuando el jugador lo confirme.
+- **#83 sin reproducir en PC:** 24 peleas largas con Jafar (build anterior a #115, con y sin HD, recogidas forzadas):
+  0 fallos y nunca una recogida con la selección vacía. El código lo explica: todo lo que vacía `sSoraSelectedCard`
+  marca una recarga, y la recogida espera a que no haya recarga. #115 queda como protección, no como causa probada.
+  Siguiente: `test_android_scenarios.py --groups jafar83` en el emulador (build nueva y anterior) o el `kh_com.log`
+  del jugador. El issue sigue abierto.
 - **Android (con el emulador de las baterías):** repetir la batalla 123 US (timeout; en PC no se reproduce),
   rendimiento en gama baja (línea `timing:`), tablets con el encuadre nuevo, botones táctiles (también web),
   elección de modo al primer arranque.
