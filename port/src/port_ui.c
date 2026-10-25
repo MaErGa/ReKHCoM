@@ -50,6 +50,18 @@ void PortInputSuppressUntilRelease(void);
 
 enum { LANG_EN, LANG_FR, LANG_DE, LANG_IT, LANG_ES, LANG_JA, LANG_COUNT };
 
+/* where the HD mod plays: its music and cards everywhere but the web; its movies where port_hdmovie.c decodes them */
+#ifdef __EMSCRIPTEN__
+#define HD_MOD_PLAYS 0
+#else
+#define HD_MOD_PLAYS 1
+#endif
+#if defined(_WIN32) || defined(__ANDROID__) || defined(PORT_ANDROID64) || defined(PORT_LINUX)
+#define HD_MOVIES_PLAY 1
+#else
+#define HD_MOVIES_PLAY 0
+#endif
+
 enum {
     /* the main page in sections, as a modern game orders them (25/10): gameplay, video, audio, general,
        the HD mod and Re:CoM, experimental, more menus; ITEM_HEAD_* are headings, not selectable */
@@ -87,7 +99,7 @@ enum {
     ITEM_TOUCH_THEME,  /* the touch buttons' look: Clear, Dark, Color */
     ITEM_TOUCH_EDIT,   /* the layout editor: drag the touch buttons where the player wants them */
     ITEM_RECOM_EXTRAS, /* the HD section's heading (every HD row together, 25/10), not selectable */
-    ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): shown only once imported */
+    ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): greyed with a note until imported (NeedsLauncher) */
     ITEM_HD_MUSIC,
     ITEM_HD_SCENES,
     ITEM_HD_SUBTITLES,
@@ -245,13 +257,16 @@ static int ItemVisible(int item) {
         case ITEM_INTZOOM:
         case ITEM_SCALE: return 0;
         case ITEM_DISCORD: return PortDiscordAvailable();
-        /* the HD mod's rows appear once the launcher imported its files */
-        case ITEM_HD_MOVIES: return PortAssetPresent(PORT_ASSET_HD_MOVIES);
-        case ITEM_HD_MUSIC: return PortAssetPresent(PORT_ASSET_HD_MUSIC);
+        /* the HD mod's rows show wherever the mod plays (greyed, with a note, until the launcher imports it, 25/10) */
+        case ITEM_HD_MOVIES:
         case ITEM_HD_SCENES:
-        case ITEM_PS2_HDSCENES: return PortAssetPresent(PORT_ASSET_HD_SCENES);
-        case ITEM_HD_SUBTITLES: return PortAssetPresent(PORT_ASSET_HD_SUBS);
-        case ITEM_HD_CARDS: return PortAssetPresent(PORT_ASSET_HD_CARDS);
+        case ITEM_PS2_HDSCENES:
+        case ITEM_HD_SUBTITLES: return HD_MOVIES_PLAY;
+        case ITEM_HD_MUSIC:
+        case ITEM_HD_CARDS: return HD_MOD_PLAYS;
+#ifdef VERSION_JP
+        case ITEM_UNDUB: return 0; /* already Japanese */
+#endif
         case ITEM_HD_TITLE: return 0; /* part of HD HUD (ITEM_HD_CARDS) since 23/10 */
         case ITEM_GBA_BORDER: return gPortConfig.viewMode == PORT_VIEW_ORIGINAL;
         /* the version and its difficulty are chosen at New Game and stay
@@ -898,11 +913,38 @@ static int ModeIndex(void) {
     return 0;
 }
 
+/* a row that needs something the launcher brings first (the HD mod's files, the Japanese cartridge for the voices):
+   0 none, else which note the help line shows */
+enum { NEED_NONE, NEED_HD, NEED_JP };
+static int NeedsLauncher(int item) {
+    switch (item) {
+        case ITEM_HD_MOVIES: return PortAssetPresent(PORT_ASSET_HD_MOVIES) ? NEED_NONE : NEED_HD;
+        case ITEM_HD_MUSIC: return PortAssetPresent(PORT_ASSET_HD_MUSIC) ? NEED_NONE : NEED_HD;
+        case ITEM_HD_SCENES:
+        case ITEM_PS2_HDSCENES: return PortAssetPresent(PORT_ASSET_HD_SCENES) ? NEED_NONE : NEED_HD;
+        case ITEM_HD_SUBTITLES: return PortAssetPresent(PORT_ASSET_HD_SUBS) ? NEED_NONE : NEED_HD;
+        case ITEM_HD_CARDS: return PortAssetPresent(PORT_ASSET_HD_CARDS) ? NEED_NONE : NEED_HD;
+        case ITEM_UNDUB: return PortUndubAvailable() ? NEED_NONE : NEED_JP;
+        default: return NEED_NONE;
+    }
+}
+static const char* const sNeedHd[LANG_COUNT] = {
+    "Import the HD mod in the launcher to turn this on", "Importe le mod HD dans le lanceur pour l'activer",
+    "Importiere die HD-Mod im Launcher, um das einzuschalten", "Importa la mod HD dal launcher per attivarla",
+    "Importa el mod HD desde el launcher para activarla", "ランチャーでHD MODを取りこむと使えます",
+};
+static const char* const sNeedJp[LANG_COUNT] = {
+    "Add the Japanese cartridge in the launcher to turn this on", "Ajoute la cartouche japonaise dans le lanceur",
+    "Füge im Launcher die japanische Fassung hinzu", "Aggiungi la cartuccia giapponese dal launcher",
+    "Añade el cartucho japonés desde el launcher para activarla", "ランチャーで日本版を追加すると使えます",
+};
+
 static int ItemEnabled(int item) {
     if (item >= ITEM_REMATCH_0 && item <= ITEM_REMATCH_LAST)
         return PortRematchAvailable(item - ITEM_REMATCH_0);
+    if (NeedsLauncher(item))
+        return 0;
     switch (item) {
-        case ITEM_UNDUB: return PortUndubAvailable();
         case ITEM_CHEAT_DEBUG: return PortDebugModeAvailable();
         case ITEM_REMATCH_MENU: return 1;
         case ITEM_CHEAT_MAXLEVEL:
@@ -1804,7 +1846,7 @@ static void Move(int dir) {
         sCursor = first + Wrap(sCursor - first + dir, n);
         while (IsHeading(sCursor))
             sCursor = first + Wrap(sCursor - first + dir, n);
-    } while (!ItemEnabled(sCursor) || !ItemVisible(sCursor));
+    } while ((!ItemEnabled(sCursor) && !NeedsLauncher(sCursor)) || !ItemVisible(sCursor));
 }
 
 static int ScenePauseEvent(const SDL_Event* ev);
@@ -3636,7 +3678,9 @@ static void DrawMenu(int l, int width, int height) {
     if (sPage == PAGE_CONTROLS && sCursor == ITEM_PAD_LAYOUT)
         DrawNintendoNote(l, width, height, barX + barW + 8);
     int zoom = sCursor == ITEM_BATTLE_ZOOM && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom;
-    if (sPage == PAGE_MAIN && (sCursor == ITEM_ZOOM || sCursor == ITEM_BATTLE_ZOOM) &&
+    if (NeedsLauncher(sCursor) && ItemVisible(sCursor))
+        MenuButton(barX, height - 15, NeedsLauncher(sCursor) == NEED_JP ? sNeedJp[l] : sNeedHd[l], '!');
+    else if (sPage == PAGE_MAIN && (sCursor == ITEM_ZOOM || sCursor == ITEM_BATTLE_ZOOM) &&
         ItemEnabled(sCursor) && PortConfigZoomHeavy(zoom))
         /* a demanding zoom: say so where the help line is */
         MenuButton(barX, height - 15, sZoomHeavy[l], '!');
