@@ -27,7 +27,7 @@ void PortMarluxiaBodyMap(const void* map) {
 }
 
 int PortMarluxiaFieldOn(void) {
-    return sField && PortArenasV2();
+    return sField && PortArenasApproved();
 }
 
 /* the field and body beyond the picture (KHCOM_NO_MARLUXIA_FIELD: the isolated before/after harness, wide view kept) */

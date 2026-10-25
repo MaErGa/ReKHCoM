@@ -1540,6 +1540,14 @@ int PortArenasV2(void) {
     return on;
 }
 
+/* the approved ones (art review 25/10: Maleficent, Ursula, Marluxia) are on for everyone; KHCOM_ARENAS_V2=0 turns them off */
+int PortArenasApproved(void) {
+    static int on = -1;
+    if (on < 0)
+        on = !(getenv("KHCOM_ARENAS_V2") && *getenv("KHCOM_ARENAS_V2") == '0');
+    return on;
+}
+
 const uint16_t* PortLatinGlyphWidths(void);
 #include "port_worldname.inc"
 
@@ -1569,7 +1577,7 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
     int tmBoard = sBgLatch[bg].valid && PortTrickmasterBackdropMatches((const void* const*)sBgLatch[bg].map) &&
         PortArenasV2();
     /* Ursula's cave (1) goes on below its floor; her own layer (2) shows one Ursula */
-    int ursLayer = PortArenasV2() && sBgLatch[bg].valid ? PortUrsulaLayer((const void* const*)sBgLatch[bg].map) : 0;
+    int ursLayer = PortArenasApproved() && sBgLatch[bg].valid ? PortUrsulaLayer((const void* const*)sBgLatch[bg].map) : 0;
     /* Jafar's room (1) goes on by its periods; the genie's layer (2) shows one genie */
     int jfLayer = PortJafarWide() && sBgLatch[bg].valid ? PortJafarLayer((const void* const*)sBgLatch[bg].map) : 0;
     /* Marluxia's last fight: the field (BG0) wraps beyond the picture as on the hardware, the body (BG1) once */
@@ -1578,7 +1586,7 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
     int oogieHall = PortArenasV2() && sBgLatch[bg].valid && PortOogieLayer((const void* const*)sBgLatch[bg].map);
     /* Maleficent's hall (1) goes on by its bays; her dragon's layer (2) shows one dragon */
     int mdLayer = 0;
-    if (PortArenasV2() && sBgLatch[bg].valid) {
+    if (PortArenasApproved() && sBgLatch[bg].valid) {
         int b;
         if (PortMaleficentLayer((const void* const*)sBgLatch[bg].map))
             mdLayer = 1;
@@ -3402,7 +3410,7 @@ void PortPpuBeginFrame(void) {
         sEnvTitleBandsOff = getenv("KHCOM_TITLE_BANDS_OFF") != NULL;
     }
     sPreliminarV1 = getenv("KHCOM_PRELIMINAR_V1") != NULL;
-    (void)PortArenasV2(); /* its switch read here, on the main thread, before the cores draw (they ask it per row) */
+    (void)PortArenasV2(); (void)PortArenasApproved(); /* its switch read here, on the main thread, before the cores draw (they ask it per row) */
     sSinglePanelBg = PortEventBackdropPanel();
 
     memset(sTitleBand, 0, sizeof(sTitleBand));

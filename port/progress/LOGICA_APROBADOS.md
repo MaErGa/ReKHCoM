@@ -15,6 +15,10 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Integración 25/10: arenas de jefe aprobadas en Atlas (Maléfica `0cdb9c54`, Úrsula `fc418e25`, Marluxia `c333e5cd`)
+quedan encendidas para todos (`PortArenasApproved`, `KHCOM_ARENAS_V2=0` las apaga). Las que siguen pendientes en la app
+(Trickmaster, Oogie) quedan detrás de `KHCOM_ARENAS_V2=1`: una arena se enciende sola cuando su familia se aprueba.
+
 Integración 25/10: escena 117, versión `ff9f8d6e16a149708fb8a08c5c80d431` aprobada en Atlas.
 El usuario autorizó integrar los aprobados antes del ZIP; se conserva
 la valoración sin elevarla a honores. Los comentarios nuevos permanecen
