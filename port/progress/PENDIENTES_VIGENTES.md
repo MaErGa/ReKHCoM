@@ -38,6 +38,23 @@ COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --q
 - **Baterías:** `run_batteries.py --status` en `khcom-claude-int` (relanzadas 25/10 noche): combates EU y luego
   Android; después la pasada `--hd`.
 
+## 1b. Próximo (pedido del usuario 25/10 noche, en este orden)
+
+- **Pre16 para el jugador de #83:** zip de Windows y APK listos (`build/releases` en khcom-recom-art, main 0f415d7a3).
+  Falta el OK del usuario para publicar la prerelease y comentar en #83 (la herramienta pide confirmación).
+  En el emulador Android 64 (arm64 traducido) `--groups jafar83` EU/US: 4/4 sin cierre con la build nueva.
+- **Galería de escenas (nueva función):** en Opciones > Re:CoM, repetir las escenas de historia ya vistas; pestañas
+  Normales / HD (HD solo si están cargadas); lo no desbloqueado como «???», como el diario de Pepito Grillo; el avance
+  es el de todo el save de ReKHCoM (lo más lejos que se llegó en cualquier partida).
+- **Mods y mejoras en todas las plataformas:** hecho el mod HD en un archivo (#132: launcher de PC > «Llevar el mod
+  HD a otra plataforma», el juego o su host lo instala solo; README por plataforma). Falta:
+  - Android: comprobar en el teléfono/emulador que «Instalar ROM...» con ReKHCoM-HD.zip instala el mod.
+  - Vita y PS5: confirmar sus builds con el paquete (Switch .nro y host PS4 compilan).
+  - Videos HD en consolas (decodificador en cada host, HD_MOD.md: sceAvPlayer PS4/PS5/Vita, FFmpeg nvtegra Switch).
+  - Texto HD en consolas (`port_hdtext` excluido: FreeType del lado del host por el puente).
+  - Estados rápidos/revanchas en consolas, Android y web (`port_state` excluido u oculto).
+  - Que el ZIP de cada consola traiga su README con la sección «HD mod».
+
 ## 2. Arte (Atlas: GPT/Codex; Claude ayuda)
 
 - Responder en la app cada envío en turno «agente» con una versión hija (`COLA_PARA_AGENTES.md`).
