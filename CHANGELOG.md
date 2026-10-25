@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.0-pre14 — 2026-10-25
+
+Test build: pre13 plus
+
+- Re:CoM achievements: a gold filigree frame on the whole Re:CoM list and badges for the mode's own achievements.
+- Options → HD text font: KHMenu (default), Comic Hearts or the system's.
+- HD music: three story-event songs that had their Re:CoM tracks swapped now play the right ones (#42).
+- The approved boss arenas (Maleficent, Ursula, Marluxia) extend across the wide view for everyone.
+
 ## v2.0-pre13 — 2026-10-25
 
 This test build includes the changes merged since v2.0-pre5:

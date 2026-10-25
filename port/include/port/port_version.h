@@ -2,6 +2,6 @@
 #ifndef PORT_VERSION_H
 #define PORT_VERSION_H
 #ifndef REKHCOM_VERSION
-#define REKHCOM_VERSION "v2.0-pre13"
+#define REKHCOM_VERSION "v2.0-pre14"
 #endif
 #endif
