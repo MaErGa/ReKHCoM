@@ -1519,6 +1519,9 @@ int PortArenasV2(void) {
     return on;
 }
 
+const uint16_t* PortLatinGlyphWidths(void);
+#include "port_worldname.inc"
+
 static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
     uint16_t cnt = IO16(0x08 + bg * 2);
     int hofs = IO16(0x10 + bg * 4) & 0x1FF;
@@ -1869,6 +1872,14 @@ scalar_world:
             ci = (fx & 1) ? (b >> 4) : (b & 15);
             pal = entry >> 12;
             out[x] = ci ? (PLTT16[pal * 16 + ci] & 0x7FFF) : TRANSPARENT;
+            if (sWorldNameOn && ((cnt >> 2) & 3) == 0 && tile >= WORLDNAME_TILE0 &&
+                tile < WORLDNAME_TILE0 + WORLDNAME_TILES) {
+                /* the world's name in HD (port_worldname.inc): its pixel letters give way to the panel */
+                if (ci && (ci == sWorldName.face || ci == sWorldName.shadow))
+                    out[x] = PLTT16[pal * 16 + sWorldName.panel] & 0x7FFF;
+                if (tile == WORLDNAME_TILE0 && !(entry & 0xC00) && (px & 7) == 0 && (py & 7) == 0)
+                    WorldNameEmit(bg, x, gy, pal, cnt & 3);
+            }
             if (sHdText && !(entry & 0xC00)) {
                 unsigned offset = ((cnt >> 2) & 3) * 0x4000 + tile * 32;
                 if (offset < 0x10000) {
@@ -3518,6 +3529,7 @@ void PortPpuBeginFrame(void) {
 #if defined(__ANDROID__) || defined(PORT_LINUX)
     sHdText = sHdText && PortPortableHdReady();
 #endif
+    WorldNameFrame();
     RegisterBgSlashes(dispcnt);
     if (sHudLayer || sHdText) {
         memset(sOccBg, 4, (size_t)gPortScreen.width * gPortScreen.height);

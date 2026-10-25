@@ -275,6 +275,9 @@ s16 WorldselectSetSlotGfx(s16 model, s16 slot) {
     }
 }
 
+#ifdef PLATFORM_PC
+void PortWorldNameShow(int world, int width, const void* image);
+#endif
 void WorldselectDrawName(s16 model, s16 width) {
     u8* src;
     u8* srcRight;
@@ -298,6 +301,9 @@ void WorldselectDrawName(s16 model, s16 width) {
     }
 
     RequestDma3Copy(sWorldselectNameBuffer, (u8*)GetBgCharBase(0) + 1024, 0x6C0);
+#ifdef PLATFORM_PC
+    PortWorldNameShow(sWorldselectWorldDefs[model].world, width, sWorldselectNameBuffer); /* the name in HD text */
+#endif
 }
 
 void WorldselectHandleInput() {
