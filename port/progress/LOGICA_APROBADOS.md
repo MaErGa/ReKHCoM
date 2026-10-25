@@ -351,3 +351,16 @@ El envío `20261024-174616-2db556` pide completar la muralla derecha y revisar l
 ## Añadir naipes: selector y cantidades HD (25/10)
 
 Envío `20261024-195741-61a4e3`, nube `fa6724d2-6a43-4eb2-8ce3-df94c8a0b457`: taparse y aparecer en los mismos frames que el número GBA. Que quede un píxel de tinta visible no permite dibujar entero el glifo HD. Para texto BG, recortar tinta y sombra con la silueta bidimensional de BG/OBJ del mismo frame, incluidas ventanas y prioridades; no inferirla de una fila ni inventar un temporizador. La prueba compara capturas GBA/HD de cada frame del ciclo, incluidas coberturas parciales, en vez de exigir un conteo constante de glifos.
+
+### Darkside06 — costura por garabatos, revisión nueva 25/10
+
+Envío `20261024-162822-ea1330`, padre `4d6a039e51ad4b8f8f52cb1b1d070ba0`:
+el celeste borra únicamente añadido y el verde pide relleno de las uniones del
+hombro y axila. Conservar los píxeles opacos nativos y el centro; no desplazar
+otra vez todo el brazo. La hija `60f90456598249ecb1e691c51dd2434e` responde la
+nube `943ba728-2009-4560-8eef-7091aefb52e7` y los cuatro trazos exactos.
+La propuesta 4bpp queda en `port/art/proposals/darkside06-r8/`; no sustituye el
+arte activo ni hereda aprobación. Nueve frames verificados offline con cero
+píxeles ROM alterados. Captura runtime pendiente del turno de RAM del usuario;
+cuando se autorice: SDL controller `0xffff/0xffff`, vídeo/audio dummy, PPU=1,
+BACKGROUND_TEST=1 y Ninja `-j1` en serie.
