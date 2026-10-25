@@ -1055,12 +1055,9 @@ static void ValueText(int item, char* out, size_t size) {
             SDL_strlcpy(out, sOnOff[gPortConfig.hdText != 0][l], size);
             break;
         case ITEM_HDFONT: {
-            static const char* const kFonts[3][LANG_COUNT] = {
-                { "KHMenu", "KHMenu", "KHMenu", "KHMenu", "KHMenu", "KHMenu" },
-                { "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts" },
-                { "System", "Système", "System", "Sistema", "Sistema", "システム" },
-            };
-            SDL_strlcpy(out, kFonts[SDL_clamp(gPortConfig.hdFont, 0, 2)][l], size);
+            /* KHMenu or the system's: Comic Hearts is the subtitles' (user 25/10) */
+            static const char* const kSystem[LANG_COUNT] = { "System", "Système", "System", "Sistema", "Sistema", "システム" };
+            SDL_strlcpy(out, gPortConfig.hdFont == 2 ? kSystem[l] : "KHMenu", size);
             break;
         }
         case ITEM_CARDS:
@@ -1317,7 +1314,7 @@ static void Change(int item, int dir) {
             gPortConfig.hdText = !gPortConfig.hdText;
             break;
         case ITEM_HDFONT:
-            gPortConfig.hdFont = Wrap(gPortConfig.hdFont + dir, 3);
+            gPortConfig.hdFont = gPortConfig.hdFont == 2 ? 0 : 2; /* two faces: either direction swaps them */
             break;
         case ITEM_CARDS:
             gPortConfig.cardHudRaise = Wrap(gPortConfig.cardHudRaise / 4 + dir, 5) * 4;
