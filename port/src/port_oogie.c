@@ -97,12 +97,23 @@ static int PathIndex(int x, int y) {
 }
 
 static int HallIndex(int x, int y) {
-    int c = FloorDiv(x - ROOM_X, 8), r = FloorDiv(y, 8), cc = Mod(c, ROOM_COLS), bay = FloorDiv(c, ROOM_COLS);
+    int c = FloorDiv(x - ROOM_X, 8), r = FloorDiv(y, 8), cc = Mod(c, ROOM_COLS);
     unsigned e;
-    if (r > ROW_BOTTOM && bay == 0) {
+    if (r > ROW_BOTTOM) {
         int v = PathIndex(x, y);
         if (v >= 0)
             return v;
+        /* Keep two tapered source-tile tips beside the path; let the wide floor fall into the dark. */
+        {
+            float oL, iL, iR, oR;
+            int depth = 64 - (y - (ROW_BOTTOM + 1) * 8), distance;
+            Lines(y, &oL, &iL, &iR, &oR);
+            if (depth <= 0)
+                return 0;
+            distance = x < oL ? (int)(oL - (float)x) : x > oR ? (int)((float)x - oR) : 0;
+            if (distance > depth)
+                return 0;
+        }
         e = Green(c, r);
     } else if (r < ROW_TOP) {
         e = cc < 2 || cc >= 28 ? RoomEntry(cc, ROW_TOP) : Brick(cc, r); /* the pillars and the bricks go on up */
