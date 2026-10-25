@@ -64,6 +64,28 @@ COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --q
   hora) y explica cómo pedir el desbloqueo manual en retroachievements.org. Confirmar con el usuario antes.
 - **Launcher:** emblema de RetroAchievements hecho (propio, no el logo oficial por ser marca registrada).
 
+## 1c. Traspaso de las funciones nuevas (cómo abordarlas)
+
+- **Galería de escenas** (Opciones > Re:CoM): los eventos de historia ya llevan su piso en el nombre
+  (`include/evt/event_ids.h`: `EVENT_0XX_<n>F_ENTRANCE/GOAL`, `RIKU_B<n>F_...`) y la partida guarda el avance por piso
+  (`GameState.floors[13]`); un evento está desbloqueado si alguna partida del save (todas las ranuras y bancos,
+  `PORT_SAVE_BANKS`) pasó ese piso con ese personaje. Reproducir: el arnés ya lo hace (`gPortEventTest` →
+  `PortEventSelectPreset`, src/main.c:1014); hacer lo mismo desde Opciones y volver al juego (como «Volver al título»
+  pero restaurando el estado: guardar un estado rápido antes, `port_state`, y cargarlo al terminar). Pestaña HD: la
+  tabla `kHdScenes` (port/src/port_hdscenes.inc) da el video de cada evento; solo si `PORT_ASSET_HD_SCENES`. Lo no
+  desbloqueado: «???» con el estilo de las filas del diario.
+- **Logros ganados antes de vincular RA:** ver §1b (política); listar `achievements_official_eu.dat` con fecha contra
+  los del perfil (`ra->account_unlocks` en ra_client.c) y mostrar los que faltan con un enlace a la ayuda de RA.
+- **Sesión de RA por usuario del PC** (#135): hecha; falta verla con una cuenta real (dos copias en dos carpetas).
+- **Videos HD en consolas:** el puente ya tiene `hd_movie` (lo usa Android 64): compilar el camino `PORT_ANDROID64` de
+  port_hdmovie.c en las imágenes de consola e implementar `H_hd_movie` en cada host (HD_MOD.md: sceAvPlayer en PS4/PS5,
+  sceAvcdec en Vita con ROP a 960x544, FFmpeg nvtegra en Switch). Necesita consola real para verificar.
+- **Texto HD en consolas:** `port_hdtext` está excluido en build_ps5.PORT_EXCLUDED; usar `hdtext_freetype.c` del lado
+  del host (FreeType ya está en los hosts SDL2) con una entrada nueva del puente que devuelva la cobertura de una
+  línea (como `PortPortableHdTextCover`).
+- **Estados rápidos en consolas/Android/web:** `port_state` excluido en consolas; en Android/web la fila de revanchas
+  se oculta. Medir el tamaño del estado y escribirlo por el puente (H_fopen) antes de encenderlo.
+
 ## 2. Arte (Atlas: GPT/Codex; Claude ayuda)
 
 - Responder en la app cada envío en turno «agente» con una versión hija (`COLA_PARA_AGENTES.md`).
