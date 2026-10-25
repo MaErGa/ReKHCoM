@@ -6,6 +6,7 @@ int PortRecomActive(void);
 #include <stdio.h>
 #include <stdlib.h>
 #include "../decompui/third_party/stb_image.h"
+enum { kMenuRecomFrame = 97 }; /* the filigree's cell (recom_set.inc kRecomFrameCell) */
 static unsigned char* sAchievementAtlas;
 static int sAchievementAtlasRows, sAchievementAtlasTried;
 static void AchievementMenuBadge(const PortAchievementInfo* info, int index, int x, int y) {
@@ -29,6 +30,14 @@ static void AchievementMenuBadge(const PortAchievementInfo* info, int index, int
         unsigned r = p[0], g = p[1], b = p[2];
         if (info->state != 1) r = g = b = (r * 77 + g * 150 + b * 29) >> 8;
         Pixel(x + px, y + py, 0xFF000000u | r << 16 | g << 8 | b);
+    }
+    if (sAchievementList && kMenuRecomFrame / 10 < sAchievementAtlasRows) {
+        /* the Re:CoM list's gold filigree around the badge: its cell drawn at 80 px (1.25x), solid where it shows */
+        for (py = 0; py < 80; ++py) for (px = 0; px < 80; ++px) {
+            const unsigned char* p = sAchievementAtlas +
+                (((kMenuRecomFrame / 10) * 64 + py * 64 / 80) * 640 + (kMenuRecomFrame % 10) * 64 + px * 64 / 80) * 4;
+            if (p[3] >= 128) Pixel(x - 8 + px, y - 8 + py, 0xFF000000u | p[0] << 16 | p[1] << 8 | p[2]);
+        }
     }
 }
 /* Read-only, portable list inside Options. Account controls stay in launcher. */

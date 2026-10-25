@@ -45,8 +45,11 @@ static void Line(uint32_t* pixels, int y, const char* text, uint32_t color) {
 }
 
 /* 32x32 box-filtered copy of the badge; returns 0 when the atlas or index is missing. */
+#define TOAST_FRAMED 0x10000 /* badgeIndex flag: the Re:CoM list's gold filigree around it */
+#define TOAST_FRAME_CELL 97   /* the filigree's atlas cell (recom_set.inc kRecomFrameCell) */
 static int Badge(uint32_t* pixels, int index) {
-    int px, py, sx, sy;
+    int px, py, sx, sy, framed = (index & TOAST_FRAMED) != 0;
+    index &= ~TOAST_FRAMED;
     if (!sAtlasTried) {
         int w, h, channels;
         sAtlasTried = 1;
@@ -67,6 +70,12 @@ static int Badge(uint32_t* pixels, int index) {
         }
         pixels[(8 + py) * 256 + 6 + px] = 0xFF000000u | (r / 4) << 16 | (g / 4) << 8 | (b / 4);
     }
+    if (framed && TOAST_FRAME_CELL / 10 < sAtlasRows)
+        for (py = 0; py < 40; ++py) for (px = 0; px < 40; ++px) { /* 1.25x the badge, solid where it shows */
+            const unsigned char* p = sAtlas +
+                (((TOAST_FRAME_CELL / 10) * 64 + py * 64 / 40) * 640 + (TOAST_FRAME_CELL % 10) * 64 + px * 64 / 40) * 4;
+            if (p[3] >= 128) pixels[(4 + py) * 256 + 2 + px] = 0xFF000000u | p[0] << 16 | p[1] << 8 | p[2];
+        }
     return 1;
 }
 

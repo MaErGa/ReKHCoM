@@ -65,7 +65,7 @@ int PortRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex) {
         SDL_strlcpy(out->title, PortRecomExtraText(e, l, 0), sizeof(out->title));
         SDL_strlcpy(out->description, PortRecomExtraText(e, l, 1), sizeof(out->description));
         out->state = PortRecomExtraUnlocked(e);
-        if (badgeIndex) *badgeIndex = -1;
+        if (badgeIndex) *badgeIndex = kRecomBadgeCell + e; /* the mode's own art, row 9 of the atlas */
     }
     return 1;
 #else
