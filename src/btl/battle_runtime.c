@@ -2221,9 +2221,16 @@ void ReleaseBattleTiles() {
     }
 }
 
+#ifdef PLATFORM_PC
+void PortLog(const char* fmt, ...);
+#endif
+
 void SetGimmickFlag(u8 index) {
     if (index <= 4) {
         gBtlWork->gimmickFlags |= 1 << index;
+#ifdef PLATFORM_PC
+        PortLog("battle: gimmick card %d picked up", index); /* issue #83: closed on Android right after this */
+#endif
     }
 }
 
@@ -2267,6 +2274,9 @@ void DropGimmickCard(u8 index, s32 x, s32 y, s32 z) {
         return;
     }
 
+#ifdef PLATFORM_PC
+    PortLog("battle: gimmick card %d dropped", index);
+#endif
     CreateGimmickCardTask(&gBtlWork->taskPools[0], x >> 8, y >> 8, z >> 8, id);
 }
 

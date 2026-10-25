@@ -3,6 +3,10 @@
  * Card Pickups, Sleight Names and Premium Bonus
  */
 
+#ifdef PLATFORM_PC
+#include <stdlib.h>
+void PortLog(const char* fmt, ...);
+#endif
 #include "macros.h"
 #include "registration_data.h"
 #include "system_state.h"
@@ -365,8 +369,20 @@ s32 Gimmick_card_1(PickupCardWork* work, void* task) {
         work->moveAngle = (u8)(work->moveAngle + 112) + GetRandom() % 33;
     }
 
+#ifdef PLATFORM_PC
+    {
+        /* harness (issue #83): KHCOM_GIMMICK_PICKUP=1 picks a dropped gimmick card up as soon as it lands */
+        static int sAuto = -1;
+        if (sAuto < 0) sAuto = getenv("KHCOM_GIMMICK_PICKUP") != NULL;
+        if (sAuto && work->vz > -0x300 && work->vz < 0)
+            work->collider.colliding = TRUE;
+    }
+#endif
     if (work->collider.colliding) {
         m4aSongNumStart(SONG_SYS_ITEMGET);
+#ifdef PLATFORM_PC
+        PortLog("battle: gimmick card collected");
+#endif
 
 #ifdef VERSION_EU
         work->priority = 10;

@@ -3,6 +3,9 @@
  * Jafar Boss
  */
 
+#ifdef PLATFORM_PC
+#include <stdlib.h>
+#endif
 #include "macros.h"
 #include "bos2.h"
 #include "sprites_bos2.h"
@@ -175,6 +178,12 @@ u8 task_bos_jf_1(JfWork* work) {
         work->stateStep = 0;
         break;
     case BTL_REACTION_CARD_BROKEN:
+#ifdef PLATFORM_PC
+        /* harness (issue #83): KHCOM_GIMMICK_PICKUP=1 also drops the card when Sora breaks one of his, so the
+           pickup (Sora's Blizzard otherwise) can be exercised */
+        if (!(gGameState.flags & GAME_FLAG_RIKU) && getenv("KHCOM_GIMMICK_PICKUP") && work->gimmickTimer == 0)
+            DropGimmickCard(0, sub->x, sub->y, sub->z);
+#endif
         if (gGameState.flags & GAME_FLAG_RIKU) {
             if (work->gimmickTimer == 0) {
                 if (GetRandom() % 100 <= 19) {
