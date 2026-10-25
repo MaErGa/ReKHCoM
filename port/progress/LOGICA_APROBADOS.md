@@ -15,6 +15,15 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Escena 112, envío `20261024-054012-207689`: la franja superior que falta
+en BG2 se rellena con la pared lisa de esa misma capa; una muestra superior
+vacía no significa que termine el edificio. Completar la puerta única con
+un dintel de su propio marco vertical siguiendo su diagonal, y prolongar el
+fuste ya existente sin colocar nuevas puertas ni sillas. La textura de BG2
+tiene píxeles transparentes: continuar también su base rosa de BG3 para
+que no deje ver el fondo amarillo. Los actores que
+esperan fuera del plano usan la regla GBA ya integrada.
+
 Escena 120, envío `20261024-053718-1ee415`: la silueta ocre de BG1
 es parte del tejado delantero original, no un donante de suelo. Completar
 sus pendientes laterales y su cuerpo inferior evita que quede una pieza

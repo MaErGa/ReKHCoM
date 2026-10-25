@@ -530,6 +530,41 @@ static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==112 && p->v[1]==2 && (wy<0 || wx>=512 || (wx>=416 && wx<448 && wy<24))) {
+        if (wy<0 && wx>=192 && wx<208) {
+            *sx=504; *sy=344; /* leave the corner shaft's gold face to BG3 */
+        } else if (wx>=352 && wx<448 && wy<24) {
+            /* Close the cut doorway with one sloping lintel made from its
+             * own upright frame. Above that head, the wall continues. */
+            int top=(wx-352)/2-32, depth=wy-top;
+            if (depth<0) {
+                *sx=256+PortSceneTileMod(wx-256,64); *sy=PortSceneTileMod(wy,32);
+            } else if (depth<4) {
+                *sx=352+depth; *sy=8+PortSceneTileMod(wx-352,8);
+            } else {
+                *sx=wx>=416?400+PortSceneTileMod(wx,8):wx;
+                *sy=wx>=416?8:PortSceneTileMod(wy,8);
+            }
+        } else if (wx>=176) {
+            *sx=256+PortSceneTileMod(wx-256,64);
+            *sy=wy-(wx-*sx)/2;
+            if (*sy<0) *sy=PortSceneTileMod(*sy,32);
+            if (*sy>=352) *sy=351;
+        } else {
+            *sx=504; *sy=344; /* no extra chairs on the left */
+        }
+        return 1;
+    }
+    if (p && p->v[0]==112 && p->v[1]==3 && wy<0 && wx>=368 && wx<384) {
+        *sx=64+PortSceneTileMod(wx,16); *sy=PortSceneTileMod(wy,16);
+        return 1; /* the existing shaft's light face, above the cut map */
+    }
+    if (p && p->v[0]==112 && p->v[1]==3 && (wy<0 || wx>=512) && wx>=352 && 2*wy-wx<-128) {
+        /* BG2's wall texture has transparent pixels: its matching solid
+         * pink undercoat must continue too, rather than exposing yellow. */
+        *sx=352+PortSceneTileMod(wx-352,8); *sy=PortSceneTileMod(wy,16);
+        return 1;
+    }
     if (p && p->v[0]==120 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
         if (p->v[1]==1) {
             /* One foreground roof: continue its two slopes and the solid
