@@ -2384,6 +2384,7 @@ static void HarnessFrame(void) {
 
 /* ---- events / pacing --------------------------------------------------------------- */
 
+int gPortExitCode; /* REKHCOM_EXIT_QUIT_ALL after Options > Quit the game */
 static void Quit(void) {
     void PortHdHudShutdown(void);
     PortSramSyncIfDirty();
@@ -2396,7 +2397,7 @@ static void Quit(void) {
     PortHdSpritesShutdown();
     PortHdLayoutShutdown();
     SDL_Quit();
-    exit(0);
+    exit(gPortExitCode);
 }
 
 static void PumpEvents(void) {
