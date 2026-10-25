@@ -50,6 +50,14 @@ void PortInputSuppressUntilRelease(void);
 
 enum { LANG_EN, LANG_FR, LANG_DE, LANG_IT, LANG_ES, LANG_JA, LANG_COUNT };
 
+/* Quit the game (and its launcher): the desktop builds only, whose launcher waits for the game; the console and
+   64-bit Android images have no launcher to close (and no SDL_PushEvent in their shim) */
+#if (defined(_WIN32) || defined(PORT_LINUX)) && !defined(PORT_GBA_RELOC)
+#define QUIT_ROW 1
+#else
+#define QUIT_ROW 0
+#endif
+
 /* where the HD mod plays: its music and cards everywhere but the web; its movies where port_hdmovie.c decodes them */
 #ifdef __EMSCRIPTEN__
 #define HD_MOD_PLAYS 0
@@ -241,6 +249,7 @@ static int ItemVisible(int item) {
     if (IsHeading(item) && item < ITEM_CLOSE)
         return SectionShown(item);
     switch (item) {
+        case ITEM_QUIT: return QUIT_ROW;
         case ITEM_HDFONT: return gPortConfig.hdText; /* with the HD text only */
 #if !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(PORT_ANDROID64) && !defined(PORT_TOUCH)
         case ITEM_HIDE_TOUCH:
@@ -3479,6 +3488,7 @@ static void ConfirmKey(int key) {
         Close();
         return;
     }
+#if QUIT_ROW
     if (sConfirm == CONFIRM_QUIT) {
         extern int gPortExitCode;
         SDL_Event q;
@@ -3489,6 +3499,7 @@ static void ConfirmKey(int key) {
         SDL_PushEvent(&q);
         return;
     }
+#endif
     sConfirm = CONFIRM_NONE;
     PortApplyGraphicsMode(sConfirmMode);
     PortConfigSave();
