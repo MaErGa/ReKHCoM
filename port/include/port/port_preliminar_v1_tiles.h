@@ -147,6 +147,15 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
          * (6,-3) along its base; floor 8 columns by 4 rows). Props, carpet
          * and stains stay unique. */
         int diagonal=2*oy+ox;
+        if (v[1]==2 && ox>=64) {
+            /* The foreground right wall belongs to BG2. Its base runs
+             * down-right, opposite to BG3's back wall. Continue the clean
+             * last six columns, not the pillar's left edge or the crates. */
+            sx=58+PortSceneTileMod(ox-58,6);
+            sy=oy-(ox-sx)/2;
+            *x=sx; *y=sy<0?0:sy;
+            return *y<64;
+        }
         if (v[1]!=3) return 0;
         if (ox>=64 && diagonal<97) {
             sx=58+PortSceneTileMod(ox-58,6); sy=oy+(ox-sx)/2;
