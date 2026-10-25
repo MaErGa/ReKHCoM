@@ -309,7 +309,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Subir cartas en combate", "カードを上げる" },
     { "Invert card scrolling", "Inverser le défilement", "Kartenauswahl umkehren", "Inverti scorrimento carte",
       "Invertir selección de cartas", "カード送りを反転" },
-    { "Video", "Vidéo", "Video", "Video", "Vídeo", "映像" },
+    { "Video", "Vidéo", "Video", "Video", "Vídeo", "ビデオ" },
     { "View", "Vue", "Ansicht", "Visuale", "Vista", "表示" },
     { "Aspect ratio", "Format d'image", "Seitenverhältnis", "Proporzioni", "Relación de aspecto", "画面の形" },
     { "Zoom", "Zoom", "Zoom", "Zoom", "Zoom", "ズーム" },
@@ -335,7 +335,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Effects volume", "Volume effets", "Effektlautstärke", "Volume effetti", "Volumen efectos", "効果音の音量" },
     { "Japanese voices (restart)", "Voix japonaises (relancer)", "Japanische Stimmen (Neustart)",
       "Voci giapponesi (riavvia)", "Voces japonesas (reiniciar)", "日本語ボイス (再起動)" },
-    { "General", "Général", "Allgemein", "Generale", "General", "一般" },
+    { "General", "Général", "Allgemein", "Generale", "General", "きほん" },
     { "Save bank", "Banque de sauvegarde", "Speicherbank", "Banco di salvataggio", "Banco de partidas",
       "セーブバンク" },
     { "Discord status", "Statut Discord", "Discord-Status", "Stato Discord", "Estado en Discord", "Discordステータス" },
@@ -936,7 +936,7 @@ static const char* const sNeedHd[LANG_COUNT] = {
 static const char* const sNeedJp[LANG_COUNT] = {
     "Add the Japanese cartridge in the launcher to turn this on", "Ajoute la cartouche japonaise dans le lanceur",
     "Füge im Launcher die japanische Fassung hinzu", "Aggiungi la cartuccia giapponese dal launcher",
-    "Añade el cartucho japonés desde el launcher para activarla", "ランチャーで日本版を追加すると使えます",
+    "Añade el cartucho japonés desde el launcher para activarla", "ランチャーで日本のカートリッジを入れると使えます",
 };
 
 static int ItemEnabled(int item) {
