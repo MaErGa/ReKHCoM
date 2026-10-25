@@ -94,6 +94,15 @@ Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlo
 
 ## 2. Cola de arte — un solo worker (`r4`), en serie
 
+**Prioridad vigente del usuario, 25/10:** terminar los cambios de las 14 piezas
+ya comentadas antes de tomar piezas nuevas. Trickmaster y las arenas de jefe
+van primero; dentro de cada grupo, del comentario más antiguo al más nuevo.
+Orden de las arenas con respuesta pendiente en Atlas: Trickmaster
+(`20261024-055415-313327`), Darkside (`20261024-174546-f62040`), Maléfica
+(`20261024-200008-90a793`), Oogie (`20261024-200206-2f7b40`). Cada pieza se
+entrega con cambios reales, captura hija y ficha de respuesta antes de pasar
+a la siguiente; conservar las valoraciones humanas.
+
 Piezas pendientes en la cola: 074, 087, 090, 095, 099, 102, 115, 116, 117, 118, Maléfica 01, Maléfica arena, Oogie arena,
 Trickmaster arena, diario (entradas y subentradas), y al final 081 (necesita extender la ventana) y 097 (es lógica de
 sprites, no receta). **057 y 061 liberadas con diagnóstico, decisión de tile-map mayor:**

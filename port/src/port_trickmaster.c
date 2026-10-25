@@ -1,6 +1,6 @@
 /* Trickmaster's room (Wonderland's boss, issue: the board ends above the wide view's bottom and leaves a black band).
- * The user's rule (18/10, BATTLE_SCENERY_AUDIT.md #8): keep the room as it is and only continue the chessboard
- * downwards, with its perspective and alternation. Source tiles stay in the user's ROM; nothing is shipped.
+ * The user's rule (Atlas 24/10): one fireplace, like the event room. Keep the original room, extend only clean
+ * wallpaper sideways, and continue the chessboard with one perspective. Source tiles stay in the user's ROM.
  *
  * The board in gBosTmBgMap (256x256, the same map in all four blocks) is a perspective floor measured from the
  * cartridge's own pixels: every column widens linearly with y and meets the others at y = 33.3 (vanishing point),
@@ -21,6 +21,11 @@ extern const uint8_t gBosTmBgTiles[];
 
 static int sIndex[2] = { -1, -1 }; /* the square on the centre column of the last row, and its neighbour */
 
+static int PositiveMod(int x, int n) {
+    int r = x % n;
+    return r < 0 ? r + n : r;
+}
+
 static int SourceIndex(int x, int y) {
     unsigned entry = gBosTmBgMap[((y & 255) >> 3) * 32 + ((x & 255) >> 3)];
     int px = x & 7, py = y & 7, index;
@@ -35,17 +40,48 @@ int PortTrickmasterBackdropMatches(const void* const* maps) {
            maps[3] == gBosTmBgMap;
 }
 
-int PortTrickmasterBackdropPixel(int x, int y, uint16_t* color) {
+int PortTrickmasterBackdropPixel(int x, int y, int cx, int cy, uint16_t* color) {
     float depth, width;
     int row, column, index;
-    if (y < BOARD_END)
-        return 0; /* the room and the board as the cartridge draws them */
+    /* The hardware scroll can sit in any of the map's identical blocks.
+     * Keep the one under the native viewport, rather than the first block. */
+    x -= cx - PositiveMod(cx, 256);
+    y -= cy - PositiveMod(cy, 256);
+    if (y < BOARD_END) {
+        int sx, sy;
+        if (x >= 0 && x < 256 && y >= 0)
+            return 0;
+        /* Only the side wallpaper repeats, never the fireplace, lamp or vase.
+         * The leftmost seven tile columns form a complete clean wall module. */
+        sx = PositiveMod(x, 56);
+        sy = y < 0 ? PositiveMod(y, 24) : y;
+        if (sy >= 176) {
+            /* Continue the authored checkerboard analytically below its wall;
+             * all columns converge on the original room's vanishing point. */
+            depth = (float)sy - VANISH_Y;
+            width = COLUMN_SLOPE * depth;
+            column = (int)floorf(((float)x - 128.0f + width * 0.5f) / width);
+            /* Read the row's centre colour and alternate the two actual
+             * floor inks. Sampling a moving donor near its diagonal edge
+             * would introduce little teeth in every projected column. */
+            index = SourceIndex(128, sy);
+            if (column & 1) {
+                int a = SourceIndex(128, BOARD_END - 4);
+                int b = SourceIndex(156, BOARD_END - 4);
+                index = index == a ? b : a;
+            }
+            *color = index ? ((const uint16_t*)(uintptr_t)GBA_PLTT)[index] & 0x7FFF : 0x8000;
+            return 1;
+        }
+        index = SourceIndex(sx, sy);
+        *color = index ? ((const uint16_t*)(uintptr_t)GBA_PLTT)[index] & 0x7FFF : 0x8000;
+        return 1;
+    }
     if (sIndex[0] < 0) {
         float w = COLUMN_SLOPE * (BOARD_END - 4 - VANISH_Y);
         sIndex[0] = SourceIndex(128, BOARD_END - 4);
         sIndex[1] = SourceIndex(128 + (int)w, BOARD_END - 4);
     }
-    x &= 255; /* the stage repeats sideways every 256 pixels, as the map above it does */
     depth = 1.0f / ((float)y - VANISH_Y);
     row = (int)((1.0f / ((float)BOARD_END - VANISH_Y) - depth) / ROW_STEP); /* 0: the first row below the map */
     width = COLUMN_SLOPE * ((float)y - VANISH_Y);

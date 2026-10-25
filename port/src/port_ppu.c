@@ -1705,9 +1705,11 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
                 continue;
             }
         }
-        if (tmBoard && gy >= GBA_SCREEN_H) { /* below the picture only: above it the map goes on as it is */
+        if (tmBoard && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
             const BgLatch* l = &sBgLatch[bg];
-            if (PortTrickmasterBackdropPixel(l->x + gx + (hofs - l->hofs), l->y + gy + (vofs - l->vofs), &out[x])) {
+            if (PortTrickmasterBackdropPixel(l->x + gx + (hofs - l->hofs), l->y + gy + (vofs - l->vofs),
+                    l->x + GBA_SCREEN_W / 2 + (hofs - l->hofs),
+                    l->y + GBA_SCREEN_H / 2 + (vofs - l->vofs), &out[x])) {
                 sInWorld[x] = 1;
                 continue;
             }
