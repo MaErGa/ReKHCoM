@@ -1,5 +1,10 @@
 # Pendientes vigentes hacia la v2.0 (sintetizado 24/10/2026 ~19:00)
 
+## Meta vigente del usuario — 25/10/2026
+
+Ver [META_V2_0.md](META_V2_0.md): arena Trickmaster → escena 099 → 004 → Síntesis (carta HD dinámica) → Añadir naipes (cantidad HD detrás del selector), después el resto de piezas comentadas y bugs vigentes. Este orden sustituye los órdenes históricos de los traspasos de abajo. PR #111 y #114 ya integrados; sus nuevas nubes son trabajo separado. La meta distingue bugs abiertos, comprobaciones y mejoras futuras, y no autoriza publicar la estable.
+
+
 Única cola de trabajo, **resumida**. Todo el detalle, comandos y traspasos anteriores están en
 **PENDIENTES_ARCHIVO_20261024.md** (esta lista al 24/10 ~19:00 completa) y en PENDIENTES_HISTORIAL_2026-10.md.
 Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola: COLA_COLABORATIVA.md. Estado vivo de piezas:
