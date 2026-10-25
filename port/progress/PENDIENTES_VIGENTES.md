@@ -55,6 +55,15 @@ COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --q
   - Estados rápidos/revanchas en consolas, Android y web (`port_state` excluido u oculto).
   - Que el ZIP de cada consola traiga su README con la sección «HD mod».
 
+- **Hecho 25/10 noche:** #132 mod HD en un archivo (PC, Linux, Switch .nro, Vita .vpk, host PS4 compilan; Android
+  64 probado en el emulador: el zip queda en files/hd), #134 Android «Instalar ROM...» acepta ReKHCoM-HD.zip,
+  #133 launcher: cuenta RetroAchievements siempre visible con emblema propio, #128 builds de guests reparadas.
+- **Logros ganados antes de vincular la cuenta (pedido del usuario):** no subirlos solos. Las reglas de RA solo
+  aceptan desbloqueos sin conexión guardados por un emulador con sesión iniciada; desbloquear «saltando» el código
+  puede dejar la cuenta Untracked. Propuesta: el launcher lista los logros locales ganados sin cuenta (fecha y
+  hora) y explica cómo pedir el desbloqueo manual en retroachievements.org. Confirmar con el usuario antes.
+- **Launcher:** emblema de RetroAchievements hecho (propio, no el logo oficial por ser marca registrada).
+
 ## 2. Arte (Atlas: GPT/Codex; Claude ayuda)
 
 - Responder en la app cada envío en turno «agente» con una versión hija (`COLA_PARA_AGENTES.md`).
