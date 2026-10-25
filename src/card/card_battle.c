@@ -2011,7 +2011,9 @@ void AddPickedCardToSoraDeck(CardBattleWork* work) {
     work->cursors[CARD_LIST_MAIN] = work->slotCounts[CARD_LIST_MAIN] - 1;
 
     if (work->listIndex == CARD_LIST_MAIN) {
-        work->cursors[CARD_LIST_MAIN] = sSoraSelectedCard->args.index;
+        // @bug sSoraSelectedCard is NULL when the card is picked up while none is selected (just used, a sleight,
+        // a reload): the GBA reads the BIOS there. Android closed on it (issue #83, Jafar's dropped card).
+        work->cursors[CARD_LIST_MAIN] = BIOS_PTR(sSoraSelectedCard)->args.index;
         node = ListPoolFirst(&work->cardDisplays[CARD_LIST_MAIN]);
 
         while (node != NULL) {
@@ -3536,7 +3538,7 @@ void CycleSoraCardList(CardBattleWork* work) {
     work->revCountShown[work->listIndex] = 0;
 
     if (work->reloadPending[work->listIndex] == 0) {
-        work->cursors[work->listIndex] = sSoraSelectedCard->args.index;
+        work->cursors[work->listIndex] = BIOS_PTR(sSoraSelectedCard)->args.index; // @bug NULL here too: as on the GBA (#83)
         node = ListPoolFirst(&work->cardDisplays[work->listIndex]);
 
         while (node != NULL) {
