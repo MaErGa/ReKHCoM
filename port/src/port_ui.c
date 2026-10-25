@@ -1434,7 +1434,17 @@ static void ConfirmFsRes(void) {
 
 /* ---- public ------------------------------------------------------------------ */
 
+static void CheckNewAssets(void);
+
 void PortUiInit(void) {
+    Uint64 start = SDL_GetPerformanceCounter();
+    /* Asset discovery also validates the optional Japanese cartridge's CRC.
+       Do that before the game starts, rather than blocking the first visible
+       title frame for a full 32 MB scan (even with undub switched off).
+       CheckNewAssets keeps the pending import notice for the title. */
+    CheckNewAssets();
+    PortLog("startup: optional assets checked in %.1f ms",
+            1000.0 * (SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency());
 }
 
 static int sScenePause;
