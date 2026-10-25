@@ -347,3 +347,7 @@ La propuesta se ve con KHCOM_PRELIMINAR_V1=1 y espera valoración propia; no her
 ## Escenas004/005: pared derecha de primer plano (25/10)
 
 El envío `20261024-174616-2db556` pide completar la muralla derecha y revisar la otra escena de León. La pared delantera pertenece a BG2, no al suelo BG3. Prolongar el módulo limpio de seis columnas por `(6,+3)`, con la base inclinada hacia abajo a la derecha; la pared trasera de BG3 sigue la diagonal contraria. No repetir el borde izquierdo del pilar, cajas ni alfombra.004 y005 comparten `gEventBg004` y deben revisarse juntas; misma receta por contenido del mapa, sin heredar valoración de una hija.
+
+## Añadir naipes: selector y cantidades HD (25/10)
+
+Envío `20261024-195741-61a4e3`, nube `fa6724d2-6a43-4eb2-8ce3-df94c8a0b457`: taparse y aparecer en los mismos frames que el número GBA. Que quede un píxel de tinta visible no permite dibujar entero el glifo HD. Para texto BG, recortar tinta y sombra con la silueta bidimensional de BG/OBJ del mismo frame, incluidas ventanas y prioridades; no inferirla de una fila ni inventar un temporizador. La prueba compara capturas GBA/HD de cada frame del ciclo, incluidas coberturas parciales, en vez de exigir un conteo constante de glifos.
