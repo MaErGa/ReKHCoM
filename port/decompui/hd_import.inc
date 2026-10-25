@@ -2009,6 +2009,105 @@ static fs::path PickFolder() {
 }
 
 }  // namespace hd
+
+/* ---- the HD mod for another platform: one file (ReKHCoM-HD.zip) the game there unpacks on start ------------------
+   (port/portable/hd_pack.c). What that platform can use: music, cards/HUD sprites and subtitles everywhere; the movies
+   and scenes only where they play (Android; Linux and Windows import their own). Stored, not deflated: the files are
+   compressed already and the consoles unpack faster. */
+#include "../ps5/third_party/miniz/miniz.h"
+namespace hdexport {
+struct Target { const char* name; const char* where; bool movies; };
+static const Target kTargets[] = {
+    { "Android", "Instalar ROM... > este archivo / Install ROM... > this file", true },
+    { "Nintendo Switch", "sdmc:/switch/ReKHCoM/", false },
+    { "PS Vita", "ux0:data/ReKHCoM/", false },
+    { "PS4", "/data/ReKHCom/", false },
+    { "PS5", "/data/ReKHCom/", false },
+};
+static std::atomic<bool> sRunning{false};
+static std::mutex sLock;
+static std::string sStatus, sDone;
+
+static void Run(fs::path root, int target) {
+    const Target& t = kTargets[target];
+    fs::path outDir = root / "mod-hd-para-otra-plataforma" / t.name;
+    fs::path out = outDir / "ReKHCoM-HD.zip", tmp = outDir / "ReKHCoM-HD.zip.part";
+    std::error_code ec;
+    fs::create_directories(outDir, ec);
+    mz_zip_archive zip = {};
+    std::string result;
+    if (!mz_zip_writer_init_file(&zip, tmp.u8string().c_str(), 0)) {
+        result = T("No se pudo crear el archivo.", "Could not create the file.");
+    } else {
+        static const char* const kinds[] = { "music", "sprites", "subs", "movies", "scenes" };
+        int files = 0;
+        bool ok = true;
+        for (const char* kind : kinds) {
+            if (!t.movies && (strcmp(kind, "movies") == 0 || strcmp(kind, "scenes") == 0))
+                continue;
+            fs::path dir = root / "hd" / kind;
+            if (!fs::is_directory(dir, ec))
+                continue;
+            for (auto it = fs::recursive_directory_iterator(dir, ec); ok && it != fs::recursive_directory_iterator(); it.increment(ec)) {
+                if (!it->is_regular_file(ec) || it->path().filename().u8string().rfind(".", 0) == 0)
+                    continue;
+                std::string name = "hd/" + fs::relative(it->path(), root / "hd", ec).generic_u8string();
+                {
+                    std::lock_guard<std::mutex> g(sLock);
+                    sStatus = std::string(T("Empaquetando ", "Packing ")) + name;
+                }
+                ok = mz_zip_writer_add_file(&zip, name.c_str(), it->path().u8string().c_str(), nullptr, 0, MZ_NO_COMPRESSION);
+                files += ok;
+            }
+        }
+        ok = mz_zip_writer_finalize_archive(&zip) && ok;
+        mz_zip_writer_end(&zip);
+        fs::remove(out, ec);
+        if (ok && files > 0 && (fs::rename(tmp, out, ec), !ec)) {
+            char buf[700];
+            snprintf(buf, sizeof(buf), T("Listo: %d archivos en un solo ReKHCoM-HD.zip. Cópialo a %s y abre el juego: lo instala solo.",
+                                         "Done: %d files in one ReKHCoM-HD.zip. Copy it to %s and start the game: it installs itself."),
+                     files, t.where);
+            result = buf;
+            if (!SDL_getenv("DECOMPUI_HD_EXPORT")) /* the harness opens no window */
+                SDL_OpenURL(("file:///" + outDir.generic_u8string()).c_str());
+        } else {
+            fs::remove(tmp, ec);
+            result = files ? T("No se pudo escribir el archivo (¿disco lleno?).", "Could not write the file (disk full?).")
+                           : T("No hay mod HD cargado todavía.", "No HD mod loaded yet.");
+        }
+    }
+    std::lock_guard<std::mutex> g(sLock);
+    sStatus.clear();
+    sDone = result;
+    sRunning = false;
+}
+
+/* the section on the HD page */
+static void Section(const fs::path& root, bool haveAny) {
+    static int target = 1;
+    ImGui::SeparatorText(T("Llevar el mod HD a otra plataforma", "Take the HD mod to another platform"));
+    ImGui::TextWrapped("%s", T("Prepara un solo archivo con lo cargado aquí para Android o una consola: se copia a la "
+                               "carpeta del juego allí y el juego lo instala solo al abrirse.",
+                               "Makes one file with what is loaded here for Android or a console: copy it to the game's "
+                               "folder there and the game installs it by itself when it starts."));
+    const char* names[5];
+    for (int i = 0; i < 5; i++) names[i] = kTargets[i].name;
+    ImGui::SetNextItemWidth(Px(200));
+    ImGui::Combo("##hdtarget", &target, names, 5);
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!haveAny || sRunning);
+    if (ImGui::Button(T("Crear ReKHCoM-HD.zip", "Make ReKHCoM-HD.zip"))) {
+        sRunning = true;
+        sDone.clear();
+        std::thread(Run, root, target).detach();
+    }
+    ImGui::EndDisabled();
+    std::lock_guard<std::mutex> g(sLock);
+    if (!sStatus.empty()) ImGui::TextWrapped("%s", sStatus.c_str());
+    if (!sDone.empty()) ImGui::TextWrapped("%s", sDone.c_str());
+}
+}  // namespace hdexport
 #endif
 
 static bool sQuitAsked, sQuitNow; /* the window's close while the HD mod loads: asked first (main loop) */
@@ -2302,6 +2401,9 @@ static bool HdModCard() {
                                ImVec2(-1, 0));
         ImGui::TextWrapped("%s", hd::sJob.Status().c_str());
     }
+#ifndef LAUNCHER_ANDROID /* the phone receives the file; it does not make one */
+    hdexport::Section(sRoot, haveTracks > 0 || haveSprites > 0);
+#endif
     ImGui::Separator();
     changed |= GatedToggle(T("Intros HD", "HD intros"),
                          T("La apertura, los créditos y los finales de Sora y Riku de Re:Chain of Memories.",

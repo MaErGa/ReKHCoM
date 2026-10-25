@@ -3189,6 +3189,7 @@ static void Launch(SDL_Window* window) {
  * DECOMPUI_SHOT=dir  render every page off screen (hidden window) and save
  *                    dir/decompui_<page>.bmp, then exit.
  * DECOMPUI_INSTALL=path  install that ROM before the first frame.
+ * DECOMPUI_HD_EXPORT=n   make the HD mod's ReKHCoM-HD.zip for platform n (hd_import.inc kTargets), then exit.
  */
 typedef void(APIENTRY* GenFn)(GLsizei, GLuint*);
 typedef void(APIENTRY* BindFn)(GLenum, GLuint);
@@ -3392,6 +3393,13 @@ int main(int argc, char** argv) {
         AddToSteam();
         return 0;
     }
+#ifndef LAUNCHER_ANDROID
+    if (const char* target = SDL_getenv("DECOMPUI_HD_EXPORT")) { /* harness: Mod HD > another platform n, then exit */
+        hdexport::Run(sRoot, SDL_atoi(target));
+        fprintf(stderr, "hd export: %s\n", hdexport::sDone.c_str());
+        return hdexport::sDone.rfind("Listo", 0) == 0 || hdexport::sDone.rfind("Done", 0) == 0 ? 0 : 1;
+    }
+#endif
     if (const char* to = SDL_getenv("DECOMPUI_INSTALL_TO")) { /* harness: "Install in another folder" there, then exit */
         InstallCopy(sRoot, fs::u8path(to));
         fprintf(stderr, "install: %s, %lld of %lld bytes\n", sInstall.ok ? "ok" : "failed", (long long)sInstall.done,
