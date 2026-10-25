@@ -8,11 +8,12 @@
  *    the fight (the teeth grate in the middle, the three counters whose glow goes out with each die broken: there the
  *    ledge and panel of the gap between two counters);
  *  - above, the pillars and the two plain brick rows go on up;
- *  - in front, the spooky green field beyond the path: the room's outer green columns (29 joins 0 as in the map) in
- *    blocks of 8 x 7 tiles, every other block mirrored and each band of blocks staggered;
+ *  - in front, complete one cut green motif beside each edge, then leave an abyss. The authored half supplies
+ *    its reflected missing tip; no green field is tiled across the margins;
  *  - below, the path: its white lines go on along their slopes (measured on rows 408..470), the black teeth of the
- *    red follow their line, the skeleton's forearm goes on down.
+ *    red follow their line, the carpet continues in plain red; the two green tips taper down into shadow.
  * Source tiles stay in the user's ROM; palette indices resolved live (the game's fades are kept). */
+#include <stdlib.h>
 #include "port/port.h"
 #include "port/port_battle_backdrop.h"
 
@@ -25,7 +26,6 @@ extern const uint16_t gDefaultBgMap[];
 #define ROW_TOP 24 /* tile rows 24..58 */
 #define ROW_BOTTOM 58
 
-static const uint8_t kGreen[8] = { 0, 1, 2, 3, 26, 27, 28, 29 };
 
 static int FloorDiv(int a, int b) {
     return a >= 0 ? a / b : -((-a + b - 1) / b);
@@ -58,15 +58,6 @@ static unsigned Brick(int c, int r) {
     return RoomEntry(2 + Mod(c - 2, 4), (r & 1) ? 29 : 32);
 }
 
-static unsigned Green(int c, int r) {
-    int u = c < 15 ? c : c - ROOM_COLS, by = r > ROW_BOTTOM ? (r - 52) / 7 : 0;
-    int rr = r > ROW_BOTTOM ? 52 + (r - 52) % 7 : r, bx, k;
-    u += 4 * by;
-    bx = FloorDiv(u, 8);
-    k = Mod(u, 8);
-    return (bx & 1) ? RoomEntry(kGreen[7 - k], rr) ^ 0x400 : RoomEntry(kGreen[k], rr);
-}
-
 /* the path's white lines (outer and inner edge, left and right; mirrored about x 375.5) */
 static void Lines(int y, float* oL, float* iL, float* iR, float* oR) {
     *oL = 319.0f - 0.484f * (float)(y - 408);
@@ -87,13 +78,33 @@ static int PathIndex(int x, int y) {
         xs = (float)x - ((float)x < (oL + iL) * 0.5f ? oL - soL : iL - siL);
     else if ((float)x > iR - 8.0f)
         xs = (float)x - ((float)x > (oR + iR) * 0.5f ? oR - soR : iR - siR);
-    else if (x >= 360 && x < 392)
-        return RoomIndex(x, 471); /* the skeleton's forearm goes on down */
     else
         return RoomIndex(346, 470); /* the path's plain red */
     sx = (int)(xs + 0.5f);
     sx = sx < ROOM_X ? ROOM_X : sx > ROOM_X + ROOM_COLS * 8 - 1 ? ROOM_X + ROOM_COLS * 8 - 1 : sx;
     return RoomIndex(sx, ys);
+}
+
+/* Complete one motif beside each edge of the authored floor, then void.
+ * Reflect the cut half only once; never tile the green field across the abyss. */
+static int FloorMotifIndex(int x, int y) {
+    int sx = x, sy = y;
+    if (y >= 472) {
+        int depth = y - 472, centre = x < 376 ? 272 : 479;
+        int half = 48 - depth;
+        if (half <= 0 || abs(x - centre) >= half)
+            return 0;
+        sx = centre + (x - centre) * 48 / half;
+        sy = 471 - depth;
+    }
+    if (sx < ROOM_X) {
+        if (sx < ROOM_X - 32) return 0;
+        sx = 2 * ROOM_X - 1 - sx;
+    } else if (sx >= ROOM_X + ROOM_COLS * 8) {
+        if (sx >= ROOM_X + ROOM_COLS * 8 + 32) return 0;
+        sx = 2 * (ROOM_X + ROOM_COLS * 8) - 1 - sx;
+    }
+    return RoomIndex(sx, sy);
 }
 
 static int HallIndex(int x, int y) {
@@ -103,22 +114,11 @@ static int HallIndex(int x, int y) {
         int v = PathIndex(x, y);
         if (v >= 0)
             return v;
-        /* Keep two tapered source-tile tips beside the path; let the wide floor fall into the dark. */
-        {
-            float oL, iL, iR, oR;
-            int depth = 64 - (y - (ROW_BOTTOM + 1) * 8), distance;
-            Lines(y, &oL, &iL, &iR, &oR);
-            if (depth <= 0)
-                return 0;
-            distance = x < oL ? (int)(oL - (float)x) : x > oR ? (int)((float)x - oR) : 0;
-            if (distance > depth)
-                return 0;
-        }
-        e = Green(c, r);
+        return FloorMotifIndex(x, y);
     } else if (r < ROW_TOP) {
         e = cc < 2 || cc >= 28 ? RoomEntry(cc, ROW_TOP) : Brick(cc, r); /* the pillars and the bricks go on up */
     } else if (r > ROW_BOTTOM || r >= 50) { /* from the rail's white band down: the green field */
-        e = Green(c, r);
+        return FloorMotifIndex(x, y);
     } else if (r >= 35 && r <= 38 && cc >= 12 && cc <= 17) {
         e = Brick(cc, r); /* the teeth grate is the fight's own */
     } else if (r >= 44 && r <= 46) {
@@ -141,5 +141,15 @@ int PortOogieHallPixel(int x, int y, int cx, int cy, uint16_t* color) {
         return 0; /* the room as the cartridge draws it */
     index = HallIndex(mx, my);
     *color = index ? ((const uint16_t*)(uintptr_t)GBA_PLTT)[index] & 0x7FFF : 0x8000;
+    if (index && my >= 472 && PathIndex(mx, my) < 0) {
+        /* The two completed tips descend into shadow, rather than exposing
+         * another band of patterned floor below the room. */
+        int light = 48 - (my - 472);
+        unsigned c = *color;
+        if (light < 0) light = 0;
+        *color = (uint16_t)(((c & 31) * light / 48) |
+            ((((c >> 5) & 31) * light / 48) << 5) |
+            ((((c >> 10) & 31) * light / 48) << 10));
+    }
     return 1;
 }
