@@ -134,7 +134,7 @@ static void Release(HdFont* f) {
 static HdFont* FontForScale(float scale,int style) {
     static const char sample[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const uint16_t* widths=PortLatinGlyphWidths();
-    int choice=SDL_clamp(gPortConfig.hdFont,0,2);
+    int choice=gPortConfig.hdFont==2?2:0; /* KHMenu or the system's; Comic Hearts: subtitles only */
     int key=(int)(scale*16+.5f)+choice*100000,i,top,bottom,px;float natural=0,game=0; /* the face chosen too */
     HdFont* f;
     for(i=0;i<2;i++)if(fonts[style][i].font && fonts[style][i].key==key)return &fonts[style][i];
