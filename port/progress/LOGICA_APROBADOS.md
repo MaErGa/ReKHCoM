@@ -319,9 +319,9 @@ no una tira que copie parte del trono ni cuatro columnas que produzcan escalones
 repite una ladera sin la silueta del castillo; el dibujo original dentro del mapa y el rectángulo GBA se conservan.
 Esta entrega es una propuesta pendiente de valoración; no hereda honores ni habilita arte nuevo para jugadores.
 
-## Escena 099: techo, propuesta de Codex (24/10)
+## Escena 099: muro superior, corrección del 25/10
 
-La nube bab8281c-e1c9-4e01-b894-a3a05e339e8b sobre d3e87dca65eb4e9fb10535b3e731419d pide mejorar el patrón superior y valora positivamente el suelo. No trasladar esa aprobación al techo ni cambiar el suelo. El friso mide 28 píxeles por casilla: usar una pareja completa de 56 píxeles, aunque no coincida con la rejilla de tiles, y conservar su fase en las dos uniones. Propuesta pendiente de valoración: completar arriba filas alternadas de casillas con el mismo donante; el mapa original queda intacto. No se habilita para jugadores sin honores de esta versión.
+El envío `20261024-183353-ceb621` sobre `ae36f45ef10e45cc809620075f0c8626` rechaza prolongar el ajedrez beige hacia arriba: corresponde al muro de una casa. La regla anterior de casillas de28px queda sustituida. Usar el mismo muro rosa de la arena de Trickmaster; los postes de madera y el fuste único de piedra mantienen su x. El período de48px excluye el travesaño; el panel derecho limpio evita reloj y ventana duplicados. Conservar el suelo elogiado y la chimenea original. La captura hija es una propuesta sin honores heredados ni activación automática para jugadores.
 
 ## Agrabah 107/108: subida del Genio (comentario posterior, 24/10)
 
