@@ -32,6 +32,18 @@ Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlo
 - Nunca borrar carpetas ReKHCoM-vX ni ningún release. Trabajar solo en KHCoMPC (C:) y D:/01Claude/ReKHCoM-build.
 - Cada PR de arte mejora LOGICA_APROBADOS.md. Toda falla o timeout de batería es un bug: reproducir.
 
+## TRASPASO (25/10 noche, claude-integrador)
+
+- Integrados: #113 cartel de mods a la derecha, #115 **#83** (recoger una carta sin carta seleccionada leía por un
+  puntero NULL: la GBA lee la BIOS, Android 64 se cerraba; BIOS_PTR), #116 el mazo ya no parpadea al invocar
+  (Simba: BG2 en mezcla alfa tapaba la capa HUD), #117 videos HD en Linux nativo (ffmpeg del sistema), #118
+  test_hd_scenes sin salto de cuadros (las 11 «nunca pedidas» eran carga de la máquina: pasan 11/11).
+- Codex integró #111 (escena 112) y #114 (Trickmaster). Sin PR abiertos.
+- #83: falta solo la confirmación del jugador (o el emulador Android con la nueva build).
+- Baterías relanzadas 25/10 noche desde main 66bebe69d (`run_batteries.py --status`): combates EU, luego Android
+  (repetir batalla 123 US, timeout). Después: gama baja, tablets, táctiles, primer arranque en el emulador.
+- Siguiente: pre nueva con zip limpio cuando terminen las baterías.
+
 ## TRASPASO (25/10 tarde, claude-integrador)
 
 - Integrados: #104 (capture_catalog.py recuperado de un respaldo), #105 Trickmaster, #106 Darkside (poses), #107 Oogie,
