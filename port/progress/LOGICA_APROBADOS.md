@@ -20,6 +20,18 @@ el muro hacia arriba. Prolongar el período vertical del papel rosa, no la
 franja beige del techo. Conservar suelo y objetos ya aceptados; la única
 chimenea conserva su fuste de piedra donde cruza la prolongación del muro.
 
+Escena 112, envío `20261024-054012-207689`: la franja superior que falta
+en BG2 se rellena con la pared lisa de esa misma capa; una muestra superior
+vacía no significa que termine el edificio. Completar la puerta única con
+la prolongación vertical del color hasta el borde superior, como puerta muy
+alta (solución temporal pedida explícitamente por el usuario el 25/10), y prolongar el
+fuste ya existente sin colocar nuevas puertas ni sillas. La textura de BG2
+tiene píxeles transparentes: continuar también su base rosa de BG3 para
+que no deje ver el fondo amarillo. Los actores que
+esperan fuera del plano usan la regla GBA ya integrada.
+En la hoja derecha prolongada, usar el naranja del panel original señalado
+por el usuario: no repetir la franja morada de separación por todo el ancho.
+
 Escena 120, envío `20261024-053718-1ee415`: la silueta ocre de BG1
 es parte del tejado delantero original, no un donante de suelo. Completar
 sus pendientes laterales y su cuerpo inferior evita que quede una pieza
