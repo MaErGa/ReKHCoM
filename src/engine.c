@@ -24,6 +24,9 @@
 #include "gba/oam.h"
 #include "obj.h"
 #include <stddef.h>
+#ifdef PLATFORM_PC
+#include "port/port_battle_backdrop.h"
+#endif
 
 u16 gLastBackdropColor IWRAM_DATA(4);
 u8 gBgPaletteBank[4] IWRAM_DATA(4);
@@ -2240,11 +2243,22 @@ void SetBgMapBlocks(s32 bg, const void* src, u8 w, u8 h) {
     }
 
     EnableBg(bg);
+#ifdef PLATFORM_PC
+    /* Jafar redraws the same pillar/body buffer after this frame's scroll.
+       VRAM still has that scrolled window until the dirty entry is redrawn;
+       keep its world origin available to the extended-view renderer. */
+    if (!(gBgWork->entries[bg].map == src && gBgWork->entries[bg].width == w &&
+          gBgWork->entries[bg].height == h && PortJafarLayer((const void* const*)src))) {
+        gBgWork->entries[bg].x = 0;
+        gBgWork->entries[bg].y = 0;
+    }
+#else
+    gBgWork->entries[bg].x = 0;
+    gBgWork->entries[bg].y = 0;
+#endif
     gBgWork->entries[bg].map = src;
     gBgWork->entries[bg].width = w;
     gBgWork->entries[bg].height = h;
-    gBgWork->entries[bg].x = 0;
-    gBgWork->entries[bg].y = 0;
     gBgWork->entries[bg].dirty = TRUE;
 }
 

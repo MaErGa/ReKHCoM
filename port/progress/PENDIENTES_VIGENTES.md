@@ -5,6 +5,16 @@
 Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola: COLA_COLABORATIVA.md. Estado vivo de piezas:
 `python port/tools/art_queue.py --quiet list`.
 
+## Jafar — corrección técnica 25/10/2026
+
+Blinkeo reproducido y corregido en `codex/jafar-blink`: origen conservado al reenlazar
+los buffers, reconocimiento estable de capas mutables y un solo genio anclado al cuerpo.
+El escenario conserva su extensión/reflejo. Pruebas EU 16:9 y 32:9 sin pérdidas;
+centro GBA idéntico. Copia jugable separada y comparación en Atlas
+`e182f7052b8348b2a88b4f2e996a0ed7`. Ver [JAFAR_BLINK_20261025.md](JAFAR_BLINK_20261025.md).
+El patrón inferior sigue pendiente de arte; el crash Android #83 no se da por resuelto.
+Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlock.
+
 ## Reglas del usuario (completas en REGLAS_DEL_USUARIO.md)
 
 - Un solo integrador con token; rama y PR por entrega; nada de push directo de arte a main.

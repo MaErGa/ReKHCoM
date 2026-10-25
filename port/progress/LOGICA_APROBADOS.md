@@ -119,6 +119,10 @@ Workflow completo (tiles, píxeles, pixel art, pruebas en x3 entero): WORKFLOW_A
 - Jafar, sala de lava (Preliminar V2): aprobada el 24/10 ("se veía genial, quedaba muy bueno el efecto"). Encendida
   para todos; `KHCOM_JAFAR_WIDE=0` la apaga. Pared, columnas, orilla y lava siguen por sus períodos de tiles; los
   pilares móviles solo en la sala; un solo genio. Receta en BATTLE_SCENERY_TECHNIQUE.md punto 12 (`port_jafar.c`).
+  Corrección del usuario 25/10: mantener el efecto de extensión/reflejo del escenario, excepto Jafar.
+  Su copia se fija al desplazamiento de su cuerpo (cuadrante 768,256), nunca al centro de la cámara.
+  Reenlazar sus buffers mutables conserva el origen del mapa; el desfase de pose entre buffer y VRAM no
+  deshabilita la extensión. La mejora del patrón inferior sigue pendiente y no se altera en este arreglo.
 
 - Integración (22/10): 107/108 y 109 encendidas por defecto para los jugadores; `KHCOM_AGRABAH_WIDE=0` /
   `KHCOM_AGRABAH109_WIDE=0` las apagan en las pruebas. Regla: lo aprobado (o con honores) va encendido, nunca detrás

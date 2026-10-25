@@ -1336,6 +1336,13 @@ static int ValidateBgLatch(int bg, uint16_t dispcnt) {
             return 0;
     if (mode > 1 || (mode == 1 && bg == 2))
         return 0;
+    /* These exact maps are authored world layers. Their mutable pillar/body
+       buffer can already contain the next pose while VRAM shows the previous
+       one until the pending redraw. A nine-tile equality probe must not make
+       the entire extended room vanish for that frame. */
+    if (PortJafarWide() && l->width == 2 && l->height == 2 &&
+        PortJafarLayer((const void* const*)l->map))
+        return 1;
     for (i = 0; i < 3; i++) {
         for (j = 0; j < 3; j++) {
             int we = WorldEntry(l, l->x + xs[i], l->y + ys[j]), ve = VramEntry(bg, xs[i], ys[j]);
