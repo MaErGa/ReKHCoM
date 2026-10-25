@@ -15,6 +15,11 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Integración 25/10: escena 115, versión `edd1e953dd7141ad931a43429c621a42` aprobada en Atlas.
+El usuario autorizó integrar los aprobados antes del ZIP; se conserva
+la valoración sin elevarla a honores. Los comentarios nuevos permanecen
+en la app para una hija posterior, a cargo del carril de Claude.
+
 Escena 102, versión `dd5a82c201a84ca29180026bc7cf064a`, aprobada 25/10 e
 integrada por autorización directa del usuario antes del ZIP (sin elevar su
 valoración a honores). En el encuentro entre una pared que gira y su
@@ -23,6 +28,12 @@ recto solo continúa después del encuentro. Los cuatro pilares cortados por el
 mapa siguen su espiral de cinco filas hasta salir del viewport, sin boca plana
 suspendida. Centro GBA intacto. Las tres nubes nuevas sobre los pilares cortos
 quedan para la siguiente hija; no se altera la aprobación de esta versión.
+
+Criterio 25/10, escena 115: la madera mantiene las
+cuatro filas de cada tabla y la fase diagonal al continuar fuera del mapa.
+Las escotillas repiten módulos completos en su retícula escalonada, no tiras
+recortadas; se descarta una copia parcial cuyo centro pertenece a una celda
+vacía del mapa original. No completar piezas atravesando el centro GBA.
 
 1. **Solo píxeles del juego.** Nada se dibuja nuevo: se reutilizan los tiles de
    la propia sala/escena, volteados o repetidos (bits 0x400 hflip / 0x800 vflip
