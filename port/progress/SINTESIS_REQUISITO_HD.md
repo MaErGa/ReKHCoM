@@ -138,3 +138,7 @@ real se comprueba en el arnés; la actualización visual se comprueba en un
 fixture runtime controlado. La forma y fuente nuevas son una propuesta,
 no una reproducción exacta del montaje previo. No se tocó `port_ppu.c`,
 `port_hdtext_layout.inc` ni las fuentes/render de texto.
+
+## Entrega por PR
+
+PR #125 abierto y rama pusheada. Propuestas Atlas pendientes de valoración; los assets todavía no se activan ni empaquetan por defecto. La meta2.0 registra esta entrega y las otras cuatro de la tanda.
