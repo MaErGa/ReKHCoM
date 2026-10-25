@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0-pre16 — 2026-10-25
+
+Test build: pre15 plus
+
+- Android: test build for the Jafar card pickup crash (#83): please tell us if it still happens.
+- New approved art: Trickmaster (posts and wall), scenes 004/005 and 099, Darkside punch, Add cards selector.
+- Fixes: the 64-bit Android and console builds again (Quit the game is a desktop option).
+
 ## v2.0-pre15 — 2026-10-25
 
 Test build: pre14 plus
