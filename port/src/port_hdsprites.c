@@ -523,13 +523,12 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
                banners sit on a band of their own colour that the wide view carries on): its first column goes on to
                the window's edge, so the banner is not cut short (user, 24/10) */
             HdSpriteDraw edge = *q;
-            float tw = 0, th = 0, left = -ox / scale;
-            SDL_GetTextureSize(st->image, &tw, &th);
-            if (tw > 0 && left < q->x[0] - 0.5f) {
+            float left = -ox / scale;
+            if (left < q->x[0] - 0.5f) {
                 edge.x[1] = q->x[0]; edge.x[2] = q->x[3];
                 edge.x[0] = edge.x[3] = left;
                 edge.y[1] = q->y[0]; edge.y[2] = q->y[3];
-                edge.u1 = edge.u0 + 1.0f / tw;
+                edge.u1 = edge.u0 + 0.25f / kHdSprites[q->id].w; /* a quarter of a cartridge pixel */
                 Quad(st->image, &edge, ox, oy, scale, (SDL_FColor){ shade, shade, shade, q->alpha / 255.0f });
                 if (white > 0)
                     Quad(st->white, &edge, ox, oy, scale, (SDL_FColor){ 1, 1, 1, q->alpha / 255.0f * white });
