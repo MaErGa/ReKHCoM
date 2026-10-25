@@ -32,10 +32,10 @@ static short sShoreRight[SHORE_RUN], sShoreLeft[SHORE_RUN];
 static int sPrepared;
 
 int PortDarksideBeachOn(void) {
-    /* KHCOM_DARKSIDE_BEACH=1 shows it until the user approves it; then on by default (=0 turns it off) */
+    /* Atlas-approved beach and body: enabled by default; =0 restores cartridge-only. */
     const char* v;
     PORT_ENV_ONCE(v, getenv, "KHCOM_DARKSIDE_BEACH");
-    return v != NULL && atoi(v) != 0;
+    return v == NULL || atoi(v) != 0;
 }
 
 static unsigned Entry(int tx, int ty) {
