@@ -8,7 +8,7 @@ están implementadas; esto no equivale a verificación completa del juego.
 La prerelease local más reciente es v0.7. PROGRESS.md/status.json indican
 94,5 % global; faltan partidas completas de Sora y Reverse/Rebirth.
 
-El reparto vigente es REPARTO.md, reordenado el 14/10, commit 3e5c0b93b.
+El reparto vigente es archivo/REPARTO.md, reordenado el 14/10, commit 3e5c0b93b.
 Tiene prioridad sobre el bloque más antiguo de reparto en PENDIENTES.md.
 README/CONTRIBUTING y varios puntos históricos de PENDIENTES contienen
 limitaciones ya superadas; contrastarlas con status.json, REPARTO y evidencia.

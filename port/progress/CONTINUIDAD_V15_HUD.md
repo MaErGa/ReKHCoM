@@ -5,7 +5,7 @@
 El usuario autoriza corregir, compilar y pushear incrementalmente, lanzar v1.5,
 retirar v1.4 después de validar la nueva y rehacer el tráiler. Pidió esta guía
 para continuar sin depender del historial de Codex. No es necesario convertirla
-en una skill instalada: esta guía y REPARTO.md viajan con el código.
+en una skill instalada: esta guía y archivo/REPARTO.md viajan con el código.
 
 Trabajar en `khcom-claude`, rama local `claude/windows-5`. Publicar con
 `git push origin HEAD:codex/v1.5-fixes` (los nombres local/remoto difieren).
@@ -139,4 +139,4 @@ Reporte build/ppu-conformance/20261015_152355_523533/report.json.
    nuevo. Capturar mediante KHCOM_RECORD=desde-hasta:ruta.mov (ProRes/ffmpeg),
    KHCOM_WINDOW=1920x1080 y las nuevas escalas; montar y revisar vídeo final.
 
-Actualizar REPARTO.md y pushear cada bloque con evidencia y límites reales.
+Actualizar archivo/REPARTO.md y pushear cada bloque con evidencia y límites reales.

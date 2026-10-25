@@ -54,3 +54,6 @@ tools/_tmp_movie_encode_re.md
 kh_com.ini
 kh_com.log
 shot_*.bmp
+
+# test launchers belong to a local work copy, never to the repository root
+/*.bat

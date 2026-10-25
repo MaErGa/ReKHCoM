@@ -30,7 +30,7 @@ sus instrucciones al pie de la letra. Cola única: PENDIENTES_VIGENTES.md.
 
 ## Cómo trabajar con el usuario
 
-- Todo lo visual: copia jugable aparte + `.bat` (PRUEBAS_VISUALES.md), esperar su
+- Todo lo visual: copia jugable aparte + `.bat` (../PRUEBAS_VISUALES.md), esperar su
   aprobación, documentar en LOGICA_APROBADOS.md (lógica del borde de Riku aprobada).
 - Hardware real NO es pendiente: llega como reporte.
 - Publicado = sale de la cola. Responder issues de GitHub cuando corresponda

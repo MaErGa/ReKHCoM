@@ -38,7 +38,7 @@ Antes de empezar comprobar propietario y commits de su checkout, no solo main.
 No abrir nuevos frentes de workers durante el cierre de esta tanda.
 
 La lista larga vigente, con 48 puntos, responsables y estados, es
-[PENDIENTES_VIGENTES.md](PENDIENTES_VIGENTES.md). Sustituye repartos anteriores.
+[PENDIENTES_VIGENTES.md](../PENDIENTES_VIGENTES.md). Sustituye repartos anteriores.
 No mantener otra cola de pendientes aquí.
 Cada tarea nueva o retomada registra lógica, pruebas y criterio de cierre en
 LOGICA_PENDIENTES_20261018.md o en su documento técnico enlazado. Editor/cheats
