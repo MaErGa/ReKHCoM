@@ -117,7 +117,17 @@ Evidencia local:
 La hija real de Atlas usa parent
 `dbdb82b983fc4a178d46ce70edf44c6b`, atendiendo nube
 `13c9d20d-c78f-4ba3-8431-cd894028c7c0` del envío
-`20261025-011932-34d062`. Registrar su ID antes de preparar el PR.
+`20261025-011932-34d062`.
+
+Subido a Atlas antes de PR, código `943f44a5b99038951169e4c244bcb205edbef711`:
+- Captura principal completa: `b77d47de367749538ebe7469598d3926`, hija directa
+  de `dbdb82b983fc4a178d46ce70edf44c6b`.
+- Evidencia complementaria de variantes: `c08283ad450f4455937a3f1e1ead3302`,
+  hija de la captura principal. Ambas incluyen `revision_info.response_to`
+  con el envío, padre y nube solicitados; estado humano pendiente.
+
+No se abrió PR ni se activó arte para jugadores. Worktree propio y rama
+`codex/sintesis-requisito-hd`, sin cambios a `khcom-claude-int`.
 
 ## Límites honestos
 
