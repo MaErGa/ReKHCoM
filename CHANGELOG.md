@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.0-pre13 — 2026-10-25
+
+This test build includes the changes merged since v2.0-pre5:
+
+- Linux HD text keeps the game's original text when the HD outline font is unavailable and searches common
+  Fedora/Bazzite/Arch font locations (#77).
+- Re:CoM mode now has a separate offline achievement list; official achievements pause in that mode, with a
+  notice explaining why (#78).
+- Steam Deck/Linux native shortcut installation no longer depends on shell file associations (#49). The
+  Gaming Mode flow still needs confirmation on a real Deck.
+- The Android Jafar card-pickup crash (#83) remains under investigation; this build is for another reproduction
+  attempt, not a confirmed fix.
+
 ## v2.0 — 2026-10-22
 
 **The HD mod.** With your own copy of KINGDOM HEARTS -HD 1.5+2.5 ReMIX- on PC, the launcher imports Re:Chain of
