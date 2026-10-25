@@ -64,6 +64,29 @@ COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --q
   hora) y explica cómo pedir el desbloqueo manual en retroachievements.org. Confirmar con el usuario antes.
 - **Launcher:** emblema de RetroAchievements hecho (propio, no el logo oficial por ser marca registrada).
 
+## 1a. Cola del usuario 25/10 noche (en curso; hechos marcados)
+
+- [x] Atlas: «Necesita mejoras» = **Aprobado (mejorar)**; todo lo aceptado va al juego (#138). Falta reiniciar el
+  Atlas en vivo (servidor de khcom-review-app) para que lo muestre.
+- [ ] Escenas aceptadas con receta encendidas (rama `claude/scenes-approved`: 007, 044, 045, 087, 090, 095, 098, 099,
+  104, 110, 112, 118, 120, 124). Pruebas en D:/01Claude/ReKHCoM-build/prelim-old|new (pre17 contra la rama): integrar
+  si los fallos de la rama ya estaban en la pre17 (057, 107, 124 fallan igual en pre17).
+- [x] Opciones: sección HD (Texto HD con subtítulos, A = ventana de fuente con muestras, Intros, Música, Cinemáticas
+  con cartel, HUD HD; texto HD por defecto salvo GBA clásico) #141; fuente solo KHMenu/Sistema #139.
+- [x] Repo limpio (#137), baterías se podan solas (#142), C:/D: liberados (C 14 GB, D 16 GB libres).
+- [ ] **Bonus élite** no se adapta a pantallas anchas (cabecera y barras a ancho GBA, cartas salen por abajo): revisar
+  el diseño del menú en `port_hdlayout`/HD menus para todos los aspectos (16:9 a 32:9).
+- [ ] **Diario, páginas de Historia (tercer nivel):** capturarlas (KHCOM_KEYS hasta Diario > Historia > entrada con una
+  partida con historia) e importarlas a Atlas como piezas nuevas (import_image.py), para las marcas del usuario.
+- [ ] **Filtro de audio:** apagado por defecto; rehacer en dos perfiles: sonido 16 bits (juego) y música HD moderna.
+- [ ] **Logros sin conexión con cuenta:** guardar en disco los desbloqueos hechos con sesión y sin red, y subirlos al
+  volver (RA lo permite: cola segura de un cliente con sesión). Hoy rc_client los reintenta solo mientras el juego vive.
+- [ ] **Banco de partidas:** cada banco con su primer arranque (idioma, modo, pantalla completa/ventana), sus ajustes y
+  sus logros locales (avisos de nuevo aunque haya cuenta); traer de la cuenta los que falten en local.
+- [ ] **Primer arranque:** preguntar pantalla completa o ventana con el estilo de la elección de modo HD/GBA.
+- [ ] **Título en HD** hasta cargar la partida, y Opciones en HD cuando el HUD HD está activo (diseño; ir a Atlas).
+- [ ] **Galería de escenas** (ver §1c).
+
 ## 1c. Traspaso de las funciones nuevas (cómo abordarlas)
 
 - **Galería de escenas** (Opciones > Re:CoM): los eventos de historia ya llevan su piso en el nombre
@@ -80,7 +103,7 @@ COLA_COLABORATIVA.md. Estado vivo de piezas: `python port/tools/art_queue.py --q
 - **Videos HD en consolas:** el puente ya tiene `hd_movie` (lo usa Android 64): compilar el camino `PORT_ANDROID64` de
   port_hdmovie.c en las imágenes de consola e implementar `H_hd_movie` en cada host (HD_MOD.md: sceAvPlayer en PS4/PS5,
   sceAvcdec en Vita con ROP a 960x544, FFmpeg nvtegra en Switch). Necesita consola real para verificar.
-- **Texto HD en consolas:** `port_hdtext` está excluido en build_ps5.PORT_EXCLUDED; usar `hdtext_freetype.c` del lado
+- **Texto HD en consolas:** PS5 ya tiene `port/ps5/guest/src/hdtext_ps5.c`; revisar el resto (Switch/Vita/PS4) a partir de él; `port_hdtext` (GDI) está excluido; o `hdtext_freetype.c` del lado
   del host (FreeType ya está en los hosts SDL2) con una entrada nueva del puente que devuelva la cobertura de una
   línea (como `PortPortableHdTextCover`).
 - **Estados rápidos en consolas/Android/web:** `port_state` excluido en consolas; en Android/web la fila de revanchas
