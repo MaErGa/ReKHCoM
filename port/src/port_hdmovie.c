@@ -11,14 +11,16 @@
  *
  * Windows: Media Foundation (part of Windows: H.264 and AAC need nothing else). Android, 32 and 64 bits: the NDK's
  * MediaCodec (port/portable/hdmovie_android.c; the 64-bit image asks its host through the hd_movie bridge entry).
- * Other systems: not yet (returns 0).
+ * Linux: the system's ffmpeg (and ffprobe), run as two processes whose raw frames and 48 kHz PCM come through
+ * pipes: nothing is linked, so it works whatever the system's ffmpeg version and the game's architecture (the
+ * i386 package on a 64-bit system). Without ffmpeg installed the cartridge's movie plays. Other systems: not yet.
  * The video comes out as the decoder's own NV12 and the GPU turns it into colour (an NV12 texture): asking Media
  * Foundation for RGB put a software colour conversion of every 1080p frame on the CPU and the movies stuttered.
  * Frames already late when decoded are not uploaded.
  */
 #include "port/port.h"
 
-#if defined(_WIN32) || defined(__ANDROID__) || defined(PORT_ANDROID64)
+#if defined(_WIN32) || defined(__ANDROID__) || defined(PORT_ANDROID64) || defined(PORT_LINUX)
 #include <stdio.h>
 #include <string.h>
 static int PlayFile(const char* name);
@@ -138,15 +140,26 @@ int PortHdMoviePlay(int movieId) {
 
 #endif
 
+#if defined(_WIN32) || defined(PORT_LINUX)
 #ifdef _WIN32
 #define COBJMACROS
+#endif
 #include <SDL3/SDL.h>
 #include <stdio.h>
+#ifdef _WIN32
 #include <windows.h>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
 #include <mferror.h>
+typedef WCHAR SubChar;
+#else
+#include <stdlib.h>
+#include <unistd.h>
+typedef long long LONGLONG; /* the movie clock in 100 ns units, as Media Foundation counts it */
+typedef char SubChar;
+unsigned char* PortPortableHdTextCover(const char* text, int px, int pad, int* w, int* h);
+#endif
 
 SDL_Renderer* PortRenderer(void);
 
@@ -299,7 +312,7 @@ static int PlayFile(const char* name);
 typedef struct {
     int count, shown; /* shown: the line its texture holds, -1 none */
     unsigned short first[SUB_MAX], last[SUB_MAX];
-    WCHAR* text[SUB_MAX];
+    SubChar* text[SUB_MAX];
     SDL_Texture* texture;
     int w, h, height; /* texture size; the output height it was made for */
 } Subs;
@@ -338,6 +351,7 @@ static int LoadSubs(Subs* s, const char* name) {
             }
         }
         *w = 0;
+#ifdef _WIN32
         n = MultiByteToWideChar(CP_UTF8, 0, line + used, -1, NULL, 0);
         if (n <= 0)
             continue;
@@ -345,6 +359,12 @@ static int LoadSubs(Subs* s, const char* name) {
         if (!s->text[s->count])
             break;
         MultiByteToWideChar(CP_UTF8, 0, line + used, -1, s->text[s->count], n);
+#else
+        (void)n;
+        s->text[s->count] = SDL_strdup(line + used);
+        if (!s->text[s->count])
+            break;
+#endif
         s->first[s->count] = (unsigned short)first;
         s->last[s->count] = (unsigned short)last;
         s->count++;
@@ -363,11 +383,39 @@ static void FreeSubs(Subs* s) {
     SDL_zerop(s);
 }
 
+/* the letters' coverage (s->w x s->h) as white letters with a dark outline spread over a disc of radius pad */
+static void SubTextureFromCover(Subs* s, SDL_Renderer* renderer, const Uint8* cover, int pad) {
+    int x, y, dx, dy;
+    Uint32* rgba = SDL_malloc((size_t)s->w * s->h * 4);
+    if (!rgba)
+        return;
+    for (y = 0; y < s->h; y++)
+        for (x = 0; x < s->w; x++) {
+            int a = cover[y * s->w + x], o = a;
+            for (dy = -pad; dy <= pad && o < 255; dy++)
+                for (dx = -pad; dx <= pad; dx++) {
+                    int yy = y + dy, xx = x + dx;
+                    if (dx * dx + dy * dy > pad * pad + pad || yy < 0 || xx < 0 || yy >= s->h || xx >= s->w)
+                        continue;
+                    o = SDL_max(o, cover[yy * s->w + xx]);
+                }
+            rgba[y * s->w + x] = (Uint32)(o * 230 / 255 > a ? o * 230 / 255 : a) << 24 | (Uint32)a << 16 |
+                                 (Uint32)a << 8 | (Uint32)a;
+        }
+    s->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, s->w, s->h);
+    if (s->texture) {
+        SDL_UpdateTexture(s->texture, NULL, rgba, s->w * 4);
+        SDL_SetTextureBlendMode(s->texture, SDL_BLENDMODE_BLEND);
+    }
+    SDL_free(rgba);
+}
+
+#ifdef _WIN32
 /* the line as white letters with a dark outline, at a size for the output height */
 static void MakeSubTexture(Subs* s, SDL_Renderer* renderer, int line, int outH) {
     static int fontTried;
     HDC dc = CreateCompatibleDC(NULL);
-    int px = SDL_max(12, outH / 22), pad = SDL_max(2, px / 9), x, y, dx, dy;
+    int px = SDL_max(12, outH / 22), pad = SDL_max(2, px / 9), y;
     HFONT font, old;
     RECT r = { 0, 0, 0, 0 };
     BITMAPINFO bi;
@@ -408,37 +456,17 @@ static void MakeSubTexture(Subs* s, SDL_Renderer* renderer, int line, int outH) 
         HGDIOBJ oldBmp = SelectObject(dc, bmp);
         const Uint32* src = bits;
         Uint8* cover = SDL_malloc((size_t)s->w * s->h);
-        Uint32* rgba = SDL_malloc((size_t)s->w * s->h * 4);
         RECT box = { pad + 1, pad + 1, s->w - pad - 1, s->h - pad - 1 };
         SetTextColor(dc, RGB(255, 255, 255));
         SetBkMode(dc, TRANSPARENT);
         DrawTextW(dc, text, -1, &box, DT_CENTER | DT_NOPREFIX);
         GdiFlush();
-        if (cover && rgba) {
+        if (cover) {
             for (y = 0; y < s->h * s->w; y++)
                 cover[y] = (Uint8)((src[y] >> 8) & 255);
-            /* the outline: the letters' coverage spread over a disc of radius pad */
-            for (y = 0; y < s->h; y++)
-                for (x = 0; x < s->w; x++) {
-                    int a = cover[y * s->w + x], o = a;
-                    for (dy = -pad; dy <= pad && o < 255; dy++)
-                        for (dx = -pad; dx <= pad; dx++) {
-                            int yy = y + dy, xx = x + dx;
-                            if (dx * dx + dy * dy > pad * pad + pad || yy < 0 || xx < 0 || yy >= s->h || xx >= s->w)
-                                continue;
-                            o = SDL_max(o, cover[yy * s->w + xx]);
-                        }
-                    rgba[y * s->w + x] = (Uint32)(o * 230 / 255 > a ? o * 230 / 255 : a) << 24 | (Uint32)a << 16 |
-                                         (Uint32)a << 8 | (Uint32)a;
-                }
-            s->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, s->w, s->h);
-            if (s->texture) {
-                SDL_UpdateTexture(s->texture, NULL, rgba, s->w * 4);
-                SDL_SetTextureBlendMode(s->texture, SDL_BLENDMODE_BLEND);
-            }
+            SubTextureFromCover(s, renderer, cover, pad);
         }
         SDL_free(cover);
-        SDL_free(rgba);
         SelectObject(dc, oldBmp);
         DeleteObject(bmp);
     }
@@ -446,6 +474,22 @@ static void MakeSubTexture(Subs* s, SDL_Renderer* renderer, int line, int outH) 
     DeleteObject(font);
     DeleteDC(dc);
 }
+#else
+/* the line in KHMenu by FreeType (the HD text's, port/portable/hdtext_freetype.c), outlined as on Windows */
+static void MakeSubTexture(Subs* s, SDL_Renderer* renderer, int line, int outH) {
+    int px = SDL_max(12, outH / 22), pad = SDL_max(2, px / 9);
+    Uint8* cover;
+    if (s->texture)
+        SDL_DestroyTexture(s->texture);
+    s->texture = NULL;
+    s->shown = line;
+    s->height = outH;
+    cover = PortPortableHdTextCover(s->text[line], px, pad, &s->w, &s->h);
+    if (cover)
+        SubTextureFromCover(s, renderer, cover, pad);
+    SDL_free(cover);
+}
+#endif
 
 /* the subtitle due at clock (100 ns units; the subtitles count the movie's frames at 30 a second) */
 static void DrawSubs(Subs* s, SDL_Renderer* renderer, LONGLONG clock, const SDL_FRect* picture, int outH) {
@@ -468,6 +512,7 @@ static void DrawSubs(Subs* s, SDL_Renderer* renderer, LONGLONG clock, const SDL_
 }
 
 /* Plays hd/movies/<name>.mp4 (a scene: hd/scenes, MoviePath) to the end (or until skipped). 0: nothing imported or it could not be opened. */
+#ifdef _WIN32
 static int PlayFile(const char* name) {
     char path[1024];
     WCHAR wpath[1024];
@@ -855,6 +900,260 @@ done:
     }
     return played;
 }
+#else
+/* The path in single quotes for the shell ('\'' for a quote inside it). */
+static void ShellQuote(const char* in, char* out, size_t size) {
+    size_t n = 0;
+    if (size < 3)
+        return;
+    out[n++] = '\'';
+    for (; *in && n + 5 < size; in++) {
+        if (*in == '\'') {
+            SDL_memcpy(out + n, "'\\''", 4);
+            n += 4;
+        } else {
+            out[n++] = *in;
+        }
+    }
+    out[n++] = '\'';
+    out[n] = 0;
+}
+
+static int PlayFile(const char* name) {
+    char path[1024], quoted[2200], command[2600], line[256];
+    SDL_Renderer* renderer = PortRenderer();
+    SDL_Texture* texture = NULL;
+    SDL_AudioStream* audio = NULL;
+    FILE *video = NULL, *sound = NULL, *probe;
+    Uint8* frame = NULL;
+    size_t frameBytes = 0;
+    int width = 0, height = 0, outW = 0, outH = 0, rate = 48000, channels = 2;
+    LONGLONG frameTime = 333333, duration = 0, skipEnd = -1, audioPushed = 0, nextVideo = 0;
+    int quit = 0, videoDone = 0, audioDone = 0, played = 0, shown = 0, dropped = 0, havePending = 0;
+    Subs subs;
+
+    if (name == NULL || renderer == NULL)
+        return 0;
+    MoviePath(name, path, sizeof(path));
+    if (access(path, R_OK) != 0)
+        return 0;
+    if (system("command -v ffmpeg >/dev/null 2>&1 && command -v ffprobe >/dev/null 2>&1") != 0) {
+        static int told;
+        if (!told++)
+            PortLog("hd movie: no ffmpeg/ffprobe on this system: the cartridge's movies play");
+        return 0;
+    }
+    ShellQuote(path, quoted, sizeof(quoted));
+    /* the picture's size, frame rate and the movie's length */
+    SDL_snprintf(command, sizeof(command), "ffprobe -v error -select_streams v:0 -show_entries "
+                 "stream=width,height,avg_frame_rate:format=duration -of default=nw=1 %s 2>/dev/null", quoted);
+    probe = popen(command, "r");
+    if (!probe)
+        return 0;
+    while (fgets(line, sizeof(line), probe)) {
+        unsigned num = 0, den = 0;
+        double seconds = 0;
+        if (SDL_sscanf(line, "width=%d", &width) == 1 || SDL_sscanf(line, "height=%d", &height) == 1)
+            continue;
+        if (SDL_sscanf(line, "avg_frame_rate=%u/%u", &num, &den) == 2 && num > 0 && den > 0)
+            frameTime = (LONGLONG)10000000 * den / num;
+        else if (SDL_sscanf(line, "duration=%lf", &seconds) == 1 && seconds > 0)
+            duration = (LONGLONG)(seconds * 10000000);
+    }
+    pclose(probe);
+    if (width <= 0 || height <= 0) {
+        PortLog("hd movie: %s has no usable video", path);
+        return 0;
+    }
+    /* frames come scaled to the window (never larger than the file): a 1080p movie in a 720p window moves less */
+    SDL_GetCurrentRenderOutputSize(renderer, &outW, &outH);
+    if (outW > 0 && outH > 0 && (outW < width || outH < height)) {
+        float scale = SDL_min((float)outW / width, (float)outH / height);
+        width = SDL_max(2, (int)(width * scale) & ~1);
+        height = SDL_max(2, (int)(height * scale) & ~1);
+    }
+    frameBytes = (size_t)width * height * 4;
+    frame = SDL_malloc(frameBytes);
+    SDL_snprintf(command, sizeof(command), "ffmpeg -v error -nostdin -i %s -an -sn -vf scale=%d:%d "
+                 "-f rawvideo -pix_fmt bgr0 - 2>/dev/null", quoted, width, height);
+    video = frame ? popen(command, "r") : NULL;
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+    if (!video || !texture) {
+        PortLog("hd movie: %s does not open (%s)", path, texture ? "ffmpeg" : SDL_GetError());
+        goto done;
+    }
+    SDL_SetTextureScaleMode(texture, (SDL_ScaleMode)PortSmoothScaleMode());
+    /* the first picture before anything is shown: a file ffmpeg cannot decode keeps the cartridge's scene */
+    if (fread(frame, 1, frameBytes, video) != frameBytes) {
+        PortLog("hd movie: %s gives no picture: the cartridge's instead", path);
+        goto done;
+    }
+    havePending = 1;
+    SDL_snprintf(command, sizeof(command), "ffmpeg -v error -nostdin -i %s -vn -sn -ac 2 -ar 48000 -f s16le - 2>/dev/null",
+                 quoted);
+    sound = popen(command, "r");
+    {
+        SDL_AudioSpec spec = { SDL_AUDIO_S16, channels, rate };
+        audio = sound ? SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL) : NULL;
+        if (audio)
+            SDL_ResumeAudioStreamDevice(audio);
+        else
+            audioDone = 1;
+    }
+    PortLog("hd movie: %s (%dx%d RGB by ffmpeg, %d Hz)", name, width, height, rate);
+    LoadSubs(&subs, name);
+    played = 1;
+    PortAudioMovieHold(1);
+    DropPendingInput();
+
+    while (!quit && !(videoDone && audioDone)) {
+        Uint64 frameStart = SDL_GetTicksNS();
+        LONGLONG clock;
+        int pause = PauseWanted(&quit);
+        {
+            static int tested;
+            const char* at = SDL_getenv("KHCOM_HDMOVIE_PAUSETEST");
+            if (at && !tested && nextVideo >= (LONGLONG)SDL_atoi(at) * 10000000) {
+                tested = 1;
+                pause = 1;
+            }
+        }
+        if (quit)
+            break;
+        /* keep about half a second of audio queued: it is the clock */
+        while (!audioDone && SDL_GetAudioStreamQueued(audio) < rate * channels * 2 / 2) {
+            Uint8 chunk[9600];
+            size_t got = fread(chunk, 1, sizeof(chunk), sound);
+            if (got == 0) {
+                audioDone = 1;
+                break;
+            }
+            SDL_PutAudioStreamData(audio, chunk, (int)got);
+            audioPushed += (LONGLONG)got * 10000000 / (rate * channels * 2);
+        }
+        if (audio && !audioDone)
+            clock = audioPushed - (LONGLONG)SDL_GetAudioStreamQueued(audio) * 10000000 / (rate * channels * 2);
+        else
+            clock = nextVideo;
+        if (skipEnd >= 0 && clock >= skipEnd)
+            break;
+        {
+            const char* limit = SDL_getenv("KHCOM_HDMOVIE_SECONDS");
+            if (limit && skipEnd < 0 && clock >= (LONGLONG)SDL_atoi(limit) * 10000000) {
+                PortLog("hd movie: test stop at %d s", SDL_atoi(limit));
+                skipEnd = clock + 3000000;
+            }
+        }
+        /* show the latest frame due by now; frames come in order, one frameTime apart */
+        while (!videoDone) {
+            if (!havePending) {
+                if (fread(frame, 1, frameBytes, video) != frameBytes) {
+                    videoDone = 1;
+                    break;
+                }
+                havePending = 1;
+                nextVideo += frameTime;
+            }
+            if (nextVideo > clock + 100000)
+                break;
+            if (audio && !audioDone && nextVideo + frameTime <= clock)
+                dropped++;
+            else
+                SDL_UpdateTexture(texture, NULL, frame, width * 4);
+            havePending = 0;
+            shown++;
+            if (!audio || audioDone)
+                break;
+        }
+        {
+            int ow = 0, oh = 0;
+            SDL_FRect dst;
+            float scale;
+            SDL_GetCurrentRenderOutputSize(renderer, &ow, &oh);
+            scale = SDL_min((float)ow / width, (float)oh / height);
+            dst.w = width * scale;
+            dst.h = height * scale;
+            dst.x = (ow - dst.w) / 2;
+            dst.y = (oh - dst.h) / 2;
+            SDL_SetRenderViewport(renderer, NULL);
+            SDL_SetRenderClipRect(renderer, NULL);
+            SDL_SetRenderScale(renderer, 1.0f, 1.0f);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+            SDL_RenderTexture(renderer, texture, NULL, &dst);
+            DrawSubs(&subs, renderer, clock, &dst, oh);
+            {
+                const LONGLONG fade = 3000000;
+                LONGLONG end = skipEnd >= 0 ? skipEnd : duration;
+                LONGLONG edge = clock < fade ? clock : (end > fade && clock > end - fade ? end - clock : fade);
+                if (audio)
+                    SDL_SetAudioStreamGain(audio, edge <= 0 ? 0.0f : (float)edge / fade);
+                if (edge < fade) {
+                    Uint8 a = (Uint8)(255 - (edge < 0 ? 0 : edge) * 255 / fade);
+                    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, a);
+                    SDL_RenderFillRect(renderer, NULL);
+                }
+            }
+            {
+                static int shot;
+                const char* at = SDL_getenv("KHCOM_HDMOVIE_SHOT");
+                if (at && !shot && clock >= (LONGLONG)SDL_atoi(at) * 10000000) {
+                    SDL_Surface* s = SDL_RenderReadPixels(renderer, NULL);
+                    if (s) {
+                        SDL_SaveBMP(s, PortConfigPath("hdmovie.bmp"));
+                        SDL_DestroySurface(s);
+                    }
+                    shot = 1;
+                }
+            }
+            if (pause) {
+                SDL_Surface* frozen = SDL_RenderReadPixels(renderer, NULL);
+                int skip = MoviePause(renderer, frozen, audio, &quit);
+                SDL_DestroySurface(frozen);
+                if (quit)
+                    break;
+                if (skip && skipEnd < 0)
+                    skipEnd = clock + 3000000;
+                continue;
+            }
+            SDL_RenderPresent(renderer);
+        }
+        {
+            Uint64 spent = SDL_GetTicksNS() - frameStart;
+            if (spent < 16000000)
+                SDL_DelayNS(16000000 - spent);
+        }
+        if (audioDone && audio && SDL_GetAudioStreamQueued(audio) > 0 && videoDone)
+            while (SDL_GetAudioStreamQueued(audio) > 0 && !quit && !PauseWanted(&quit))
+                SDL_Delay(10);
+    }
+
+done:
+    PortLog("hd movie: %d frames decoded, %d late ones not shown%s", shown, dropped, quit ? ", window closed" : "");
+    if (played) {
+        FreeSubs(&subs);
+        PortAudioMovieHold(0);
+    }
+    /* closing our ends first: an ffmpeg still writing gets a broken pipe and exits, so pclose does not wait */
+    if (sound)
+        pclose(sound);
+    if (video)
+        pclose(video);
+    SDL_free(frame);
+    if (texture)
+        SDL_DestroyTexture(texture);
+    if (audio)
+        SDL_DestroyAudioStream(audio);
+    if (quit) {
+        SDL_Event q;
+        SDL_zero(q);
+        q.type = SDL_EVENT_QUIT;
+        SDL_PushEvent(&q);
+    }
+    return played;
+}
+#endif
 #elif defined(__ANDROID__) || defined(PORT_ANDROID64)
 #include <SDL3/SDL.h>
 #ifdef PORT_ANDROID64

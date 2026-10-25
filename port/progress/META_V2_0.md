@@ -13,18 +13,35 @@ Encargo vigente del usuario: cerrar las correcciones comentadas de Atlas y los b
 
 Una entrega exige cambio real, revisión visual, captura hija vinculada a las nubes y PR con pruebas. Conservar valoraciones humanas. «Aprobado con mejoras» cierra la versión aprobada; las mejoras futuras no bloquean por defecto, salvo petición expresa del usuario como las anteriores.
 
-## Bugs y comprobaciones técnicas aún abiertos
+## Bugs y comprobaciones técnicas vigentes
 
-- [ ] **#83 Android: crash al recoger la carta de Jafar.** Único issue abierto verificado en GitHub al registrar esta meta; no cerrar por pruebas PC. Consultar la reserva del responsable antes de trabajar.
-- [ ] Parpadeo del deck al lanzar invocaciones, incluido Simba: reproducir y corregir.
-- [ ] Batería de escenas HD: el último traspaso informa **86/97** en main y 11 escenas «nunca pedidas». Investigar el arnés/lógica y comparar la rama Linux; no declarar un resultado nuevo sin repetir la prueba.
-- [ ] Android: timeout de batalla 123 US; repetir con APK e imágenes correctos. Validar gama baja, tablets, táctiles y elección inicial de modo cuando los recursos permitan las pruebas.
-- [ ] Cargas/transiciones: resolver primeras cargas visibles y tirones con cachés acotadas, respetando la reserva `transiciones-cargas`.
-- [ ] Vídeos HD en Linux nativo: revisar e integrar `claude/linux-hd-movies` tras verificar sus diferencias contra main.
-- [ ] `check_sources.py`: verificar los fallos observados por glifos japoneses ausentes en etiquetas de `port_ui.c`; no confundir compilación correcta con comprobación global correcta.
-- [ ] Repetir únicamente las baterías fallidas o incompletas que sigan vigentes; todo timeout se investiga. Pruebas seriales, ocultas y silenciosas, Ninja `-j 1`, consumo de RAM bajo.
+Estado actualizado contra `origin/main` (`d47dbeab6`, lista limpia del 25/10) y GitHub. No reabrir como pendientes de código las soluciones ya integradas por otro carril.
+
+- [ ] **#83 Android: confirmar corrección de recogida de carta de Jafar.** Main ya incluye el arreglo BIOS_PTR; siguen la comparación PC vieja/nueva, la validación Android y la confirmación del jugador. El issue permanece abierto. Consultar su responsable; no cerrarlo por pruebas PC.
+- [ ] **Android:** repetir batalla123 US (timeout), validar gama baja, tablets, táctiles también en web y elección inicial de modo, cuando los recursos permitan esas pruebas.
+- [ ] **Baterías:** consultar `run_batteries.py --status`; el traspaso limpio informa combates EU y Android relanzados, después pasada `--hd`. El resultado histórico86/97 no es un resultado vigente confirmado; investigar cualquier fallo que siga reproduciéndose.
+- [ ] **Cargas/transiciones:** consultar la reserva `transiciones-cargas` y confirmar qué falta de primeras cargas visibles y tirones; no duplicar el carril ni reabrirlo solo por una nota antigua.
+- [ ] **Fuentes:** verificar si siguen los fallos observados por glifos japoneses ausentes en `port_ui.c`; compilación correcta no equivale a `check_sources.py` correcto.
+- [x] **Mazo e invocaciones:** el traspaso nuevo informa el arreglo del parpadeo integrado. Volver a trabajar solo con fallo reproducible.
+- [x] **Vídeos HD Linux:** integrados según la lista limpia de main; verificar paquetes finales, sin mantener la antigua rama como pendiente de integración.
+- [x] **Pre15 local:** paquete y copia jugable ya preparados por el otro carril. Preparar una siguiente pre solamente cuando integre las entregas nuevas de esta meta.
+
+Pruebas seriales, ocultas y silenciosas, Ninja `-j 1` y consumo de RAM bajo. Todo timeout vigente se investiga; no dar por repetida una comprobación por copiar un traspaso.
 
 Los problemas que esperan datos (cara HD de Sora recortada al recibir daño, cuadro negro en Agrabah con HUD HD, Proton y regresiones de audio #42) siguen como seguimiento condicionado a un reporte reproducible. Switch y online completo continúan después de la v2.0.
+
+## Entregas de esta tanda
+
+| Trabajo | Atlas hija | PR | Estado |
+|---|---|---|---|
+| Meta2.0 | Documento en este PR | #120 | Documentado |
+| Arena Trickmaster | `7c6c539b5c264f24a9b655a8432e2cc7` | #121 | Propuesta entregada; GBA4/4 idéntico |
+| Escena099 | `ac568c9ae6c642beb8990ac107cd7a0c` | #122 | Propuesta entregada; GBA2/2 idéntico |
+| Escenas004/005 | `8827dd92eb9c4392876f611cbf4cfcb2` | #123 | Propuesta entregada; GBA3/3 idéntico |
+| Añadir naipes | `27f14d9fe9bb4428b0dccf98c1e06a8c` | #124 | Propuesta entregada;61frames de oclusión correctos |
+| Síntesis | Pendiente de captura real | Pendiente | Implementación en `codex/sintesis-requisito-hd`, validación serial pendiente |
+
+Subir una propuesta no resuelve automáticamente la valoración ni equivale a integración.
 
 ## Ya integrado; no volver a contar como pendiente
 

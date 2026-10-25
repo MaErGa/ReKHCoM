@@ -83,6 +83,15 @@ Hecho (VM Debian 12 arm64, Cortex-A53 emulado, virtio-gpu con /dev/fb0):
 **No probado en hardware real**: escritorio Linux con X11/PulseAudio de verdad,
 Steam Deck, ni ninguna Anbernic.
 
+## Videos HD (25/10)
+
+Linux nativo reproduce las películas y escenas HD con el `ffmpeg`/`ffprobe` del sistema, lanzados como procesos
+aparte (video `bgr0` escalado a la ventana y audio s16le 48 kHz por tuberías; nada enlazado, sirve para el paquete
+i386 en un sistema de 64 bits). Mismo reloj por audio, pausa, fundidos y subtítulos (KHMenu por FreeType,
+`PortPortableHdTextCover`) que en Windows. Sin `ffmpeg` instalado: la escena del cartucho, como antes.
+Probado en la VM Debian 12 x86_64 con `apt install ffmpeg`: apertura 1280x720, 1508 cuadros, 3 tardíos,
+subtítulos visibles, salida 0. Steam Deck sigue con la versión de Windows por Proton.
+
 ## Pendiente
 
 - Probar en un PC Linux real (X11 y XWayland, sonido) y en una Steam Deck.

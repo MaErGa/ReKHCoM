@@ -76,7 +76,7 @@ def run(exe_dir, work, hd, version, list_id, index, frames, timeout, recom, movi
     case_bin.place(exe_dir, work, d)
     link(hd, d / "hd")
     (d / "kh_com.ini").write_text("config_version=2\nview_mode=0\nhd_movies=1\nhd_scenes=" + ("0" if movies_only else "1") +
-                                     "\nhd_subtitles=1\n")
+                                     "\nhd_subtitles=1\nexperimental_frame_skip=0\n")  # keys stay on their frames on a loaded machine
     keys = ",".join(f"{f}-{f + 3}:A" for f in range(30, frames, 40))
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy", KHCOM_FAST="1",
                KHCOM_EVENT=f"{list_id}:{index}", KHCOM_KEYS=keys, KHCOM_QUIT=str(frames))
