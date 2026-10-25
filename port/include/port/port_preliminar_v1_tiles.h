@@ -377,12 +377,10 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         *x=sx; *y=sy; return 1;
     }
     if (v[0] == 102 && v[1] == 2 && oy < 0) {
-        /* the four tall columns cut by the map's top go on up their 5-row
-         * spiral and end flat on its first row, as the short ones do (user
-         * 24/10); each at its own height */
-        int top = ox>=22 && ox<26 ? -5 : ox>=26 && ox<30 ? -1 : ox>=35 && ox<39 ? -2 :
-                  ox>=45 && ox<49 ? -5 : 0;
-        if (oy < top) return 0;
+        /* Continue each top-cut shaft through the top of the viewport with
+         * its five-row spiral; a flat truncation leaves an open pipe end
+         * suspended in the sea (user's second annotation, 24/10). */
+        if (!((ox>=22 && ox<30) || (ox>=35 && ox<39) || (ox>=45 && ox<49))) return 0;
         *y = PortSceneTileMod(oy, 5); return 1;
     }
     if (v[0] == 102) {
