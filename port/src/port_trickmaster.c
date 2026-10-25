@@ -48,9 +48,16 @@ int PortTrickmasterBackdropPixel(int x, int y, int cx, int cy, uint16_t* color) 
     x -= cx - PositiveMod(cx, 256);
     y -= cy - PositiveMod(cy, 256);
     if (y < 24) {
-        int sx = PositiveMod(x, 56), sy = 24 + PositiveMod(y - 24, 64);
+        int sx = PositiveMod(x, 56), sy = 24 + PositiveMod(y - 24, 48);
         /* Atlas: continue the pink wallpaper upwards, not the beige ceiling
-         * strip. Keep only the existing chimney's stone shaft through it. */
+         * strip. Keep the actual timber posts beside the chimney aligned
+         * with their original x, excluding the horizontal rail at y=80.
+         * The plain right panel avoids copying the clock and little window.
+         * Keep only the existing chimney's stone shaft through it. */
+        if ((x >= 56 && x < 120) || (x >= 184 && x < 208))
+            sx = x;
+        else if (x >= 144 && x < 184)
+            sx = 72 + PositiveMod(x - 144, 40);
         if (x >= 120 && x < 144) {
             sx = x;
             sy = 24 + PositiveMod(y - 24, 16);
