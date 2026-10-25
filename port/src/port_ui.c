@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "port/port.h"
+#include "port/port_version.h"
 #include "port/port_aspect.h"
 #include "port/port_ui.h"
 #include "port/port_achievement_list.h"
@@ -50,17 +51,14 @@ void PortInputSuppressUntilRelease(void);
 enum { LANG_EN, LANG_FR, LANG_DE, LANG_IT, LANG_ES, LANG_JA, LANG_COUNT };
 
 enum {
-    /* the game's settings first, the picture's after: on a touch screen the first rows were the resolution
-       and going down changed it (24/10) */
+    /* the main page in sections, as a modern game orders them (25/10): gameplay, video, audio, general,
+       the HD mod and Re:CoM, experimental, more menus; ITEM_HEAD_* are headings, not selectable */
+    ITEM_HEAD_GAME, /* section heading, not selectable */
     ITEM_DODGE,
     ITEM_STOCK,
-    ITEM_MUSIC,
-    ITEM_SFX,
-    ITEM_MASTER,
-    ITEM_SAVEBANK,
-    ITEM_UNDUB,
-    ITEM_DISCORD,
-    ITEM_FPS,
+    ITEM_CARDS,
+    ITEM_INVERT_CARD_SCROLL,
+    ITEM_HEAD_VIDEO, /* section heading, not selectable */
     ITEM_VIEW,
     ITEM_ASPECT,
     ITEM_ZOOM,
@@ -68,13 +66,35 @@ enum {
     ITEM_SCALE,
     ITEM_HUD,
     ITEM_NARROW,
-    ITEM_FILTER,
     ITEM_FULLSCREEN,
     ITEM_FS_RES,
     ITEM_VSYNC,
+    ITEM_FILTER,
     ITEM_SCANLINES,
     ITEM_LCD,
-    ITEM_CARDS,
+    ITEM_GBA_BORDER,   /* GBA classic: the decorative border around the GBA picture (Original view) */
+    ITEM_MODE_RESET,   /* a graphics mode's defaults (PortApplyGraphicsMode), confirmed twice */
+    ITEM_FPS,
+    ITEM_HEAD_AUDIO, /* section heading, not selectable */
+    ITEM_MASTER,
+    ITEM_MUSIC,
+    ITEM_SFX,
+    ITEM_UNDUB,
+    ITEM_HEAD_GENERAL, /* section heading, not selectable */
+    ITEM_SAVEBANK,
+    ITEM_DISCORD,
+    ITEM_HIDE_TOUCH,
+    ITEM_TOUCH_THEME,  /* the touch buttons' look: Clear, Dark, Color */
+    ITEM_TOUCH_EDIT,   /* the layout editor: drag the touch buttons where the player wants them */
+    ITEM_RECOM_EXTRAS, /* section heading, not selectable */
+    ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): shown only once imported */
+    ITEM_HD_MUSIC,
+    ITEM_HD_SCENES,
+    ITEM_HD_SUBTITLES,
+    ITEM_HD_CARDS,     /* HD cards, faces and battle words (port_hdsprites.c), once imported */
+    ITEM_HD_TITLE,     /* the title's HD logo */
+    ITEM_PS2_MODE,
+    ITEM_PS2_MENU,     /* opens the Re:CoM page */
     ITEM_EXPERIMENTAL, /* section heading, not selectable */
     ITEM_BATTLE_ZOOM,
     ITEM_HDTEXT,
@@ -84,29 +104,16 @@ enum {
     ITEM_SMOOTHAUDIO,
     ITEM_SAVE_SLOT_EXPERIMENTAL,
     ITEM_MOOGLE_NOTICE,
-    ITEM_INVERT_CARD_SCROLL,
-    ITEM_HIDE_TOUCH,
-    ITEM_TOUCH_THEME,  /* the touch buttons' look: Clear, Dark, Color */
-    ITEM_TOUCH_EDIT,   /* the layout editor: drag the touch buttons where the player wants them */
-    ITEM_FRAMESKIP,
-    ITEM_RECOM_EXTRAS, /* section heading, not selectable */
-    ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): shown only once imported */
-    ITEM_HD_MUSIC,
-    ITEM_HD_SCENES,
-    ITEM_HD_SUBTITLES,
-    ITEM_HD_CARDS,     /* HD cards, faces and battle words (port_hdsprites.c), once imported */
-    ITEM_HD_TITLE,     /* the title's HD logo */
-    ITEM_MODE_RESET,   /* a graphics mode's defaults (PortApplyGraphicsMode), confirmed twice */
-    ITEM_GBA_BORDER,   /* GBA classic: the decorative border around the GBA picture (Original view) */
     ITEM_UNSTOCK,
-    ITEM_PS2_MODE,
-    ITEM_PS2_MENU,     /* opens the Re:CoM page */
+    ITEM_FRAMESKIP,
+    ITEM_HEAD_MORE, /* section heading, not selectable */
     ITEM_CONTROLS_MENU,
-    ITEM_CHEATS_MENU,
-    ITEM_REMATCH_MENU,
     ITEM_ACHIEVEMENTS_MENU,
+    ITEM_REMATCH_MENU,
+    ITEM_CHEATS_MENU,
     ITEM_CLOSE,
     ITEM_TITLE,        /* back to the title screen, as the game's own Continue screen does: last, asked twice */
+    ITEM_QUIT,         /* closes the game and its launcher for good: last, asked twice */
     /* the Re:Chain of Memories page */
     ITEM_PS2_DIFFICULTY,
     ITEM_PS2_FASTTEXT,
@@ -158,7 +165,7 @@ static int sPage;
 static int sTitleRequest; /* ITEM_TITLE: due once the menu has closed */
 /* a big window over Options that asks twice, as the scene pause asks before a skip: back to the title (ITEM_TITLE),
    or which mode's presets to go back to (ITEM_MODE_RESET) */
-enum { CONFIRM_NONE, CONFIRM_TITLE, CONFIRM_MODE, CONFIRM_STATES };
+enum { CONFIRM_NONE, CONFIRM_TITLE, CONFIRM_MODE, CONFIRM_STATES, CONFIRM_QUIT };
 static int sConfirm, sConfirmStep, sConfirmCursor, sConfirmMode;
 static void ConfirmOpen(int what);
 static void ConfirmKey(int key);
@@ -178,15 +185,49 @@ static int sNgRecom; /* new game page: the Re:CoM version chosen */
 enum { WIZ_VERSION, WIZ_DIFFICULTY, WIZ_OPTIONS, WIZ_MODE, WIZ_MODE_GBA, WIZ_ASSETS };
 static int sWizStep, sWizCursor; /* the new game window's step and row */
 static void WizKey(int key);
+/* the section headings: red text and a thin line, never selected */
+static int IsHeading(int item) {
+    switch (item) {
+        case ITEM_HEAD_GAME: case ITEM_HEAD_VIDEO: case ITEM_HEAD_AUDIO: case ITEM_HEAD_GENERAL: case ITEM_RECOM_EXTRAS:
+        case ITEM_EXPERIMENTAL: case ITEM_HEAD_MORE: case ITEM_CHEAT_DEBUG_HEADING: case ITEM_CONTROL_NINTENDO_HEADING:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+/* the rows that open a page or a window: A (or a tap) does, left and right do not (25/10) */
+static int OpensSomething(int item) {
+    switch (item) {
+        case ITEM_PS2_MENU: case ITEM_CONTROLS_MENU: case ITEM_ACHIEVEMENTS_MENU: case ITEM_REMATCH_MENU:
+        case ITEM_CHEATS_MENU: case ITEM_TOUCH_EDIT: case ITEM_TITLE: case ITEM_QUIT: case ITEM_MODE_RESET:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 static int PageFirst(void) {
     return sPage == PAGE_REMATCH ? ITEM_REMATCH_0 : sPage == PAGE_CHEATS ? ITEM_CHEAT_DEBUG : sPage == PAGE_CONTROLS ? ITEM_CONTROL_A : sPage == PAGE_PS2 ? ITEM_PS2_DIFFICULTY : sPage == PAGE_NEWGAME ? ITEM_NG_VERSION : 0;
 }
 static int PageEnd(void) {
-    return sPage == PAGE_REMATCH ? ITEM_REMATCH_BACK + 1 : sPage == PAGE_CHEATS ? ITEM_CHEATS_BACK + 1 : sPage == PAGE_CONTROLS ? ITEM_CONTROLS_BACK + 1 : sPage == PAGE_PS2 ? ITEM_PS2_BACK + 1 : sPage == PAGE_NEWGAME ? ITEM_NG_START + 1 : ITEM_TITLE + 1;
+    return sPage == PAGE_REMATCH ? ITEM_REMATCH_BACK + 1 : sPage == PAGE_CHEATS ? ITEM_CHEATS_BACK + 1 : sPage == PAGE_CONTROLS ? ITEM_CONTROLS_BACK + 1 : sPage == PAGE_PS2 ? ITEM_PS2_BACK + 1 : sPage == PAGE_NEWGAME ? ITEM_NG_START + 1 : ITEM_QUIT + 1;
 }
 
 /* rows shown only where they apply */
+static int ItemVisible(int item);
+/* a heading shows while a row of its section does (Re:CoM's with nothing imported has none) */
+static int SectionShown(int heading) {
+    int i;
+    for (i = heading + 1; i < ITEM_CLOSE && !IsHeading(i); i++)
+        if (ItemVisible(i))
+            return 1;
+    return 0;
+}
+
 static int ItemVisible(int item) {
+    if (IsHeading(item) && item < ITEM_CLOSE)
+        return SectionShown(item);
     switch (item) {
         case ITEM_HDFONT: return gPortConfig.hdText; /* with the HD text only */
 #if !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(PORT_ANDROID64) && !defined(PORT_TOUCH)
@@ -244,19 +285,16 @@ static const char* const sMainZoom[LANG_COUNT] = {
     "Come zoom principale", "Igual al zoom principal", "通常ズームと同じ"
 };
 static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
+    { "Gameplay", "Jeu", "Spiel", "Gioco", "Juego", "ゲーム" },
     { "One-button dodge roll", "Roulade en un bouton", "Ausweichrolle mit einer Taste", "Capriola con un tasto",
       "Voltereta con un botón", "ワンボタンドッジ" },
     { "One-button stock (L+R)", "Réserve en un bouton (L+R)", "Vorrat mit einer Taste (L+R)",
       "Accumulo con un tasto (L+R)", "Acumular con un botón (L+R)", "ワンボタンストック (L+R)" },
-    { "Music volume", "Volume musique", "Musiklautstärke", "Volume musica", "Volumen música", "音楽の音量" },
-    { "Effects volume", "Volume effets", "Effektlautstärke", "Volume effetti", "Volumen efectos", "効果音の音量" },
-    { "Master volume", "Volume général", "Gesamtlautstärke", "Volume generale", "Volumen general", "全体の音量" },
-    { "Save bank", "Banque de sauvegarde", "Speicherbank", "Banco di salvataggio", "Banco de partidas",
-      "セーブバンク" },
-    { "Japanese voices (restart)", "Voix japonaises (relancer)", "Japanische Stimmen (Neustart)",
-      "Voci giapponesi (riavvia)", "Voces japonesas (reiniciar)", "日本語ボイス (再起動)" },
-    { "Discord status", "Statut Discord", "Discord-Status", "Stato Discord", "Estado en Discord", "Discordステータス" },
-    { "Show FPS", "Afficher FPS", "FPS anzeigen", "Mostra FPS", "Mostrar FPS", "FPS表示" },
+    { "Battle cards raised", "Cartes de combat relevées", "Kampfkarten angehoben", "Carte di battaglia rialzate",
+      "Subir cartas en combate", "カードを上げる" },
+    { "Invert card scrolling", "Inverser le défilement", "Kartenauswahl umkehren", "Inverti scorrimento carte",
+      "Invertir selección de cartas", "カード送りを反転" },
+    { "Video", "Vidéo", "Video", "Video", "Vídeo", "映像" },
     { "View", "Vue", "Ansicht", "Visuale", "Vista", "表示" },
     { "Aspect ratio", "Format d'image", "Seitenverhältnis", "Proporzioni", "Relación de aspecto", "画面の形" },
     { "Zoom", "Zoom", "Zoom", "Zoom", "Zoom", "ズーム" },
@@ -264,15 +302,44 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Scaling", "Mise à l'échelle", "Skalierung", "Scala", "Escalado", "スケール" },
     { "HUD size", "Taille du HUD", "HUD-Größe", "Dimensione HUD", "Tamaño del HUD", "HUDサイズ" },
     { "GBA-size scenes", "Scènes format GBA", "Szenen im GBA-Format", "Scene formato GBA", "Escenas tamaño GBA", "GBAサイズの場面" },
-    { "Filter", "Filtre", "Filter", "Filtro", "Filtro", "フィルター" },
     { "Fullscreen", "Plein écran", "Vollbild", "Schermo intero", "Pantalla completa", "フルスクリーン" },
     { "Fullscreen resolution", "Résolution plein écran", "Vollbild-Auflösung", "Risoluzione a schermo intero",
       "Resolución completa", "フルスクリーン解像度" },
     { "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR" },
+    { "Filter", "Filtre", "Filter", "Filtro", "Filtro", "フィルター" },
     { "Scanlines", "Lignes de balayage", "Scanlines", "Linee di scansione", "Scanlines", "スキャンライン" },
     { "GBA LCD colours", "Couleurs LCD GBA", "GBA-LCD-Farben", "Colori LCD GBA", "Colores LCD GBA", "GBAカラー" },
-    { "Battle cards raised", "Cartes de combat relevées", "Kampfkarten angehoben", "Carte di battaglia rialzate",
-      "Subir cartas en combate", "カードを上げる" },
+    { "Border (Original view)", "Bordure (vue originale)", "Rahmen (Originalansicht)", "Cornice (vista originale)",
+      "Borde (vista Original)", "わく（オリジナル表示）" },
+    { "Reset to a mode's defaults", "Réglages d'un mode", "Standard eines Modus", "Predefiniti di una modalità",
+      "Restablecer según el modo", "モードの初期値に戻す" },
+    { "Show FPS", "Afficher FPS", "FPS anzeigen", "Mostra FPS", "Mostrar FPS", "FPS表示" },
+    { "Audio", "Audio", "Audio", "Audio", "Audio", "サウンド" },
+    { "Master volume", "Volume général", "Gesamtlautstärke", "Volume generale", "Volumen general", "全体の音量" },
+    { "Music volume", "Volume musique", "Musiklautstärke", "Volume musica", "Volumen música", "音楽の音量" },
+    { "Effects volume", "Volume effets", "Effektlautstärke", "Volume effetti", "Volumen efectos", "効果音の音量" },
+    { "Japanese voices (restart)", "Voix japonaises (relancer)", "Japanische Stimmen (Neustart)",
+      "Voci giapponesi (riavvia)", "Voces japonesas (reiniciar)", "日本語ボイス (再起動)" },
+    { "General", "Général", "Allgemein", "Generale", "General", "一般" },
+    { "Save bank", "Banque de sauvegarde", "Speicherbank", "Banco di salvataggio", "Banco de partidas",
+      "セーブバンク" },
+    { "Discord status", "Statut Discord", "Discord-Status", "Stato Discord", "Estado en Discord", "Discordステータス" },
+    { "Hide touch controls", "Masquer les commandes tactiles", "Touch-Steuerung ausblenden",
+      "Nascondi controlli touch", "Ocultar controles táctiles", "タッチボタンを非表示" },
+    { "Touch button theme", "Thème des boutons tactiles", "Design der Touch-Tasten", "Tema dei tasti touch",
+      "Tema de botones", "タッチボタンのテーマ" },
+    { "Move touch buttons", "Déplacer les boutons tactiles", "Touch-Tasten verschieben", "Sposta i tasti touch",
+      "Mover botones táctiles", "タッチボタンを移動" },
+    { "Re:CoM improvements", "Améliorations Re:CoM", "Re:CoM-Verbesserungen", "Miglioramenti Re:CoM", "Mejoras de Re:CoM", "Re:CoMの改善" },
+    { "HD intros", "Intros HD", "HD-Intros", "Intro HD", "Intros HD", "HDイントロ" }, /* opening, credits, endings */
+    { "HD music", "Musique HD", "HD-Musik", "Musica HD", "Música HD", "HDミュージック" },
+    { "HD scenes", "Scènes HD", "HD-Szenen", "Scene HD", "Escenas HD", "HDシーン" },
+    { "HD subtitles", "Sous-titres HD", "HD-Untertitel", "Sottotitoli HD", "Subtítulos HD", "HDじまく" },
+    { "HD HUD", "ATH HD", "HD-HUD", "HUD HD", "HUD HD", "HD HUD" }, /* cards, battle HUD and title logo together */
+    { "HD title logo", "Logo de titre HD", "HD-Titellogo", "Logo del titolo HD", "Logo del título HD", "HDタイトルロゴ" },
+    { "Re:CoM mode", "Mode Re:CoM", "Re:CoM-Modus", "Modalità Re:CoM", "Modo Re:CoM", "Re:CoMモード" },
+    { "Re:CoM settings", "Réglages Re:CoM", "Re:CoM-Einstellungen", "Impostazioni Re:CoM", "Ajustes Re:CoM",
+      "Re:CoMオプション" },
     { "Experimental", "Expérimental", "Experimentell", "Sperimentale", "Experimentales", "実験的機能" },
     { "Battle zoom", "Zoom en combat", "Kampfzoom", "Zoom battaglia", "Zoom en combate", "バトルズーム" },
     { "HD text", "Texte HD", "HD-Text", "Testo HD", "Texto HD", "HDテキスト" },
@@ -285,39 +352,20 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Elegir ranura en puntos de guardado", "セーブポイントでスロットを選択" },
     { "Moogle points notice", "Avis des points mog", "Mogry-Punkte anzeigen", "Avviso punti moguri",
       "Aviso de puntos moguri", "モーグリポイント通知" },
-    { "Invert card scrolling", "Inverser le défilement", "Kartenauswahl umkehren", "Inverti scorrimento carte",
-      "Invertir selección de cartas", "カード送りを反転" },
-    { "Hide touch controls", "Masquer les commandes tactiles", "Touch-Steuerung ausblenden",
-      "Nascondi controlli touch", "Ocultar controles táctiles", "タッチボタンを非表示" },
-    { "Touch button theme", "Thème des boutons tactiles", "Design der Touch-Tasten", "Tema dei tasti touch",
-      "Tema de botones", "タッチボタンのテーマ" },
-    { "Move touch buttons", "Déplacer les boutons tactiles", "Touch-Tasten verschieben", "Sposta i tasti touch",
-      "Mover botones táctiles", "タッチボタンを移動" },
-    { "Skip frames when slow", "Sauter des images si lent", "Bilder überspringen wenn langsam",
-      "Salta fotogrammi se lento", "Saltar cuadros si va lento", "遅い時はフレームを飛ばす" },
-    { "Re:CoM improvements", "Améliorations Re:CoM", "Re:CoM-Verbesserungen", "Miglioramenti Re:CoM", "Mejoras de Re:CoM", "Re:CoMの改善" },
-    { "HD intros", "Intros HD", "HD-Intros", "Intro HD", "Intros HD", "HDイントロ" }, /* opening, credits, endings */
-    { "HD music", "Musique HD", "HD-Musik", "Musica HD", "Música HD", "HDミュージック" },
-    { "HD scenes", "Scènes HD", "HD-Szenen", "Scene HD", "Escenas HD", "HDシーン" },
-    { "HD subtitles", "Sous-titres HD", "HD-Untertitel", "Sottotitoli HD", "Subtítulos HD", "HDじまく" },
-    { "HD HUD", "ATH HD", "HD-HUD", "HUD HD", "HUD HD", "HD HUD" }, /* cards, battle HUD and title logo together */
-    { "HD title logo", "Logo de titre HD", "HD-Titellogo", "Logo del titolo HD", "Logo del título HD", "HDタイトルロゴ" },
-    { "Reset to a mode's defaults", "Réglages d'un mode", "Standard eines Modus", "Predefiniti di una modalità",
-      "Restablecer según el modo", "モードの初期値に戻す" },
-    { "Border (Original view)", "Bordure (vue originale)", "Rahmen (Originalansicht)", "Cornice (vista originale)",
-      "Borde (vista Original)", "わく（オリジナル表示）" },
     { "Return stocked cards", "Rendre les cartes en réserve", "Vorratskarten zurücknehmen",
       "Riprendi carte accumulate", "Devolver cartas acumuladas", "ストックをてふだに戻す" },
-    { "Re:CoM mode", "Mode Re:CoM", "Re:CoM-Modus", "Modalità Re:CoM", "Modo Re:CoM", "Re:CoMモード" },
-    { "Re:CoM settings", "Réglages Re:CoM", "Re:CoM-Einstellungen", "Impostazioni Re:CoM", "Ajustes Re:CoM",
-      "Re:CoMオプション" },
+    { "Skip frames when slow", "Sauter des images si lent", "Bilder überspringen wenn langsam",
+      "Salta fotogrammi se lento", "Saltar cuadros si va lento", "遅い時はフレームを飛ばす" },
+    { "More", "Plus", "Mehr", "Altro", "Más", "その他" },
     { "Controls", "Commandes", "Steuerung", "Controlli", "Controles", "コントロール" },
-    { "Cheats", "Codes", "Cheats", "Trucchi", "Trucos", "チート" },
-    { "Boss rematches", "Revanches de boss", "Boss-Revanchen", "Rivincite coi boss", "Revancha de jefes", "ボス再戦" },
     { "Achievements", "Succès", "Erfolge", "Obiettivi", "Logros", "じっせき" },
+    { "Boss rematches", "Revanches de boss", "Boss-Revanchen", "Rivincite coi boss", "Revancha de jefes", "ボス再戦" },
+    { "Cheats", "Codes", "Cheats", "Trucchi", "Trucos", "チート" },
     { "Back", "Retour", "Zurück", "Indietro", "Volver", "戻る" },
     { "Return to title screen", "Retour à l'écran titre", "Zurück zum Titelbildschirm",
       "Torna alla schermata del titolo", "Volver a la pantalla de título", "タイトル画面に戻る" },
+    { "Quit the game", "Quitter le jeu", "Spiel beenden", "Esci dal gioco", "Salir del juego",
+      "ゲームを終了" },
     { "Difficulty", "Difficulté", "Schwierigkeit", "Difficoltà", "Dificultad", "難しさ" },
     { "Fast dialogue", "Dialogues rapides", "Schnelle Dialoge", "Dialoghi veloci", "Diálogos rápidos",
       "会話を早く" },
@@ -1087,6 +1135,7 @@ static void ValueText(int item, char* out, size_t size) {
             SDL_strlcpy(out, "\xE2\x86\x92", size);
             break;
         case ITEM_TITLE:
+        case ITEM_QUIT:
             SDL_strlcpy(out, "\xE2\x86\x92", size);
             break;
         case ITEM_PS2_DIFFICULTY:
@@ -1317,6 +1366,10 @@ static void Change(int item, int dir) {
             if (dir > 0)
                 ConfirmOpen(CONFIRM_TITLE);
             return;
+        case ITEM_QUIT: /* asked twice, as the title: the game and its launcher close */
+            if (dir > 0)
+                ConfirmOpen(CONFIRM_QUIT);
+            return;
         case ITEM_ACHIEVEMENTS_MENU:
             if (dir > 0) AchievementMenuOpen();
             return;
@@ -1523,7 +1576,7 @@ void PortUiOpenOptions(void) {
     sFade = SDL_getenv("KHCOM_OPTIONS_SHOT") ? MENU_FADE * 2 : 0; /* test shots: no fade */
     sClosing = 0;
     sReturn = 0;
-    sCursor = 0;
+    sCursor = ITEM_DODGE; /* the first row under the first heading */
     sScroll = 0;
     sPage = PAGE_MAIN;
     sHarnessTick = 0;
@@ -1749,8 +1802,7 @@ static void Move(int dir) {
     do {
         int first = PageFirst(), n = PageEnd() - first;
         sCursor = first + Wrap(sCursor - first + dir, n);
-        if (sCursor == ITEM_EXPERIMENTAL || sCursor == ITEM_RECOM_EXTRAS || sCursor == ITEM_CHEAT_DEBUG_HEADING ||
-            sCursor == ITEM_CONTROL_NINTENDO_HEADING)
+        while (IsHeading(sCursor))
             sCursor = first + Wrap(sCursor - first + dir, n);
     } while (!ItemEnabled(sCursor) || !ItemVisible(sCursor));
 }
@@ -1920,11 +1972,13 @@ int PortUiHandleEvent(const void* p) {
                 break;
             case SDLK_LEFT:
             case SDLK_A:
-                Change(sCursor, -1);
+                if (!OpensSomething(sCursor))
+                    Change(sCursor, -1);
                 break;
             case SDLK_RIGHT:
             case SDLK_D:
-                Change(sCursor, 1);
+                if (!OpensSomething(sCursor))
+                    Change(sCursor, 1);
                 break;
             case SDLK_RETURN:
             case SDLK_SPACE:
@@ -1971,10 +2025,12 @@ int PortUiHandleEvent(const void* p) {
                 Move(1);
                 break;
             case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-                Change(sCursor, -1);
+                if (!OpensSomething(sCursor))
+                    Change(sCursor, -1);
                 break;
             case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-                Change(sCursor, 1);
+                if (!OpensSomething(sCursor))
+                    Change(sCursor, 1);
                 break;
             case SDL_GAMEPAD_BUTTON_SOUTH:
                 if (sCursor == ITEM_CLOSE)
@@ -3231,6 +3287,29 @@ static const char* const sConfirmTitleRows[2][LANG_COUNT] = {
     { "Yes, return to the title", "Oui, retour au titre", "Ja, zum Titel", "Sì, torna al titolo", "Sí, volver al título",
       "はい、タイトルへ" },
 };
+static const char* const sConfirmQuitAsk[LANG_COUNT] = {
+    "Quit the game?", "Quitter le jeu ?", "Spiel beenden?", "Uscire dal gioco?", "¿Salir del juego?", "ゲームを終了しますか？",
+};
+static const char* const sConfirmQuitWarn[2][LANG_COUNT] = {
+    { "The game and its launcher close. Anything not saved since your last save is lost.",
+      "Le jeu et son lanceur se ferment. Tout ce qui n'a pas été sauvegardé sera perdu.",
+      "Spiel und Launcher werden geschlossen. Nicht Gespeichertes geht verloren.",
+      "Il gioco e il launcher si chiudono. Ciò che non hai salvato andrà perso.",
+      "Se cierran el juego y su lanzador. Se pierde lo que no guardaste desde tu última partida guardada.",
+      "ゲームとランチャーを閉じます。セーブしていない進行は失われます。" },
+    { "Last confirmation: unsaved progress cannot be recovered.",
+      "Dernière confirmation : la progression non sauvegardée ne pourra pas être récupérée.",
+      "Letzte Bestätigung: nicht gespeicherter Fortschritt lässt sich nicht wiederherstellen.",
+      "Ultima conferma: i progressi non salvati non si potranno recuperare.",
+      "Confirmación final: lo que no guardaste no se puede recuperar.",
+      "最終確認：セーブしていない進行はもどせません。" },
+};
+static const char* const sConfirmQuitRows[2][LANG_COUNT] = {
+    { "No, keep playing", "Non, continuer", "Nein, weiterspielen", "No, continua a giocare", "No, seguir jugando",
+      "いいえ、つづける" },
+    { "Yes, quit the game", "Oui, quitter le jeu", "Ja, Spiel beenden", "Sì, esci dal gioco", "Sí, salir del juego",
+      "はい、終了する" },
+};
 static const char* const sConfirmModeAsk[LANG_COUNT] = {
     "Which preset do you want to go back to?", "Revenir à quel préréglage ?", "Zu welcher Voreinstellung zurück?",
     "A quale preimpostazione tornare?", "¿A qué preset quieres volver?", "どのプリセットに戻しますか？",
@@ -3358,6 +3437,16 @@ static void ConfirmKey(int key) {
         Close();
         return;
     }
+    if (sConfirm == CONFIRM_QUIT) {
+        extern int gPortExitCode;
+        SDL_Event q;
+        sConfirm = CONFIRM_NONE;
+        gPortExitCode = REKHCOM_EXIT_QUIT_ALL; /* the launcher reads it and closes as well */
+        SDL_zero(q);
+        q.type = SDL_EVENT_QUIT;
+        SDL_PushEvent(&q);
+        return;
+    }
     sConfirm = CONFIRM_NONE;
     PortApplyGraphicsMode(sConfirmMode);
     PortConfigSave();
@@ -3390,14 +3479,18 @@ static void DrawConfirm(int l, int width, int height) {
     } else {
         int last = sConfirmStep == (sConfirm == CONFIRM_MODE ? 2 : 1);
         for (i = 0; i < 2; i++)
-            labels[i] = sConfirm == CONFIRM_TITLE ? sConfirmTitleRows[i][l] : sConfirmModeRows[i][l];
+            labels[i] = sConfirm == CONFIRM_TITLE ? sConfirmTitleRows[i][l] : sConfirm == CONFIRM_QUIT ? sConfirmQuitRows[i][l]
+                                                                                       : sConfirmModeRows[i][l];
         if (last)
             SDL_strlcpy(ask, sConfirmSure[l], sizeof(ask));
         else if (sConfirm == CONFIRM_TITLE)
             SDL_strlcpy(ask, sConfirmTitleAsk[l], sizeof(ask));
+        else if (sConfirm == CONFIRM_QUIT)
+            SDL_strlcpy(ask, sConfirmQuitAsk[l], sizeof(ask));
         else
             SDL_snprintf(ask, sizeof(ask), sConfirmModeReset[l], sModeNames[sConfirmMode][l]);
-        warn = sConfirm == CONFIRM_TITLE ? sConfirmTitleWarn[last][l] : sConfirmModeWarn[sConfirmStep][l];
+        warn = sConfirm == CONFIRM_TITLE ? sConfirmTitleWarn[last][l] : sConfirm == CONFIRM_QUIT ? sConfirmQuitWarn[last][l]
+                                                                                           : sConfirmModeWarn[sConfirmStep][l];
     }
     /* measure; on the GBA's 160 lines a window too tall shows only the chosen row's description */
     warnH = DrawWrapped(warn, 0, 0, panelW - 32, 0, 0) * 11 + 4;
@@ -3506,8 +3599,7 @@ static void DrawMenu(int l, int width, int height) {
         }
         uint32_t face = on ? MENU_INK : MENU_DIM;
 
-        if (i == ITEM_EXPERIMENTAL || i == ITEM_RECOM_EXTRAS || i == ITEM_CHEAT_DEBUG_HEADING ||
-            i == ITEM_CONTROL_NINTENDO_HEADING) {
+        if (IsHeading(i)) {
             /* a section heading: red text and a thin line, no square */
             int end = DrawText(sLabels[i][l], barX, y - 1, MENU_RED_DARK, 0xFFD8D8D8u);
             Fill(end + 6, y + 4, barX + barW - end - 6, 1, MENU_GREY);
@@ -3520,6 +3612,14 @@ static void DrawMenu(int l, int width, int height) {
             continue;
         ShortValue(i, value, sizeof(value));
         x = barX + barW - 4 - TextWidth(value);
+        if (sel && on && OpensSomething(i)) {
+            /* a row that opens something: the game's A button, and its arrow nudging right (A enters; right does not) */
+            int nudge = (int)((SDL_GetTicks() / 100) % 4); /* the real clock: the game is paused here */
+            nudge = nudge == 3 ? 1 : nudge;
+            DrawGlyph('A', x - GlyphWidth('A') - 8, y - 2, MENU_RED_DARK, 0xFFD8D8D8u);
+            DrawText(value, x - 2 + nudge, y - 2, MENU_INK, 0xFFD8D8D8u);
+            continue;
+        }
         if (sel && on) {
             x -= 8;
             DrawText("\xE2\x86\x90", x - 10, y - 2, MENU_RED_DARK, 0xFFD8D8D8u);
@@ -3686,7 +3786,7 @@ static int HarnessOptionsAction(void) {
         const char* dir = item ? SDL_strchr(item + 1, ':') : NULL;
         if (item && dir && (!comma || dir < comma) && SDL_atoi(route) == sHarnessTick) {
             int row = SDL_atoi(item + 1), direction = SDL_atoi(dir + 1);
-            if (row >= 0 && row < ITEM_COUNT && row != ITEM_EXPERIMENTAL && row != ITEM_RECOM_EXTRAS && row != ITEM_CHEAT_DEBUG_HEADING && row != ITEM_CONTROL_NINTENDO_HEADING && row != ITEM_CLOSE) {
+            if (row >= 0 && row < ITEM_COUNT && !IsHeading(row) && row != ITEM_CLOSE) {
                 char before[128], after[128];
                 ValueText(row, before, sizeof(before));
                 sCursor = row;

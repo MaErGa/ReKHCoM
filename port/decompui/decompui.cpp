@@ -3172,6 +3172,10 @@ static void Launch(SDL_Window* window) {
     DWORD code = 0;
     GetExitCodeProcess(pi.hProcess, &code);
     CloseHandle(pi.hProcess);
+    if (code == REKHCOM_EXIT_QUIT_ALL) { /* Options > Quit the game: the launcher goes too */
+        sQuitNow = true;
+        return;
+    }
     SDL_ShowWindow(window);
     SDL_RaiseWindow(window);
     LoadIni();
