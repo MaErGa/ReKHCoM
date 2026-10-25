@@ -110,6 +110,13 @@ def scenarios(groups, only, riku, from_battle=0):
             stage = next((k for k, s in enumerate(stages) if s.replace('BATTLE_STAGE_', 'WORLD_') == world), 0)
             out.append((f'battle-{i:03d}-{battle}', 1800, 150,
                         f'KHCOM_BATTLE={i}:{stage}:{int(riku)}\nKHCOM_KEYS={battle_keys(1800)}'))
+    if 'jafar83' in groups:
+        # issue #83 (Galaxy Tab S6 Lite): closed twice on picking up the card Jafar dropped; long fights that keep
+        # hitting him and walking over his gimmick cards (Riku drops them on card breaks, Sora on Blizzard hits)
+        for riku in (1, 0):
+            out.append((f'issue83-jafar-{"riku" if riku else "sora"}', 14000, 600,
+                        f'KHCOM_BATTLE=204:8:{riku}
+KHCOM_KEYS={battle_keys(14000)}'))
     if 'issues' in groups:
         keys = ','.join(f'{f}-{f + 3}:A' for f in range(30, 2400, 40))
         for name, env in ISSUES.items():
@@ -217,7 +224,7 @@ def main():
     p.add_argument('--serial', required=True)
     p.add_argument('--regions', nargs='+', choices=CODES, default=['us'])
     p.add_argument('--groups', nargs='+', default=['menus', 'fixtures', 'bosses'],
-                   choices=['menus', 'fixtures', 'bosses', 'battles', 'issues', 'story', 'bot'])
+                   choices=['menus', 'fixtures', 'bosses', 'battles', 'issues', 'story', 'bot', 'jafar83'])
     p.add_argument('--only', default='')
     p.add_argument('--riku', action='store_true')
     p.add_argument('--from-battle', type=int, default=0, help='skip battle entries below this index')

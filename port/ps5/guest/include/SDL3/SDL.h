@@ -256,6 +256,7 @@ typedef int SDL_Scancode;
 #define SDLK_PAGEUP 0x4000004Bu
 #define SDLK_PAGEDOWN 0x4000004Eu
 #define SDLK_X 0x78u
+#define SDLK_TAB 0x09u
 #define SDLK_Z 0x7Au
 #define SDLK_RIGHT 0x4000004Fu
 #define SDLK_LEFT 0x40000050u
