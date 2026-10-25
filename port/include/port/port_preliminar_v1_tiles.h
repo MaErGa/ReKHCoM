@@ -534,17 +534,12 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
         if (wy<0 && wx>=192 && wx<208) {
             *sx=504; *sy=344; /* leave the corner shaft's gold face to BG3 */
         } else if (wx>=352 && wx<448 && wy<24) {
-            /* Close the cut doorway with one sloping lintel made from its
-             * own upright frame. Above that head, the wall continues. */
-            int top=(wx-352)/2-32, depth=wy-top;
-            if (depth<0) {
-                *sx=256+PortSceneTileMod(wx-256,64); *sy=PortSceneTileMod(wy,32);
-            } else if (depth<4) {
-                *sx=352+depth; *sy=8+PortSceneTileMod(wx-352,8);
-            } else {
-                *sx=wx>=416?400+PortSceneTileMod(wx,8):wx;
-                *sy=wx>=416?8:PortSceneTileMod(wy,8);
-            }
+            /* User 25/10: temporarily stretch the door's colour straight
+             * up to the screen edge, as an unusually tall doorway. */
+            /* Right leaf: one orange sample, not the purple divider repeated
+             * across the panel (user's orange reference line, 25/10). */
+            *sx=wx>=408?401:wx;
+            *sy=8;
         } else if (wx>=176) {
             *sx=256+PortSceneTileMod(wx-256,64);
             *sy=wy-(wx-*sx)/2;
