@@ -197,3 +197,61 @@ static HdGlyph* GlyphJp(SDL_Renderer* r,HdFont* f,uint16_t code) {
     return &none;
 }
 #include "port/port_hdtext_layout.inc"
+
+/* A movie subtitle (port_hdmovie.c, Linux): the UTF-8 text at px pixels in KHMenu (the system's face, then the
+   Japanese one, for letters it lacks), its "\n" lines centred, with pad blank pixels around it. Coverage, w*h bytes;
+   the caller SDL_frees it. NULL: no font. */
+unsigned char* PortPortableHdTextCover(const char* text, int px, int pad, int* w, int* h) {
+    FT_Face face, faces[3];
+    int lines = 1, line, widths[32], ascent, lineH, x, n = 0;
+    const char* p;
+    unsigned char* cover;
+    if (!text || !PortPortableHdReady() || FT_New_Memory_Face(library, data[0], sizes[0], 0, &face)) return NULL;
+    faces[n++] = face;
+    if (fallback) faces[n++] = fallback;
+    if (japanese) faces[n++] = japanese;
+    for (x = 0; x < n; x++) FT_Set_Pixel_Sizes(faces[x], 0, (FT_UInt)px);
+    ascent = (int)(face->size->metrics.ascender >> 6);
+    lineH = (int)(face->size->metrics.height >> 6);
+    for (p = text; *p; p++) lines += *p == '\n';
+    if (lines > 32) lines = 32;
+    SDL_zero(widths);
+    for (line = 0, p = text; *p && line < 32;) { /* measure each line */
+        Uint32 cp = SDL_StepUTF8(&p, NULL);
+        if (cp == '\n') { line++; continue; }
+        for (x = 0; x < n; x++)
+            if (FT_Get_Char_Index(faces[x], cp) || x == n - 1) {
+                if (!FT_Load_Char(faces[x], cp, FT_LOAD_DEFAULT)) widths[line] += (int)(faces[x]->glyph->advance.x >> 6);
+                break;
+            }
+    }
+    *w = 0;
+    for (line = 0; line < lines; line++) *w = SDL_max(*w, widths[line]);
+    *w += pad * 2 + 2;
+    *h = lines * lineH + pad * 2 + 2;
+    cover = SDL_calloc((size_t)*w * *h, 1);
+    if (!cover) { FT_Done_Face(face); return NULL; }
+    for (line = 0, p = text, x = (*w - widths[0]) / 2; *p && line < 32;) {
+        Uint32 cp = SDL_StepUTF8(&p, NULL);
+        int f;
+        if (cp == '\n') { line++; x = line < 32 ? (*w - widths[line]) / 2 : 0; continue; }
+        for (f = 0; f < n; f++)
+            if (FT_Get_Char_Index(faces[f], cp) || f == n - 1) break;
+        if (FT_Load_Char(faces[f], cp, FT_LOAD_RENDER)) continue;
+        {
+            FT_GlyphSlot g = faces[f]->glyph;
+            int gx, gy, top = pad + 1 + line * lineH + ascent - g->bitmap_top, left = x + g->bitmap_left;
+            for (gy = 0; gy < (int)g->bitmap.rows; gy++)
+                for (gx = 0; gx < (int)g->bitmap.width; gx++) {
+                    int yy = top + gy, xx = left + gx;
+                    if (yy >= 0 && xx >= 0 && yy < *h && xx < *w) {
+                        unsigned char v = g->bitmap.buffer[gy * g->bitmap.pitch + gx];
+                        if (v > cover[yy * *w + xx]) cover[yy * *w + xx] = v;
+                    }
+                }
+            x += (int)(g->advance.x >> 6);
+        }
+    }
+    FT_Done_Face(face);
+    return cover;
+}
