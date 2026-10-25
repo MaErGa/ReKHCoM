@@ -10,7 +10,7 @@ int PortGuardArmorBackdropPixel(int x, int y, uint16_t* color);
 
 /* Trickmaster's room (port_trickmaster.c): its chessboard goes on below the map, in its perspective */
 int PortTrickmasterBackdropMatches(const void* const* maps);
-int PortTrickmasterBackdropPixel(int x, int y, uint16_t* color);
+int PortTrickmasterBackdropPixel(int x, int y, int cx, int cy, uint16_t* color);
 
 /* Maleficent's dragon arena (port_maleficent.c): the hall goes on by its bays, the dragon drawn once */
 int PortMaleficentLayer(const void* const* maps);
