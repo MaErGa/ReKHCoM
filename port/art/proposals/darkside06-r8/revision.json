@@ -1,0 +1,75 @@
+{
+  "response_to": [
+    {
+      "submission": "20261024-162822-ea1330",
+      "image_id": "4d6a039e51ad4b8f8f52cb1b1d070ba0",
+      "cloud_id": "943ba728-2009-4560-8eef-7091aefb52e7"
+    },
+    {
+      "submission": "20261024-162822-ea1330",
+      "image_id": "4d6a039e51ad4b8f8f52cb1b1d070ba0",
+      "cloud_id": "3e25e82d-7d5d-4441-8a51-6ee1f45a0fb5"
+    },
+    {
+      "submission": "20261024-162822-ea1330",
+      "image_id": "4d6a039e51ad4b8f8f52cb1b1d070ba0",
+      "cloud_id": "f4d3ee64-1277-433e-93a6-6f34fde95103"
+    },
+    {
+      "submission": "20261024-162822-ea1330",
+      "image_id": "4d6a039e51ad4b8f8f52cb1b1d070ba0",
+      "cloud_id": "a450c2ed-e678-4365-87a4-a154f318d021"
+    },
+    {
+      "submission": "20261024-162822-ea1330",
+      "image_id": "4d6a039e51ad4b8f8f52cb1b1d070ba0",
+      "cloud_id": "6c5cd466-b7d9-4dce-8bbf-3f3617a147ae"
+    }
+  ],
+  "change": "Costura local: quitar el añadido marcado celeste y rellenar las dos uniones verdes con índices del mismo hombro. Centro ROM intacto.",
+  "technique": "4bpp nativo, máscaras del garabato original, sin espejo; paleta y resolución ROM conservadas.",
+  "checks": [
+    {
+      "frame": 13,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 21,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 22,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 23,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 24,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 25,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 26,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 27,
+      "native_pixels_changed": 0
+    },
+    {
+      "frame": 28,
+      "native_pixels_changed": 0
+    }
+  ],
+  "removed_added_pixels": 86,
+  "green_fill_pixels": 27,
+  "limitations": [
+    "Propuesta offline; pendiente de captura runtime por turno de RAM. No aprobada."
+  ],
+  "subsequent_human_verdict": null
+}

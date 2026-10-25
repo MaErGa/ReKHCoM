@@ -38,3 +38,15 @@ python port/switch/build_switch.py host           # build/switch/ReKHCoM.nro
 
 The host is built in the consoles VM (`port/progress/TOOLKIT_CONSOLAS.md`) with devkitA64 and libnx in
 `/opt/devkitpro`, taken from the `devkitpro/devkita64` Docker image (devkitPro's own servers refuse the VM).
+
+## HD mod (optional)
+
+The HD mod (Re:Chain of Memories' music, HD cards/HUD and subtitles) is made on a PC from your own
+KINGDOM HEARTS -HD 1.5+2.5 ReMIX-:
+
+1. On the PC, open ReKHCoM (the Windows or Linux download of this same release) > Mod HD and load it from the game.
+2. Under "Take the HD mod to another platform" choose **Nintendo Switch** and press "Make ReKHCoM-HD.zip".
+3. Copy that one file, as it is, to `sdmc:/switch/ReKHCoM/` and start ReKHCoM: it installs itself (the log says
+   `hd pack: N files ...`). You may delete the zip afterwards.
+
+A `hd` folder copied there by hand works too. HD movies do not play on the Switch yet; the music and cards do.

@@ -205,3 +205,9 @@ normal. Falta hardware ARM; estas pruebas no miden rendimiento de móviles.
 El cargador stock US/JP también necesitó comprobar tres cartas antes de leer
 sus definiciones: el acceso NULL original dependía de SEH en Windows. Las
 combinaciones válidas mantienen sus resultados en las tres regiones.
+
+## HD mod (optional)
+
+Make it on a PC: ReKHCoM for Windows/Linux > Mod HD > "Take the HD mod to another platform" > **Android** >
+"Make ReKHCoM-HD.zip". Copy that file to the phone (Downloads, say) and in ReKHCoM on the phone use
+**Install ROM...** and pick it: the music, cards, movies and scenes go in at once.

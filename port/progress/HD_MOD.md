@@ -163,3 +163,16 @@ cada archivo pasa por `nombre.source.mp4`, que vuelve a su nombre si el launcher
 
 VMAF contra la fuente a su tamaño (el 720p de la apertura escalado a 1080p: cuenta la pérdida de resolución).
 Probado: Main/CBR 96,8 y el encoder de software 94,2 contra 97,1 del elegido a igual peso.
+
+## El mod en un solo archivo para otras plataformas (25/10)
+
+- Launcher de PC > Mod HD > «Llevar el mod HD a otra plataforma»: elige Android, Switch, Vita, PS4 o PS5 y crea
+  `mod-hd-para-otra-plataforma/<plataforma>/ReKHCoM-HD.zip` (sin comprimir; videos y escenas solo para Android).
+  Arnés: `DECOMPUI_HD_EXPORT=<n>` (n en `hdexport::kTargets`).
+- El juego lo instala solo: `port/portable/hd_pack.c` desempaqueta `<datos>/ReKHCoM-HD.zip` en `<datos>/hd` al
+  arrancar (PC/Linux/Android 32: `port/src/port_hdpack.c`; Switch/Vita/PS4/PS5: su host, `shared/hd_pack_host.h`).
+  `hd/.pack` recuerda el tamaño instalado; solo entra hd/<music|sprites|subs|movies|scenes>, nunca rutas con «..».
+- Android: el launcher del teléfono ya instala ese zip con «Instalar ROM...» (rom_folder.inc; por verificar en el teléfono).
+- Rutas: Switch `sdmc:/switch/ReKHCoM/`, Vita `ux0:data/ReKHCoM/`, PS4/PS5 `/data/ReKHCom/`. Instrucciones en el
+  README de cada plataforma.
+

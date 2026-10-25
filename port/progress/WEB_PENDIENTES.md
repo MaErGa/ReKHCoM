@@ -122,7 +122,7 @@ Evidencia: WEB_PUBLICACION.json (12/12 hashes y tipos MIME correctos).
 
 ## PC / Android siguen pendientes
 
-Consultar RELEASE_V19.md y REPARTO.md. Recompilar y verificar PC tras guardas de
+Consultar RELEASE_V19.md y archivo/REPARTO.md. Recompilar y verificar PC tras guardas de
 stock US/JP y prototipos; preparar v1.9 sin regresiones. Android ARM alpha está
 compilada y x86 emulado probado; falta dispositivo ARM físico. No afirmar prueba
 de ARM ni texto HD portátil. Conservar ROMs, partidas y savestates del usuario.

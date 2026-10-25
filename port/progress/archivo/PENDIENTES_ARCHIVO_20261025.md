@@ -7,7 +7,7 @@ Método de depuración: DEBUG_WORKFLOW.md. Protocolo de la cola: COLA_COLABORATI
 
 ## TRASPASO ACTIVO — 25/10, Codex (continuar antes del ZIP)
 
-Estado verificable y siguientes pasos: [TRASPASO_CARGAS_ZIP_20261025.md](TRASPASO_CARGAS_ZIP_20261025.md).
+Estado verificable y siguientes pasos: [TRASPASO_CARGAS_ZIP_20261025.md](../TRASPASO_CARGAS_ZIP_20261025.md).
 El usuario dejó el arte pendiente a Claude; Codex integra los aprobados y termina
 los pendientes técnicos, todos los PR y un ZIP **local**. Registrar y pushear cada
 avance verificado. La autorización directa del 25/10 incluye las versiones
@@ -19,7 +19,7 @@ Blinkeo reproducido y corregido en `codex/jafar-blink`: origen conservado al ree
 los buffers, reconocimiento estable de capas mutables y un solo genio anclado al cuerpo.
 El escenario conserva su extensión/reflejo. Pruebas EU 16:9 y 32:9 sin pérdidas;
 centro GBA idéntico. Copia jugable separada y comparación en Atlas
-`e182f7052b8348b2a88b4f2e996a0ed7`. Ver [JAFAR_BLINK_20261025.md](JAFAR_BLINK_20261025.md).
+`e182f7052b8348b2a88b4f2e996a0ed7`. Ver [JAFAR_BLINK_20261025.md](../JAFAR_BLINK_20261025.md).
 El patrón inferior sigue pendiente de arte; el crash Android #83 no se da por resuelto.
 Pruebas terminadas; respetar pedido de bajo consumo de RAM mientras juega Deadlock.
 
@@ -178,9 +178,9 @@ Flujo del worker: WORKER_BRIEF.md (imagen a la app primero; `--sent` obligatorio
 ## 5. Después de la v2.0
 
 - **Switch fuera de la v2.0** (motor nuevo hecho en SWITCH_MOTOR.md; vuelve con medida en consola real). Vita/PS4 a la
-  GPU (RENDIMIENTO.md). PPU de GBA en varios núcleos para 60 fps a x1.
+  GPU (../RENDIMIENTO.md). PPU de GBA en varios núcleos para 60 fps a x1.
 - Online (~70 %, ONLINE_ESTUDIO.md): prueba entre dos personas, relay en VPS, rollback y lobby en Android, sockets Switch.
-- Menús de Re:CoM en HD (HUD_HD_RECOM.md), fondos de menús, números de cartas HD vs Re:CoM, más assets, datos para el
+- Menús de Re:CoM en HD (../HUD_HD_RECOM.md), fondos de menús, números de cartas HD vs Re:CoM, más assets, datos para el
   modo Re:CoM, rutas completas de Sora y Reverse/Rebirth (#39).
 - Mejoras futuras de lo «aprobado con mejoras» (no son pendientes de ahora).
 

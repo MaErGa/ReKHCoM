@@ -126,7 +126,7 @@ title_last). Humo del zip v2.0 Windows: 9/9 limpio. JP: `check_jp_glyphs.py` ok.
 4. **Issues**: ir mirando si llegan y resolverlos si no están cubiertos.
 4b. **Antes de la v2.0: tablets Android** (resoluciones de las más populares, p. ej. 2560x1600 16:10, 2000x1200,
    1280x800, 2208x1840 plegable abierto, 4:3 2048x1536): que los HUD se acomoden como en las otras; arreglar o rellenar
-   artes/fondos con lo aprendido (LOGICA_APROBADOS.md).
+   artes/fondos con lo aprendido (../LOGICA_APROBADOS.md).
 5. **Codex**: mismos carriles: Codex toma los artes restantes y termina las Preliminares (ver Reparto).
 
 **Ojo:** a las ~01:45 un `taskkill` mío cortó 2-4 combates de la batería `eu_riku` (debug_kit, test_battles
@@ -141,7 +141,7 @@ Hecho el primer paso: `EMPEZAR_AQUI.md` (raíz) y `port/progress/REGLAS_DEL_USUA
 la memoria local de Claude). Falta: revisar que cada herramienta que nombra funcione sin rutas de este PC (buscar
 `D:/01Claude` y `KHCoMPC` en port/tools y volverlas parámetros con valor por omisión relativo). Antes era: `EMPEZAR_AQUI.md` corto (qué leer, cómo compilar, dónde van las ROMs, cómo correr cada batería y
 herramienta, qué se instala y de dónde: toolchain llvm-mingw, SDL3, emsdk, Android SDK, devkitA64/VitaSDK/OpenOrbis por
-Docker o VM). Instrucciones de las VMs/toolkit como texto (TOOLKIT_CONSOLAS.md), **nunca ISOs, discos de VM ni
+Docker o VM). Instrucciones de las VMs/toolkit como texto (../TOOLKIT_CONSOLAS.md), **nunca ISOs, discos de VM ni
 binarios grandes en git**; todo lo sintetizado < 50 MB. Las rutas de este PC (D:/01Claude, KHCoMPC/...) en los .md
 deben quedar como "carpeta de trabajo" con su equivalente relativo. Revisar el tamaño del repo (`git count-objects -vH`).
 
@@ -195,13 +195,13 @@ partidas/bancos, logros, enlace en red), fluidos y sin bugs (depurar).
 - Jafar APROBADO y encendido (`port_jafar.c`); Oogie y Marluxia en Preliminar V2 (`KHCOM_ARENAS_V2=1`), copia
   `pruebas/Probar Preliminar V2 jefes.bat`: **espera comentarios del usuario** (Trickmaster, Oogie, Maléfica,
   Úrsula, Marluxia; Darkside sus 7 poses).
-- "Cuelgue" 32:9 = getenv por píxel → `PORT_ENV_ONCE` en todo el port (DEBUG_WORKFLOW.md).
+- "Cuelgue" 32:9 = getenv por píxel → `PORT_ENV_ONCE` en todo el port (../DEBUG_WORKFLOW.md).
 - Launcher: "Comprimir lo instalado", sin 720p (ahorraba 6 %), adopta la instalación anterior, migra escenas al
   iniciar; juego: actualizar desde antes de los modos conserva opciones con "GBA mejorado".
 - `test_update.py`: 7/7 desde 1.9.8..2.0-pre2 (incluidas las de Quiver). Quiver nos aceptó: **no borrar ningún
   release**; v1.9.10 y v1.9.8 republicadas (mismo SHA). Originales en `KHCoMPC/respaldos/releases-*`.
 - README al día (v1.9.14). `scene_wide_review.py` arreglado.
-- `timing:` en el log (consolas siempre, PC con `KHCOM_TIMING`): fase 0 del motor de Switch (SWITCH_MOTOR.md).
+- `timing:` en el log (consolas siempre, PC con `KHCOM_TIMING`): fase 0 del motor de Switch (../SWITCH_MOTOR.md).
 - **Switch fuera de la v2.0** (usuario): queda en la última pre; vuelve con el motor nuevo comprobado.
 
 **En curso / sin terminar al cortar:**
@@ -691,7 +691,7 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
   de empezar a usar recursos en la 2.0"); (b) aprobar las arenas de jefes que entrega la sesión "arenas-jefes"
   (Darkside primero; 7 de 8 pendientes); (c) permiso para borrar scratchpads viejos de %TEMP%\claude (~5,4 GB).
 - En curso: repetir solo el combate Android US 124 (timeout con dos corridas en el emulador): `build/android-124-alone.log`.
-- Después de la v2.0: las 160 filas de la imagen GBA en varios núcleos (RENDIMIENTO.md) para 60 fps a x1.
+- Después de la v2.0: las 160 filas de la imagen GBA en varios núcleos (../RENDIMIENTO.md) para 60 fps a x1.
 - Disco: C: ~5 GB libres por `pagefile.sys` 38,7 GB (falta de RAM: emulador + VM + baterías); se achica al reiniciar.
 
 ### Nuevo 22/10 (usuario): HUD HD y cartas HD desde el Re:CoM del 1.5+2.5 del jugador
@@ -762,7 +762,7 @@ título (logo como fondo afín, sigue GBA), revisar issues, lista de verificaci�
 
 ### Lista de verificación antes de publicar (no saltear)
 - **Sin Switch en la v2.0** (usuario 24/10): queda en la última prerelease de la 2.0; vuelve con el motor nuevo
-  comprobado (SWITCH_MOTOR.md). Sacar el `.nro` de la publicación de la v2.0.
+  comprobado (../SWITCH_MOTOR.md). Sacar el `.nro` de la publicación de la v2.0.
 - Correr `port/tools/test_update.py` con el paquete nuevo contra `respaldos/releases-estables` y
   `--olds respaldos/releases-prueba` (las que Quiver tiene: v1.9.15-pre1 verificada, v2.0-pre2): todo ok antes de publicar.
 - **No se borra NINGÚN release ni archivo** (estables ni de prueba): Quiver nos aceptó el 24/10 y sus mantenedores dijeron

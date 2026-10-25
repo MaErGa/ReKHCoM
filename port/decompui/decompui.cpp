@@ -2160,12 +2160,17 @@ static void PageExtras() {
                          Ini("hd_text"));
     if (Ini("hd_text")) {
         /* the HD text's face (art review, 24/10): the user's KHMenu by default, two others to choose from */
-        static const char* fontsEs[3] = { "KHMenu", "Comic Hearts", "Sistema" };
-        static const char* fontsEn[3] = { "KHMenu", "Comic Hearts", "System" };
-        changed |= CycleRow(T("Fuente del texto HD", "HD text font"),
-                            T("KHMenu es la del juego; Comic Hearts, más fina; Sistema, la del equipo.",
-                              "KHMenu is the game's; Comic Hearts is thinner; System is the computer's own."),
-                            Ini("hd_font"), 3, sSpanish ? fontsEs : fontsEn);
+        /* KHMenu or the system's; Comic Hearts is the subtitles' (user 25/10). The ini keeps 0 / 2. */
+        static const char* fontsEs[2] = { "KHMenu", "Sistema" };
+        static const char* fontsEn[2] = { "KHMenu", "System" };
+        int pick = Ini("hd_font") == 2 ? 1 : 0;
+        if (CycleRow(T("Fuente del texto HD", "HD text font"),
+                     T("KHMenu es la del juego; Sistema, la del equipo. Los subtítulos usan siempre la suya.",
+                       "KHMenu is the game's; System is the computer's own. Subtitles always keep theirs."),
+                     pick, 2, sSpanish ? fontsEs : fontsEn)) {
+            Ini("hd_font") = pick ? 2 : 0;
+            changed = true;
+        }
     }
     ImGui::Separator();
 #ifdef REKHCOM_SHOW_HD_HUD /* HD HUD pending: hidden, and the game forces it off (KHCOM_HD_HUD_DEV=1 for development) */
@@ -3189,6 +3194,7 @@ static void Launch(SDL_Window* window) {
  * DECOMPUI_SHOT=dir  render every page off screen (hidden window) and save
  *                    dir/decompui_<page>.bmp, then exit.
  * DECOMPUI_INSTALL=path  install that ROM before the first frame.
+ * DECOMPUI_HD_EXPORT=n   make the HD mod's ReKHCoM-HD.zip for platform n (hd_import.inc kTargets), then exit.
  */
 typedef void(APIENTRY* GenFn)(GLsizei, GLuint*);
 typedef void(APIENTRY* BindFn)(GLenum, GLuint);
@@ -3392,6 +3398,13 @@ int main(int argc, char** argv) {
         AddToSteam();
         return 0;
     }
+#ifndef LAUNCHER_ANDROID
+    if (const char* target = SDL_getenv("DECOMPUI_HD_EXPORT")) { /* harness: Mod HD > another platform n, then exit */
+        hdexport::Run(sRoot, SDL_atoi(target));
+        fprintf(stderr, "hd export: %s\n", hdexport::sDone.c_str());
+        return hdexport::sDone.rfind("Listo", 0) == 0 || hdexport::sDone.rfind("Done", 0) == 0 ? 0 : 1;
+    }
+#endif
     if (const char* to = SDL_getenv("DECOMPUI_INSTALL_TO")) { /* harness: "Install in another folder" there, then exit */
         InstallCopy(sRoot, fs::u8path(to));
         fprintf(stderr, "install: %s, %lld of %lld bytes\n", sInstall.ok ? "ok" : "failed", (long long)sInstall.done,

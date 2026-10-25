@@ -771,6 +771,8 @@ static void GamePush(const int16_t* frames, uint32_t count) {
 /* HD music: the host decodes the track the game names and mixes it into the game's blocks (shared/hd_music_host.h) */
 #define HD_MUSIC_LOG Log
 #include "hd_music_host.h"
+/* the HD mod copied as one file, ReKHCoM-HD.zip in the data folder: unpacked into hd before the game starts */
+#include "hd_pack_host.h"
 /* the network link's socket (shared/udp_host.h): none on this host yet, the link stays the cable */
 #include "udp_host.h"
 /* the image's other threads, the PPU's cores (shared/thread_host.h): cores 1 and 2 on the Switch, pthreads on the Linux
@@ -1148,6 +1150,7 @@ int main(int argc, char** argv) {
 #else
     Log("ReKHCoM (Switch) starting");
 #endif
+    HdPackInstall(DATA_ROOT, Log);
     VideoInit();
 
     const char* region = FindRegion();

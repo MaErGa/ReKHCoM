@@ -452,6 +452,7 @@ static void PortConfigLoadFile(void) {
        KHCOM_HD_HUD_DEV=1 (then kh_com.ini's hd_hud applies). */
     if (!SDL_getenv("KHCOM_HD_HUD_DEV"))
         gPortConfig.hdHud = 0;
+    gPortConfig.hdSubtitles = 1; /* no switch of their own any more (Options: part of HD text) */
     /* the launcher changed the graphics mode: its presets now */
     if (gPortConfig.graphicsMode != PORT_MODE_CHOOSE && gPortConfig.graphicsMode != gPortConfig.graphicsModeApplied)
         PortApplyGraphicsMode(gPortConfig.graphicsMode);
@@ -520,13 +521,13 @@ void PortApplyGraphicsMode(int mode) {
     sUpgradedSettings = 0;
     gPortConfig.viewMode = classic ? PORT_VIEW_ORIGINAL : PORT_VIEW_AUTO;
     /* the HD mod's parts only once imported: the new start offers them when the launcher brings them */
-    gPortConfig.hdText = hd;
+    gPortConfig.hdText = !classic; /* every mode but GBA classic (user 25/10) */
     gPortConfig.hdCards = hd && PortAssetPresent(PORT_ASSET_HD_CARDS);
     gPortConfig.hdTitle = gPortConfig.hdCards;
     gPortConfig.hdMusic = hd && PortAssetPresent(PORT_ASSET_HD_MUSIC);
     /* HD intros (opening, credits, endings): on unless GBA Original */
     gPortConfig.hdMovies = !classic && PortAssetPresent(PORT_ASSET_HD_MOVIES);
-    gPortConfig.hdSubtitles = !classic && PortAssetPresent(PORT_ASSET_HD_SUBS);
+    gPortConfig.hdSubtitles = 1; /* part of HD text now: the HD videos always carry their subtitles */
     gPortConfig.hdScenes = hd && PortAssetPresent(PORT_ASSET_HD_SCENES);
     PortSetQolButtons(!classic);
     gPortConfig.gbaBorder = classic ? (gPortConfig.gbaBorder ? gPortConfig.gbaBorder : 1) : 0;

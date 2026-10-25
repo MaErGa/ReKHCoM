@@ -1,6 +1,6 @@
 # Riku: correcciones locales v1.9 — 17/10/2026
 
-Actualizacion: usuario autoriza publicar v1.9; ver cierre en REPARTO.md.
+Actualizacion: usuario autoriza publicar v1.9; ver cierre en archivo/REPARTO.md.
 Trabajo en release/v1.9, sin integrar la escala experimental de menus.
 
 ## Persistencia y partidas existentes

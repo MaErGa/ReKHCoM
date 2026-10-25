@@ -1,5 +1,35 @@
 # Changelog
 
+## v2.0-pre18 — 2026-10-25
+
+Test build: pre17 plus
+
+- Options: the HD section in order (HD text with its font choice, HD intros, HD music, HD cutscenes, HD HUD).
+- Bonus Elite fits wide screens (16:9 to 32:9).
+- RetroAchievements: unlocks made signed in but without a connection are sent on the next start.
+- Steam Deck / Linux: test option REKHCOM_GPU=1 (Launch Options: `REKHCOM_GPU=1 %command%`) to try the GPU (#140).
+- Linux / Steam Deck: the native build says once that it is an alpha; the Windows build also runs through Proton,
+  with the GPU (LEEME_LINUX_ALPHA.txt).
+- Approved art in the wide view for more scenes.
+
+## v2.0-pre17 — 2026-10-25
+
+Test build: pre16 plus
+
+- Android: the crash when picking up the card Jafar drops should be gone (#83); please confirm.
+- HD mod as one file for Android and consoles: on the PC, Mod HD > "Take the HD mod to another platform" makes
+  ReKHCoM-HD.zip; copy it to the game's folder there (Android: Install ROM...) and it installs itself.
+- RetroAchievements: the account is always in sight in the launcher; a portable copy on this PC signs in with the
+  last account used here (for a year).
+
+## v2.0-pre16 — 2026-10-25
+
+Test build: pre15 plus
+
+- Android: test build for the Jafar card pickup crash (#83): please tell us if it still happens.
+- New approved art: Trickmaster (posts and wall), scenes 004/005 and 099, Darkside punch, Add cards selector.
+- Fixes: the 64-bit Android and console builds again (Quit the game is a desktop option).
+
 ## v2.0-pre15 — 2026-10-25
 
 Test build: pre14 plus

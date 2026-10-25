@@ -57,3 +57,15 @@ release can carry this asset alongside the other platform packages.
 
 HD text and Shift-JIS text input (Japanese names) are off in the Japanese version (no CJK font is included).
 Not tested on the console yet.
+
+## HD mod (optional)
+
+The HD mod (Re:Chain of Memories' music, HD cards/HUD and subtitles) is made on a PC from your own
+KINGDOM HEARTS -HD 1.5+2.5 ReMIX-:
+
+1. On the PC, open ReKHCoM (the Windows or Linux download of this same release) > Mod HD and load it from the game.
+2. Under "Take the HD mod to another platform" choose **PS5** and press "Make ReKHCoM-HD.zip".
+3. Copy that one file, as it is, to `/data/ReKHCom/` and start ReKHCoM: it installs itself (the log says
+   `hd pack: N files ...`). You may delete the zip afterwards.
+
+A `hd` folder copied there by hand works too. HD movies do not play on the PS5 yet; the music and cards do.

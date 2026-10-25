@@ -42,3 +42,15 @@ python port/vita/build_vita.py test --regions eu --env KHCOM_BATTLE=10:4 --env K
 The package is built in the consoles VM (`port/progress/TOOLKIT_CONSOLAS.md`) with VitaSDK in
 `/root/consoles/vitasdk`. `test` links the same guest with the host's Linux mode for 32-bit ARM and runs it in the
 ARM64 VM (screenshots in `build/vita/test-out/shots.tar`).
+
+## HD mod (optional)
+
+The HD mod (Re:Chain of Memories' music, HD cards/HUD and subtitles) is made on a PC from your own
+KINGDOM HEARTS -HD 1.5+2.5 ReMIX-:
+
+1. On the PC, open ReKHCoM (the Windows or Linux download of this same release) > Mod HD and load it from the game.
+2. Under "Take the HD mod to another platform" choose **PS Vita** and press "Make ReKHCoM-HD.zip".
+3. Copy that one file, as it is, to `ux0:data/ReKHCoM/` and start ReKHCoM: it installs itself (the log says
+   `hd pack: N files ...`). You may delete the zip afterwards.
+
+A `hd` folder copied there by hand works too. HD movies do not play on the Vita yet; the music and cards do.

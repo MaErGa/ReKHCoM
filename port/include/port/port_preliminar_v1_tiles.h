@@ -147,6 +147,15 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
          * (6,-3) along its base; floor 8 columns by 4 rows). Props, carpet
          * and stains stay unique. */
         int diagonal=2*oy+ox;
+        if (v[1]==2 && ox>=64) {
+            /* The foreground right wall belongs to BG2. Its base runs
+             * down-right, opposite to BG3's back wall. Continue the clean
+             * last six columns, not the pillar's left edge or the crates. */
+            sx=58+PortSceneTileMod(ox-58,6);
+            sy=oy-(ox-sx)/2;
+            *x=sx; *y=sy<0?0:sy;
+            return *y<64;
+        }
         if (v[1]!=3) return 0;
         if (ox>=64 && diagonal<97) {
             sx=58+PortSceneTileMod(ox-58,6); sy=oy+(ox-sx)/2;
@@ -435,12 +444,21 @@ static inline int PortPreliminarTileSource(const PortPreliminarRecipe* p, int* x
         }
         *x=sx; *y=sy; return 1;
     }
-    if (v[0] == 102 && v[1] == 2 && oy < 0) {
-        /* Continue each top-cut shaft through the top of the viewport with
-         * its five-row spiral; a flat truncation leaves an open pipe end
-         * suspended in the sea (user's second annotation, 24/10). */
-        if (!((ox>=22 && ox<30) || (ox>=35 && ox<39) || (ox>=45 && ox<49))) return 0;
-        *y = PortSceneTileMod(oy, 5); return 1;
+    if (v[0] == 102 && v[1] == 2) {
+        /* Three short shafts start below the map's top. Continue each in
+         * its own column and five-row phase, including blank map cells.
+         * Called only for the added viewport; cartridge pixels stay intact. */
+        int start = -1;
+        if (ox>=31 && ox<35) start=3;
+        else if (ox>=40 && ox<44) start=1;
+        else if (ox>=49 && ox<53) start=6;
+        if (start>=0 && oy<start) {
+            *y=start+PortSceneTileMod(oy-start,5); return 1;
+        }
+        if (oy<0) {
+            if (!((ox>=22 && ox<30) || (ox>=35 && ox<39) || (ox>=45 && ox<49))) return 0;
+            *y=PortSceneTileMod(oy,5); return 1;
+        }
     }
     if (v[0] == 102) {
         /* The authored BG3 already contains its diagonal corridor. Do not
@@ -711,18 +729,30 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
         *sx=504; *sy=248; /* an empty cell of the map */
         return 1;
     }
-    if (p && p->v[0]==99 && p->v[1]==3 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
+    if (p && p->v[0]==99 && p->v[1]==3 && (wx<0 || wx>=256 || wy<24 || wy>=256)) {
         int tx=wx>>3, ty=wy>>3;
         if (wy<24) {
-            /* The ceiling's donor is a complete 56px pair (x=58..113),
-             * not a tile-aligned stripe. Continue its 28px squares upwards
-             * with alternating rows, phased to the authored edge at y=24.
-             * Keep this proposal outside the source map; the praised floor
-             * and the fireplace never pass through this branch. */
-            int row=(wy-24)/28;
-            if (wy<24 && (wy-24)%28) --row;
-            *sx=58+PortSceneTileMod(wx-2+((row+1)&1)*28,56);
-            *sy=0;
+            /* Same room as Trickmaster: extend its wall, not the beige
+             * checker ceiling. Posts and the single stone shaft retain
+             * their x; the clean panel excludes the clock and window. */
+            *sx=PortSceneTileMod(wx,56);
+            *sy=24+PortSceneTileMod(wy-24,48);
+            if ((wx>=56 && wx<120) || (wx>=184 && wx<208)) *sx=wx;
+            else if (wx>=144 && wx<184) *sx=72+PortSceneTileMod(wx-144,40);
+            if ((wx>=56 && wx<120) || (wx>=144 && wx<208)) *sy=24;
+            if (wx>=120 && wx<144) {
+                *sx=wx; *sy=24+PortSceneTileMod(wy-24,16);
+            }
+            return 1;
+        }
+        if ((wx<0 || wx>=256) && wy>=24 && wy<176) {
+            /* Same intact wallpaper module as the arena: no mirrored prop
+             * fragment beside the room, and no flat filler farther away. */
+            *sx=PortSceneTileMod(wx,56); *sy=wy;
+            if (wy>=108 && wy<128) {
+                if (wy<112) { *sx=32; *sy=108; }
+                else if (wy<114 || wy>=126) *sx=32;
+            }
             return 1;
         }
         if (PortPreliminar099Floor(wx,wy,sx,sy)) return 1;

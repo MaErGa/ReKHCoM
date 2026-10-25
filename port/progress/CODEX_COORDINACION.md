@@ -669,7 +669,7 @@ partidas/ejecutables del usuario desde este bloque.
 ## Reparto al retomar
 
 - Claude está modificando `port_ppu.c`, `src/engine.c`, `engine.h` y
-  `REPARTO.md` en `khcom-claude`: conserva el cierre de headers/transiciones
+  `archivo/REPARTO.md` en `khcom-claude`: conserva el cierre de headers/transiciones
   de menús. Codex no toca esos archivos mientras esté ese trabajo activo.
 - Codex retoma **Gameplay verification**: contraste del replay VBM USA con
   el cartucho, sincronía tras la intro y rutas reproducibles de ambas
@@ -684,13 +684,13 @@ partidas/ejecutables del usuario desde este bloque.
 
 - Claude integró los headers y cerró menús/eventos en ae59ef83a/22733e166.
   No repetir ese trabajo. Gameplay sigue en 85 %.
-- La auditoría `HDTEXT_CIERRE_AUDIT.md` identificó familias numéricas de texto
+- La auditoría `archivo/HDTEXT_CIERRE_AUDIT.md` identificó familias numéricas de texto
   aún sin convertir pese al 100 % de la barra. Codex toma exclusivamente
   category/value/CP de los tres archivos de barajas y `mode_status.c`;
   pruebas regionales off/on y comparación exacta del modo pixel en curso.
   Map/save, números OBJ del mapa, teclado de 64 bytes y subida de nivel
   permanecen pendientes, distintos de los números artísticos de naipes.
-- `WIDESCREEN_CIERRE_AUDIT.md` no encontró un defecto nuevo de extensión;
+- `archivo/WIDESCREEN_CIERRE_AUDIT.md` no encontró un defecto nuevo de extensión;
   sí un error de contabilidad de las salas: 120 casos únicos por región,
   118 capturas de campo y dos encuentros, no 131/129. Esto no reemplaza
   las partidas completas de Sora/Riku pendientes.

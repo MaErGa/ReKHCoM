@@ -186,6 +186,32 @@ def case_dirs():
     return out
 
 
+PRUNED = 'pruned.txt'  # a clean case whose binaries went (prune_clean): its log stays, the report counts it
+
+
+def prune_clean(suite, version):
+    """After a suite: the cases whose log shows no fault or crash give back their executable, DLL and captures (the
+    batteries took ~50 GB, 25/10); the faulty ones keep everything for the report's symbols. Returns the bytes freed."""
+    freed = 0
+    for name, v, case, folder in case_dirs():
+        if name != suite or v != version:
+            continue
+        log = folder / 'kh_com.log'
+        if not log.exists():
+            continue
+        text = log.read_text(encoding='utf-8', errors='replace')
+        if FAULT.search(text) or 'CRASH' in text or 'FATAL' in text:
+            continue
+        for f in list(folder.glob('*.exe')) + list(folder.glob('*.dll')) + list(folder.glob('*.bmp')):
+            try:
+                freed += f.stat().st_size
+                f.unlink()
+            except OSError:
+                pass
+        (folder / PRUNED).write_text('clean: binaries and captures removed after the suite\n', encoding='utf-8')
+    return freed
+
+
 def symbolize(exe, addresses):
     """{address: (function, file:line)} using the exe that produced them."""
     if not addresses:
@@ -231,6 +257,9 @@ def report():
     for suite, version, case, folder in case_dirs():
         log = folder / 'kh_com.log'
         exe = folder / 'khcom.exe'
+        if log.exists() and (folder / PRUNED).exists():
+            scanned += 1  # clean, already pruned: nothing to symbolize
+            continue
         if not log.exists() or not exe.exists():
             continue
         scanned += 1
@@ -299,6 +328,8 @@ def main():
     ap.add_argument('--build', action='store_true', help='ninja the desktop test builds first')
     ap.add_argument('--resume', action='store_true',
                     help='skip the suites that already finished (a run killed from outside leaves no .done mark)')
+    ap.add_argument('--keep-cases', action='store_true',
+                   help='keep every case\'s executable and captures (by default a clean case gives them back)')
     ap.add_argument('--hd', action='store_true',
                     help='the HD mod on (cards, title, text; KHCOM_CONFIG, KHCOM_HD_SPRITES from $KHCOM_HD_SOURCE or '
                          '<work>/hd-completo/sprites); results in build/debugkit-hd')
@@ -313,9 +344,9 @@ def main():
         env = dict(os.environ, PATH=str(ROOT.parent / 'toolchain/bin') + os.pathsep + os.environ.get('PATH', ''))
         if args.build:
             for v in versions:
-                if not (build_dir(v) / 'build.ninja').exists():
-                    subprocess.run([sys.executable, 'port/configure_pc.py', '--version', v, '--out', f'build/pc-{v}'],
-                                   cwd=ROOT, check=True, env=env)
+                # always: a build.ninja from before a new source file links without it (25/10: PortHdGauge undefined)
+                subprocess.run([sys.executable, 'port/configure_pc.py', '--version', v, '--out', f'build/pc-{v}'],
+                               cwd=ROOT, check=True, env=env)
                 subprocess.run([shutil.which('ninja', path=env['PATH']) or 'ninja', '-f', str(build_dir(v) / 'build.ninja')], cwd=ROOT, check=True, env=env)
         OUT.mkdir(parents=True, exist_ok=True)
         for v in versions:
@@ -341,6 +372,8 @@ def main():
                     code = subprocess.run(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, env=env).returncode
                 # killed from outside (0x40010004 on Windows, or a signal): not finished, --resume runs it again
                 if code not in (0x40010004, 0xC000013A) and code >= 0:
+                    if not args.keep_cases:
+                        print(f'   pruned {prune_clean(suite, v) / 1e9:.1f} GB of clean cases', flush=True)
                     done.write_text('', encoding='utf-8')
                 print((OUT / f'{suite}-{v}.txt').read_text(encoding='utf-8', errors='replace').strip().splitlines()[-1:],
                       flush=True)

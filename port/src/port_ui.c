@@ -50,6 +50,14 @@ void PortInputSuppressUntilRelease(void);
 
 enum { LANG_EN, LANG_FR, LANG_DE, LANG_IT, LANG_ES, LANG_JA, LANG_COUNT };
 
+/* Quit the game (and its launcher): the desktop builds only, whose launcher waits for the game; the console and
+   64-bit Android images have no launcher to close (and no SDL_PushEvent in their shim) */
+#if (defined(_WIN32) || defined(PORT_LINUX)) && !defined(PORT_GBA_RELOC)
+#define QUIT_ROW 1
+#else
+#define QUIT_ROW 0
+#endif
+
 /* where the HD mod plays: its music and cards everywhere but the web; its movies where port_hdmovie.c decodes them */
 #ifdef __EMSCRIPTEN__
 #define HD_MOD_PLAYS 0
@@ -99,16 +107,16 @@ enum {
     ITEM_TOUCH_THEME,  /* the touch buttons' look: Clear, Dark, Color */
     ITEM_TOUCH_EDIT,   /* the layout editor: drag the touch buttons where the player wants them */
     ITEM_RECOM_EXTRAS, /* the HD section's heading (every HD row together, 25/10), not selectable */
+    ITEM_HDTEXT,
     ITEM_HD_MOVIES,    /* the HD mod (HD_MOD.md): greyed with a note until imported (NeedsLauncher) */
     ITEM_HD_MUSIC,
     ITEM_HD_SCENES,
-    ITEM_HD_SUBTITLES,
     ITEM_HD_CARDS,     /* HD cards, faces and battle words (port_hdsprites.c), once imported */
-    ITEM_HD_TITLE,     /* the title's HD logo */
-    ITEM_HDTEXT,
-    ITEM_HDFONT,
     ITEM_HDHUD,
     ITEM_HD2D,
+    ITEM_HD_SUBTITLES,
+    ITEM_HDFONT,
+    ITEM_HD_TITLE,     /* the title's HD logo */
     ITEM_PS2_MODE,
     ITEM_PS2_MENU,     /* opens the Re:CoM page */
     ITEM_EXPERIMENTAL, /* section heading, not selectable */
@@ -177,7 +185,7 @@ static int sPage;
 static int sTitleRequest; /* ITEM_TITLE: due once the menu has closed */
 /* a big window over Options that asks twice, as the scene pause asks before a skip: back to the title (ITEM_TITLE),
    or which mode's presets to go back to (ITEM_MODE_RESET) */
-enum { CONFIRM_NONE, CONFIRM_TITLE, CONFIRM_MODE, CONFIRM_STATES, CONFIRM_QUIT };
+enum { CONFIRM_NONE, CONFIRM_TITLE, CONFIRM_MODE, CONFIRM_STATES, CONFIRM_QUIT, CONFIRM_FONT };
 static int sConfirm, sConfirmStep, sConfirmCursor, sConfirmMode;
 static void ConfirmOpen(int what);
 static void ConfirmKey(int key);
@@ -241,7 +249,10 @@ static int ItemVisible(int item) {
     if (IsHeading(item) && item < ITEM_CLOSE)
         return SectionShown(item);
     switch (item) {
-        case ITEM_HDFONT: return gPortConfig.hdText; /* with the HD text only */
+        case ITEM_QUIT: return QUIT_ROW;
+        /* in HD text now (user 25/10): the subtitles always with it, the font from its row (A) */
+        case ITEM_HDFONT:
+        case ITEM_HD_SUBTITLES: return 0;
 #if !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && !defined(PORT_ANDROID64) && !defined(PORT_TOUCH)
         case ITEM_HIDE_TOUCH:
         case ITEM_TOUCH_THEME:
@@ -260,8 +271,7 @@ static int ItemVisible(int item) {
         /* the HD mod's rows show wherever the mod plays (greyed, with a note, until the launcher imports it, 25/10) */
         case ITEM_HD_MOVIES:
         case ITEM_HD_SCENES:
-        case ITEM_PS2_HDSCENES:
-        case ITEM_HD_SUBTITLES: return HD_MOVIES_PLAY;
+        case ITEM_PS2_HDSCENES: return HD_MOVIES_PLAY;
         case ITEM_HD_MUSIC:
         case ITEM_HD_CARDS: return HD_MOD_PLAYS;
 #ifdef VERSION_JP
@@ -309,7 +319,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Subir cartas en combate", "カードを上げる" },
     { "Invert card scrolling", "Inverser le défilement", "Kartenauswahl umkehren", "Inverti scorrimento carte",
       "Invertir selección de cartas", "カード送りを反転" },
-    { "Video", "Vidéo", "Video", "Video", "Vídeo", "映像" },
+    { "Video", "Vidéo", "Video", "Video", "Vídeo", "ビデオ" },
     { "View", "Vue", "Ansicht", "Visuale", "Vista", "表示" },
     { "Aspect ratio", "Format d'image", "Seitenverhältnis", "Proporzioni", "Relación de aspecto", "画面の形" },
     { "Zoom", "Zoom", "Zoom", "Zoom", "Zoom", "ズーム" },
@@ -335,7 +345,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Effects volume", "Volume effets", "Effektlautstärke", "Volume effetti", "Volumen efectos", "効果音の音量" },
     { "Japanese voices (restart)", "Voix japonaises (relancer)", "Japanische Stimmen (Neustart)",
       "Voci giapponesi (riavvia)", "Voces japonesas (reiniciar)", "日本語ボイス (再起動)" },
-    { "General", "Général", "Allgemein", "Generale", "General", "一般" },
+    { "General", "Général", "Allgemein", "Generale", "General", "きほん" },
     { "Save bank", "Banque de sauvegarde", "Speicherbank", "Banco di salvataggio", "Banco de partidas",
       "セーブバンク" },
     { "Discord status", "Statut Discord", "Discord-Status", "Stato Discord", "Estado en Discord", "Discordステータス" },
@@ -346,16 +356,16 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Move touch buttons", "Déplacer les boutons tactiles", "Touch-Tasten verschieben", "Sposta i tasti touch",
       "Mover botones táctiles", "タッチボタンを移動" },
     { "HD", "HD", "HD", "HD", "HD", "HD" },
+    { "HD text", "Texte HD", "HD-Text", "Testo HD", "Texto HD", "HDテキスト" },
     { "HD intros", "Intros HD", "HD-Intros", "Intro HD", "Intros HD", "HDイントロ" }, /* opening, credits, endings */
     { "HD music", "Musique HD", "HD-Musik", "Musica HD", "Música HD", "HDミュージック" },
-    { "HD scenes", "Scènes HD", "HD-Szenen", "Scene HD", "Escenas HD", "HDシーン" },
-    { "HD subtitles", "Sous-titres HD", "HD-Untertitel", "Sottotitoli HD", "Subtítulos HD", "HDじまく" },
+    { "HD cutscenes", "Cinématiques HD", "HD-Zwischensequenzen", "Filmati HD", "Cinemáticas HD", "HDムービー" },
     { "HD HUD", "ATH HD", "HD-HUD", "HUD HD", "HUD HD", "HD HUD" }, /* cards, battle HUD and title logo together */
-    { "HD title logo", "Logo de titre HD", "HD-Titellogo", "Logo del titolo HD", "Logo del título HD", "HDタイトルロゴ" },
-    { "HD text", "Texte HD", "HD-Text", "Testo HD", "Texto HD", "HDテキスト" },
-    { "HD text font", "Police du texte HD", "Schrift des HD-Texts", "Font del testo HD", "Fuente del texto HD", "HDテキストのフォント" },
     { "HD HUD (pilot)", "HUD HD (pilote)", "HD-HUD (Pilot)", "HUD HD (pilota)", "HUD HD (piloto)", "HD HUD (試験)" },
     { "HD-2D look", "Style HD-2D", "HD-2D-Optik", "Stile HD-2D", "Estilo HD-2D", "HD-2D表示" },
+    { "HD subtitles", "Sous-titres HD", "HD-Untertitel", "Sottotitoli HD", "Subtítulos HD", "HDじまく" },
+    { "HD text font", "Police du texte HD", "Schrift des HD-Texts", "Font del testo HD", "Fuente del texto HD", "HDテキストのフォント" },
+    { "HD title logo", "Logo de titre HD", "HD-Titellogo", "Logo del titolo HD", "Logo del título HD", "HDタイトルロゴ" },
     { "Re:CoM mode", "Mode Re:CoM", "Re:CoM-Modus", "Modalità Re:CoM", "Modo Re:CoM", "Re:CoMモード" },
     { "Re:CoM settings", "Réglages Re:CoM", "Re:CoM-Einstellungen", "Impostazioni Re:CoM", "Ajustes Re:CoM",
       "Re:CoMオプション" },
@@ -933,10 +943,28 @@ static const char* const sNeedHd[LANG_COUNT] = {
     "Importiere die HD-Mod im Launcher, um das einzuschalten", "Importa la mod HD dal launcher per attivarla",
     "Importa el mod HD desde el launcher para activarla", "ランチャーでHD MODを取りこむと使えます",
 };
+static const char* const sScenesNote[LANG_COUNT] = {
+    "Re:CoM's movies replace the scenes the game plays with its own engine. For purists: turned off, the originals "
+    "stay. Both versions can be watched again later among the scenes already unlocked.",
+    "Les vidéos de Re:CoM remplacent les scènes jouées par le moteur du jeu. Pour les puristes : désactivé, les "
+    "originales restent. Les deux versions se reverront plus tard parmi les scènes débloquées.",
+    "Die Videos von Re:CoM ersetzen die Szenen der Spiel-Engine. Für Puristen: aus, bleiben die Originale. Beide "
+    "Fassungen lassen sich später bei den freigeschalteten Szenen erneut ansehen.",
+    "I video di Re:CoM sostituiscono le scene fatte con il motore del gioco. Per i puristi: spento, restano le "
+    "originali. Entrambe si potranno rivedere più avanti tra le scene sbloccate.",
+    "Los videos de Re:CoM reemplazan las escenas que el juego hace con su motor. Para los puristas: apagado, quedan "
+    "las originales. Las dos versiones se podrán ver de nuevo luego entre las escenas ya desbloqueadas.",
+    "Re:CoMのムービーがゲームのシーンのかわりになります。オフでもとのシーンのままです。",
+};
+static const char* const sFontNote[LANG_COUNT] = {
+    "A: choose the font (KHMenu or the system's).", "A : choisir la police (KHMenu ou système).",
+    "A: Schrift wählen (KHMenu oder System).", "A: scegli il font (KHMenu o sistema).",
+    "A: elegir la fuente (KHMenu o la del sistema).", "A: フォントをえらぶ (KHMenu かシステム)",
+};
 static const char* const sNeedJp[LANG_COUNT] = {
     "Add the Japanese cartridge in the launcher to turn this on", "Ajoute la cartouche japonaise dans le lanceur",
     "Füge im Launcher die japanische Fassung hinzu", "Aggiungi la cartuccia giapponese dal launcher",
-    "Añade el cartucho japonés desde el launcher para activarla", "ランチャーで日本版を追加すると使えます",
+    "Añade el cartucho japonés desde el launcher para activarla", "ランチャーで日本のカートリッジを入れると使えます",
 };
 
 static int ItemEnabled(int item) {
@@ -1042,16 +1070,16 @@ static void ValueText(int item, char* out, size_t size) {
         case ITEM_LCD:
             SDL_strlcpy(out, sOnOff[gPortConfig.colorCorrection != 0][l], size);
             break;
-        case ITEM_HDTEXT:
-            SDL_strlcpy(out, sOnOff[gPortConfig.hdText != 0][l], size);
+        case ITEM_HDTEXT: /* on: the face too (A changes it) */
+            if (gPortConfig.hdText)
+                SDL_snprintf(out, size, "%s · %s", sOnOff[1][l], gPortConfig.hdFont == 2 ? (l == LANG_ES || l == LANG_IT ? "Sistema" : l == LANG_FR ? "Système" : l == LANG_JA ? "システム" : "System") : "KHMenu");
+            else
+                SDL_strlcpy(out, sOnOff[0][l], size);
             break;
         case ITEM_HDFONT: {
-            static const char* const kFonts[3][LANG_COUNT] = {
-                { "KHMenu", "KHMenu", "KHMenu", "KHMenu", "KHMenu", "KHMenu" },
-                { "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts", "Comic Hearts" },
-                { "System", "Système", "System", "Sistema", "Sistema", "システム" },
-            };
-            SDL_strlcpy(out, kFonts[SDL_clamp(gPortConfig.hdFont, 0, 2)][l], size);
+            /* KHMenu or the system's: Comic Hearts is the subtitles' (user 25/10) */
+            static const char* const kSystem[LANG_COUNT] = { "System", "Système", "System", "Sistema", "Sistema", "システム" };
+            SDL_strlcpy(out, gPortConfig.hdFont == 2 ? kSystem[l] : "KHMenu", size);
             break;
         }
         case ITEM_CARDS:
@@ -1308,7 +1336,7 @@ static void Change(int item, int dir) {
             gPortConfig.hdText = !gPortConfig.hdText;
             break;
         case ITEM_HDFONT:
-            gPortConfig.hdFont = Wrap(gPortConfig.hdFont + dir, 3);
+            gPortConfig.hdFont = gPortConfig.hdFont == 2 ? 0 : 2; /* two faces: either direction swaps them */
             break;
         case ITEM_CARDS:
             gPortConfig.cardHudRaise = Wrap(gPortConfig.cardHudRaise / 4 + dir, 5) * 4;
@@ -1548,6 +1576,27 @@ static void CheckNewAssets(void);
 
 void PortUiInit(void) {
     Uint64 start = SDL_GetPerformanceCounter();
+    extern void PortHdPackCheck(void);
+    PortHdPackCheck(); /* <data folder>/ReKHCoM-HD.zip, copied as one file: into hd first */
+#ifdef PORT_LINUX
+    {
+        /* once per installation: the native Linux/Steam Deck build is an alpha; the Windows one runs through Proton
+           with the GPU (user 25/10) */
+        extern void PortAchievementToast(const char* title, const char* detail, const char* label, int badgeIndex);
+        const char* mark = PortConfigPath("linux_alpha_notice.txt");
+        FILE* f = fopen(mark, "r");
+        if (f) {
+            fclose(f);
+        } else if ((f = fopen(mark, "w")) != NULL) {
+            fputs("shown\n", f);
+            fclose(f);
+            PortAchievementToast(Lang() == LANG_ES ? "Versión nativa de Linux (alpha)" : "Native Linux build (alpha)",
+                                 Lang() == LANG_ES ? "La versión de Windows también funciona por Proton, con la GPU."
+                                                   : "The Windows version also runs through Proton, with the GPU.",
+                                 "ReKHCoM", -1);
+        }
+    }
+#endif
     /* Asset discovery also validates the optional Japanese cartridge's CRC.
        Do that before the game starts, rather than blocking the first visible
        title frame for a full 32 MB scan (even with undub switched off).
@@ -1624,6 +1673,8 @@ void PortUiOpenOptions(void) {
     sHarnessTick = 0;
     if (SDL_getenv("KHCOM_OPTIONS_CURSOR")) /* test harness: shot of a lower row */
         sCursor = SDL_clamp(SDL_atoi(SDL_getenv("KHCOM_OPTIONS_CURSOR")), 0, ITEM_COUNT - 1);
+    if (SDL_getenv("KHCOM_OPTIONS_FONTCHOICE")) /* test harness: the HD text font window open */
+        ConfirmOpen(CONFIRM_FONT);
     if (sCursor >= ITEM_CHEAT_DEBUG && sCursor <= ITEM_CHEATS_BACK) /* a row of the Cheats page */
         sPage = PAGE_CHEATS;
     if (sCursor >= ITEM_CONTROL_A && sCursor <= ITEM_CONTROLS_BACK) /* a row of the Controls page */
@@ -2026,7 +2077,10 @@ int PortUiHandleEvent(const void* p) {
             case SDLK_SPACE:
             case SDLK_X:
             case SDLK_K:
-                if (sCursor == ITEM_CLOSE)
+                if (sCursor == ITEM_HDTEXT && gPortConfig.hdText) {
+                    sConfirmCursor = gPortConfig.hdFont == 2;
+                    ConfirmOpen(CONFIRM_FONT);
+                } else if (sCursor == ITEM_CLOSE)
                     Close();
                 else if (sCursor == ITEM_FS_RES)
                     ConfirmFsRes();
@@ -2075,7 +2129,10 @@ int PortUiHandleEvent(const void* p) {
                     Change(sCursor, 1);
                 break;
             case SDL_GAMEPAD_BUTTON_SOUTH:
-                if (sCursor == ITEM_CLOSE)
+                if (sCursor == ITEM_HDTEXT && gPortConfig.hdText) {
+                    sConfirmCursor = gPortConfig.hdFont == 2;
+                    ConfirmOpen(CONFIRM_FONT);
+                } else if (sCursor == ITEM_CLOSE)
                     Close();
                 else if (sCursor == ITEM_FS_RES)
                     ConfirmFsRes();
@@ -3427,6 +3484,15 @@ static void ConfirmKey(int key) {
     extern void PortMenuSoundClick(void);
     extern void PortMenuSoundDecide(int confirm);
     int rows = ConfirmRows(), last = sConfirm == CONFIRM_MODE ? 2 : sConfirm == CONFIRM_STATES ? 0 : 1;
+    if (sConfirm == CONFIRM_FONT && key >= 2) { /* one step: A takes the face under the cursor, B leaves it as it was */
+        PortMenuSoundDecide(key == 2);
+        if (key == 2) {
+            gPortConfig.hdFont = sConfirmCursor ? 2 : 0;
+            PortConfigSave();
+        }
+        sConfirm = CONFIRM_NONE;
+        return;
+    }
     if (key == 0 || key == 1) {
         int c = sConfirmCursor;
         do
@@ -3479,6 +3545,7 @@ static void ConfirmKey(int key) {
         Close();
         return;
     }
+#if QUIT_ROW
     if (sConfirm == CONFIRM_QUIT) {
         extern int gPortExitCode;
         SDL_Event q;
@@ -3489,6 +3556,7 @@ static void ConfirmKey(int key) {
         SDL_PushEvent(&q);
         return;
     }
+#endif
     sConfirm = CONFIRM_NONE;
     PortApplyGraphicsMode(sConfirmMode);
     PortConfigSave();
@@ -3496,6 +3564,62 @@ static void ConfirmKey(int key) {
 }
 
 /* a white window in the middle of the darkened options, as the scene pause: the question, a red warning, the rows */
+/* the two faces' samples (port/tools/gen_font_samples.py): KHMenu above, the system's below, 320x40 each */
+static const unsigned char sFontSamplesPng[] = {
+#include "port/font_samples_png.inc"
+};
+static void DrawFontSample(int face, int x, int y, int w, int h) {
+    static unsigned char* rgba;
+    static int tried, sw, sh;
+    int px, py;
+    if (!tried) {
+        int channels;
+        tried = 1;
+        rgba = stbi_load_from_memory(sFontSamplesPng, (int)sizeof(sFontSamplesPng), &sw, &sh, &channels, 4);
+    }
+    if (!rgba || sh < 80)
+        return;
+    for (py = 0; py < h; py++)
+        for (px = 0; px < w; px++) {
+            int sx = px * sw / w, sy = face * 40 + py * 40 / h, X = x + px, Y = y + py;
+            const unsigned char* c = rgba + ((size_t)sy * sw + sx) * 4;
+            uint32_t* d;
+            unsigned a = c[3];
+            if (!a || X < 0 || Y < 0 || X >= sFbW || Y >= sFbH)
+                continue;
+            d = &sFb[Y * sFbW + X];
+            *d = 0xFF000000u | ((c[0] * a + ((*d >> 16) & 255) * (255 - a)) / 255) << 16 |
+                 ((c[1] * a + ((*d >> 8) & 255) * (255 - a)) / 255) << 8 | ((c[2] * a + (*d & 255) * (255 - a)) / 255);
+        }
+}
+
+/* Options > HD text > A: the two faces side by side, as they look in the game */
+static void DrawFontChoice(int l, int width, int height) {
+    static const char* const kAsk[LANG_COUNT] = { "HD text font", "Police du texte HD", "Schrift des HD-Texts",
+        "Font del testo HD", "Fuente del texto HD", "HDテキストのフォント" };
+    static const char* const kNames[2][LANG_COUNT] = {
+        { "KHMenu (default)", "KHMenu (par défaut)", "KHMenu (Standard)", "KHMenu (predefinito)", "KHMenu (predeterminada)", "KHMenu (きほん)" },
+        { "System", "Système", "System", "Sistema", "Sistema", "システム" } };
+    static const char* const kNote[LANG_COUNT] = { "Subtitles keep their own font.", "Les sous-titres gardent la leur.",
+        "Untertitel behalten ihre Schrift.", "I sottotitoli tengono il loro.", "Los subtítulos conservan la suya.",
+        "じまくはそのままです。" };
+    int panelW = SDL_min(width - 24, 250), x0 = (width - panelW) / 2, rowH = 14 + 30, h = 22 + rowH * 2 + 16, y0, i, y;
+    y0 = SDL_max(2, (height - h) / 2);
+    Shade(0, 0, width, height, 0xFF000000u, 160);
+    Fill(x0 - 2, y0 - 2, panelW + 4, h + 4, MENU_GREY);
+    Fill(x0, y0, panelW, h, 0xFFFFFFFFu);
+    DrawText(kAsk[l], x0 + 8, y0 + 4, MENU_RED_DARK, 0xFFD8D8D8u);
+    Fill(x0 + 8, y0 + 17, panelW - 16, 1, MENU_GREY);
+    for (i = 0, y = y0 + 22; i < 2; i++, y += rowH) {
+        int sel = i == sConfirmCursor;
+        MenuBar(x0 + 8, y, panelW - 16, sel);
+        DrawText(kNames[i][l], x0 + 24, y - 2, MENU_INK, 0xFFD8D8D8u);
+        Fill(x0 + 10, y + 13, panelW - 20, 26, sel ? 0xFF606878u : 0xFF8890A0u); /* a dark strip: the sample reads as in a box */
+        DrawFontSample(i, x0 + 12, y + 13, panelW - 24, 26);
+    }
+    DrawText(kNote[l], x0 + 8, y0 + h - 13, MENU_DIM, 0xFFFFFFFFu);
+}
+
 static void DrawConfirm(int l, int width, int height) {
     const char* labels[4];
     const char* subs[4] = { NULL, NULL, NULL, NULL };
@@ -3503,6 +3627,11 @@ static void DrawConfirm(int l, int width, int height) {
     char ask[200];
     static char hd[600];
     int rows = ConfirmRows(), i, panelW = SDL_min(width - 24, 250), textW = panelW - 30, x0, y0, h, y, warnH, compact;
+
+    if (sConfirm == CONFIRM_FONT) {
+        DrawFontChoice(l, width, height);
+        return;
+    }
 
     if (sConfirm == CONFIRM_MODE && sConfirmStep == 0) {
         int imported = HdAnyImported();
@@ -3699,6 +3828,10 @@ static void DrawMenu(int l, int width, int height) {
     int zoom = sCursor == ITEM_BATTLE_ZOOM && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom;
     if (NeedsLauncher(sCursor) && ItemVisible(sCursor) && selY >= 0)
         DrawNeedNote(NeedsLauncher(sCursor) == NEED_JP ? sNeedJp[l] : sNeedHd[l], width, height, barX + barW + 8, selY);
+    else if (sPage == PAGE_MAIN && sCursor == ITEM_HD_SCENES && selY >= 0)
+        DrawNeedNote(sScenesNote[l], width, height, barX + barW + 8, selY);
+    else if (sPage == PAGE_MAIN && sCursor == ITEM_HDTEXT && gPortConfig.hdText && selY >= 0)
+        DrawNeedNote(sFontNote[l], width, height, barX + barW + 8, selY);
     if (sPage == PAGE_MAIN && (sCursor == ITEM_ZOOM || sCursor == ITEM_BATTLE_ZOOM) &&
         ItemEnabled(sCursor) && PortConfigZoomHeavy(zoom))
         /* a demanding zoom: say so where the help line is */

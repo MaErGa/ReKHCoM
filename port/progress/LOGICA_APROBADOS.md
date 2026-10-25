@@ -49,6 +49,10 @@ Trickmaster, envío `20261025-052021-8546de`: «todo bien», sólo completar
 el muro hacia arriba. Prolongar el período vertical del papel rosa, no la
 franja beige del techo. Conservar suelo y objetos ya aceptados; la única
 chimenea conserva su fuste de piedra donde cruza la prolongación del muro.
+Corrección del envío `20261025-060416-21533f`: al prolongar hacia arriba,
+los postes de madera mantienen su x original a ambos lados de la chimenea.
+El período donante termina antes del travesaño horizontal; copiarlo introduce
+una franja cortada. El panel derecho se toma limpio, sin repetir reloj ni ventana.
 
 Escena 112, envío `20261024-054012-207689`: la franja superior que falta
 en BG2 se rellena con la pared lisa de esa misma capa; una muestra superior
@@ -190,7 +194,7 @@ Workflow completo (tiles, píxeles, pixel art, pruebas en x3 entero): WORKFLOW_A
   `MapTopEdgeTile`, `MapPlainBaseTile`).
 - 061 hielo, 074 Monstro y 057 playa (18/10) y 004: **aprobadas antes de tiempo** (usuario 24/10). Ya no son
   modelo; ver «Aprobaciones tempranas corregidas» abajo. Guard Armor y las ventanas 1-17 siguen valiendo
-  (REPARTO.md, ESCENAS_REVISION_AMPLIA.md).
+  (archivo/REPARTO.md, ESCENAS_REVISION_AMPLIA.md).
 
 - 59 retratos: aprobado el 18/10. La vista amplia exponía las posiciones de espera
   X=449/-299 antes de aplicar la silueta. Ocultar la espera en `msgface_2` y
@@ -271,7 +275,7 @@ Lo que se había aprendido de ellas no basta; estas son las reglas corregidas (v
 | 004 / `22fc4ea176864111880e02b851a58445` | «falta acabar patrón hacia la derecha» | Un patrón sigue **hasta el borde de la pantalla en los dos lados**; no basta con cerrar el lado más visible. Comprobar el ancho máximo (3840) en ambos márgenes. 004 (r3c): perfil propio; la pared repite con (6,-3) a lo largo de su base (periodo 6 medido en el mapa), el suelo 8x4; alfombra, cajas y manchas quedan únicas; el borde del zócalo se mide por tile (2y+x). |
 | 057 / `e49d2f465f9346d28ba013d9a81de938` | «el patrón no se sigue hacia arriba bien» (4 nubes); «pelones a los que falta la mitad derecha del pasto»; «mejorar derecha del pasto» | Repetir **hacia arriba** con el período vertical medido del propio patrón, no con la fila superior. Cada mata de pasto entera (las dos mitades): el donante debe contenerla completa, como 053. El lado derecho con la misma estructura que el izquierdo. |
 | 061 / `f31927d3f7014eb3a51e52fcf7323003` | «falta un cachito»; «falta terminar el patrón de pasillo» | Sin huecos: revisar cada esquina y unión entre la extensión y el mapa. Un pasillo sigue con su propio período hasta el borde, sin cortarse antes. |
-| 074 / `303416c343704456aea87be42f0508bf` | «el patrón no está bien, creo que había una versión mejorada, mejorar» | Antes de rehacer, buscar en la app las versiones anteriores de la pieza y partir de la mejor valorada; el patrón debe repetir su período real. |
+| 074 / `303416c343704456aea87be42f0508bf` | «el patrón no está bien, creo que había una versión mejorada, mejorar» | Antes de rehacer, buscar en la app las versiones anteriores de la pieza y partir de la mejor valorada; el patrón debe repetir su período real. Propuesta 25/10: conservar el cierre histórico (+20,-1) del ornamento BG2, donante entero [7,15)×[18,22). Las copias posteriores avanzan (+20,+10) desde (27,17): su coordenada fuente Y es `y-10*repeat+1`, también en el primer módulo nuevo; usar -4 desplazaba las copias cinco tiles. No alterar BG1, BG3, paletas ni el bloque nativo. Pendiente de prueba serial y valoración humana; no hereda aprobación. |
 
 Regla general que sale de las cuatro: medir el período de cada estructura en **horizontal y vertical**, extenderla
 **en todas las direcciones** hasta los bordes de la pantalla más ancha, y no dar por terminado un lado sin revisar
@@ -345,9 +349,9 @@ no una tira que copie parte del trono ni cuatro columnas que produzcan escalones
 repite una ladera sin la silueta del castillo; el dibujo original dentro del mapa y el rectángulo GBA se conservan.
 Esta entrega es una propuesta pendiente de valoración; no hereda honores ni habilita arte nuevo para jugadores.
 
-## Escena 099: techo, propuesta de Codex (24/10)
+## Escena 099: muro superior, corrección del 25/10
 
-La nube bab8281c-e1c9-4e01-b894-a3a05e339e8b sobre d3e87dca65eb4e9fb10535b3e731419d pide mejorar el patrón superior y valora positivamente el suelo. No trasladar esa aprobación al techo ni cambiar el suelo. El friso mide 28 píxeles por casilla: usar una pareja completa de 56 píxeles, aunque no coincida con la rejilla de tiles, y conservar su fase en las dos uniones. Propuesta pendiente de valoración: completar arriba filas alternadas de casillas con el mismo donante; el mapa original queda intacto. No se habilita para jugadores sin honores de esta versión.
+El envío `20261024-183353-ceb621` sobre `ae36f45ef10e45cc809620075f0c8626` rechaza prolongar el ajedrez beige hacia arriba: corresponde al muro de una casa. La regla anterior de casillas de28px queda sustituida. Usar el mismo muro rosa de la arena de Trickmaster; los postes de madera y el fuste único de piedra mantienen su x. El período de48px excluye el travesaño; el panel derecho limpio evita reloj y ventana duplicados. Conservar el suelo elogiado y la chimenea original. La captura hija es una propuesta sin honores heredados ni activación automática para jugadores.
 
 ## Agrabah 107/108: subida del Genio (comentario posterior, 24/10)
 
@@ -369,3 +373,32 @@ La propuesta se ve con KHCOM_PRELIMINAR_V1=1 y espera valoración propia; no her
   escalones en el muro, hueco marrón en 120) quedan en la cola de arte; nada de esto llega a jugadores sin aprobación.
 - Comprobar que `port_preliminar_v1_data.inc` lleva `ready=1` en la escena: con `ready=0` la receta no se aplica ni
   con `KHCOM_PRELIMINAR_V1` y la captura sale sin extensión.
+
+## Escenas004/005: pared derecha de primer plano (25/10)
+
+El envío `20261024-174616-2db556` pide completar la muralla derecha y revisar la otra escena de León. La pared delantera pertenece a BG2, no al suelo BG3. Prolongar el módulo limpio de seis columnas por `(6,+3)`, con la base inclinada hacia abajo a la derecha; la pared trasera de BG3 sigue la diagonal contraria. No repetir el borde izquierdo del pilar, cajas ni alfombra.004 y005 comparten `gEventBg004` y deben revisarse juntas; misma receta por contenido del mapa, sin heredar valoración de una hija.
+
+## Añadir naipes: selector y cantidades HD (25/10)
+
+Envío `20261024-195741-61a4e3`, nube `fa6724d2-6a43-4eb2-8ce3-df94c8a0b457`: taparse y aparecer en los mismos frames que el número GBA. Que quede un píxel de tinta visible no permite dibujar entero el glifo HD. Para texto BG, recortar tinta y sombra con la silueta bidimensional de BG/OBJ del mismo frame, incluidas ventanas y prioridades; no inferirla de una fila ni inventar un temporizador. La prueba compara capturas GBA/HD de cada frame del ciclo, incluidas coberturas parciales, en vez de exigir un conteo constante de glifos.
+
+### Darkside06 — costura por garabatos, revisión nueva 25/10
+
+Envío `20261024-162822-ea1330`, padre `4d6a039e51ad4b8f8f52cb1b1d070ba0`:
+el celeste borra únicamente añadido y el verde pide relleno de las uniones del
+hombro y axila. Conservar los píxeles opacos nativos y el centro; no desplazar
+otra vez todo el brazo. La hija `60f90456598249ecb1e691c51dd2434e` responde la
+nube `943ba728-2009-4560-8eef-7091aefb52e7` y los cuatro trazos exactos.
+La propuesta 4bpp queda en `port/art/proposals/darkside06-r8/`; no sustituye el
+arte activo ni hereda aprobación. Nueve frames verificados offline con cero
+píxeles ROM alterados. Captura runtime pendiente del turno de RAM del usuario;
+cuando se autorice: SDL controller `0xffff/0xffff`, vídeo/audio dummy, PPU=1,
+BACKGROUND_TEST=1 y Ninja `-j1` en serie.
+
+### Escena099: módulo lateral de la arena (25/10)
+
+Envío `20261025-125411-7d1750`: seguir en los márgenes el mismo módulo completo de papel rosa de56px de la arena. No reflejar fragmentos de postes ni sustituir la pared lejana por un color plano. Postes de arriba continuos en sus x y travesaños rectos; conservar suelo y chimenea únicos.
+
+### Trickmaster: postes completos y travesaño recto (revisión25/10)
+
+Envío `20261025-125448-4ee67a`: continuar la madera hasta arriba sin repetir sus remates diagonales. Prolongar las columnas de la arista superior de los postes conservando sus x; el travesaño lateral mantiene bordes horizontales constantes y el grano original entre ellos. La chimenea única y el suelo no cambian.

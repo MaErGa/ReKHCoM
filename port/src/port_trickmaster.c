@@ -48,9 +48,20 @@ int PortTrickmasterBackdropPixel(int x, int y, int cx, int cy, uint16_t* color) 
     x -= cx - PositiveMod(cx, 256);
     y -= cy - PositiveMod(cy, 256);
     if (y < 24) {
-        int sx = PositiveMod(x, 56), sy = 24 + PositiveMod(y - 24, 64);
+        int sx = PositiveMod(x, 56), sy = 24 + PositiveMod(y - 24, 48);
         /* Atlas: continue the pink wallpaper upwards, not the beige ceiling
-         * strip. Keep only the existing chimney's stone shaft through it. */
+         * strip. Keep the actual timber posts beside the chimney aligned
+         * with their original x, excluding the horizontal rail at y=80.
+         * The plain right panel avoids copying the clock and little window.
+         * Keep only the existing chimney's stone shaft through it. */
+        if ((x >= 56 && x < 120) || (x >= 184 && x < 208))
+            sx = x;
+        else if (x >= 144 && x < 184)
+            sx = 72 + PositiveMod(x - 144, 40);
+        /* Extend the top edge's uninterrupted timber columns. Repeating a
+         * taller panel brings back the diagonal ends of the crosspieces. */
+        if ((x >= 56 && x < 120) || (x >= 144 && x < 208))
+            sy = 24;
         if (x >= 120 && x < 144) {
             sx = x;
             sy = 24 + PositiveMod(y - 24, 16);
@@ -67,6 +78,12 @@ int PortTrickmasterBackdropPixel(int x, int y, int cx, int cy, uint16_t* color) 
          * The leftmost seven tile columns form a complete clean wall module. */
         sx = PositiveMod(x, 56);
         sy = y < 0 ? PositiveMod(y, 24) : y;
+        /* Straight upper/lower silhouette of the long horizontal rail;
+         * retain the authored grain between those two clean edge rows. */
+        if (sy >= 108 && sy < 128) {
+            if (sy < 112) { sx = 32; sy = 108; }
+            else if (sy < 114 || sy >= 126) sx = 32;
+        }
         if (sy >= 176) {
             /* Continue the authored checkerboard analytically below its wall;
              * all columns converge on the original room's vanishing point. */

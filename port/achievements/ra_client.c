@@ -18,12 +18,18 @@ static void SecureZeroMemory(void* p, size_t n) {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#endif
 
 #include "ra_client.h"
 #include "../third_party/rcheevos/src/rc_client_internal.h"
 #include "rc_consoles.h"
 #include "rc_hash.h"
 #include "rc_api_user.h"
+#include "rc_api_runtime.h"
 
 typedef struct KhRaJob {
     struct KhRaJob* next;
@@ -92,14 +98,135 @@ static FILE* DataFile(KhRa* ra, const char* name, const char* mode) {
 #define RA_MODE(m) m
 #endif
 
+/* The session of this computer's user (25/10): the last account signed in with any ReKHCoM on this PC, for a year, so a
+ * portable copy elsewhere (another disk) signs in by itself. A copy with its own account keeps it (it wins) and that
+ * becomes the last one. Per user of the system: %APPDATA%\ReKHCoM (DPAPI, this Windows user only) or
+ * ~/.config/ReKHCoM (0600). Cleared on a sign-out of the same account. */
+#define RA_CACHE_DAYS 365
+typedef struct { char user[128], token[128]; long long saved; } RaCached;
+
+static int CachePath(char* out, size_t size) {
+#ifdef __ANDROID__
+    (void)out; (void)size;
+    return 0; /* the phone's app keeps one data folder: nothing to share */
+#endif
+#ifdef _WIN32
+    const char* base = getenv("APPDATA");
+    if (!base || !base[0]) return 0;
+    snprintf(out, size, "%s\\ReKHCoM", base);
+    _mkdir(out);
+    snprintf(out, size, "%s\\ReKHCoM\\retroachievements_last.auth", base);
+#else
+    const char* xdg = getenv("XDG_CONFIG_HOME");
+    const char* home = getenv("HOME");
+    char dir[900];
+    if (xdg && xdg[0]) snprintf(dir, sizeof(dir), "%s/ReKHCoM", xdg);
+    else if (home && home[0]) snprintf(dir, sizeof(dir), "%s/.config/ReKHCoM", home);
+    else return 0;
+    mkdir(dir, 0700);
+    snprintf(out, size, "%s/retroachievements_last.auth", dir);
+#endif
+    return 1;
+}
+
+static FILE* CacheFile(const char* mode) {
+    char path[1024];
+    if (!CachePath(path, sizeof(path))) return NULL;
+#ifdef _WIN32
+    {
+        wchar_t* wide = Wide(path), wmode[8];
+        FILE* f;
+        if (!wide) return NULL;
+        MultiByteToWideChar(CP_UTF8, 0, mode, -1, wmode, 8);
+        f = _wfopen(wide, wmode);
+        free(wide);
+        return f;
+    }
+#else
+    {
+        FILE* f = fopen(path, mode);
+        if (f && mode[0] == 'w') chmod(path, 0600);
+        return f;
+    }
+#endif
+}
+
+static void CacheWrite(const char* user, const char* token) {
+    RaCached c;
+    FILE* f;
+    memset(&c, 0, sizeof(c));
+    snprintf(c.user, sizeof(c.user), "%s", user);
+    snprintf(c.token, sizeof(c.token), "%s", token);
+    c.saved = (long long)time(NULL);
+#ifdef _WIN32
+    {
+        DATA_BLOB in, out = {0};
+        in.pbData = (BYTE*)&c; in.cbData = sizeof(c);
+        if (CryptProtectData(&in, L"ReKHCoM RetroAchievements (this PC)", NULL, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out)) {
+            if ((f = CacheFile("wb")) != NULL) { fwrite(out.pbData, 1, out.cbData, f); fclose(f); }
+            SecureZeroMemory(out.pbData, out.cbData);
+            LocalFree(out.pbData);
+        }
+    }
+#else
+    if ((f = CacheFile("wb")) != NULL) { fwrite(&c, 1, sizeof(c), f); fclose(f); }
+#endif
+    SecureZeroMemory(&c, sizeof(c));
+}
+
+/* 1: the last account of this PC's user, still within its year */
+static int CacheRead(RaCached* c) {
+    FILE* f = CacheFile("rb");
+    int ok = 0;
+    memset(c, 0, sizeof(*c));
+    if (!f) return 0;
+#ifdef _WIN32
+    {
+        BYTE bytes[4096];
+        size_t size = fread(bytes, 1, sizeof(bytes), f);
+        DATA_BLOB in, out = {0};
+        in.pbData = bytes; in.cbData = (DWORD)size;
+        if (size && size < sizeof(bytes) && CryptUnprotectData(&in, NULL, NULL, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out)) {
+            if (out.cbData == sizeof(*c)) { memcpy(c, out.pbData, sizeof(*c)); ok = 1; }
+            SecureZeroMemory(out.pbData, out.cbData);
+            LocalFree(out.pbData);
+        }
+        SecureZeroMemory(bytes, sizeof(bytes));
+    }
+#else
+    ok = fread(c, 1, sizeof(*c), f) == sizeof(*c);
+#endif
+    fclose(f);
+    ok = ok && c->user[0] && c->token[0] && c->user[127] == 0 && c->token[127] == 0 &&
+         (long long)time(NULL) - c->saved < (long long)RA_CACHE_DAYS * 86400;
+    if (!ok) SecureZeroMemory(c, sizeof(*c));
+    return ok;
+}
+
+static void CacheForget(const char* user) {
+    RaCached c;
+    if (CacheRead(&c) && strcmp(c.user, user) == 0) {
+        FILE* f = CacheFile("wb");
+        if (f) fclose(f);
+    }
+    SecureZeroMemory(&c, sizeof(c));
+}
+
 static void ForgetToken(KhRa* ra) {
     FILE* file = DataFile(ra, "retroachievements.auth", RA_MODE("wb"));
     if (file) fclose(file);
+    if (ra->username[0]) CacheForget(ra->username); /* signed out: this PC forgets it too */
     SecureZeroMemory(ra->token, sizeof(ra->token));
     SecureZeroMemory(ra->username, sizeof(ra->username));
 }
 
+static int SaveTokenFile(KhRa* ra);
 static int SaveToken(KhRa* ra) {
+    if (ra->username[0] && ra->token[0]) CacheWrite(ra->username, ra->token);
+    return SaveTokenFile(ra);
+}
+
+static int SaveTokenFile(KhRa* ra) {
     struct { char user[128], token[128]; } credentials;
 #ifndef _WIN32
     FILE* plain;
@@ -287,10 +414,118 @@ int KhRaFetchImage(KhRa* ra, const char* url, KhRaImageCallback callback, void* 
     return 1;
 }
 
+
+/* Unlocks made while signed in but without a connection (a phone in the underground, 25/10): rc_client retries them
+ * only while the game runs. Each one is also kept in retroachievements_pending.txt ("id unix-time" per line, the
+ * account's name first) until the account shows it; the next start with a connection sends the rest with their
+ * seconds since the unlock, as RetroAchievements takes a client's queued offline unlocks. Unlocks earned with no
+ * account signed in never go here (RetroAchievements' rules). */
+#define RA_PENDING "retroachievements_pending.txt"
+#define RA_PENDING_MAX 128
+typedef struct { uint32_t id; long long when; } RaPendingEntry;
+
+static int PendingRead(KhRa* ra, RaPendingEntry* out, char* user, size_t userSize) {
+    FILE* f = DataFile(ra, RA_PENDING, RA_MODE("r"));
+    char line[160];
+    int n = 0;
+    user[0] = 0;
+    if (!f) return 0;
+    if (fgets(line, sizeof(line), f)) {
+        line[strcspn(line, "\r\n")] = 0;
+        snprintf(user, userSize, "%s", line);
+    }
+    while (n < RA_PENDING_MAX && fgets(line, sizeof(line), f)) {
+        unsigned id; long long when;
+        if (sscanf(line, "%u %lld", &id, &when) == 2 && id) { out[n].id = id; out[n].when = when; n++; }
+    }
+    fclose(f);
+    return n;
+}
+
+static void PendingWrite(KhRa* ra, const RaPendingEntry* e, int n, const char* user) {
+    FILE* f = DataFile(ra, RA_PENDING, RA_MODE("w"));
+    int i;
+    if (!f) return;
+    if (n > 0) {
+        fprintf(f, "%s\n", user);
+        for (i = 0; i < n; i++) fprintf(f, "%u %lld\n", e[i].id, e[i].when);
+    }
+    fclose(f);
+}
+
+static void PendingAdd(KhRa* ra, uint32_t id) {
+    RaPendingEntry e[RA_PENDING_MAX];
+    char user[128];
+    int n = PendingRead(ra, e, user, sizeof(user)), i;
+    const rc_client_user_t* me = rc_client_get_user_info(ra->client);
+    if (!me || !me->username) return;
+    if (n && strcmp(user, me->username) != 0) n = 0; /* another account's queue: not this one's to send */
+    for (i = 0; i < n; i++) if (e[i].id == id) return;
+    if (n == RA_PENDING_MAX) return;
+    e[n].id = id; e[n].when = (long long)time(NULL); n++;
+    PendingWrite(ra, e, n, me->username);
+}
+
+static void PendingDrop(KhRa* ra, uint32_t id) {
+    RaPendingEntry e[RA_PENDING_MAX];
+    char user[128];
+    int n = PendingRead(ra, e, user, sizeof(user)), i, k = 0;
+    for (i = 0; i < n; i++) if (e[i].id != id) e[k++] = e[i];
+    if (k != n) PendingWrite(ra, e, k, user);
+}
+
+typedef struct PendingRequest { KhRa* ra; uint32_t id; } PendingRequest;
+static void PendingAwarded(const rc_api_server_response_t* response, void* userdata) {
+    PendingRequest* request = (PendingRequest*)userdata;
+    rc_api_award_achievement_response_t award;
+    memset(&award, 0, sizeof(award));
+    /* sent (or already on the account): off the queue; a network error leaves it for the next start */
+    if (rc_api_process_award_achievement_server_response(&award, response) == RC_OK &&
+        (award.response.succeeded || award.awarded_achievement_id == request->id))
+        PendingDrop(request->ra, request->id);
+    rc_api_destroy_award_achievement_response(&award);
+    free(request);
+}
+
+/* with the account's unlocks just read: drop what it has, send the rest */
+static void PendingFlush(KhRa* ra) {
+    RaPendingEntry e[RA_PENDING_MAX];
+    char user[128];
+    int n = PendingRead(ra, e, user, sizeof(user)), i, k = 0;
+    const rc_client_user_t* me = rc_client_get_user_info(ra->client);
+    long long now = (long long)time(NULL);
+    if (!n || !me || !me->username || strcmp(user, me->username) != 0 || !ra->hash[0]) return;
+    for (i = 0; i < n; i++) {
+        uint32_t j, have = 0;
+        for (j = 0; j < ra->account_unlock_count; ++j) have |= ra->account_unlocks[j] == e[i].id;
+        if (have) continue;
+        e[k++] = e[i];
+    }
+    PendingWrite(ra, e, k, user);
+    for (i = 0; i < k; i++) {
+        rc_api_award_achievement_request_t params;
+        rc_api_request_t api;
+        PendingRequest* request = (PendingRequest*)calloc(1, sizeof(*request));
+        long long ago = now - e[i].when;
+        if (!request) break;
+        memset(&params, 0, sizeof(params));
+        params.username = me->username; params.api_token = me->token;
+        params.achievement_id = e[i].id; params.hardcore = 0; params.game_hash = ra->hash;
+        params.seconds_since_unlock = ago < 0 ? 0 : ago > 0x7FFFFFFF ? 0x7FFFFFFF : (uint32_t)ago;
+        request->ra = ra; request->id = e[i].id;
+        if (rc_api_init_award_achievement_request(&api, &params) == RC_OK)
+            ServerCall(&api, PendingAwarded, request, ra->client);
+        else free(request);
+        rc_api_destroy_request(&api);
+    }
+}
+
 static void Event(const rc_client_event_t* event, rc_client_t* client) {
     KhRa* ra = (KhRa*)rc_client_get_userdata(client);
     if (event->type == RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED && event->achievement) {
         ra->notice_id = event->achievement->id;
+        if (!rc_client_get_spectator_mode_enabled(client) && rc_client_get_user_info(client))
+            PendingAdd(ra, event->achievement->id); /* until the account shows it (a phone without signal) */
         snprintf(ra->notice, sizeof(ra->notice), "%s\n%s", event->achievement->title,
                  event->achievement->description ? event->achievement->description : "");
     } else if (event->type == RC_CLIENT_EVENT_SERVER_ERROR && event->server_error)
@@ -316,6 +551,7 @@ static void AccountProgress(const rc_api_server_response_t* response, void* user
                 else ra->account_unlock_count = 0;
             }
             ra->account_progress_available = !progress.num_achievement_ids || ra->account_unlocks != NULL;
+            if (ra->account_progress_available) PendingFlush(ra);
         } else SetStatus(ra, "Catalog loaded; account progress could not be retrieved.", 1);
     }
     rc_api_destroy_fetch_user_unlocks_response(&progress);
@@ -412,6 +648,20 @@ KhRa* KhRaCreate(const char* directory, KhRaRead read, void* userdata, KhRaTrans
     file = DataFile(ra, "retroachievements.ini", RA_MODE("r"));
     if (file) { int value = 0; if (fscanf(file, "enabled=%d", &value) == 1) ra->enabled = value == 1; fclose(file); }
     ReadToken(ra);
+    if (!ra->token[0]) {
+        RaCached c;
+        if (CacheRead(&c)) {
+            FILE* own = DataFile(ra, "retroachievements.ini", RA_MODE("r"));
+            snprintf(ra->username, sizeof(ra->username), "%s", c.user);
+            snprintf(ra->token, sizeof(ra->token), "%s", c.token);
+            ra->remember = 1;
+            if (own) fclose(own); /* the copy said on or off: it keeps that */
+            else ra->enabled = 1; /* a new copy: signed in like the rest of this PC */
+            SecureZeroMemory(&c, sizeof(c));
+        }
+    } else if (ra->remember) {
+        CacheWrite(ra->username, ra->token); /* its own account wins and becomes this PC's last one */
+    }
     if (ra->enabled && ra->token[0]) {
         ra->busy = 1;
         SetStatus(ra, "Signing in...", 0);
