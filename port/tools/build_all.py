@@ -143,7 +143,7 @@ def main():
         path = explicit or (hits[-1] if hits else None)
         if not path:
             p.error('Missing dependency: ' + pattern)
-        return Path(path).resolve()
+        return Path(path).absolute()  # not resolve(): a junction to another drive breaks configure_pc.py relpath
     tc = dependency(args.toolchain, 'llvm-mingw-*')
     sdl = dependency(args.sdl, 'SDL3-*')
     ninja = args.ninja or shutil.which('ninja') or base / 'bin/ninja.exe'
