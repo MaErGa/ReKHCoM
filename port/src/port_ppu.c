@@ -2280,7 +2280,10 @@ static int ObjCoversGlyph(uint16_t occ, int prio, int i) {
    walks out into the wide view; one crossing the frame's edge is never cut (user 25/10: Agrabah's barrels lost half,
    Sora and friends vanished leaving). Reset per scene (PortPpuRender). */
 static unsigned char sActorEntered[128];
+static unsigned sStagedActorFirstSeen[3];
+static unsigned char sStagedActorEntered[3]; /* Cheshire, Aladdin, Genie: independent of recycled OAM slots. */
 static int sActorSceneKey = -1;
+static unsigned sActorSceneFrames;
 
 static void DrawObjs(int gy, uint16_t dispcnt) {
     int i, w = gPortScreen.width;
@@ -2378,10 +2381,18 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
             (sceneActorId != 112 || sOamHd[i].palette == gAladdinPalette ||
                 sOamHd[i].palette == gGeniePalette || sOamHd[i].tiles == gBtlShadowTiles ||
                 sOamHd[i].tiles == gBtlShadowSmallTiles || sOamHd[i].tiles == gBtlShadowLargeTiles)) {
-            if (ox < GBA_SCREEN_W && ox + bw > 0 && oy < GBA_SCREEN_H && oy + bh > 0)
-                sActorEntered[i] = 1; /* in the frame (some of it): it stays drawn from now on */
-            else if (!sActorEntered[i])
-                continue; /* still waiting outside */
+            int actor = sOamHd[i].palette == gCheshirePalette ? 0 :
+                sOamHd[i].palette == gAladdinPalette ? 1 :
+                sOamHd[i].palette == gGeniePalette ? 2 : -1;
+            unsigned char* entered = actor >= 0 ? &sStagedActorEntered[actor] : &sActorEntered[i];
+            if (actor >= 0 && !sStagedActorFirstSeen[actor]) sStagedActorFirstSeen[actor] = sActorSceneFrames + 1;
+            if (ox < GBA_SCREEN_W && ox + bw > 0 && oy < GBA_SCREEN_H && oy + bh > 0) {
+                /* The first render can precede the authored camera placement.
+                 * Preserve its native pixels without unlocking a staged actor. */
+                if (actor >= 0 ? sActorSceneFrames + 1 - sStagedActorFirstSeen[actor] >= 3 : sActorSceneFrames >= 3) *entered = 1;
+            }
+            else if (!*entered)
+                continue; /* a different actor previously using this OAM slot does not grant entry */
         }
         line = gy - oy;
         /* Reject lines outside the sprite before mosaic quantisation:
@@ -3453,8 +3464,11 @@ void PortPpuBeginFrame(void) {
         int key = PortEventId();
         if (key != sActorSceneKey) {
             memset(sActorEntered, 0, sizeof(sActorEntered));
+            memset(sStagedActorEntered, 0, sizeof(sStagedActorEntered));
+            memset(sStagedActorFirstSeen, 0, sizeof(sStagedActorFirstSeen));
             sActorSceneKey = key;
-        }
+            sActorSceneFrames = 0;
+        } else sActorSceneFrames++;
     }
 
     memset(sTitleBand, 0, sizeof(sTitleBand));
