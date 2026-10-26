@@ -891,6 +891,15 @@ extern const unsigned char gDeckRemoveGridMap[];
 extern const unsigned char gDeckMenuTextItalianTiles[];
 extern const unsigned char gDeckAddGridMap[];
 #endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitleMenuSelectedEntrySpanishTiles[];
+extern const unsigned char gTitleMenuSelectedEntrySpanishFrame0[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitleMenuEntrySpanishTiles[];
+extern const unsigned char gTitleMenuEntrySpanishFrame0[];
+#endif
+extern const unsigned char gTitleMenuSelectedBarTiles[];
 static const HdSpriteDef kHdSprites[] = {
     { gCardWep01Tiles, NULL, "gCardWep01Tiles", -16, -12, 32, 32, 1 },
     { gCardWep04Tiles, NULL, "gCardWep04Tiles", -16, -12, 32, 32, 1 },
@@ -1506,5 +1515,12 @@ static const HdSpriteDef kHdSprites[] = {
 #if defined(VERSION_EU)
     { gDeckMenuTextItalianTiles, gDeckAddGridMap, "gDeckAddGridItalianBanner", 0, 0, 104, 16, 5 },
 #endif
+#if defined(VERSION_EU)
+    { gTitleMenuSelectedEntrySpanishTiles, gTitleMenuSelectedEntrySpanishFrame0, "gTitleMenuSelectedEntrySpanishFrame0", 16, 0, 103, 11, 2 },
+#endif
+#if defined(VERSION_EU)
+    { gTitleMenuEntrySpanishTiles, gTitleMenuEntrySpanishFrame0, "gTitleMenuEntrySpanishFrame0", 3, 0, 116, 15, 2 },
+#endif
+    { gTitleMenuSelectedBarTiles, NULL, "gTitleMenuSelectedBar", 3, 11, 116, 4, 2 },
 #include "port/synthesis_requirement_hd_entries.inc"
 };
