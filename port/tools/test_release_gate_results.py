@@ -143,7 +143,7 @@ class GateResults(unittest.TestCase):
             for f in ('khcom.exe', 'SDL3.dll'):
                 (d / f).write_bytes(b'previous build')
         with patch.object(m, 'ROOT', self.root), patch.object(m.case_bin, 'place', side_effect=stale), \
-                patch.object(m.subprocess, 'run') as execute:
+                patch.object(m.subprocess, 'run', return_value=SimpleNamespace(returncode=0)) as execute:
             code, _, _ = m.run(self.build, self.root / 'events', 'eu', 0, 0, 100, 20)
         self.assertNotEqual(code, 0)
         execute.assert_not_called()
