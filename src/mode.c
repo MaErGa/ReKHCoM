@@ -86,7 +86,8 @@ extern Mode gModeDeck, gModeStatus, gModeJiminy, gModeAllmap, gModeMapinspect, g
     gModeWorldselect, gModeWORLDSELECT, gModeWorldwarp, gModeMsTop, gModeMsShop, gModeMsCharge;
 
 int PortMoogleMenu(void) {
-    return gCurrentMode == &gModeMsShop || gCurrentMode == &gModeMsCharge;
+    /* Distinct profiles: the charge screen has tabs reaching its right edge. */
+    return gCurrentMode == &gModeMsShop ? 1 : gCurrentMode == &gModeMsCharge ? 2 : 0;
 }
 
 /* Derive this from the live mode so loading a state needs no extra flag. */
