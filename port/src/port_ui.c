@@ -999,10 +999,10 @@ static int NeedsLauncher(int item) {
         default: return NEED_NONE;
     }
 }
-static const char* const sNeedHd[LANG_COUNT] = {
-    "Import the HD mod in the launcher to turn this on", "Importe le mod HD dans le lanceur pour l'activer",
-    "Importiere die HD-Mod im Launcher, um das einzuschalten", "Importa la mod HD dal launcher per attivarla",
-    "Importa el mod HD desde el launcher para activarla", "ランチャーでHD MODを取りこむと使えます",
+static const char* const sModeDescHdMissing[LANG_COUNT] = { /* the standard line, in red under the description */
+    "Not installed: load it from the launcher (HD mod).", "Non installé : charge-le depuis le lanceur (mod HD).",
+    "Nicht installiert: im Launcher laden (HD-Mod).", "Non installato: caricalo dal launcher (mod HD).",
+    "No instalado: cárgalo desde el launcher (Mod HD).", "ないです：ランチャー（HD MOD）でいれてください。",
 };
 static const char* const sCheatRebelNote[LANG_COUNT] = {
     "Turning it on starts Rebel mode: achievements go to a list of their own on this computer, not to RetroAchievements.",
@@ -1038,9 +1038,9 @@ static const char* const sFontNote[LANG_COUNT] = {
     "A: elegir la fuente (KHMenu o la del sistema).", "A: フォントをえらぶ (KHMenu かシステム)",
 };
 static const char* const sNeedJp[LANG_COUNT] = {
-    "Add the Japanese cartridge in the launcher to turn this on", "Ajoute la cartouche japonaise dans le lanceur",
-    "Füge im Launcher die japanische Fassung hinzu", "Aggiungi la cartuccia giapponese dal launcher",
-    "Añade el cartucho japonés desde el launcher para activarla", "ランチャーで日本のカートリッジを入れると使えます",
+    "Not installed: add the Japanese ROM in the launcher.", "Non installé : ajoute la ROM japonaise dans le lanceur.",
+    "Nicht installiert: japanische ROM im Launcher hinzufügen.", "Non installato: aggiungi la ROM giapponese dal launcher.",
+    "No instalado: añade la ROM japonesa en el launcher.", "ないです：ランチャーで日本のROMを入れてください。",
 };
 
 static int ItemEnabled(int item) {
@@ -2623,11 +2623,7 @@ static const char* const sModeDescHd[LANG_COUNT] = {
     "Re:Chain of Memoriesのカード・ロゴ・顔・音楽・ムービー（ランチャーがKingdom Hearts HD 1.5+2.5から取り込み）、"
     "HDテキストとすべての改善。",
 };
-static const char* const sModeDescHdMissing[LANG_COUNT] = { /* the standard line, in red under the description */
-    "Not installed: load it from the launcher (HD mod).", "Non installé : charge-le depuis le lanceur (mod HD).",
-    "Nicht installiert: im Launcher laden (HD-Mod).", "Non installato: caricalo dal launcher (mod HD).",
-    "No instalado: cárgalo desde el launcher (Mod HD).", "ないです：ランチャー（HD MOD）でいれてください。",
-};
+
 static const char* const sModeDescGba[LANG_COUNT] = {
     "The cartridge's graphics. Then choose enhanced or classic.",
     "Les graphismes de la cartouche. Puis choisis amélioré ou classique.",
@@ -3994,7 +3990,7 @@ static void DrawConfirm(int l, int width, int height) {
 }
 
 /* beside a greyed row: a small white sign with the red "!" saying what the launcher must bring first */
-static void DrawNeedNote(const char* text, int width, int height, int left, int rowY) {
+static void DrawNeedNoteInk(const char* text, int width, int height, int left, int rowY, uint32_t ink) {
     int panelW = SDL_min(170, width - left - 6), x0 = left, textW, lines, h, y0;
     if (panelW < 100)
         return;
@@ -4006,7 +4002,11 @@ static void DrawNeedNote(const char* text, int width, int height, int left, int 
     Fill(x0, y0, panelW, h, 0xFFFFFFFFu);
     Fill(x0, y0, 3, h, MENU_RED_DARK); /* a sign's edge, not a row's bar */
     DrawGlyph('!', x0 + 8, y0 + 3, MENU_RED_DARK, 0xFFD8D8D8u);
-    DrawWrapped(text, x0 + 20, y0 + 3, textW, MENU_INK, 1);
+    DrawWrapped(text, x0 + 20, y0 + 3, textW, ink, 1);
+}
+
+static void DrawNeedNote(const char* text, int width, int height, int left, int rowY) {
+    DrawNeedNoteInk(text, width, height, left, rowY, MENU_INK);
 }
 
 static void DrawMenu(int l, int width, int height) {
@@ -4131,7 +4131,7 @@ static void DrawMenu(int l, int width, int height) {
         DrawNintendoNote(l, width, height, barX + barW + 8);
     int zoom = sCursor == ITEM_BATTLE_ZOOM && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom;
     if (NeedsLauncher(sCursor) && ItemVisible(sCursor) && selY >= 0)
-        DrawNeedNote(NeedsLauncher(sCursor) == NEED_JP ? sNeedJp[l] : sNeedHd[l], width, height, barX + barW + 8, selY);
+        DrawNeedNoteInk(NeedsLauncher(sCursor) == NEED_JP ? sNeedJp[l] : sModeDescHdMissing[l], width, height, barX + barW + 8, selY, MENU_RED_DARK);
     else if (sPage == PAGE_MAIN && sCursor == ITEM_ACH_MODE && selY >= 0)
         DrawNeedNote(sAchModeNote[AchMode()][l], width, height, barX + barW + 8, selY);
     else if (sPage == PAGE_MAIN && sCursor == ITEM_SAVEBANK && !ItemEnabled(ITEM_SAVEBANK) && selY >= 0)

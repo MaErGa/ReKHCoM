@@ -6,7 +6,9 @@ Prioridad más reciente del usuario: **integrar lo aprobado → terminar pendien
 
 - Fuentes core, rama `codex/core-fonts-clean`: reproducida la pérdida en la copia de prueba de barriles (`hd_text=1`, KHMenu elegida, carpeta de fuentes ausente). KHMenu y Comic Hearts quedan también dentro del ejecutable Windows, sin cambiar la elección Sistema ni Texto HD apagado. El ZIP conserva ambas fuentes y el empaquetador rechaza binarios sin esos recursos. Compilación EU, arranque sin assets, comprobación de payload y `check_sources.py` correctos. Recursos de versión sincronizados con pre19.
 - Integrado: PR192, pintor de píxeles Atlas y respuestas generales conjuntas; PR193, versiones aprobadas exactas de 081/097/110/112 (`bd784a0b2f7c62646a365dc5ebdc4e79dadf2646`). Sus comentarios nuevos siguen en Atlas; no equivalen a errores pendientes de integración.
-- Código siguiente: unificar la línea roja de opciones no instaladas (HD y ROM japonesa); lista Re:CoM del modo rebelde; revisar resultados pendientes de baterías y retest Android 123/124. Bancos por banco siguen aplazados según el diseño vigente. El botón Opciones y el título HD esperan su arte y van al final con Atlas.
+- Cerrado: PR194, fuentes core embebidas, merge `6b894a3bc48846181928434ededf315308da8195`.
+- Opciones no instaladas: mensaje HD compartido con el primer arranque y aviso de ROM japonesa con el mismo formato, ambos en rojo. Compilación EU, check_sources y capturas reales de las dos opciones correctos.
+- Código siguiente: lista Re:CoM del modo rebelde; revisar resultados pendientes de baterías y retest Android 123/124. Bancos por banco siguen aplazados según el diseño vigente. El botón Opciones y el título HD esperan su arte y van al final con Atlas.
 - ZIP pre19 existente: todavía anterior a estas integraciones; **no entregarlo como build actual**. Reconstruir EU/US/JP desde el cierre de código, verificar fuentes y limpieza antes de entregarlo. No publicar release sin autorización.
 
 
