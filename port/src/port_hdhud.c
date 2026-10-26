@@ -3,6 +3,7 @@
  */
 #include <SDL3/SDL.h>
 #include <stdio.h>
+#include <limits.h>
 #include "port/port.h"
 #include "port/port_ui.h"
 #define STB_IMAGE_IMPLEMENTATION
@@ -10,6 +11,20 @@
 #define STBI_NO_HDR
 #define STBI_NO_LINEAR
 #include "../decompui/third_party/stb_image.h"
+
+/* Decode the same reviewed PNG from disk or the executable's core resources.
+ * Validate dimensions before decoding to keep the existing memory budget. */
+static unsigned char* LoadCoreHudImage(const char* file, int* w, int* h, int* channels) {
+    size_t size = 0;
+    void* data = PortLoadAsset(file, &size);
+    unsigned char* pixels = NULL;
+    if (data && size <= INT_MAX && stbi_info_from_memory(data, (int)size, w, h, channels) &&
+        *channels == 4 && *w > 0 && *h > 0 && *w <= 4096 && *h <= 4096 &&
+        (size_t)*w * *h <= 4194304)
+        pixels = stbi_load_from_memory(data, (int)size, w, h, channels, 4);
+    SDL_free(data);
+    return pixels;
+}
 
 static SDL_Texture* sFrame;
 static SDL_Texture* sWhiteFrame;
@@ -44,9 +59,7 @@ static void LoadHudAsset(HudAsset* asset) {
     SDL_ScaleMode mode;
     asset->available = 0;
     SDL_snprintf(file, sizeof(file), "assets/hd-hud/sprites/%016llx.png", (unsigned long long)asset->hash);
-    if (!stbi_info(PortConfigPath(file), &w, &h, &channels) || channels != 4 ||
-        w < 1 || h < 1 || w > 4096 || h > 4096 || (size_t)w * h > 4194304) return;
-    pixels = stbi_load(PortConfigPath(file), &w, &h, &channels, 4);
+    pixels = LoadCoreHudImage(file, &w, &h, &channels);
     if (!pixels) return;
     l = w; t = h;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
@@ -179,14 +192,12 @@ int PortHdHudPlayerFrameReady(void) {
            sPlayerFrame && sWhitePlayerFrame && gPortHudScale && !PortUiActive();
 }
 static void LoadPlayerFrame(SDL_Renderer* renderer) {
-    const char* path = PortConfigPath("assets/hd-hud/pilot/player-double-frame-v1.png");
+    const char* path = "assets/hd-hud/pilot/player-double-frame-v1.png";
     int w, h, channels, x, y, l, t, r = -1, b = -1;
     unsigned char* pixels;
     SDL_Surface *src, *dst;
     SDL_ScaleMode sampling;
-    if (!stbi_info(path, &w, &h, &channels) || channels != 4 || w < 1 || h < 1 ||
-        w > 4096 || h > 4096 || (size_t)w * h > 4194304) return;
-    pixels = stbi_load(path, &w, &h, &channels, 4);
+    pixels = LoadCoreHudImage(path, &w, &h, &channels);
     if (!pixels) return;
     l = w; t = h;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
@@ -253,9 +264,7 @@ static void LoadLabel(SDL_Renderer* renderer) {
     else if (gLanguage == 2) file = "assets/hd-hud/pilot/label-lp-v1.png";
     else if (gLanguage == 3) file = "assets/hd-hud/pilot/label-pv-v3.png";
 #endif
-    if (!stbi_info(PortConfigPath(file), &w, &h, &channels) || channels != 4 ||
-        w < 1 || h < 1 || w > 4096 || h > 4096 || (size_t)w * h > 4194304) return;
-    pixels = stbi_load(PortConfigPath(file), &w, &h, &channels, 4);
+    pixels = LoadCoreHudImage(file, &w, &h, &channels);
     if (!pixels) return;
     left = w; top = h;
     inkLeft = w; inkTop = h;
@@ -393,14 +402,13 @@ void PortHdHudPrepare(SDL_Renderer* renderer) {
         return;
     }
     sAttempted = 1;
-    path = PortConfigPath("assets/hd-hud/pilot/enemy-hp-frame-v2.png");
-    if (!stbi_info(path, &w, &h, &channels) || channels != 4 || w < 1 || h < 1 ||
-        w > 4096 || h > 4096 || (size_t)w * h > 4194304) {
+    path = "assets/hd-hud/pilot/enemy-hp-frame-v2.png";
+    pixels = LoadCoreHudImage(path, &w, &h, &channels);
+    if (!pixels) {
         PortLog("HD HUD: missing or invalid RGBA pilot; original HUD retained");
         return;
     }
-    pixels = stbi_load(path, &w, &h, &channels, 4);
-    if (!pixels) return;
+
     left = w; top = h;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
         unsigned char* p = pixels + ((size_t)y * w + x) * 4;
