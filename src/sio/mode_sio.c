@@ -111,6 +111,14 @@ extern const SioAnimDef gSioChgCardAnimDefs[3];
 #endif
 #ifdef VERSION_EU
 #include "link_deck_names.inc"
+#ifdef PLATFORM_PC
+/* number tiles registered as HD text, as the deck menus do (card_deckmenu2.c) */
+void PortRegisterBgTextTile(void* address, int code, int style, const void* source32);
+#define PORT_BG_DIGIT(dst, d, src) PortRegisterBgTextTile((void*)(dst), '0' + (d), 2, (const void*)(src))
+#else
+#define PORT_BG_DIGIT(dst, d, src) ((void)0)
+#endif
+
 #endif
 extern SioWorldEntry gSioWorldEntries[];
 extern s8 gSioHandicapMarkerX[];
@@ -3527,8 +3535,11 @@ void SioChgCardDrawPointTotals() {
     points = points % 10;
     digits[2] = points;
     RequestDma3Copy(&gSioChgCardDigitTiles[digits[0] * 32], (void*)(BG_VRAM + 13 * TILE_SIZE_4BPP), 32);
+    PORT_BG_DIGIT((void*)(BG_VRAM + 13 * TILE_SIZE_4BPP), digits[0], &gSioChgCardDigitTiles[digits[0] * 32]);
     RequestDma3Copy(&gSioChgCardDigitTiles[digits[1] * 32], (void*)(BG_VRAM + 14 * TILE_SIZE_4BPP), 32);
+    PORT_BG_DIGIT((void*)(BG_VRAM + 14 * TILE_SIZE_4BPP), digits[1], &gSioChgCardDigitTiles[digits[1] * 32]);
     RequestDma3Copy(&gSioChgCardDigitTiles[digits[2] * 32], (void*)(BG_VRAM + 15 * TILE_SIZE_4BPP), 32);
+    PORT_BG_DIGIT((void*)(BG_VRAM + 15 * TILE_SIZE_4BPP), digits[2], &gSioChgCardDigitTiles[digits[2] * 32]);
     sum = 0;
 
     for (j = 5; j < 10; j++) {
@@ -3546,8 +3557,11 @@ void SioChgCardDrawPointTotals() {
     points = points % 10;
     digits[2] = points;
     RequestDma3Copy(&gSioChgCardDigitTiles[digits[0] * 32], (void*)(BG_VRAM + 16 * TILE_SIZE_4BPP), 32);
+    PORT_BG_DIGIT((void*)(BG_VRAM + 16 * TILE_SIZE_4BPP), digits[0], &gSioChgCardDigitTiles[digits[0] * 32]);
     RequestDma3Copy(&gSioChgCardDigitTiles[digits[1] * 32], (void*)(BG_VRAM + 17 * TILE_SIZE_4BPP), 32);
+    PORT_BG_DIGIT((void*)(BG_VRAM + 17 * TILE_SIZE_4BPP), digits[1], &gSioChgCardDigitTiles[digits[1] * 32]);
     RequestDma3Copy(&gSioChgCardDigitTiles[digits[2] * 32], (void*)(BG_VRAM + 18 * TILE_SIZE_4BPP), 32);
+    PORT_BG_DIGIT((void*)(BG_VRAM + 18 * TILE_SIZE_4BPP), digits[2], &gSioChgCardDigitTiles[digits[2] * 32]);
 }
 
 void SioChgCardHandleInput() {
