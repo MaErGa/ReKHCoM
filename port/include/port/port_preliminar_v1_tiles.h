@@ -686,7 +686,7 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
             int phase=PortSceneTileMod(wx,64);
             *sx=96+(phase<32?phase:63-phase); *sy=wy; return 1;
         }
-        if (wx>=512 && 2*wy-wx>=-128 && 2*wy-wx<0) {
+        if (wx>=512 && 2*wy-wx>=-128 && 2*wy-wx<64) {
             /* Reflect the whole left hedge bay, including its flowers, rather
              * than chopping the right hedge into four-column stair steps. */
             int reflected=559-wx;
