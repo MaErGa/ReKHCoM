@@ -324,3 +324,55 @@ aviso en los trucos que lo activan, partidas editadas en el launcher también); 
 ## Atlas: sintesis aprobada, pendiente de integracion
 
 Version humana aprobada `823cdf38241144b1b282bcf3f2532120`: requisito HD dinamico, tinta dentro de la silueta, banda neutra y TOTAL desplazado de10 a9. Rama codex/sintesis-requisito-hd actualizada con main; PR125 se reabre tras aprobacion. La sugerencia posterior sobre contorno/numeros queda para una hija nueva; no se declara respondida ni se elevan honores.
+
+
+# Traspasos retirados de PENDIENTES (26/10 tarde)
+
+## TRASPASO — Claude toma lo de Codex (26/10 09:45)
+
+- Codex sin commits ni cambios desde 09:28 (árbol khcom-atlas-patrones-074 limpio). El usuario: «Codex se durmió,
+  retomar sus pendientes hasta acabar y lanzar la 2.0». Claude sigue PR #231 en la rama `claude/v20-close`
+  (worktree D:/01Claude/ReKHCoM-build/v20-wt, base origin/codex/hd-ui-v20-completion 3b1a04ae3), con la lista de
+  port/progress/CIERRE_V20_EN_CURSO.md y HANDOFF_V20_20261026.md de esa rama. No se toca el árbol de Codex.
+- Hecho en `claude/v20-close` (26/10): título HD completo (entradas, seleccionadas, Brillo Sora/Riku, crédito,
+  cursor, «Pulsa Start» en 5 idiomas: make_title_words.py, KHMenu ajustada a la tinta, embebido grupo 7), barra de
+  Pulsa Start lisa, fundidos del título arreglados (fundido restando del juego), Opciones HD (ilustración HD bajo el
+  panel, textos sin solaparse), avisos del port en HD. Faltan: proporción de piezas Re:CoM (avisos de combate
+  aplastados), números HD de cartas no rojas + mejoradas/premium, textos HD del mazo en la tienda Moguri, galería
+  desde saves viejos, Steam, #202, builds y pruebas de la 2.0.
+
+## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)
+
+- **Pedido:** título completo en HD con el mod HD: fondo, botones (Nueva partida, Sora, Riku, Cargar, Combate),
+  «Pulsa Start», crédito y copyright, aviso SELECT; con los fundidos y transiciones del juego, limpio («que se vea
+  clean»); estilo del original. Logo HD ya hecho y aprobado (el de Re:CoM sin «Re»).
+- **Fondo:** la ilustración HD del póster de CoM que dejó el usuario (KHCoMPC/x5zh3428mzyf1.jpg) no está en Recom.pkg
+  (revisado FO0501/FO0505: traen el Sora de Re:CoM, logos y palabras). El usuario decide incluirla como «mod»: va en el
+  paquete como archivo aparte, no dentro del exe; se dibuja solo con el título HD (= con el mod HD).
+- **Diseño en curso (rama `claude/title-hd`):** en port_ppu.c QueueMainHdParts, como el logo de BG2: la ilustración
+  sustituye BG1 (arte final) y BG0 mientras es el primer plano de la intro (sTitleArtFadeBg0), con el alfa del fundido
+  cruzado (BLDALPHA), el blanco/negro de BLDY y el fundido de paleta; lo que el juego dibuja encima (barra en BG0,
+  sprites, logo) vuelve encima por la capa «over». Solo Sora (el título de Riku sigue en píxeles).
+- **Palabras:** FO0505 `<lang>_title.imz` (UK/SP/FR/GR/IT) trae NUEVA PARTIDA, CARGAR PARTIDA, ESCENAS, ATRÁS,
+  DEVELOPED BY SQUARE ENIX: recetas en port/data/hd_sprites.tsv (grupo 2) para gTitleMenuEntry*/SelectedEntry*.
+  Lo que falta en Re:CoM (Sora, Riku, Pulsa Start, Jupiter) se dibuja con KHMenu.otf en el color del cartucho.
+- **Herramientas:** capturas del título en D:/01Claude/ReKHCoM-build/titlehd (khcom.exe aislado, ROM baserom.gba,
+  KHCOM_SHOTS / KHCOM_HDSPRITE_EXPORT + hdsprite_catalog.py); maqueta scratch title_mock.py (obsoleta: ir a capturas
+  reales). Todo visual pasa por Atlas antes de integrar.
+- **Hecho hoy:** #227 Linux 64 pantalla completa (fusionado); Codex integró 087/074/097/061/110/095/naipes mundo/
+  Maléfica estudios y también 112 (#214, que en Atlas pedía cambios: avisar a Codex); zip limpio
+  KHCoMPC/ReKHCoM-v2.0-pre19-main-1fbd9ee-windows-x86.zip. Bat de Maléfica: era para Codex, no se hace aquí.
+
+## TRASPASO — Claude, 26/10 mañana
+
+- **Corriendo (desacoplado, sobrevive al cierre de sesión):** baterías en khcom-claude-int (`run_batteries.py
+  --status`; relanzadas 06:20, siguen desde «events us») y `test_hd_audio_flow.py` (salida en
+  D:/01Claude/ReKHCoM-build/v20check/). Después de las baterías: `test_frameskip.py --build build/pc-main --jobs 3`
+  (son ~400 corridas: horas, no es un cuelgue).
+- **Pruebas de la 2.0 ya pasadas (pre19 / main):** test_update (las 4 estables → ok), test_launcher 11/11,
+  test_hd_audio 0/13 con problemas, match_hd_scenes --check, primer arranque modo + ventana (fullscreen=0).
+- **Linux 64, rama `wip/linux64-fullscreen-row`:** la fila de pantalla completa ya sale y cambia en Opciones (la
+  imagen manda la orden por `set_title` con prefijo `\x01fullscreen=`, sin tocar el puente); falta ver por qué el host
+  no registra la orden en la VM (vmshare-fs64/run.sh). En la misma rama: la fila de escenas HD salía apagada en esa
+  imagen (HD_MOVIES_PLAY sin PORT_LINUX64_GUEST), ya corregido.
+
