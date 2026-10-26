@@ -50,11 +50,8 @@ Steam Deck; zip limpio en KHCoMPC).
   primer plano → zoom de salida → arte completo con Pulsa Start encima; recortado al lienzo (sin salirse al negro).
   Asset en port/assets/hd/title/art/sora.png (subcarpetas, pedido del usuario); va en el release y solo se usa con el
   mod HD (decisión del usuario: F resuelta, sin cifrar).
-- **Bugs abiertos del título HD:** (1) el aviso «SELECT Opciones» del port queda bajo el arte HD (se ve «ECT Opc»):
-  el aviso (port_ui.c MenuButton, sTitleHintFrames) va en la capa de la interfaz, que se compone DEBAJO de la capa 0
-  HD: copiar gPortFrame a sMainOver no sirve (sale blanco, probado). Hay que pintar las piezas HD de capa 0 antes
-  de la capa de la interfaz en el presentador (port_main.c, orden de PortHdSpritesDraw vs la UI) o dibujar el aviso
-  en la capa 2 (pantalla); (2) en el primer plano el panel de Goofy cae bajo el
+- **Bugs abiertos del título HD:** (1) HECHO 26/10: el aviso SELECT queda encima (PortPpuOverKeepDrawn: lo que la
+  interfaz cambia en sComposite pasa, en su caja entera, a la capa «over»); (2) en el primer plano el panel de Goofy cae bajo el
   crédito: mover el foco del primer plano (cx 200→215) o subir el fundido izquierdo; (3) pulir encuadre final a ojo vs
   GBA; (4) probar 2560x1080, 3840x1080 y 4:3; (5) piezas C (botones, Pulsa Start, crédito) pendientes.
 - G. Captura de ventana: KHCOM_OUTPUT_SHOT no sacó nada con offscreen; usar KHCOM_PRESENTSHOTS=a-b (rango).

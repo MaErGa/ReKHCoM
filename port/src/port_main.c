@@ -1568,6 +1568,10 @@ static void Present(void) {
         }
     }
     PortUiDraw(sComposite, gPortScreen.width, gPortScreen.height);
+    {
+        extern void PortPpuOverKeepDrawn(const uint32_t* composite);
+        PortPpuOverKeepDrawn(sComposite); /* the title's hint over its HD illustration */
+    }
     SDL_UpdateTexture(sTexture, NULL, sComposite, gPortScreen.width * 4);
     SDL_GetCurrentRenderOutputSize(sRenderer, &outW, &outH);
     SDL_SetRenderDrawColor(sRenderer, 0, 0, 0, 255);

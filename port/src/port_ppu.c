@@ -4832,6 +4832,32 @@ static void HdOverLayer(int screen, int w, int h, const uint8_t* occBg, const ui
     }
 }
 
+/* What the port draws on its copy of the picture (the title's SELECT hint, port_ui.c) stays over the HD
+   illustration: every pixel it changed goes to the layer drawn over the HD parts (port_main.c, after PortUiDraw). */
+void PortPpuOverKeepDrawn(const uint32_t* composite) {
+    int w = gPortScreen.width, h = gPortScreen.height, x, y, x0, y0, x1 = -1, y1 = -1;
+    if (!sTitleArtHd || !composite || composite == gPortFrame || !sMainOver || (size_t)w * h > sMainOverSize)
+        return;
+    x0 = w;
+    y0 = h;
+    for (y = 0; y < h; y++)
+        for (x = 0; x < w; x++)
+            if (composite[y * w + x] != gPortFrame[y * w + x]) {
+                x0 = SDL_min(x0, x); x1 = SDL_max(x1, x);
+                y0 = SDL_min(y0, y); y1 = SDL_max(y1, y);
+            }
+    if (x1 < 0)
+        return;
+    if (!sMainOverUsed) {
+        memset(sMainOver, 0, (size_t)w * h * 4);
+        sMainOverUsed = 1;
+    }
+    /* the whole box it drew, its white inside too (the same white as the title's, so unchanged pixel by pixel) */
+    for (y = y0; y <= y1; y++)
+        for (x = x0; x <= x1; x++)
+            sMainOver[y * w + x] = composite[y * w + x] | 0xFF000000u;
+}
+
 static void MainHdOver(void) {
     int w = gPortScreen.width, h = gPortScreen.height;
     sMainOverUsed = sScreenOverUsed = 0;
