@@ -5,6 +5,13 @@ archivos anteriores). Método de depuración: DEBUG_WORKFLOW.md. Cola de arte: `
 list` (Atlas). Reglas del usuario: REGLAS_DEL_USUARIO.md. Última prerelease: **v2.0-pre19** (26/10, Windows, Linux,
 Steam Deck; zip limpio en KHCoMPC).
 
+## TRASPASO — Claude toma lo de Codex (26/10 09:45)
+
+- Codex sin commits ni cambios desde 09:28 (árbol khcom-atlas-patrones-074 limpio). El usuario: «Codex se durmió,
+  retomar sus pendientes hasta acabar y lanzar la 2.0». Claude sigue PR #231 en la rama `claude/v20-close`
+  (worktree D:/01Claude/ReKHCoM-build/v20-wt, base origin/codex/hd-ui-v20-completion 3b1a04ae3), con la lista de
+  port/progress/CIERRE_V20_EN_CURSO.md y HANDOFF_V20_20261026.md de esa rama. No se toca el árbol de Codex.
+
 ## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)
 
 - **Pedido:** título completo en HD con el mod HD: fondo, botones (Nueva partida, Sora, Riku, Cargar, Combate),
