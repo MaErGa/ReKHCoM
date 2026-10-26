@@ -53,7 +53,10 @@ Steam Deck; zip limpio en KHCoMPC).
 - **Bugs abiertos del título HD:** (1) HECHO 26/10: el aviso SELECT queda encima (PortPpuOverKeepDrawn: lo que la
   interfaz cambia en sComposite pasa, en su caja entera, a la capa «over»); (2) en el primer plano el panel de Goofy cae bajo el
   crédito: mover el foco del primer plano (cx 200→215) o subir el fundido izquierdo; (3) pulir encuadre final a ojo vs
-  GBA; (4) probar 2560x1080, 3840x1080 y 4:3; (5) piezas C (botones, Pulsa Start, crédito) pendientes.
+  GBA; (4) probar 2560x1080, 3840x1080 y 4:3; (5) piezas C pendientes, TODAS en HD (usuario 26/10): botones Nueva partida/Sora/Riku/Cargar/Combate y su barra
+  seleccionada y cursor (gTitleMenu*), «L◀ BRILLO ▶R» (gTitleSoraLumi<lang>Frame0..2, el control de brillo), Pulsa
+  Start (gTitlePressStart<lang>Frame0..4 + la barra rosa del BG0 gTitlePressStartBarMap), crédito
+  (gTitleDevelopedBy<lang>). (2) primer plano: foco movido a x=214 (26/10), revisar en captura.
 - G. Captura de ventana: KHCOM_OUTPUT_SHOT no sacó nada con offscreen; usar KHCOM_PRESENTSHOTS=a-b (rango).
 
 ## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)

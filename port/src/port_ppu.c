@@ -4626,9 +4626,10 @@ static void TitleArtQueue(void) {
     t = !intro ? 1.0f : !whole ? 0.0f : effect == 1 ? SDL_min(16, (IO16(0x52) >> 8) & 31) / 16.0f : 0.0f;
     t = t * t * (3.0f - 2.0f * t);
     {
-        /* the close-up: Sora's face (the poster's 55%, 22%) where the cartridge's close-up has it, 1.75 times as big */
+        /* the close-up: Sora's face (the poster's 55%, 22%) near where the cartridge's close-up has it, a little right so
+           the credit keeps its white; 1.75 times as big */
         float ch = kFinal[2] * 1.75f, cw = ch * aspect;
-        float cx = 200.0f - 0.55f * cw, cy = 40.0f - 0.22f * ch;
+        float cx = 214.0f - 0.55f * cw, cy = 40.0f - 0.22f * ch;
         h = ch + (kFinal[2] - ch) * t;
         x0 = cx + (kFinal[0] - cx) * t;
         y0 = cy + (kFinal[1] - cy) * t;
