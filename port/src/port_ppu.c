@@ -17,6 +17,10 @@
 #include <stdio.h>
 
 #include "port/port.h"
+
+/* PPU is also compiled by console guests without SDL headers. */
+#define PPU_MIN(a, b) ((a) < (b) ? (a) : (b))
+#define PPU_MAX(a, b) ((a) > (b) ? (a) : (b))
 #include "port/port_hd2d.h"
 #include "port/port_hdsprites.h"
 #include "engine.h"
@@ -4619,11 +4623,11 @@ static void TitleArtQueue(void) {
     int intro = sTitleArtFadeBg0 && (dispcnt & 0x100), whole = (dispcnt & 0x200) != 0;
     int effect = (bld >> 6) & 3, dark = 0, white = 0, k;
     float aspect = 0.8289f, t, x0, y0, h, w, x[4], y[4], u0, v0, u1, v1;
-    if (!sTitleArtFade || !gPortConfig.hdTitle || (dispcnt & 7) != 1 || (!intro && !whole) ||
+    if (!sTitleArtFade || !gPortConfig.hdTitle || !gPortConfig.hdHud || (dispcnt & 7) != 1 || (!intro && !whole) ||
         !PortHdTitleArtReady(&aspect))
         return;
     /* how far the dissolve is: BG1's share of the blend while both are up */
-    t = !intro ? 1.0f : !whole ? 0.0f : effect == 1 ? SDL_min(16, (IO16(0x52) >> 8) & 31) / 16.0f : 0.0f;
+    t = !intro ? 1.0f : !whole ? 0.0f : effect == 1 ? PPU_MIN(16, (IO16(0x52) >> 8) & 31) / 16.0f : 0.0f;
     t = t * t * (3.0f - 2.0f * t);
     {
         /* the close-up: Sora's face (the poster's 55%, 22%) near where the cartridge's close-up has it, a little right so
@@ -4639,8 +4643,8 @@ static void TitleArtQueue(void) {
     y0 += (float)gPortScreen.originY;
     {
         /* cut to the picture (the original view's black bars stay black), the texture in proportion */
-        float cx0 = SDL_max(x0, 0.0f), cx1 = SDL_min(x0 + w, (float)gPortScreen.width);
-        float cy0 = SDL_max(y0, 0.0f), cy1 = SDL_min(y0 + h, (float)gPortScreen.height);
+        float cx0 = PPU_MAX(x0, 0.0f), cx1 = PPU_MIN(x0 + w, (float)gPortScreen.width);
+        float cy0 = PPU_MAX(y0, 0.0f), cy1 = PPU_MIN(y0 + h, (float)gPortScreen.height);
         if (cx1 <= cx0 || cy1 <= cy0)
             return;
         u0 = (cx0 - x0) / w; u1 = (cx1 - x0) / w;
@@ -4649,15 +4653,15 @@ static void TitleArtQueue(void) {
         y[0] = y[1] = cy0; y[2] = y[3] = cy1;
     }
     if ((bld & 0x03) && effect == 2)
-        white = SDL_min(16, IO16(0x54) & 31) * 255 / 16;
+        white = PPU_MIN(16, IO16(0x54) & 31) * 255 / 16;
     else if ((bld & 0x03) && effect == 3)
-        dark = SDL_min(16, IO16(0x54) & 31) * 255 / 16;
+        dark = PPU_MIN(16, IO16(0x54) & 31) * 255 / 16;
     {
         int pd = 0, pw = 0; /* the title fades its palette too (BG1's, which the close-up shares) */
         PortPaletteFade((const uint16_t*)gTitleSoraBgPalette, PLTT16 + (gBgPaletteBank[1] & 15) * 16,
                         256 - (gBgPaletteBank[1] & 15) * 16, &pd, &pw);
-        dark = SDL_max(dark, pd);
-        white = SDL_max(white, pw);
+        dark = PPU_MAX(dark, pd);
+        white = PPU_MAX(white, pw);
     }
     for (k = 0; k < 4; k++)
         if (!(x[k] > -4096.0f && x[k] < 8192.0f && y[k] > -4096.0f && y[k] < 8192.0f))
@@ -4844,8 +4848,8 @@ void PortPpuOverKeepDrawn(const uint32_t* composite) {
     for (y = 0; y < h; y++)
         for (x = 0; x < w; x++)
             if (composite[y * w + x] != gPortFrame[y * w + x]) {
-                x0 = SDL_min(x0, x); x1 = SDL_max(x1, x);
-                y0 = SDL_min(y0, y); y1 = SDL_max(y1, y);
+                x0 = PPU_MIN(x0, x); x1 = PPU_MAX(x1, x);
+                y0 = PPU_MIN(y0, y); y1 = PPU_MAX(y1, y);
             }
     if (x1 < 0)
         return;

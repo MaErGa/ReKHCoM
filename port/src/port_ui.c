@@ -829,7 +829,32 @@ static uint32_t Mix(uint32_t a, uint32_t b, int t) {
     return 0xFF000000u | (r << 16) | (g << 8) | bl;
 }
 
+/* The port's own menus keep native layout, but rasterize their font at output
+   resolution with HUD HD. Record paint order so modal panels and fades also
+   cover/shade text that has already been queued. */
+static struct { int code, x, y, alive; uint32_t face, shadow; } sHdUiGlyphs[2048];
+static int sHdUiCount;
+static uint32_t* sHdUiFrame;
+
+void PortUiHdDraw(SDL_Renderer* renderer, float x, float y, float scale) {
+    extern void PortHdTextUiGlyph(SDL_Renderer*, int, float, float, float, uint32_t, uint32_t);
+    int i;
+    if (!gPortConfig.hdHud) return;
+    for (i = 0; i < sHdUiCount; i++)
+        if (sHdUiGlyphs[i].alive)
+            PortHdTextUiGlyph(renderer, sHdUiGlyphs[i].code, x + sHdUiGlyphs[i].x * scale,
+                y + sHdUiGlyphs[i].y * scale, scale, sHdUiGlyphs[i].face, sHdUiGlyphs[i].shadow);
+}
+
 static void Shade(int x0, int y0, int w, int h, uint32_t color, int alpha) {
+    int glyph;
+    if (sFb == sHdUiFrame)
+        for (glyph = 0; glyph < sHdUiCount; glyph++)
+            if (sHdUiGlyphs[glyph].x + 3 >= x0 && sHdUiGlyphs[glyph].x + 3 < x0 + w &&
+                sHdUiGlyphs[glyph].y + 4 >= y0 && sHdUiGlyphs[glyph].y + 4 < y0 + h) {
+                sHdUiGlyphs[glyph].face = Mix(sHdUiGlyphs[glyph].face, color, alpha);
+                sHdUiGlyphs[glyph].shadow = Mix(sHdUiGlyphs[glyph].shadow, color, alpha);
+            }
     int x, y;
 
     for (y = SDL_max(y0, 0); y < SDL_min(y0 + h, sFbH); y++)
@@ -869,6 +894,14 @@ static int TextWidth(const char* s) {
 /* The font's glyphs occupy rows 3..12 of their 16x16 cell; y is the top of
    that band. Colour 1 is the face, colour 2 the shadow. */
 static void DrawGlyph(int code, int x, int y, uint32_t face, uint32_t shadow) {
+    if (sHdUiFrame && sFb == sHdUiFrame && code >= 32 && sHdUiCount < 2048) {
+        int n = sHdUiCount++;
+        sHdUiGlyphs[n].code = code & 0xffff;
+        sHdUiGlyphs[n].x = x; sHdUiGlyphs[n].y = y;
+        sHdUiGlyphs[n].face = face; sHdUiGlyphs[n].shadow = shadow;
+        sHdUiGlyphs[n].alive = 1;
+        return;
+    }
     const uint16_t* frame;
     const uint8_t* tiles;
     int px, py, top = 3, bottom = 13;
@@ -2514,6 +2547,12 @@ static void DecodeMenuArt(void) {
 }
 
 static void Fill(int x0, int y0, int w, int h, uint32_t c) {
+    int glyph;
+    if (sFb == sHdUiFrame)
+        for (glyph = 0; glyph < sHdUiCount; glyph++)
+            if (sHdUiGlyphs[glyph].x >= x0 && sHdUiGlyphs[glyph].x < x0 + w &&
+                sHdUiGlyphs[glyph].y >= y0 && sHdUiGlyphs[glyph].y < y0 + h)
+                sHdUiGlyphs[glyph].alive = 0;
     int x, y;
 
     for (y = y0; y < y0 + h; y++)
@@ -4193,7 +4232,7 @@ static void DrawMenu(int l, int width, int height) {
         static const char* const restart[LANG_COUNT] = {
             "Restart the game to apply voice changes.", "Relancez le jeu pour appliquer les voix.",
             "Das Spiel neu starten, um die Stimmen anzuwenden.", "Riavvia il gioco per applicare le voci.",
-            "Reinicia el juego para aplicar el cambio de voces.", "ボイスの変更はゲーム再起動後に反映されます。"
+            "Reinicia el juego para aplicar el cambio de voces.", "ボイスの変更後はゲームを再起動してください。"
         };
         DrawNeedNote(restart[l], width, height, barX + barW + 8, selY);
     }
@@ -4602,6 +4641,8 @@ void PortUiDraw(uint32_t* frame, int width, int height) {
     ++sMenuLightDrawClock;
     QuitTrack();
 
+    sHdUiCount = 0;
+    sHdUiFrame = gPortConfig.hdHud && sOpen ? frame : NULL;
     sFb = frame;
     sFbW = width;
     sFbH = height;

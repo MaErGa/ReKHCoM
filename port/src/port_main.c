@@ -1985,6 +1985,10 @@ static void Present(void) {
             SDL_RenderTexture(sRenderer, sTexture, &ps, &pd);
         }
     }
+    if (menuCanvas && gPortConfig.hdHud) {
+        extern void PortUiHdDraw(SDL_Renderer*, float, float, float);
+        PortUiHdDraw(sRenderer, worldX, worldY, worldScale);
+    }
     if (gPortConfig.viewMode != PORT_VIEW_CRT) /* the CRT or its shader draws them */
         DrawScanlines(&dst, outW);
     {
