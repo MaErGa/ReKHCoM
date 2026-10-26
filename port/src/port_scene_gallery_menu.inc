@@ -1,6 +1,6 @@
 /* Options > Scenes (port_scene_gallery.c): the story's scenes, the ones not seen yet as "???" (as the journal does).
- * Two tabs: GBA (the cartridge's scene, replayed with a temporary checkpoint) and HD (the Re:CoM scene,
- * when the HD mod's scenes are imported). Y or L/R changes the tab. */
+ * GBA, HD and ReKHCoM (the same HD/native selection as live gameplay with its HD switches on).
+ * Y or L/R changes the tab. Replays preserve the original game and its logical Re:CoM version. */
 int PortHdSceneImported(const char* movie);
 int PortSceneGalleryPlay(int eventId);
 #include "evt/event_ids.h"
@@ -11,6 +11,9 @@ static int sSceneChoice, sSceneScroll, sSceneHarnessTick;
 static int sSceneOrder[sizeof(kSceneNames) / sizeof(kSceneNames[0])], sSceneOrderN;
 static int sSceneView[sizeof(kSceneNames) / sizeof(kSceneNames[0])], sSceneViewN, sSceneViewTab = -1;
 static unsigned char sSceneImported[sizeof(kSceneNames) / sizeof(kSceneNames[0])];
+static unsigned char sSceneBroken[sizeof(kSceneNames) / sizeof(kSceneNames[0])];
+static int SceneAt(int i, const char** movie);
+static int SceneViewCount(void);
 int PortUiGalleryHarnessDone(void) {
     const char* at = SDL_getenv("KHCOM_GALLERY_QUIT_AFTER");
     return at && sSceneHarnessTick >= SDL_atoi(at) && !sOpen && !sScenePause;
@@ -18,10 +21,16 @@ int PortUiGalleryHarnessDone(void) {
 
 void PortUiGalleryResume(void) {
     int choice = sSceneChoice, scroll = sSceneScroll, hd = sSceneHd, tick = sSceneHarnessTick;
+    int eventId = SceneAt(choice, NULL), i;
+    unsigned char broken[sizeof(sSceneBroken)];
+    memcpy(broken, sSceneBroken, sizeof(broken));
     sScenePause = 0;
     PortUiOpenOptions();
     sPage = PAGE_SCENES;
     sSceneChoice = choice; sSceneScroll = scroll; sSceneHd = hd; sSceneHarnessTick = tick;
+    memcpy(sSceneBroken, broken, sizeof(broken));
+    sSceneViewTab = -1;
+    for (i = 0; i < SceneViewCount(); i++) if (SceneAt(i, NULL) == eventId) { sSceneChoice = i; break; }
     sMenuLightStart = MenuLightNow();
 }
 
@@ -70,7 +79,7 @@ static void SceneBuildView(void) {
     for (i = 0; i < SceneCount(); i++) {
         const char* movie;
         SceneRawAt(i, &movie);
-        sSceneImported[i] = *movie && PortHdSceneImported(movie);
+        sSceneImported[i] = !sSceneBroken[i] && *movie && PortHdSceneImported(movie);
     }
     for (i = 0; i < SceneCount(); i++) {
         const char* movie;
@@ -81,7 +90,7 @@ static void SceneBuildView(void) {
             for (j = 0; j < SceneCount(); j++) {
                 const char* other;
                 int otherId = SceneRawAt(j, &other);
-                if (!PORT_SCENE_IS_MOVIE(otherId) && PortSceneIsSeen(otherId) && !strcmp(movie, other)) {
+                if (!PORT_SCENE_IS_MOVIE(otherId) && sSceneImported[j] && PortSceneIsSeen(otherId) && !strcmp(movie, other)) {
                     duplicate = 1; break;
                 }
             }
@@ -104,19 +113,38 @@ static const char* SceneLabel(int i, int l) {
     SceneBuildView();
     return i >= 0 && i < sSceneViewN ? kSceneNames[sSceneOrder[sSceneView[i]]].name[l] : "";
 }
+static void SceneMarkBroken(const char* movie) {
+    int i, eventId = SceneAt(sSceneChoice, NULL);
+    for (i = 0; i < SceneCount(); i++) {
+        const char* name;
+        SceneRawAt(i, &name);
+        if (!strcmp(movie, name)) sSceneBroken[i] = 1;
+    }
+    sSceneViewTab = -1; /* restore native movie aliases too when their complete HD event could not be decoded */
+    for (i = 0; i < SceneViewCount(); i++) if (SceneAt(i, NULL) == eventId) { sSceneChoice = i; break; }
+    PortLog("scene gallery: HD resource failed; native aliases restored for %s", movie);
+    if (SDL_getenv("KHCOM_GALLERY_AUDIT")) for (i = 0; i < SceneViewCount(); i++) {
+        const char* name;
+        int id = SceneAt(i, &name);
+        if (PORT_SCENE_IS_MOVIE(id) && !strcmp(name, movie))
+            PortLog("scene gallery native alias: id=%d available=%d", id, !SceneProviderHd(i));
+    }
+}
 
 static void SceneMenuOpen(void) {
     sPage = PAGE_SCENES;
     sSceneChoice = sSceneScroll = 0;
     sSceneHd = SDL_getenv("KHCOM_SCENES_SHOT") ? SDL_clamp(SDL_atoi(SDL_getenv("KHCOM_SCENES_SHOT")) - 1, 0, 2) : 0;
+    memset(sSceneBroken, 0, sizeof(sSceneBroken));
     sSceneViewTab = -1;
     SceneBuildView();
     sSceneHarnessTick = 0;
     if (SDL_getenv("KHCOM_GALLERY_CHOICE"))
         sSceneChoice = SDL_clamp(SDL_atoi(SDL_getenv("KHCOM_GALLERY_CHOICE")), 0, SceneViewCount() - 1);
     if (SDL_getenv("KHCOM_GALLERY_EVENT")) {
-        int i, wanted = SDL_atoi(SDL_getenv("KHCOM_GALLERY_EVENT"));
-        for (i = 0; i < SceneViewCount(); i++) if (SceneAt(i, NULL) == wanted) { sSceneChoice = i; break; }
+        int i, found = 0, wanted = SDL_atoi(SDL_getenv("KHCOM_GALLERY_EVENT"));
+        for (i = 0; i < SceneViewCount(); i++) if (SceneAt(i, NULL) == wanted) { sSceneChoice = i; found = 1; break; }
+        PortLog("scene gallery selection: event=%d found=%d tab=%d", wanted, found, sSceneHd);
     }
     sMenuLightStart = MenuLightNow();
     if (SDL_getenv("KHCOM_GALLERY_PREVIEWTEST")) {
@@ -205,7 +233,7 @@ static int SceneMenuInput(const SDL_Event* ev) {
                 sHdUiCount = 0;
                 PortMenuSoundBegin();
                 PortLog("scene gallery: HD %s -> %d; returning to the list choice=%d tab=%d", movie, played, sSceneChoice, sSceneHd);
-                if (!played && sSceneHd == 2) sSceneImported[sSceneView[sSceneChoice]] = 0;
+                if (!played && sSceneHd == 2) SceneMarkBroken(movie);
                 if (!played && sSceneHd == 1) PortUiNotice(Lang() == LANG_ES ? "No se pudo abrir el vídeo HD" : "The HD video could not be opened");
                 if (!played && sSceneHd == 2 && PortSceneGalleryPlay(eventId)) Close();
             } else if (sSceneHd != 1 && PortSceneGalleryPlay(eventId)) {

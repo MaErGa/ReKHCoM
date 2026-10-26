@@ -34,8 +34,10 @@ static uint32_t AuditHash(const void* data, size_t size) {
     return hash;
 }
 static GalleryAudit AuditStamp(void) {
-    static const char* const names[] = { "scenes_seen.dat", "achievements_official_eu.dat", "achievements_rebel_eu.dat",
-        "achievements_recom_eu.dat", "achievements_recom_extra_eu.dat", "achievements_rebel_recom_eu.dat" };
+    static const char* const names[] = { "scenes_seen.dat", "kh_com_recom.ini", "rebel_mode.txt",
+        "achievements_official_eu.dat", "achievements_official_us.dat", "achievements_official_jp.dat",
+        "achievements_rebel_eu.dat", "achievements_recom_eu.dat", "achievements_recom_extra.dat",
+        "achievements_rebel_recom_eu.dat", "achievements_rebel_recom_extra.dat" };
     GalleryAudit stamp = {0};
     unsigned i;
     stamp.game = AuditHash(&gGameState, sizeof(gGameState));
@@ -132,7 +134,7 @@ const uint32_t* PortSceneGalleryPreview(int eventId, int hd) {
 }
 
 void PortSceneGalleryCapture(void) {
-    if (sReplay == GALLERY_PLAY && !sReplayCaptured && sReplayFrames >= 90) {
+    if (sReplay == GALLERY_PLAY && !sReplayCaptured && PortFrameCount() - sReplayStartFrame >= 90) {
         PortSceneGalleryRemember(sReplayEvent, 0, gPortFrame, gPortScreen.width, gPortScreen.height);
         sReplayCaptured = 1;
     }
@@ -188,6 +190,7 @@ int PortSceneGalleryPlay(int eventId) {
         sReplayFallback = 1;
         sReplay = GALLERY_PLAY;
         sReplayFrames = 0;
+        sReplayCaptured = 0;
         sReplayEntered = 0;
         sReplayStartFrame = PortFrameCount();
         PortSceneGalleryBegin(eventId);

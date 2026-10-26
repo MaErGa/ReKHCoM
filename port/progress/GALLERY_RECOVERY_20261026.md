@@ -36,3 +36,11 @@ reproducciÃ³n HD suspende el overlay mientras su pausa estÃ¡ activa y lo recuper
   pelÃ­culas/extras, QA a 1920 y ultrapanorÃ¡mico, y revisiÃ³n independiente. No es evidencia de todas las combinaciones.
 - Datos locales: `<work>/gallery-matrix-pilot2/{manifest.json,results.jsonl,logs,shots}`. 24 casos, dos reproducciones por
   caso, salida 0 y comparaciones registradas; los MP4 de codec son fixtures sintÃ©ticos, no footage del juego.
+
+## Revisión posterior del candidato
+
+- Cuatro pilotos adicionales pasan sobre el ejecutable EU SHA256 `78150ce92df6bb3e56629faac1c979e0b66f219b75d6e63082cd4b3f3b494406`: evento 56 con HD corrupto y fallback nativo; intro 513 nativa con salto; película 514 nativa con final natural; final Riku 517 HD cancelando la pausa. Dos reproducciones por caso, estado/SRAM intactos. Evidencia en `<work>/gallery-movie-pilots`.
+- Un HD corrupto en ReKHCoM ya no oculta su cola cinematográfica nativa: se invalidan las entradas que comparten recurso, se reconstruye la lista y se conserva el evento seleccionado. El piloto confirma que vuelve a estar disponible el alias 515.
+- La auditoría incluye metadata Re:CoM y nombres oficiales de logros EU/US/JP; esto amplía las huellas comparadas, sin afirmar ejecución de las tres regiones. El fallback sin checkpoint reinicia la captura para cada escena.
+- El arnés limita los renderers a dos, fuerza un hilo PPU y rechaza reanudar resultados con otro ejecutable, ROM, save o fixtures. Cada resultado registra el SHA del binario.
+- Cuatro pilotos de extras pasan con Sora/Riku y versión lógica Re:CoM desactivada/activada, aun con `hd_scenes=hd_movies=0`: la galería usa HD sin cambiar preferencias, y los extras 001/614 aparecen solamente con Re:CoM activo. El primer intento con SRAM totalmente vacía detectó inicialización legítima del arranque; el arnés exige ahora un save inicializado y los cuatro casos se repitieron sobre la copia estable. Evidencia en `<work>/gallery-extras-pilots`.
