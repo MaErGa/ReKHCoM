@@ -119,6 +119,8 @@ static void RecomInit(void) {
 static int sRecomCredits; /* 0 none, else the movie */
 
 void PortAchievementsMovie(int movieId) {
+    extern int PortSceneGalleryActive(void);
+    if (PortSceneGalleryActive()) return;
     if (movieId == 4 || movieId == 5) sRecomCredits = movieId;
 }
 

@@ -416,6 +416,13 @@ enum MovieModeState {
 
 void mode_movie_0(s32 movieId) {
 #ifdef PLATFORM_PC
+    extern void PortSceneSeen(int sceneId);
+    extern int gPortGalleryEvent;
+    if (gPortGalleryEvent) {
+        ResetGameState();
+        if (movieId == MOVIE_RIKU_ENDING) SetupRikuNewGame(); else SetupSoraNewGame();
+    }
+    PortSceneSeen(512 + movieId);
     PortSideStyle(PORT_SIDE_MOVIE); /* cropped to the video, as large as the window allows */
 #endif
     sMovieModeState = MOVIE_MODE_STATE_CLEAR;
@@ -462,7 +469,8 @@ static u16 sMovieSubLowerWidths[MOVIE_SUB_MAX_CHARS];
 void PortUiOpenMoviePause(void);
 unsigned PortUiOpenSerial(void);
 u32 PortFrameCount(void);
-int PortHdMoviePlay(int movieId);
+int PortHdMoviePlay(int movieId);
+
 void PortAchievementsMovie(int movieId);
 static u8 sPortMovieSkip;
 
@@ -1004,6 +1012,14 @@ void mode_movie_1() {
         sMovieModeState++;
         break;
     case MOVIE_MODE_STATE_EXIT: {
+#ifdef PLATFORM_PC
+        extern int gPortGalleryEvent;
+        if (gPortGalleryEvent) {
+            extern void PortSceneGalleryReturn(void);
+            PortSceneGalleryReturn();
+            return;
+        }
+#endif
         CpuFill32(0, (void*)VRAM, VRAM_SIZE);
 
         if (sMovieFlags & MOVIE_FLAG_SOFT_RESET) {

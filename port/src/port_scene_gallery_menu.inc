@@ -1,78 +1,154 @@
 /* Options > Scenes (port_scene_gallery.c): the story's scenes, the ones not seen yet as "???" (as the journal does).
- * Two tabs: GBA (the cartridge's scene, replayed in the game's engine, from the title only) and HD (the Re:CoM scene,
+ * Two tabs: GBA (the cartridge's scene, replayed with a temporary checkpoint) and HD (the Re:CoM scene,
  * when the HD mod's scenes are imported). Y or L/R changes the tab. */
-int PortHdSceneCount(void);
-int PortHdSceneAt(int i, const char** movie);
 int PortHdSceneImported(const char* movie);
-int PortHdMoviePlayName(const char* movie);
-int PortSceneIsSeen(int eventId);
 int PortSceneGalleryPlay(int eventId);
 #include "evt/event_ids.h"
+#include "port/port_scene_gallery.h"
 #include "port_scene_names.inc"
 
-static int sSceneChoice, sSceneScroll;
+static int sSceneChoice, sSceneScroll, sSceneHarnessTick;
 static int sSceneOrder[sizeof(kSceneNames) / sizeof(kSceneNames[0])], sSceneOrderN;
-
-static int SceneCount(void) {
-    return (int)(sizeof(kSceneNames) / sizeof(kSceneNames[0]));
+static int sSceneView[sizeof(kSceneNames) / sizeof(kSceneNames[0])], sSceneViewN, sSceneViewTab = -1;
+static unsigned char sSceneImported[sizeof(kSceneNames) / sizeof(kSceneNames[0])];
+int PortUiGalleryHarnessDone(void) {
+    const char* at = SDL_getenv("KHCOM_GALLERY_QUIT_AFTER");
+    return at && sSceneHarnessTick >= SDL_atoi(at) && !sOpen && !sScenePause;
 }
 
-/* row i in story order (Sora's events, then Riku's: their ids), and its Re:CoM scene */
-static int SceneAt(int i, const char** movie) {
+void PortUiGalleryResume(void) {
+    int choice = sSceneChoice, scroll = sSceneScroll, hd = sSceneHd, tick = sSceneHarnessTick;
+    sScenePause = 0;
+    PortUiOpenOptions();
+    sPage = PAGE_SCENES;
+    sSceneChoice = choice; sSceneScroll = scroll; sSceneHd = hd; sSceneHarnessTick = tick;
+    sMenuLightStart = MenuLightNow();
+}
+
+static int SceneKey(SDL_Keycode key, int action) {
+    return (gPortConfig.keys[action][0] && key == (SDL_Keycode)gPortConfig.keys[action][0]) ||
+           (gPortConfig.keys[action][1] && key == (SDL_Keycode)gPortConfig.keys[action][1]);
+}
+
+static void SceneFitText(char* text, int width) {
+    while (TextWidth(text) > width && *text) {
+        size_t n = strlen(text) - 1;
+        while (n && ((unsigned char)text[n] & 0xC0) == 0x80) n--;
+        text[n] = 0;
+    }
+}
+static void SceneCopyText(char* out, size_t size, const char* text) {
+    size_t length = strlen(text), n = length < size - 1 ? length : size - 1;
+    if (n < length) while (n && ((unsigned char)text[n] & 0xC0) == 0x80) n--;
+    memcpy(out, text, n); out[n] = 0;
+}
+
+static int SceneCount(void) { return (int)(sizeof(kSceneNames) / sizeof(kSceneNames[0])); }
+
+static int SceneRawAt(int i, const char** movie) {
     int k, j, eventId;
     if (!sSceneOrderN) {
         for (k = 0; k < SceneCount(); k++) {
-            for (j = sSceneOrderN; j > 0 && kSceneNames[sSceneOrder[j - 1]].eventId > kSceneNames[k].eventId; j--)
+            for (j = sSceneOrderN; j > 0 && kSceneNames[sSceneOrder[j - 1]].storyOrder > kSceneNames[k].storyOrder; j--)
                 sSceneOrder[j] = sSceneOrder[j - 1];
             sSceneOrder[j] = k;
             sSceneOrderN++;
         }
     }
-    if (i < 0 || i >= SceneCount())
-        return -1;
+    if (i < 0 || i >= SceneCount()) return -1;
     eventId = kSceneNames[sSceneOrder[i]].eventId;
-    if (movie) {
-        *movie = "";
-        for (k = 0; k < PortHdSceneCount(); k++) {
-            const char* m;
-            if (PortHdSceneAt(k, &m) == eventId) {
-                *movie = m;
-                break;
-            }
-        }
-    }
+    if (movie) { const char* name = PortHdGalleryMovieName(eventId); *movie = name ? name : ""; }
     return eventId;
 }
 
-static const char* SceneLabel(int i, int l) {
-    return i >= 0 && i < SceneCount() ? kSceneNames[sSceneOrder[i]].name[l] : "";
+/* Resolve availability once per opening/tab, never stat dozens of movie files every render frame. */
+static void SceneBuildView(void) {
+    int i, j;
+    if (sSceneViewTab == sSceneHd) return;
+    sSceneViewTab = sSceneHd;
+    sSceneViewN = 0;
+    for (i = 0; i < SceneCount(); i++) {
+        const char* movie;
+        SceneRawAt(i, &movie);
+        sSceneImported[i] = *movie && PortHdSceneImported(movie);
+    }
+    for (i = 0; i < SceneCount(); i++) {
+        const char* movie;
+        int id = SceneRawAt(i, &movie), duplicate = 0;
+        if (sSceneHd == 1 && !*movie) continue;
+        /* A complete HD event already contains its movie tail. Match the actual shared mapping, not file numbers. */
+        if (sSceneHd && PORT_SCENE_IS_MOVIE(id) && sSceneImported[i])
+            for (j = 0; j < SceneCount(); j++) {
+                const char* other;
+                int otherId = SceneRawAt(j, &other);
+                if (!PORT_SCENE_IS_MOVIE(otherId) && PortSceneIsSeen(otherId) && !strcmp(movie, other)) {
+                    duplicate = 1; break;
+                }
+            }
+        if (!duplicate) sSceneView[sSceneViewN++] = i;
+    }
 }
 
-static int SceneHdAvailable(void) {
-    const char* movie;
-    int i;
-    for (i = 0; i < SceneCount(); i++)
-        if (SceneAt(i, &movie) >= 0 && PortHdSceneImported(movie))
-            return 1;
-    return 0;
+static int SceneViewCount(void) { SceneBuildView(); return sSceneViewN; }
+static int SceneAt(int i, const char** movie) {
+    SceneBuildView();
+    return i >= 0 && i < sSceneViewN ? SceneRawAt(sSceneView[i], movie) : -1;
+}
+static int SceneImportedAt(int i) {
+    SceneBuildView();
+    return i >= 0 && i < sSceneViewN && sSceneImported[sSceneView[i]];
+}
+static int SceneProviderHd(int i) { return sSceneHd == 1 || (sSceneHd == 2 && SceneImportedAt(i)); }
+static int SceneRiku(int id) { return PORT_SCENE_IS_MOVIE(id) ? id == PORT_SCENE_MOVIE(5) : id >= EVENT_149_RIKU_B12F_OPNING; }
+static const char* SceneLabel(int i, int l) {
+    SceneBuildView();
+    return i >= 0 && i < sSceneViewN ? kSceneNames[sSceneOrder[sSceneView[i]]].name[l] : "";
 }
 
 static void SceneMenuOpen(void) {
     sPage = PAGE_SCENES;
     sSceneChoice = sSceneScroll = 0;
-    sSceneHd = 0;
+    sSceneHd = SDL_getenv("KHCOM_SCENES_SHOT") ? SDL_clamp(SDL_atoi(SDL_getenv("KHCOM_SCENES_SHOT")) - 1, 0, 2) : 0;
+    sSceneViewTab = -1;
+    SceneBuildView();
+    sSceneHarnessTick = 0;
+    if (SDL_getenv("KHCOM_GALLERY_CHOICE"))
+        sSceneChoice = SDL_clamp(SDL_atoi(SDL_getenv("KHCOM_GALLERY_CHOICE")), 0, SceneViewCount() - 1);
+    if (SDL_getenv("KHCOM_GALLERY_EVENT")) {
+        int i, wanted = SDL_atoi(SDL_getenv("KHCOM_GALLERY_EVENT"));
+        for (i = 0; i < SceneViewCount(); i++) if (SceneAt(i, NULL) == wanted) { sSceneChoice = i; break; }
+    }
     sMenuLightStart = MenuLightNow();
+    if (SDL_getenv("KHCOM_GALLERY_PREVIEWTEST")) {
+        static int checked;
+        if (!checked) {
+            extern int PortSceneBackgroundPreview(int eventId, uint32_t* out, int width, int height);
+            uint32_t still[160 * 90];
+            int i, ok = 0;
+            checked = 1;
+            for (i = 0; i < SceneCount(); i++) {
+                int eventId = SceneRawAt(i, NULL);
+                if (PortSceneBackgroundPreview(eventId, still, 160, 90)) ok++;
+                else PortLog("scene gallery preview: missing GBA background event %d", eventId);
+            }
+            PortLog("scene gallery preview check: %d/%d cartridge backgrounds", ok, SceneCount());
+        }
+    }
 }
 
 static int SceneMenuInput(const SDL_Event* ev) {
-    int move = 0, tab = 0, back = 0, play = 0, count = SceneCount();
+    int move = 0, tab = 0, back = 0, play = 0, count = SceneViewCount();
     if (ev->type == SDL_EVENT_KEY_DOWN) {
+        if (SceneKey(ev->key.key, PORT_ACT_A)) play = !ev->key.repeat;
+        else if (SceneKey(ev->key.key, PORT_ACT_B)) back = !ev->key.repeat;
+        else if (SceneKey(ev->key.key, PORT_ACT_L) || SceneKey(ev->key.key, PORT_ACT_R)) tab = !ev->key.repeat;
+        else
         switch (ev->key.key) {
         case SDLK_UP: case SDLK_W: move = -1; break;
         case SDLK_DOWN: case SDLK_S: move = 1; break;
         case SDLK_LEFT: case SDLK_A: move = -5; break;
         case SDLK_RIGHT: case SDLK_D: move = 5; break;
-        case SDLK_Q: case SDLK_PAGEUP: case SDLK_E: case SDLK_PAGEDOWN: case SDLK_TAB: case SDLK_X: tab = 1; break;
+        case SDLK_Q: case SDLK_PAGEUP: case SDLK_E: case SDLK_PAGEDOWN: case SDLK_TAB: tab = 1; break;
         case SDLK_RETURN: case SDLK_SPACE: case SDLK_K: play = !ev->key.repeat; break;
         case SDLK_ESCAPE: case SDLK_BACKSPACE: case SDLK_F1: case SDLK_Z: case SDLK_J: back = !ev->key.repeat; break;
         }
@@ -90,7 +166,14 @@ static int SceneMenuInput(const SDL_Event* ev) {
         }
     }
     if (back) { sPage = PAGE_MAIN; sCursor = ITEM_SCENES_MENU; sScroll = 0; return 1; }
-    if (tab && (sSceneHd || SceneHdAvailable())) { sSceneHd = !sSceneHd; }
+    if (tab) {
+        int oldId = SceneAt(sSceneChoice, NULL), i;
+        sSceneHd = (sSceneHd + 1) % 3;
+        count = SceneViewCount();
+        sSceneChoice = 0;
+        for (i = 0; i < count; i++) if (SceneAt(i, NULL) == oldId) { sSceneChoice = i; break; }
+        sSceneScroll = 0;
+    }
     if (move && count) {
         if (move == 1 || move == -1) sSceneChoice = Wrap(sSceneChoice + move, count);
         else sSceneChoice = SDL_clamp(sSceneChoice + move, 0, count - 1);
@@ -99,9 +182,33 @@ static int SceneMenuInput(const SDL_Event* ev) {
         const char* movie;
         int eventId = SceneAt(sSceneChoice, &movie);
         if (eventId >= 0 && PortSceneIsSeen(eventId)) {
-            if (sSceneHd && PortHdSceneImported(movie)) {
-                PortHdMoviePlayName(movie); /* played here, over the paused game; back to this list after */
-            } else if (!sSceneHd && PortSceneGalleryPlay(eventId)) {
+            if (SceneProviderHd(sSceneChoice) && SceneImportedAt(sSceneChoice)) {
+                extern void PortMenuSoundEnd(void);
+                extern void PortMenuSoundBegin(void);
+                extern void PortSceneGalleryHdBegin(int eventId);
+                extern void PortSceneGalleryHdEnd(void);
+                uint32_t *canvas = sFb, *hdCanvas = sHdUiFrame;
+                int canvasW = sFbW, canvasH = sFbH;
+                int played;
+                /* A movie's own pause must not inherit the gallery's open overlay or mixer snapshot. */
+                PortMenuSoundEnd();
+                PortUiForceClose();
+                PortSceneGalleryAuditBegin();
+                PortSceneGalleryHdBegin(eventId);
+                played = PortHdGalleryPlayScene(eventId, sSceneHd == 2);
+                PortSceneGalleryHdEnd();
+                PortSceneGalleryAuditEnd();
+                PortUiGalleryResume();
+                /* MoviePause draws into and frees its own temporary canvas. Never resume this draw on that pointer. */
+                sFb = canvas; sFbW = canvasW; sFbH = canvasH;
+                sHdUiFrame = hdCanvas;
+                sHdUiCount = 0;
+                PortMenuSoundBegin();
+                PortLog("scene gallery: HD %s -> %d; returning to the list choice=%d tab=%d", movie, played, sSceneChoice, sSceneHd);
+                if (!played && sSceneHd == 2) sSceneImported[sSceneView[sSceneChoice]] = 0;
+                if (!played && sSceneHd == 1) PortUiNotice(Lang() == LANG_ES ? "No se pudo abrir el vídeo HD" : "The HD video could not be opened");
+                if (!played && sSceneHd == 2 && PortSceneGalleryPlay(eventId)) Close();
+            } else if (sSceneHd != 1 && PortSceneGalleryPlay(eventId)) {
                 Close();
             }
         }
@@ -110,23 +217,60 @@ static int SceneMenuInput(const SDL_Event* ev) {
     return 1;
 }
 
+static void SceneHarness(void) {
+    const char* route = SDL_getenv("KHCOM_GALLERY_KEYS");
+    const char* shots = SDL_getenv("KHCOM_GALLERY_SHOTS");
+    if (!route && !shots) return;
+    ++sSceneHarnessTick;
+    while (route && *route) {
+        const char* colon = SDL_strchr(route, ':');
+        const char* comma = SDL_strchr(route, ',');
+        if (colon && (!comma || colon < comma) && SDL_atoi(route) == sSceneHarnessTick) {
+            int key = SDL_atoi(colon + 1);
+            SDL_Event ev;
+            SDL_memset(&ev, 0, sizeof(ev));
+            ev.type = SDL_EVENT_KEY_DOWN;
+            ev.key.key = key;
+            if (key < 0) Close(); else SceneMenuInput(&ev);
+            PortLog("scene gallery test: tick=%d key=%d choice=%d HD=%d", sSceneHarnessTick, key, sSceneChoice, sSceneHd);
+        }
+        route = comma ? comma + 1 : NULL;
+    }
+    while (shots && *shots) {
+        if (SDL_atoi(shots) == sSceneHarnessTick) {
+            extern void PortHarnessShot(const char* name);
+            char name[64];
+            SDL_snprintf(name, sizeof(name), "gallery_%04d.bmp", sSceneHarnessTick);
+            PortHarnessShot(name);
+        }
+        shots = SDL_strchr(shots, ',');
+        if (shots) shots++;
+    }
+}
+
 static void DrawSceneMenu(int l, int width, int height) {
+    SceneHarness();
     static const char* const kTitle[LANG_COUNT] = { "Scenes", "Scènes", "Szenen", "Scene", "Escenas", "シーン" };
     static const char* const kLocked[LANG_COUNT] = { "???", "???", "???", "???", "???", "???" };
-    static const char* const kTabs[2][LANG_COUNT] = {
-        { "GBA", "GBA", "GBA", "GBA", "GBA", "GBA" }, { "HD", "HD", "HD", "HD", "HD", "HD" } };
+    static const char* const kTabs[3][LANG_COUNT] = {
+        { "GBA", "GBA", "GBA", "GBA", "GBA", "GBA" }, { "HD", "HD", "HD", "HD", "HD", "HD" },
+        { "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM" } };
     static const char* const kHelp[LANG_COUNT] = {
-        "Up/down  A: watch  Y/L/R: GBA/HD  B: back", "Haut/bas  A : voir  Y/L/R : GBA/HD  B : retour",
-        "Auf/ab  A: ansehen  Y/L/R: GBA/HD  B: zurück", "Su/giù  A: guarda  Y/L/R: GBA/HD  B: indietro",
-        "Arriba/abajo  A: ver  Y/L/R: GBA/HD  B: volver", "うえ/した  A:みる  Y/L/R:GBA/HD  B:もどる" };
-    static const char* const kTitleOnly[LANG_COUNT] = {
-        "GBA scenes play from the title screen.", "Les scènes GBA se lancent depuis l'écran titre.",
-        "GBA-Szenen starten vom Titelbildschirm.", "Le scene GBA partono dalla schermata del titolo.",
-        "Las escenas GBA se ven desde la pantalla de título.", "GBAのシーンはタイトルからみられます。" };
+        "Up/down  A: watch  Y/L/R: tab  B: back", "Haut/bas  A : voir  Y/L/R : GBA/HD  B : retour",
+        "Auf/ab  A: ansehen  Y/L/R: tab  B: zurück", "Su/giù  A: guarda  Y/L/R: tab  B: indietro",
+        "Arriba/abajo  A: ver  Y/L/R: tab  B: volver", "うえ/した  A:みる  Y/L/R:タブ  B:もどる" };
     static const char* const kNoHd[LANG_COUNT] = {
         "Not imported (HD mod).", "Non importée (mod HD).", "Nicht importiert (HD-Mod).", "Non importata (mod HD).",
         "No importada (mod HD).", "HD MODにありません。" };
-    int count = SceneCount(), seen = 0, x = 10, top = MENU_TOP + 23, right = width - 10, i, y;
+    static const char* const kTitleOnly[LANG_COUNT] = {
+        "On this platform GBA replay starts from the title.", "Sur cette plateforme, les scènes GBA partent du titre.",
+        "GBA-Szenen starten hier vom Titelbildschirm.", "Qui le scene GBA partono dal titolo.",
+        "En esta plataforma las escenas GBA parten desde el título.", "GBAのシーンはタイトルからみられます。" };
+    extern int PortSceneGalleryAvailable(void);
+    int nativeAvailable = PortSceneGalleryAvailable();
+    int count = SceneViewCount(), seen = 0, x = 10, top = MENU_TOP + 23, right = width - 10, i, y;
+    int cardW = SDL_min(170, width * 2 / 5), cardX = right - cardW;
+    int listRight = cardX - 10;
     int rows = SDL_max(1, (height - top - 30) / 16);
     char text[160];
     for (i = 0; i < count; i++)
@@ -142,13 +286,15 @@ static void DrawSceneMenu(int l, int width, int height) {
     for (i = sSceneScroll, y = top; i < count && i < sSceneScroll + rows; i++, y += 16) {
         const char* movie;
         int eventId = SceneAt(i, &movie), on = PortSceneIsSeen(eventId);
-        int playable = on && (sSceneHd ? PortHdSceneImported(movie) : 1);
+        int playable = on && (SceneProviderHd(i) ? SceneImportedAt(i) : nativeAvailable);
         char name[96];
-        MenuBar(x, y, right - x, i == sSceneChoice);
+        MenuBar(x, y, listRight - x, i == sSceneChoice);
         Fill(x + 2, y + 1, 7, 7, playable ? MENU_RED : MENU_GREY);
         if (on)
-            SDL_strlcpy(name, SceneLabel(i, l), sizeof(name));
+            SceneCopyText(name, sizeof(name), SceneLabel(i, l));
         SDL_snprintf(text, sizeof(text), "%02d  %s", i + 1, on ? name : kLocked[l]);
+        /* Long names stay on their own row; the full selected name is repeated on the card below its still. */
+        SceneFitText(text, listRight - x - 20);
         DrawText(text, x + 16, y - 2, playable ? MENU_INK : MENU_DIM, 0xFFD8D8D8u);
     }
     {
@@ -156,9 +302,56 @@ static void DrawSceneMenu(int l, int width, int height) {
         int eventId = count ? SceneAt(sSceneChoice, &movie) : -1;
         const char* note = NULL;
         if (eventId >= 0 && PortSceneIsSeen(eventId)) {
-            if (sSceneHd && !PortHdSceneImported(movie))
+            extern const uint32_t* PortSceneGalleryPreview(int eventId, int hd);
+            const uint32_t* preview = PortSceneGalleryPreview(eventId, SceneProviderHd(sSceneChoice));
+            int pw = cardW - 12, ph = SDL_min(pw * 9 / 16, height - top - 72), px, py;
+            char label[160];
+            Fill(cardX - 2, top - 2, cardW + 4, ph + 64, MENU_GREY);
+            Fill(cardX, top, cardW, ph + 60, 0xFFFFFFFFu);
+            MenuBar(cardX + 4, top + 2, cardW - 8, 1);
+            DrawText(SceneRiku(eventId) ? (SceneProviderHd(sSceneChoice) ? "Riku - HD" : "Riku - GBA") : (SceneProviderHd(sSceneChoice) ? "Sora - HD" : "Sora - GBA"),
+                     cardX + 16, top, MENU_INK, 0xFFD8D8D8u);
+            Fill(cardX + 6, top + 16, pw, ph, MENU_GREY);
+            if (preview)
+                for (py = 0; py < ph; py++)
+                    for (px = 0; px < pw; px++)
+                        Pixel(cardX + 6 + px, top + 16 + py, preview[(py * 90 / ph) * 160 + px * 160 / pw]);
+            else {
+                const char* empty = l == LANG_ES ? "Sin vista previa" : "No preview available";
+                while (TextWidth(empty) > pw) { empty = l == LANG_ES ? "Sin captura" : "No still yet"; break; }
+                DrawText(empty, cardX + 7, top + 18 + ph / 2, MENU_DIM, MENU_GREY);
+            }
+            SceneCopyText(label, sizeof(label), SceneLabel(sSceneChoice, l));
+            /* Wrap at spaces to keep the scene's name separate from its picture. */
+            {
+                char *line = label, *end = label;
+                int yy = top + 20 + ph, lines = 0;
+                while (*line && lines++ < 3) {
+                    char *last = NULL;
+                    end = line;
+                    while (*end) {
+                        char saved = *end;
+                        *end = 0;
+                        if (TextWidth(line) > cardW - 12) { *end = saved; break; }
+                        *end = saved;
+                        if (*end == ' ') last = end;
+                        end++;
+                        while (((unsigned char)*end & 0xC0) == 0x80) end++;
+                    }
+                    if (*end && last && last > line) end = last;
+                    {
+                        char saved = *end;
+                        *end = 0;
+                        DrawText(line, cardX + 6, yy, MENU_INK, 0xFFD8D8D8u);
+                        *end = saved;
+                        line = saved == ' ' ? end + 1 : end;
+                    }
+                    yy += 10;
+                }
+            }
+            if (sSceneHd == 1 && !SceneImportedAt(sSceneChoice))
                 note = kNoHd[l];
-            else if (!sSceneHd && !PortDebugModeAvailable())
+            else if (!SceneProviderHd(sSceneChoice) && !nativeAvailable)
                 note = kTitleOnly[l];
         }
         if (note)

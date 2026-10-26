@@ -205,6 +205,8 @@ void PortSramLoad(void) {
 }
 
 void PortSramSyncIfDirty(void) {
+    extern int PortSceneGalleryActive(void);
+    if (PortSceneGalleryActive()) return; /* replay restores SRAM before normal syncing resumes */
     const uint8_t* sram = (const uint8_t*)(uintptr_t)GBA_SRAM;
     char tmp[MAX_PATH];
     FILE* f;

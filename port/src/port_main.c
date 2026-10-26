@@ -2295,6 +2295,17 @@ static uint16_t HarnessKeys(uint32_t frame) {
     };
     const char* p = SDL_getenv("KHCOM_KEYS");
     uint16_t keys = MovieKeys(frame) | MonkeyKeys(frame);
+    {
+        extern int gPortGalleryEvent;
+        extern unsigned PortSceneGalleryAge(void);
+        const char* automatic = SDL_getenv("KHCOM_GALLERY_AUTO_KEYS");
+        if (gPortGalleryEvent && automatic) {
+            unsigned age = PortSceneGalleryAge();
+            if (age % 6 < 2) keys |= 1;
+            if (!SDL_strcmp(automatic, "skip") && age % 300 >= 80 && age % 300 < 180) keys |= 8;
+            if (!SDL_strcmp(automatic, "cancel") && age % 300 >= 80 && age % 300 < 84) keys |= 8;
+        }
+    }
 
     while (p && *p) {
         int a = SDL_atoi(p), b = a;
@@ -2375,6 +2386,10 @@ static void HarnessFrame(void) {
     const char* ui = SDL_getenv("KHCOM_OPTIONS_SHOT");
     const char* oam = SDL_getenv("KHCOM_OAMDUMP");
     const char* saveAt = SDL_getenv("KHCOM_SAVESTATE");
+    {
+        extern int PortUiGalleryHarnessDone(void);
+        if (PortUiGalleryHarnessDone()) Quit();
+    }
 
     {
         /* KHCOM_HDMOVIE_PLAY=<frame>:<movie>: that cartridge movie's HD replacement (port_hdmovie.c MovieFile) */
@@ -2528,7 +2543,9 @@ static void HarnessFrame(void) {
 int gPortExitCode; /* REKHCOM_EXIT_QUIT_ALL after Options > Quit the game */
 static void Quit(void) {
     void PortHdHudShutdown(void);
+    extern void PortSceneGalleryShutdown(void);
     PortSramSyncIfDirty();
+    PortSceneGalleryShutdown();
     PortConfigSave();
     PortAchievementsShutdown();
     PortDiscordShutdown();
@@ -2591,6 +2608,12 @@ static void PumpEvents(void) {
                 Quit();
                 break;
             case SDL_EVENT_KEY_DOWN:
+                {
+                    extern int PortSceneGalleryActive(void);
+                    if (PortSceneGalleryActive() && (ev.key.key == SDLK_F5 || ev.key.key == SDLK_F6 ||
+                                                    ev.key.key == SDLK_F7 || ev.key.key == SDLK_F8))
+                        continue; /* a visual replay must not replace the paused original game with a quick state */
+                }
                 /* quick states only when turned on in Cheats (off by default, so a run plays as on the cartridge;
                    no achievements while on): F5 save, F8 load, F6/F7 the slot */
                 if (!ev.key.repeat && ev.key.key == SDLK_F5 && gPortConfig.cheatSaveStates) {
@@ -2827,6 +2850,10 @@ static void VBlankCycle(void) {
         uint64_t t0 = SDL_GetPerformanceCounter();
         PortPpuRenderFrame();
         sPpuTicks = SDL_GetPerformanceCounter() - t0;
+        {
+            extern void PortSceneGalleryCapture(void);
+            PortSceneGalleryCapture();
+        }
     }
 
     /* Line 160: vertical blank. */
@@ -2994,6 +3021,10 @@ void PortFrame(void) {
         return;
     }
     PortStateService();
+    {
+        extern void PortSceneGalleryFrame(void);
+        PortSceneGalleryFrame();
+    }
     {
         /* Options > Return to title screen: the game's own soft reset, as its Continue screen does */
         extern int PortUiTakeTitleRequest(void);
