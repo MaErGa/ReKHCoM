@@ -1,5 +1,85 @@
 /* HD title words (make_title_words.py): the cartridge symbols title_words_hd.inc matches. */
 #if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartFrenchTiles[];
+extern const unsigned char gTitlePressStartFrenchFrame0[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartFrenchTiles[];
+extern const unsigned char gTitlePressStartFrenchFrame1[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartFrenchTiles[];
+extern const unsigned char gTitlePressStartFrenchFrame2[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartFrenchTiles[];
+extern const unsigned char gTitlePressStartFrenchFrame3[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartFrenchTiles[];
+extern const unsigned char gTitlePressStartFrenchFrame4[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartSpanishTiles[];
+extern const unsigned char gTitlePressStartSpanishFrame0[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartSpanishTiles[];
+extern const unsigned char gTitlePressStartSpanishFrame1[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartSpanishTiles[];
+extern const unsigned char gTitlePressStartSpanishFrame2[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartSpanishTiles[];
+extern const unsigned char gTitlePressStartSpanishFrame3[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartSpanishTiles[];
+extern const unsigned char gTitlePressStartSpanishFrame4[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartItalianTiles[];
+extern const unsigned char gTitlePressStartItalianFrame0[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartItalianTiles[];
+extern const unsigned char gTitlePressStartItalianFrame1[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartItalianTiles[];
+extern const unsigned char gTitlePressStartItalianFrame2[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartItalianTiles[];
+extern const unsigned char gTitlePressStartItalianFrame3[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartItalianTiles[];
+extern const unsigned char gTitlePressStartItalianFrame4[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartGermanTiles[];
+extern const unsigned char gTitlePressStartGermanFrame0[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartGermanTiles[];
+extern const unsigned char gTitlePressStartGermanFrame1[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartGermanTiles[];
+extern const unsigned char gTitlePressStartGermanFrame2[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartGermanTiles[];
+extern const unsigned char gTitlePressStartGermanFrame3[];
+#endif
+#if defined(VERSION_EU)
+extern const unsigned char gTitlePressStartGermanTiles[];
+extern const unsigned char gTitlePressStartGermanFrame4[];
+#endif
+#if defined(VERSION_EU)
 extern const unsigned char gTitleMenuSelectedEntryFrenchTiles[];
 extern const unsigned char gTitleMenuSelectedEntryFrenchFrame0[];
 #endif
@@ -306,6 +386,26 @@ extern const unsigned char gTitleDevelopedByGermanFrame0[];
 #if defined(VERSION_EU) || defined(VERSION_US)
 extern const unsigned char gTitleDevelopedByTiles[];
 extern const unsigned char gTitleDevelopedByFrame0[];
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+extern const unsigned char gTitlePressStartTiles[];
+extern const unsigned char gTitlePressStartFrame0[];
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+extern const unsigned char gTitlePressStartTiles[];
+extern const unsigned char gTitlePressStartFrame1[];
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+extern const unsigned char gTitlePressStartTiles[];
+extern const unsigned char gTitlePressStartFrame2[];
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+extern const unsigned char gTitlePressStartTiles[];
+extern const unsigned char gTitlePressStartFrame3[];
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+extern const unsigned char gTitlePressStartTiles[];
+extern const unsigned char gTitlePressStartFrame4[];
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
 extern const unsigned char gTitleMenuCursorTiles[];

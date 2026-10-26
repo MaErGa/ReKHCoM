@@ -707,6 +707,7 @@ static int sScreenHdAny;           /* some part queued on the screen layer */
 /* The title's logo as an affine background (BG2: its zoom in the intro, the staff roll's end), drawn HD instead
    while the title says so (PortTitleLogoBg) and the HD title is on. */
 static int sTitleLogoBg, sTitleLogoBgHd;
+static int sTitleBarHd; /* the title's press-start bar (BG0) drawn smooth this frame (TitleBarLine) */
 static int sTitleArtHd; /* the title's illustration drawn HD this frame: bit 0 in place of BG0 (the intro's close-up),
                            bit 1 of BG1 (the whole picture) */
 extern const unsigned char gTitleLogoBgTiles[];
@@ -2648,6 +2649,10 @@ static void ComposeLine(int y, uint16_t dispcnt, const int* bgOn, const int* bgP
     int evy = IO16(0x54) & 31, effect = (bldcnt >> 6) & 3;
     uint16_t backdrop = PLTT16[0] & 0x7FFF;
     int order[4], n = 0, p, b, x, docked = 0;
+    /* The HD title's picture (BG1 off, drawn HD): the white around it is the picture's own paper, which fades with
+       the picture's palette, not the system backdrop (faded on its own, it went black at once). */
+    if ((sTitleArtHd & 2) && (((const uint16_t*)gTitleSoraBgPalette)[31] & 0x7FFF) == 0x7FFF)
+        backdrop = PLTT16[(gBgPaletteBank[1] & 15) * 16 + 31] & 0x7FFF;
     /* Wide margins where no layer draws: the room's own void colour (a map's
        uniform padding), not the system backdrop. A room can end inside its
        map with nothing past it, which showed black or white beside the void
@@ -2973,6 +2978,33 @@ static void BuildTitleBands(int gy, const int* bgOn) {
     }
 }
 
+/* The press-start bar with the HD title: BG0's runs on this line handed over as the picture would show them (BLDY,
+   a blend only with the backdrop), drawn smooth by the HD layer; BG0 then leaves them to it. */
+static void TitleBarLine(int y, int gy) {
+    uint16_t ctrl = IO16(0x50), alpha = IO16(0x52);
+    int effect = (ctrl >> 6) & 3, x = 0, w = gPortScreen.width;
+    uint32_t run[256];
+    if (!sTitleBarHd || gy < 0 || gy >= GBA_SCREEN_H)
+        return;
+    while (x < w) {
+        int x0, n = 0;
+        if (sBgLine[0][x] == TRANSPARENT) { x++; continue; }
+        x0 = x;
+        while (x < w && sBgLine[0][x] != TRANSPARENT && n < 256) {
+            uint16_t c = sBgLine[0][x];
+            if (effect == 1 && (ctrl & 1) && (ctrl & 0x2000)) /* only the backdrop is under it (BG1 is drawn HD) */
+                c = Blend(c, PLTT16[0] & 0x7FFF, PPU_MIN(16, alpha & 31), PPU_MIN(16, (alpha >> 8) & 31));
+            else if ((ctrl & 1) && effect == 2)
+                c = Brighten(c, PPU_MIN(16, IO16(0x54) & 31));
+            else if ((ctrl & 1) && effect == 3)
+                c = Darken(c, PPU_MIN(16, IO16(0x54) & 31));
+            run[n++] = sColorLut[c];
+            sBgLine[0][x++] = TRANSPARENT;
+        }
+        PortHdTitleBarRow(y, x0, n, run);
+    }
+}
+
 static void RenderLine(int y, int gy) {
     uint16_t dispcnt = IO16(0x00);
     int mode = dispcnt & 7;
@@ -3046,6 +3078,7 @@ static void RenderLine(int y, int gy) {
     if (bgOn[0] && sTitleArtFadeBg0) TitleArtFadeLine(gy, 0);
     DrawObjs(gy, dispcnt);
     BuildTitleBands(gy, bgOn);
+    if (bgOn[0]) TitleBarLine(y, gy);
     BuildWindows(gy, dispcnt);
     ComposeLine(y, dispcnt, bgOn, bgPrio, gPortFrame, 1);
     /* The presenter also uses this background in non-menu narrow scenes,
@@ -4682,6 +4715,7 @@ static void QueueMainHdParts(void) {
     sTitleLogoBgHd = 0;
     sTitleArtHd = 0;
     TitleArtQueue();
+    sTitleBarHd = sTitleBands && gPortConfig.hdTitle && gPortConfig.hdHud && !sEnvTitleBandsOff;
     if (sTitleLogoBg && (IO16(0x00) & 0x400) && ((IO16(0x00) & 7) == 1 || (IO16(0x00) & 7) == 2)) {
         /* BG2 maps screen (sx, sy) to texture ((X + pa sx + pb sy) / 256, (Y + pc sx + pd sy) / 256): the
            texture's corners go back through the inverse to the canvas */

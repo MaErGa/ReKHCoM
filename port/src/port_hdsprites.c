@@ -271,11 +271,58 @@ void PortHdTitleArtQueue(const float* x, const float* y, float u0, float v0, flo
     q->white = (uint8_t)SDL_clamp(white, 0, 255);
 }
 
+/* The title's press-start bar (BG0, a gradient the cartridge steps column by column): its rows as the game colours
+   them (port_ppu.c TitleBarLine), drawn smooth at the output's resolution, colours interpolated between the columns'
+   centres, over the illustration and under the HD words. */
+#define BAR_RUNS 512
+typedef struct BarRun {
+    int16_t y, x0, n;
+    uint32_t c[256];
+} BarRun;
+static BarRun sBar[BAR_RUNS];
+static int sBarCount;
+
+void PortHdTitleBarRow(int y, int x0, int n, const uint32_t* argb) {
+    BarRun* r;
+    if (sBarCount == BAR_RUNS || n < 1)
+        return;
+    r = &sBar[sBarCount++];
+    r->y = (int16_t)y;
+    r->x0 = (int16_t)x0;
+    r->n = (int16_t)SDL_min(n, 256);
+    memcpy(r->c, argb, (size_t)r->n * 4);
+}
+
+static void BarDraw(SDL_Renderer* renderer, float ox, float oy, float scale, float shade) {
+    static SDL_Vertex v[(256 + 2) * 2];
+    static int index[(256 + 1) * 6];
+    int i, k;
+    for (i = 0; i < sBarCount; i++) {
+        const BarRun* r = &sBar[i];
+        float y0 = oy + r->y * scale, y1 = y0 + scale;
+        int nv = 0, ni = 0;
+        for (k = -1; k <= r->n; k++) {
+            /* the run's two ends, then each column's centre */
+            float x = k < 0 ? r->x0 : k == r->n ? r->x0 + r->n : r->x0 + k + 0.5f;
+            uint32_t c = r->c[SDL_clamp(k, 0, r->n - 1)];
+            SDL_FColor f = { ((c >> 16) & 255) / 255.0f * shade, ((c >> 8) & 255) / 255.0f * shade,
+                             (c & 255) / 255.0f * shade, 1.0f };
+            v[nv].position.x = ox + x * scale; v[nv].position.y = y0; v[nv].color = f; nv++;
+            v[nv].position.x = ox + x * scale; v[nv].position.y = y1; v[nv].color = f; nv++;
+        }
+        for (k = 0; k + 3 < nv; k += 2) {
+            index[ni++] = k; index[ni++] = k + 2; index[ni++] = k + 1;
+            index[ni++] = k + 1; index[ni++] = k + 2; index[ni++] = k + 3;
+        }
+        SDL_RenderGeometry(renderer, NULL, v, nv, index, ni);
+    }
+}
+
 void PortHdSpritesBegin(int layer) {
     if ((unsigned)layer < HD_LAYERS)
         sDrawCount[layer] = 0;
     if (layer == 0)
-        sArtCount = 0;
+        sArtCount = sBarCount = 0;
 }
 
 /* Test aid (KHCOM_HDDRAWLOG=frame,frame,...): this frame's HD drawing is logged ("hd draw <frame> <name> layer <n>",
@@ -606,6 +653,8 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
         if (white > 0)
             Quad(sArtWhite, q, ox, oy, scale, (SDL_FColor){ 1, 1, 1, q->alpha / 255.0f * white });
     }
+    if (layer == 0 && sBarCount)
+        BarDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
     for (i = 0; i < sDrawCount[layer]; i++) {
         const HdSpriteDraw* q = &sDraws[layer][i];
         HdSpriteState* st = &sState[q->id];
@@ -646,8 +695,29 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
     }
 }
 
+/* How far a palette is faded to black (*dark) or white (*white), 0..255, from its original: the game's fades
+   (engine.c FadeUpdate) scale it (c = o (1 - f)), take a step off every channel (FADE_MODE_BLACK: c = o - a), add one
+   (FADE_MODE_ADD_WHITE: c = o + a) or raise every channel to one (FADE_MODE_WHITE: c = max(o, a)); any of them is
+   recognised, and its share of the way (the channels' sum) is what the HD pictures follow. */
+static int FadeFits(const uint16_t* original, const volatile uint16_t* current, int count, int kind, int f, int a) {
+    int i, k, err = 0;
+    for (i = 1; i < count; i++)
+        for (k = 0; k < 15; k += 5) {
+            int o = (original[i] >> k) & 31, c = (current[i] >> k) & 31, e;
+            switch (kind) {
+            case 0: e = o * (256 - f) / 256; break;           /* scaled to black */
+            case 1: e = SDL_max(0, o - a); break;              /* a step off */
+            case 2: e = o + (31 - o) * f / 256; break;         /* scaled to white */
+            case 3: e = SDL_min(31, o + a); break;             /* a step on */
+            default: e = SDL_max(o, a); break;                 /* raised to a */
+            }
+            err += SDL_abs(c - e);
+        }
+    return err <= 2 * 3 * (count - 1);
+}
+
 void PortPaletteFade(const uint16_t* original, const volatile uint16_t* current, int count, int* dark, int* white) {
-    int i, so = 0, sc = 0, room = 0, err = 0, k;
+    int i, so = 0, sc = 0, room = 0, k, step = 0, top = 0;
     *dark = *white = 0;
     if (!original || count < 2)
         return;
@@ -657,24 +727,22 @@ void PortPaletteFade(const uint16_t* original, const volatile uint16_t* current,
             so += o;
             sc += c;
             room += 31 - o;
+            if (c > 0 && o - c > step) step = o - c; /* the step a black fade took (where it left something) */
+            if (c - o > top) top = c - o;            /* ... a white one added */
         }
     if (sc < so && so > 0) {
         int f = 256 * (so - sc) / so; /* c = o (1 - f) */
-        for (i = 1; i < count; i++)
-            for (k = 0; k < 15; k += 5) {
-                int o = (original[i] >> k) & 31, c = (current[i] >> k) & 31;
-                err += SDL_abs(c - o * (256 - f) / 256);
-            }
-        if (err <= 2 * 3 * (count - 1) && f > 6)
+        if (step == 0) step = 31;     /* everything at black */
+        if (f > 6 && (FadeFits(original, current, count, 0, f, 0) || FadeFits(original, current, count, 1, 0, step)))
             *dark = SDL_min(f, 255);
     } else if (sc > so && room > 0) {
-        int f = 256 * (sc - so) / room; /* c = o + (31 - o) f */
+        int f = 256 * (sc - so) / room, a; /* c = o + (31 - o) f */
+        a = 31; /* FADE_MODE_WHITE's level: the lowest channel left */
         for (i = 1; i < count; i++)
-            for (k = 0; k < 15; k += 5) {
-                int o = (original[i] >> k) & 31, c = (current[i] >> k) & 31;
-                err += SDL_abs(c - (o + (31 - o) * f / 256));
-            }
-        if (err <= 2 * 3 * (count - 1) && f > 6)
+            for (k = 0; k < 15; k += 5)
+                a = SDL_min(a, (current[i] >> k) & 31);
+        if (f > 6 && (FadeFits(original, current, count, 2, f, 0) || FadeFits(original, current, count, 3, 0, top) ||
+                      FadeFits(original, current, count, 4, 0, a)))
             *white = SDL_min(f, 255);
     }
 }

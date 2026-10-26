@@ -1,5 +1,65 @@
 /* HD title words (make_title_words.py): kHdSprites rows, group 7, pictures embedded in the game. */
 #if defined(VERSION_EU)
+    { gTitlePressStartFrenchTiles, gTitlePressStartFrenchFrame0, "gTitlePressStartFrenchFrame0", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartFrenchTiles, gTitlePressStartFrenchFrame1, "gTitlePressStartFrenchFrame1", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartFrenchTiles, gTitlePressStartFrenchFrame2, "gTitlePressStartFrenchFrame2", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartFrenchTiles, gTitlePressStartFrenchFrame3, "gTitlePressStartFrenchFrame3", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartFrenchTiles, gTitlePressStartFrenchFrame4, "gTitlePressStartFrenchFrame4", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartSpanishTiles, gTitlePressStartSpanishFrame0, "gTitlePressStartSpanishFrame0", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartSpanishTiles, gTitlePressStartSpanishFrame1, "gTitlePressStartSpanishFrame1", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartSpanishTiles, gTitlePressStartSpanishFrame2, "gTitlePressStartSpanishFrame2", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartSpanishTiles, gTitlePressStartSpanishFrame3, "gTitlePressStartSpanishFrame3", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartSpanishTiles, gTitlePressStartSpanishFrame4, "gTitlePressStartSpanishFrame4", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartItalianTiles, gTitlePressStartItalianFrame0, "gTitlePressStartItalianFrame0", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartItalianTiles, gTitlePressStartItalianFrame1, "gTitlePressStartItalianFrame1", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartItalianTiles, gTitlePressStartItalianFrame2, "gTitlePressStartItalianFrame2", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartItalianTiles, gTitlePressStartItalianFrame3, "gTitlePressStartItalianFrame3", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartItalianTiles, gTitlePressStartItalianFrame4, "gTitlePressStartItalianFrame4", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartGermanTiles, gTitlePressStartGermanFrame0, "gTitlePressStartGermanFrame0", -120, -24, 240, 24, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartGermanTiles, gTitlePressStartGermanFrame1, "gTitlePressStartGermanFrame1", -120, -24, 240, 24, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartGermanTiles, gTitlePressStartGermanFrame2, "gTitlePressStartGermanFrame2", -120, -24, 240, 24, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartGermanTiles, gTitlePressStartGermanFrame3, "gTitlePressStartGermanFrame3", -120, -24, 240, 24, 7 },
+#endif
+#if defined(VERSION_EU)
+    { gTitlePressStartGermanTiles, gTitlePressStartGermanFrame4, "gTitlePressStartGermanFrame4", -120, -24, 240, 24, 7 },
+#endif
+#if defined(VERSION_EU)
     { gTitleMenuSelectedEntryFrenchTiles, gTitleMenuSelectedEntryFrenchFrame0, "gTitleMenuSelectedEntryFrenchFrame0", 16, 0, 104, 16, 7 },
 #endif
 #if defined(VERSION_EU)
@@ -229,6 +289,21 @@
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
     { gTitleDevelopedByTiles, gTitleDevelopedByFrame0, "gTitleDevelopedByFrame0", -64, 0, 120, 16, 7 },
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+    { gTitlePressStartTiles, gTitlePressStartFrame0, "gTitlePressStartFrame0", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+    { gTitlePressStartTiles, gTitlePressStartFrame1, "gTitlePressStartFrame1", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+    { gTitlePressStartTiles, gTitlePressStartFrame2, "gTitlePressStartFrame2", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+    { gTitlePressStartTiles, gTitlePressStartFrame3, "gTitlePressStartFrame3", -120, -16, 240, 16, 7 },
+#endif
+#if defined(VERSION_EU) || defined(VERSION_US)
+    { gTitlePressStartTiles, gTitlePressStartFrame4, "gTitlePressStartFrame4", -120, -16, 240, 16, 7 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
     { gTitleMenuCursorTiles, gTitleMenuCursorFrame0, "gTitleMenuCursorFrame0", 0, 0, 16, 16, 7 },

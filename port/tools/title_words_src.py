@@ -18,10 +18,11 @@ import sprite_sheet  # noqa: E402
 
 ROMS = {'eu': 'B8CP', 'us': 'B8CE', 'jp': 'B8CJ'}
 SHEETS = ('gTitleMenuEntry', 'gTitleMenuSelectedEntry', 'gTitleSoraLumi', 'gTitleRikuLumi', 'gTitleDevelopedBy',
-          'gTitleMenuCursor')
+          'gTitleMenuCursor', 'gTitlePressStart')
 # the palette title.c loads for each sheet (palette, 16-colour bank)
 PALETTE = {'gTitleMenuEntry': ('gTitleMenuEntryPalette', 0), 'gTitleMenuSelectedEntry': ('gTitleObjPalettes', 0),
-           'gTitleMenuCursor': ('gTitleObjPalettes', 0), 'gTitleSoraLumi': ('gTitleSoraLumiPalette', 0),
+           'gTitleMenuCursor': ('gTitleObjPalettes', 0), 'gTitlePressStart': ('gTitleObjPalettes', 0),
+           'gTitleSoraLumi': ('gTitleSoraLumiPalette', 0),
            'gTitleRikuLumi': ('gTitleSoraLumiPalette', 1),  # Riku's title: palette offset 0x20 (title.c)
            'gTitleDevelopedBy': ('gTitleLogoKingdomHeartsPalette', 0)}
 

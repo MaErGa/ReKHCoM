@@ -40,6 +40,8 @@ CREDIT = {
     'es': 'DESARROLLADO POR SQUARE ENIX / Jupiter', 'it': 'SVILUPPATO DA SQUARE ENIX / Jupiter',
     'de': 'ENTWICKELT VON SQUARE ENIX / Jupiter',
 }
+PRESS = {'en': 'PRESS START', 'fr': 'APPUIE SUR START', 'es': 'PULSA START', 'it': 'PREMI START',
+         'de': 'BITTE START DRÜCKEN'}
 # regions each symbol exists in (the English names are shared by EU and US)
 REGIONS = {'eu': 'VERSION_EU', 'us': 'VERSION_US'}
 
@@ -71,8 +73,13 @@ def font_word(text, w, h):
         return m
     big = Image.new('L', (256 * (len(text) + 2), 400), 0)
     ImageDraw.Draw(big).text((64, 40), text, font=f, fill=255)
-    box = big.getbbox()
-    return big.crop(box).resize((w, h), Image.LANCZOS)
+    ink = big.crop(big.getbbox())
+    natural = round(ink.width * h / ink.height)
+    if w > natural * 1.3:  # a narrow letter (I) in a pixel cell as wide as a stroke pair: its own width, centred
+        m = Image.new('L', (w, h), 0)
+        m.paste(ink.resize((natural, h), Image.LANCZOS), ((w - natural) // 2, 0))
+        return m
+    return ink.resize((w, h), Image.LANCZOS)
 
 
 def runs(cols, n):
@@ -116,6 +123,20 @@ def banner_tokens(word):
     return split
 
 
+def letter_tokens(text):
+    """letter by letter where the cartridge spaced them out, else word by word"""
+    def split(cols):
+        r = gaps_runs(cols)
+        letters = text.replace(' ', '')
+        if len(r) == len(letters):
+            return [(c,) + m for c, m in zip(letters, r)]
+        words = runs(cols, len(text.split()))
+        if not words:
+            raise SystemExit(f"{text}: {len(r)} runs, {letters}")
+        return [(t,) + m for t, m in zip(text.split(), words)]
+    return split
+
+
 def credit_tokens(text, idx):
     """the small "developed by" and the big "SQUARE ENIX / Jupiter", each fitted to its part"""
     small, big = text.split(' SQUARE')
@@ -129,7 +150,7 @@ def credit_tokens(text, idx):
     return split
 
 
-def draw(frame, kind, lang, src, idx, pal, text_rows, tokens, keep_x=None, bg=None):
+def draw(frame, kind, lang, src, idx, pal, text_rows, tokens, keep_x=None, bg=None, mono=False):
     w, h = src.size
     hd = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
     colour = lambda x, y: tuple(pal.get(str(idx.getpixel((x, y))), src.getpixel((x, y))[:3])) + (255,)
@@ -192,7 +213,7 @@ def draw(frame, kind, lang, src, idx, pal, text_rows, tokens, keep_x=None, bg=No
                     cs[c] = cs.get(c, 0) + 1
             rowc.append(max(cs, key=cs.get) if cs else None)
         rowc = [c or next(d for d in rowc if d) for c in rowc]
-        if bg:  # a banner's letters are one colour (the shades were the pixel letters' edges)
+        if bg or mono:  # letters of one colour (the shades were the pixel letters' edges)
             ink = [colour(x, y) for y in range(h) for x in range(w) if text[y][x]]
             rowc = [max(set(ink), key=ink.count)] * len(rowc)
         m = font_word(tok, (b - a) * S, (ty1 - ty0) * S)
@@ -208,22 +229,23 @@ def draw(frame, kind, lang, src, idx, pal, text_rows, tokens, keep_x=None, bg=No
     return hd
 
 
-def cursor(src, idx, pal):
-    """the orb: its rings (centre row, out from the middle) as a smooth rounded square"""
+def cursor(src, idx, pal, hd=None, top=0):
+    """the orb (rows top..top+10): its rings (centre row, out from the middle) as a smooth rounded square"""
     w, h = src.size
-    cy = 5
-    xs = [x for x in range(w) if idx.getpixel((x, cy))]
+    cy = top + 5
+    xs = [x for x in range(min(w, 16)) if idx.getpixel((x, cy))]  # the orb's 16 columns, not the words after it
     cx0, cx1 = xs[0], xs[-1] + 1
     while idx.getpixel((cx1 - 1, cy)) != idx.getpixel((cx0, cy)):
         cx1 -= 1
     r = (cx1 - cx0) / 2
     mid = (cx0 + cx1) / 2
     prof = [src.getpixel((int(mid) + k, cy))[:3] for k in range(int(r) + 1)]
-    hd = draw(None, None, None, src, idx, pal, None, None)
-    for py in range(0, 11 * S):
+    if hd is None:
+        hd = draw(None, None, None, src, idx, pal, None, None)
+    for py in range(top * S, (top + 11) * S):
         for px in range(cx0 * S, cx1 * S):
             dx = abs((px + 0.5) / S - mid) / r
-            dy = abs((py + 0.5) / S - 5.5) / 5.5
+            dy = abs((py + 0.5) / S - top - 5.5) / 5.5
             d = (dx ** 4 + dy ** 4) ** 0.25
             if d > 1:
                 continue
@@ -263,6 +285,13 @@ def main():
                 hd = draw(frame, 0, lang, src, idx, {}, (2, 11), banner_tokens(LUMI[lang][n]),
                           keep_x=lambda x, y, r=right, l=left: l <= x <= r and idx.getpixel((x, y)) != back,
                           bg=src.getpixel((bx, 6))[:3])
+            elif frame.startswith('gTitlePressStart'):
+                lang = lang_of(frame, 'gTitlePressStart')
+                line = next(y for y in range(src.height) if sum(1 for x in range(src.width) if idx.getpixel((x, y))) > src.width * 0.8)
+                top = next(y for y in range(src.height) if idx.getpixel((8, y)))
+                hd = draw(frame, 0, lang, src, idx, {}, (0, line), letter_tokens(PRESS[lang]),
+                          keep_x=lambda x, y: x >= 15, mono=True)
+                hd = cursor(src, idx, {}, hd, top)
             elif frame.startswith('gTitleDevelopedBy'):
                 lang = lang_of(frame, 'gTitleDevelopedBy')
                 hd = draw(frame, 0, lang, src, idx, {}, (0, 8), credit_tokens(CREDIT[lang], idx))
