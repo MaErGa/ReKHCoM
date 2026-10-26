@@ -1,0 +1,38 @@
+[
+  {
+    "cut": "cut-01",
+    "id": "306aea394d144032932cf1595bf4cbdd",
+    "parent": "2f93c47e6dad42d1b61a96ca3d8e7083",
+    "responses": [
+      {
+        "submission": "20261026-063437-4733f3",
+        "image_id": "2f93c47e6dad42d1b61a96ca3d8e7083",
+        "cloud_id": "76a90955-1dcc-4745-a33f-4a1419189df1"
+      }
+    ]
+  },
+  {
+    "cut": "cut-02",
+    "id": "57768c3432cb475d9e2f67887c8bbaf6",
+    "parent": "d44b24262467494cbe3fc454ed5df1f5",
+    "responses": [
+      {
+        "submission": "20261026-063427-234010",
+        "image_id": "d44b24262467494cbe3fc454ed5df1f5",
+        "cloud_id": "60b6221a-d597-43e3-8195-00f0690552c7"
+      }
+    ]
+  },
+  {
+    "cut": "cut-03",
+    "id": "2ca1f374795c4c4f9c78ec82f553fe2d",
+    "parent": "47658cfa72ee4785b2469abec62eddd0",
+    "responses": [
+      {
+        "submission": "20261026-063404-a3e517",
+        "image_id": "47658cfa72ee4785b2469abec62eddd0",
+        "cloud_id": "e95ea344-bb0e-42e9-94cf-3350596d34a2"
+      }
+    ]
+  }
+]
