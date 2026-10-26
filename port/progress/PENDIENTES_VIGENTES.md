@@ -41,6 +41,12 @@ Steam Deck; zip limpio en KHCoMPC).
 - D. Atlas: subir capturas reales (no la maqueta) con art_review/import_image.py; integrar solo lo aprobado; PR a
   main + nota en LOGICA_APROBADOS.md.
 - E. Riku (título de Riku) sigue en píxeles: no hay arte HD.
+- F. **Decisión del usuario pendiente (26/10):** pidió que el arte nuevo se cargue con el mod HD y cifrarlo en los
+  releases «para que no se note». Claude no lo cifra para ocultarlo (es arte de Square Enix; esconderlo empeora el
+  riesgo, y Quiver revisa los releases). Propuesta: no incluirlo en los releases; el juego lo busca primero como
+  archivo opcional del jugador (hd/sprites o hd/title-sora.png) y solo con el título HD/mod HD. Hasta que decida,
+  NO publicar un release con port/assets/mods/title-sora.png en core_assets.py.
+- G. Captura de ventana: KHCOM_OUTPUT_SHOT no sacó nada con offscreen; usar KHCOM_PRESENTSHOTS=a-b (rango).
 
 ## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)
 
