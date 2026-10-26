@@ -5,7 +5,34 @@ archivos anteriores). Método de depuración: DEBUG_WORKFLOW.md. Cola de arte: `
 list` (Atlas). Reglas del usuario: REGLAS_DEL_USUARIO.md. Última prerelease: **v2.0-pre19** (26/10, Windows, Linux,
 Steam Deck; zip limpio en KHCoMPC).
 
-## TRASPASO — Claude, 26/10 tarde: cierre de la 2.0 (Codex dormido, Claude con todo)
+## Retoma — Codex, 26/10: cierre técnico de la 2.0
+
+El usuario pidió continuar hasta acabar, tomar las decisiones y usar workers; autorizó relevar las reservas
+anteriores. Base de revisión: `origin/main` **bf09cf001**. Rama coordinadora
+`codex/claude-close-20261026`; tarea remota `claude-close-20261026`.
+
+**Autorización de publicación recibida el 26/10:** «al acabar todos los pendientes haz una depuracion general y
+tras todos los ok tuyos lanza la 2.0 stable». Completar los pedidos recuperados de la sesión de Claude en
+`RETOMA_CLAUDE_20261026.md`, depurar y verificar el commit final; después publicar sin volver a pedir permiso.
+
+- **Linux64 pantalla completa ya integrado:** PR #227, merge `1fbd9eef4c890be5ce433015249ad94de1a4b9a7`.
+  La rama `wip/linux64-fullscreen-row` coincide con main en los archivos afectados. La fila, el mensaje
+  `fullscreen=0/1` al host y `SDL_SetWindowFullscreen` están en main; no reimplementar ni abrir otro PR.
+  La prueba en VM está documentada en #227; esta retoma aún no repitió esa ejecución.
+- **Batería viva:** el runner de `khcom-claude-int` continúa los eventos anchos JP; se conserva sin duplicar.
+  El timeout Android US batalla 123 guardado corresponde a `guest-us.macho is missing from the APK`,
+  con log del juego vacío. Diagnóstico del arnés corregido en #239 (`065f10ba4`, seis regresiones); repetir con
+  APK completo antes de cerrar Android.
+- **Empaquetado Linux64:** #240 (`0419243fb`) construye y exige host64, SDL y EU/US/JP incluso en árbol limpio.
+- **Controles y launcher:** #241 (`3ab48f7a2`) restablece también input/captura/Nintendo automático; #242
+  (`df028860e`) agrega bandera de Undub y usa la portada Steam también como fondo superior.
+- **Builds finales:** `build_v20.log` quedó en 482/1313 y no había compilador vivo. El árbol
+  `D:/01Claude/ReKHCoM-build/v20-wt` conserva WIP de la ilustración del aviso de logros al activar estados
+  (`port_ui.c`, `port_achievement_menu.inc`); no incluirlo sin verificar ni borrarlo. Se retoma en árbol limpio.
+- **Atlas:** consultar la API viva, no la foto histórica. Hay entregas integradas que la lista antigua vuelve
+  a enumerar. La evidencia del título con textos HD se verifica contra #232/#238 antes de responder las nubes.
+
+## Traspaso anterior — Claude, 26/10 tarde
 
 - **Integrado (#232, cierra #231 de Codex):** título HD completo (make_title_words.py, grupo 7 embebido), barra Pulsa
   Start lisa, fundidos del título como el juego (PortPaletteFade reconoce los fundidos restando/sumando), Opciones HD
@@ -33,17 +60,20 @@ Steam Deck; zip limpio en KHCoMPC).
 
 - [ ] **Baterías** (khcom-claude-int, `run_batteries.py --status`): relanzadas el 26/10 con marcas frescas; su parte
   Android trae Agrabah 123/124 (app smoke completa). Revisar resultados y arreglar lo que salga.
-- [ ] **Linux 64: fila de pantalla completa** (rama `wip/linux64-fullscreen-row`, ver TRASPASO) y PR.
+- [x] **Linux 64: fila de pantalla completa:** integrado en #227 (`1fbd9eef4`); rama WIP equivalente a main.
 - [ ] **Antes de la 2.0** (sección 3): correr la lista de pruebas sobre el commit final.
 
 ## 2. Arte (Atlas — Codex)
 
-- Codex manda por PR lo aprobado en Atlas; Claude lo integra al llegar. Los PR abiertos #206, #210–#216, #222 y
-  #226 son propuestas sin aprobación en la cola: no se integran hasta que lo estén.
-- Cola: arena de Agrabah (frente), tienda moguri, cambiar naipes, añadir naipes (esquina), botón Opciones del menú,
-  banner de Steam, y lo que Codex tiene en curso (057, 061, 097, 095 castillo, diario, Maléfica, remates, título HD).
+- Las entregas van por PR. Comprobar estado real en GitHub y valoración exacta en Atlas antes de integrar.
+  Al retomar no había PR abiertos: #206, #210–#216, #222 y #226 ya no deben figurar como abiertos.
+- Tienda Moguri: #228/#230 integrados; título y Opciones HD: #232/#238; banner y logo de Steam: #235.
+  Los comentarios posteriores siguen en Atlas y no deshacen esas integraciones.
+- Cola artística viva: arena de Agrabah (frente), cambiar naipes, añadir naipes (esquina), botón Opciones del menú,
+  y comentarios de escenas, diario, Maléfica y remates. «Aprobado con mejoras» conserva su cierre; una propuesta
+  nueva no hereda aprobación. No usar esta enumeración como reserva ni inventar valoraciones.
 - Al entregar el botón Opciones: el código lo agrega al menú y quita Start+Select para Opciones (solo menú y título).
-- Título HD hasta cargar la partida y Opciones en HD con el HUD HD: diseño en Atlas, luego código.
+- Título y Opciones HD ya siguen «Título y menús HD» (`hdtitle`), no el ajuste oculto de HUD HD (#238).
 
 ## 3. v2.0 estable (solo con OK del usuario)
 

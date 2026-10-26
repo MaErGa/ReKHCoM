@@ -2964,6 +2964,13 @@ static void BuildTitleBands(int gy, const int* bgOn) {
             if (k == 8) { c = obj; layer = LAYER_OBJ; }
         }
         if (layer < 0) continue;
+        if (layer == 0 && sTitleBarHd) {
+            /* The HD illustration covers the presenter's old margin bands.
+               Extend the actual BG0 run before queueing its smooth HD bar,
+               so both its pink stripe and black footer reach the edge. */
+            int x, begin = side ? edge + 1 : 0, end = side ? gPortScreen.width : edge;
+            for (x = begin; x < end; x++) sBgLine[0][x] = c;
+        }
         if ((layer == LAYER_OBJ && sObjSemi[edge]) ||
             (effect == 1 && (ctrl & (1 << layer))))
             c = Blend(c, white, (alpha & 31) > 16 ? 16 : alpha & 31,

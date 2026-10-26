@@ -448,6 +448,7 @@ static const Setting kSettings[] = {
     { "cheat_infinite_hp", 0 },
     { "cheat_savestates", 0 },
     { "debug_gba_map_logic", 0 },
+      { "experimental_title_brightness", 0 },
     { "experimental_save_point_slot_select", 0 },
     { "experimental_hide_touch_controls", 0 },
     { "config_version", PORT_ZOOM_CONFIG_VERSION }, { "view_mode", 4 },   { "zoom", PORT_ZOOM_DEFAULT },         { "scale_mode", 0 },
@@ -2178,6 +2179,11 @@ static void PageExtras() {
     ImGui::Spacing();
     BeginCard("experimental");
     Eyebrow(T("EXPERIMENTALES", "EXPERIMENTAL"));
+    changed |= ToggleRow(T("Brillo del título GBA", "GBA title brightness"),
+                         T("Restaura el botón Brillo y los atajos L/R del título. Compensaban la pantalla de la GBA original; no hacen falta en pantallas modernas. Siempre disponibles en GBA original.",
+                           "Restores the title's Brightness button and L/R shortcuts. They compensated for the original GBA screen and are unnecessary on modern displays. Always available in GBA Original."),
+                         Ini("experimental_title_brightness"));
+    ImGui::Separator();
     changed |= ZoomRow(T("Zoom en combate", "Battle zoom"),
                        T("Solo en vista Auto. Al salir del combate vuelve al zoom principal.",
                          "Auto view only. Leaving battle restores the main zoom."),
