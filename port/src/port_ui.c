@@ -883,6 +883,8 @@ static float Advance(SDL_Renderer* renderer, int i, float scale) {
 
 void PortUiHdDraw(SDL_Renderer* renderer, float x, float y, float scale) {
     extern void PortHdTextUiGlyph(SDL_Renderer*, int, float, float, float, float, uint32_t, uint32_t);
+    extern int PortHdMenuLightDraw(SDL_Renderer*, float, float, float, uint64_t, float, float);
+    extern uint64_t PortUiMenuLightTicks(void);
     int i, j, k;
     if (!gPortConfig.hdTitle) return;
     /* each text in the box its pixel letters take, spaced by KHMenu's own advances (stretched or tightened to that
@@ -890,6 +892,17 @@ void PortUiHdDraw(SDL_Renderer* renderer, float x, float y, float scale) {
     for (i = 0; i < sHdUiCount; i = j) {
         float natural = 0, pen, k0;
         int box;
+        if (sHdUiGlyphs[i].code == -1) {
+            if (sHdUiGlyphs[i].alive) {
+                float end = (sHdUiGlyphs[i].face & 255) / 255.0f;
+                float white = (sHdUiGlyphs[i].shadow & 255) / 255.0f;
+                float shade = white < 1 ? SDL_clamp((end - white) / (1 - white), 0.0f, 1.0f) : 0;
+                PortHdMenuLightDraw(renderer, x + sHdUiGlyphs[i].x * scale, y + sHdUiGlyphs[i].y * scale,
+                                     sHdUiGlyphs[i].pw * scale, PortUiMenuLightTicks(), shade, white);
+            }
+            j = i + 1;
+            continue;
+        }
         /* a text, up to a glyph drawn some other way (the arrows stay the cartridge's): what follows starts where
            the pixel text has it */
         for (j = i; j < sHdUiCount && sHdUiGlyphs[j].run == sHdUiGlyphs[i].run && sHdUiGlyphs[j].y == sHdUiGlyphs[i].y &&
@@ -2712,11 +2725,24 @@ static int sMenuLightFocus = -1;
 static Uint64 MenuLightNow(void) {
     return SDL_getenv("KHCOM_MENU_FRAMECLOCK") ? sMenuLightDrawClock : SDL_GetTicks() * 60 / 1000;
 }
+uint64_t PortUiMenuLightTicks(void) { return MenuLightNow(); }
 
 /* The cartridge's actual six-step cursor cycle (8 ticks per step), sampled
  * from its four sprite frames. Only the light's 5x5 face is copied: existing
  * square/bar/text dimensions stay unchanged. Frames and colours remain in ROM. */
 static void MenuLight(int x, int y) {
+    if (sHdUiFrame && sFb == sHdUiFrame && sHdUiCount < 2048) {
+        /* A light uses the existing ordered glyph queue, so modals, fades
+           and the gallery's saved drawing context handle it identically. */
+        int n = sHdUiCount++;
+        sHdUiGlyphs[n].code = -1;
+        sHdUiGlyphs[n].x = x - 3; sHdUiGlyphs[n].y = y - 3;
+        sHdUiGlyphs[n].pw = 11; sHdUiGlyphs[n].alive = 1;
+        sHdUiGlyphs[n].face = 0xFFFFFFFFu; sHdUiGlyphs[n].shadow = 0xFF000000u;
+        sHdUiGlyphs[n].run = ++sHdUiRun;
+    }
+    /* Keep the original pixels as a fallback, and byte-identical when HD
+       menus are off. The HD light covers this entire indicator box. */
     const uint16_t* anim = gDebugMenuCursorAnim0;
     int count = anim[2], total = 0, frame = 0;
     for (int i = 0; i < count; ++i) total += anim[4 + i * 2];
