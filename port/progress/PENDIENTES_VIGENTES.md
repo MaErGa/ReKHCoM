@@ -15,9 +15,11 @@ Steam Deck; zip limpio en KHCoMPC).
 - **Ojo al probar:** un hd/sprites importado antes de `pad=` se ignora (log «import the HD mod again»): reimportar con
   `ReKHCoM.exe --hd-import --sprites-only`. Carpeta de prueba D:/01Claude/ReKHCoM-build/v20test (estado
   st/tt50.khst = Sora nv50 en Ciudad de Paso; KHCOM_BATTLE=10:4:0 KHCOM_BATTLE_DECK=2 KHCOM_BOT=1 para combate).
-- **Sigue (en orden):** números HD en el resto de menús; galería desde saves viejos; Steam (logo sin «Re:», banner);
-  #202 CRT; PR #210 (Atlas 090, sin valorar: decide el usuario); builds y pruebas de la 2.0; preguntar al usuario
-  antes de publicar (HUD HD sigue apagado para jugadores: el título/Opciones HD solo se ven con él).
+- **Hecho después:** números HD de guardado/link (#233), galería con saves viejos (#234), Steam banner+logo (#235),
+  v2.0 versión+CHANGELOG (#236). #202 verificado (320x240, 1920x240, 640x480 exactos).
+- **Sigue:** builds v2.0 (build_all --platform all en D:/01Claude/ReKHCoM-build/v20-wt, log ../build_v20.log), PS4/
+  Vita/PS5, pruebas (release_check, test_update, hd_audio, escenas, launcher, humo); preguntas al usuario antes de
+  publicar (HUD HD a jugadores, PR #210, comentarios #140 #44 #163 #202, anuncios).
 
 ## Reglas que no se olvidan
 
