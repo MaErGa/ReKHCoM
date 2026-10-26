@@ -111,6 +111,7 @@ extern const SioAnimDef gSioChgCardAnimDefs[3];
 #endif
 #ifdef VERSION_EU
 #include "link_deck_names.inc"
+#endif
 #ifdef PLATFORM_PC
 /* number tiles registered as HD text, as the deck menus do (card_deckmenu2.c) */
 void PortRegisterBgTextTile(void* address, int code, int style, const void* source32);
@@ -119,7 +120,6 @@ void PortRegisterBgTextTile(void* address, int code, int style, const void* sour
 #define PORT_BG_DIGIT(dst, d, src) ((void)0)
 #endif
 
-#endif
 extern SioWorldEntry gSioWorldEntries[];
 extern s8 gSioHandicapMarkerX[];
 extern u16 gSioHandicapAp[];
