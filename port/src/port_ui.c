@@ -667,8 +667,8 @@ static const char* const sHelpNg[LANG_COUNT] = {
     "ââ Elegir   ââ Cambiar   A Comenzar",
     "ââ 選択   ââ 変更   A はじめる",
 };
-static const char* const sTitleHint[LANG_COUNT] = { "SELECT  Options", "SELECT  Options", "SELECT  Optionen",
-                                                    "SELECT  Opzioni", "SELECT  Opciones",
+static const char* const sTitleHint[LANG_COUNT] = { "SELECT  OPTIONS", "SELECT  OPTIONS", "SELECT  OPTIONEN",
+                                                    "SELECT  OPZIONI", "SELECT  OPCIONES",
     "SELECT  オプション",
 };
 static const char* const sDifficulty[3][LANG_COUNT] = {
@@ -2759,6 +2759,18 @@ static void MenuButton(int x, int y, const char* text, int key) {
     DrawText(text, x + 16 + keyW, y, MENU_INK, 0xFFD8D8D8u);
 }
 
+/* Match the title's PULSA START sign: uppercase text, eight native pixels
+   after the eleven-pixel indicator, and the same six-pixel edge inset. */
+static void DrawTitleHint(int l) {
+    const char* text = sTitleHint[l];
+    int w = TextWidth(text) + 23;
+    int x = gPortScreen.originX + GBA_SCREEN_W - 6 - w;
+    int y = gPortScreen.originY + 6;
+    Shade(x - 3, y - 2, w + 6, 14, 0xFFFFFFFFu, 224);
+    MenuBar(x, y, w, 1);
+    DrawText(text, x + 19, y, MENU_INK, 0xFFD8D8D8u);
+}
+
 /* A value without its explanation in brackets, for the narrow list. */
 static void ShortValue(int item, char* out, size_t size) {
     char* paren;
@@ -4839,11 +4851,8 @@ void PortUiDraw(uint32_t* frame, int width, int height) {
         if (sSkipPrompt && !sSkipOwnLayer)
             DrawSkipPrompt(l);
         if (sTitleHintFrames > 0) {
-            const char* hint = sTitleHint[l];
-            int gx = gPortScreen.originX + GBA_SCREEN_W - TextWidth(hint) - 6;
-            int gy = gPortScreen.originY + 4;
             sTitleHintFrames--;
-            MenuButton(gx - 18, gy + 2, hint, 0);
+            DrawTitleHint(l);
         }
         return;
     }

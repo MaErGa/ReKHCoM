@@ -15,6 +15,14 @@ usuario y se revisan las escenas hermanas que la copiaron.
 
 ## Principios
 
+Título HD, correcciones directas del usuario del 26/10: mantener el logo importado de CoM sin «Re:»; los textos
+SELECT y PULSA START comparten mayúsculas, separación de ocho píxeles nativos tras el indicador y margen de seis.
+La barra inferior y su línea negra llegan al borde sin una fila vacía a escala fraccionaria. La extensión roja
+conserva el color final de la franja HD: no volver a cubrirla con el color rosa de la paleta GBA. Sólo la línea
+OBJ se vuelve a dibujar después de la ilustración; su fuente nativa se muestrea sin hacer reaparecer letras GBA
+encima de sus reemplazos HD. Comparar también 21:9, 32:9 y un alto fraccionario. Esto corrige composición y
+sincronía, no cambia la ilustración ni asigna valoraciones nuevas en Atlas.
+
 Síntesis de estancias, envío `20261025-011932-34d062`, propuesta
 `dbdb82b983fc4a178d46ce70edf44c6b`: «veo el assset pero no remplaznadolo bien».
 Una carta HD colocada junto a la GBA no demuestra sustitución. La hija debe

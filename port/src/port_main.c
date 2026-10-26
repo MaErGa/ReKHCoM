@@ -1898,6 +1898,28 @@ static void Present(void) {
             }
         }
         PortHdTextDraw(sRenderer, 0, worldX, worldY, worldScale);
+        if (gPortConfig.hdTitle && gPortConfig.viewMode != PORT_VIEW_ORIGINAL) {
+            /* The title's HD poster is drawn after the ordinary side fill.
+               Reapply the authored margin bands above it, including the
+               black OBJ underline which lives outside BG0's gradient. */
+            int side, row;
+            for (side = 0; side < 2; side++) {
+                float edge = PixelEdge(worldX, gPortScreen.originX + (side ? GBA_SCREEN_W : 0), worldScale);
+                float left = side ? SDL_clamp(edge, 0.0f, (float)outW) : 0.0f;
+                float right = side ? (float)outW : SDL_clamp(edge, 0.0f, (float)outW);
+                if (right <= left) continue;
+                for (row = 0; row < GBA_SCREEN_H; row++) {
+                    uint32_t c = PortTitleFooterPixel(side, row);
+                    if (c) {
+                        float top = PixelEdge(worldY, gPortScreen.originY + row, worldScale);
+                        float bottom = PixelEdge(worldY, gPortScreen.originY + row + 1, worldScale);
+                        SDL_FRect band = { left, top, right - left, bottom - top };
+                        SDL_SetRenderDrawColor(sRenderer, (c >> 16) & 255, (c >> 8) & 255, c & 255, 255);
+                        SDL_RenderFillRect(sRenderer, &band);
+                    }
+                }
+            }
+        }
     }
     /* the options menu covers everything: no layer is drawn over it */
     if (PortPpuOverlayActive() && sOverlayScale > 0 && !menuCanvas) {
