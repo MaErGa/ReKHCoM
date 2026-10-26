@@ -31,7 +31,7 @@
 #include "port/port_preliminar_v1_tiles.h"
 
 extern const void* gMsgwinMapBlocks[4];
-extern const uint16_t gCheshirePalette[];
+extern const uint16_t gCheshirePalette[], gAladdinPalette[];
 
 /* PORT_PPU_THREADS (the desktop builds, configure_pc.py): the canvas rows above and below the GBA picture are drawn
    on several cores (RenderOuterRows, below). Each core then has its own line buffers: PPU_TLS marks them. */
@@ -2368,8 +2368,9 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
             continue;
 
         if (sceneActorFrame && !sOamTag[i].screen && !sOamTag[i].hud && !sOamTag[i].text &&
-            (sceneActorId == 97 || prio > 0) &&
-            (sceneActorId != 97 || sOamHd[i].palette == gCheshirePalette)) {
+            (sceneActorId == 97 || sceneActorId == 112 || prio > 0) &&
+            (sceneActorId != 97 || sOamHd[i].palette == gCheshirePalette) &&
+            (sceneActorId != 112 || sOamHd[i].palette == gAladdinPalette)) {
             if (ox < GBA_SCREEN_W && ox + bw > 0 && oy < GBA_SCREEN_H && oy + bh > 0)
                 sActorEntered[i] = 1; /* in the frame (some of it): it stays drawn from now on */
             else if (!sActorEntered[i])
