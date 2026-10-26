@@ -1577,6 +1577,10 @@ static void Present(void) {
         }
     }
     PortUiDraw(sComposite, gPortScreen.width, gPortScreen.height);
+    {
+        extern void PortPpuOverKeepDrawn(const uint32_t* composite);
+        PortPpuOverKeepDrawn(sComposite); /* the title's hint over its HD illustration */
+    }
     SDL_UpdateTexture(sTexture, NULL, sComposite, gPortScreen.width * 4);
     SDL_GetCurrentRenderOutputSize(sRenderer, &outW, &outH);
     SDL_SetRenderDrawColor(sRenderer, 0, 0, 0, 255);
@@ -1812,7 +1816,35 @@ static void Present(void) {
             DrawBlurredReflection(&backdrop, outW, outH);
         }
         DrawClassicBorder(&dst);
-        SDL_RenderTexture(sRenderer, sTexture, NULL, &dst);
+        {
+            /* the Options panel's HD picture under its canvas, which leaves it clear (port_ui.c): the canvas then goes
+               up with its alpha, in a texture of its own (the frame's has none) */
+            extern int PortUiHdArtUnder(SDL_Renderer*, float, float, float);
+            static SDL_Texture* sMenuAlpha;
+            static int sMenuAlphaW, sMenuAlphaH;
+            SDL_Texture* frameTex = sTexture;
+            if (menuCanvas && gPortConfig.hdHud && PortUiHdArtUnder(sRenderer, dst.x, dst.y, dst.w / gPortScreen.width)) {
+                if (sMenuAlpha && (sMenuAlphaW != gPortScreen.width || sMenuAlphaH != gPortScreen.height)) {
+                    SDL_DestroyTexture(sMenuAlpha);
+                    sMenuAlpha = NULL;
+                }
+                if (!sMenuAlpha) {
+                    sMenuAlphaW = gPortScreen.width;
+                    sMenuAlphaH = gPortScreen.height;
+                    sMenuAlpha = SDL_CreateTexture(sRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                                                   sMenuAlphaW, sMenuAlphaH);
+                    if (sMenuAlpha)
+                        SDL_SetTextureBlendMode(sMenuAlpha, SDL_BLENDMODE_BLEND);
+                }
+                if (sMenuAlpha) {
+                    SDL_SetTextureScaleMode(sMenuAlpha, gPortConfig.filter == PORT_FILTER_LINEAR
+                                                            ? (SDL_ScaleMode)PortSmoothScaleMode() : SDL_SCALEMODE_NEAREST);
+                    SDL_UpdateTexture(sMenuAlpha, NULL, sComposite, gPortScreen.width * 4);
+                    frameTex = sMenuAlpha;
+                }
+            }
+            SDL_RenderTexture(sRenderer, frameTex, NULL, &dst);
+        }
         worldScale = dst.w / gPortScreen.width;
         worldX = dst.x;
         worldY = dst.y;
@@ -1988,6 +2020,10 @@ static void Present(void) {
             SDL_RenderTexture(sRenderer, sTexture, &ps, &pd);
         }
     }
+    if (gPortConfig.hdHud) {
+        extern void PortUiHdDraw(SDL_Renderer*, float, float, float);
+        PortUiHdDraw(sRenderer, worldX, worldY, worldScale);
+    }
     if (gPortConfig.viewMode != PORT_VIEW_CRT) /* the CRT or its shader draws them */
         DrawScanlines(&dst, outW);
     {
@@ -2103,10 +2139,11 @@ static void Present(void) {
     PortFbPresent(sRenderer);
 #endif
     {
-        /* KHCOM_PRESENTSHOTS=a-b (harness): the window as shown, frames a..b (present_<frame>.bmp) */
+        /* KHCOM_PRESENTSHOTS=a-b[/step] (harness): the window as shown, frames a..b (present_<frame>.bmp) */
         const char* range = SDL_getenv("KHCOM_PRESENTSHOTS");
-        int from = 0, to = -1;
-        if (range && SDL_sscanf(range, "%d-%d", &from, &to) == 2 && (int)sFrameCount >= from && (int)sFrameCount <= to) {
+        int from = 0, to = -1, step = 1;
+        if (range && SDL_sscanf(range, "%d-%d/%d", &from, &to, &step) >= 2 && (int)sFrameCount >= from &&
+            (int)sFrameCount <= to && ((int)sFrameCount - from) % (step > 0 ? step : 1) == 0) {
             SDL_Surface* s = SDL_RenderReadPixels(sRenderer, NULL);
             if (s) {
                 char name[64];

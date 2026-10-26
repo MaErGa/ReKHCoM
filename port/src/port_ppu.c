@@ -17,6 +17,10 @@
 #include <stdio.h>
 
 #include "port/port.h"
+
+/* PPU is also compiled by console guests without SDL headers. */
+#define PPU_MIN(a, b) ((a) < (b) ? (a) : (b))
+#define PPU_MAX(a, b) ((a) > (b) ? (a) : (b))
 #include "port/port_hd2d.h"
 #include "port/port_hdsprites.h"
 #include "engine.h"
@@ -703,7 +707,11 @@ static int sScreenHdAny;           /* some part queued on the screen layer */
 /* The title's logo as an affine background (BG2: its zoom in the intro, the staff roll's end), drawn HD instead
    while the title says so (PortTitleLogoBg) and the HD title is on. */
 static int sTitleLogoBg, sTitleLogoBgHd;
+static int sTitleBarHd; /* the title's press-start bar (BG0) drawn smooth this frame (TitleBarLine) */
+static int sTitleArtHd; /* the title's illustration drawn HD this frame: bit 0 in place of BG0 (the intro's close-up),
+                           bit 1 of BG1 (the whole picture) */
 extern const unsigned char gTitleLogoBgTiles[];
+extern const unsigned char gTitleSoraBgPalette[];
 extern const unsigned char gTitleLogoBgPalette[];
 extern uint8_t gBgPaletteBank[4]; /* engine.c: the palette bank each BG's palette was loaded at */
 void PortTitleLogoBg(int on) {
@@ -2641,6 +2649,10 @@ static void ComposeLine(int y, uint16_t dispcnt, const int* bgOn, const int* bgP
     int evy = IO16(0x54) & 31, effect = (bldcnt >> 6) & 3;
     uint16_t backdrop = PLTT16[0] & 0x7FFF;
     int order[4], n = 0, p, b, x, docked = 0;
+    /* The HD title's picture (BG1 off, drawn HD): the white around it is the picture's own paper, which fades with
+       the picture's palette, not the system backdrop (faded on its own, it went black at once). */
+    if ((sTitleArtHd & 2) && (((const uint16_t*)gTitleSoraBgPalette)[31] & 0x7FFF) == 0x7FFF)
+        backdrop = PLTT16[(gBgPaletteBank[1] & 15) * 16 + 31] & 0x7FFF;
     /* Wide margins where no layer draws: the room's own void colour (a map's
        uniform padding), not the system backdrop. A room can end inside its
        map with nothing past it, which showed black or white beside the void
@@ -2966,6 +2978,33 @@ static void BuildTitleBands(int gy, const int* bgOn) {
     }
 }
 
+/* The press-start bar with the HD title: BG0's runs on this line handed over as the picture would show them (BLDY,
+   a blend only with the backdrop), drawn smooth by the HD layer; BG0 then leaves them to it. */
+static void TitleBarLine(int y, int gy) {
+    uint16_t ctrl = IO16(0x50), alpha = IO16(0x52);
+    int effect = (ctrl >> 6) & 3, x = 0, w = gPortScreen.width;
+    uint32_t run[256];
+    if (!sTitleBarHd || gy < 0 || gy >= GBA_SCREEN_H)
+        return;
+    while (x < w) {
+        int x0, n = 0;
+        if (sBgLine[0][x] == TRANSPARENT) { x++; continue; }
+        x0 = x;
+        while (x < w && sBgLine[0][x] != TRANSPARENT && n < 256) {
+            uint16_t c = sBgLine[0][x];
+            if (effect == 1 && (ctrl & 1) && (ctrl & 0x2000)) /* only the backdrop is under it (BG1 is drawn HD) */
+                c = Blend(c, PLTT16[0] & 0x7FFF, PPU_MIN(16, alpha & 31), PPU_MIN(16, (alpha >> 8) & 31));
+            else if ((ctrl & 1) && effect == 2)
+                c = Brighten(c, PPU_MIN(16, IO16(0x54) & 31));
+            else if ((ctrl & 1) && effect == 3)
+                c = Darken(c, PPU_MIN(16, IO16(0x54) & 31));
+            run[n++] = sColorLut[c];
+            sBgLine[0][x++] = TRANSPARENT;
+        }
+        PortHdTitleBarRow(y, x0, n, run);
+    }
+}
+
 static void RenderLine(int y, int gy) {
     uint16_t dispcnt = IO16(0x00);
     int mode = dispcnt & 7;
@@ -3012,6 +3051,10 @@ static void RenderLine(int y, int gy) {
     }
     if (sTitleLogoBgHd)
         bgOn[2] = 0; /* the title's logo: drawn HD over the picture (QueueMainHdParts) */
+    if (sTitleArtHd & 1)
+        bgOn[0] = 0; /* the title's illustration: drawn HD under the picture (TitleArtQueue) */
+    if (sTitleArtHd & 2)
+        bgOn[1] = 0;
     for (b = 0; b < 4; b++) {
         if (!bgOn[b])
             continue;
@@ -3035,6 +3078,7 @@ static void RenderLine(int y, int gy) {
     if (bgOn[0] && sTitleArtFadeBg0) TitleArtFadeLine(gy, 0);
     DrawObjs(gy, dispcnt);
     BuildTitleBands(gy, bgOn);
+    if (bgOn[0]) TitleBarLine(y, gy);
     BuildWindows(gy, dispcnt);
     ComposeLine(y, dispcnt, bgOn, bgPrio, gPortFrame, 1);
     /* The presenter also uses this background in non-menu narrow scenes,
@@ -4602,6 +4646,64 @@ static void QueueStillHdParts(void) {
     sStillHdCount = 0;
 }
 
+/* The HD title (Sora's: sTitleArtFade) draws the poster (PortHdTitleArtReady) in place of its two illustrations, the
+   intro's close-up on BG0 and the whole picture on BG1, and keeps the title's own timing: where the cartridge
+   dissolves the close-up into the picture (BLDALPHA, 16 steps), the HD picture zooms out from the close-up's framing
+   to its own in those same steps; the white and black fades (BLDY, the palette's fade) follow the game. */
+static void TitleArtQueue(void) {
+    static const float kFinal[4] = { 112.5f, -4.0f, 168.0f, 0.0f }; /* left, top, height in GBA pixels */
+    uint16_t dispcnt = IO16(0x00), bld = IO16(0x50);
+    int intro = sTitleArtFadeBg0 && (dispcnt & 0x100), whole = (dispcnt & 0x200) != 0;
+    int effect = (bld >> 6) & 3, dark = 0, white = 0, k;
+    float aspect = 0.8289f, t, x0, y0, h, w, x[4], y[4], u0, v0, u1, v1;
+    if (!sTitleArtFade || !gPortConfig.hdTitle || !gPortConfig.hdHud || (dispcnt & 7) != 1 || (!intro && !whole) ||
+        !PortHdTitleArtReady(&aspect))
+        return;
+    /* how far the dissolve is: BG1's share of the blend while both are up */
+    t = !intro ? 1.0f : !whole ? 0.0f : effect == 1 ? PPU_MIN(16, (IO16(0x52) >> 8) & 31) / 16.0f : 0.0f;
+    t = t * t * (3.0f - 2.0f * t);
+    {
+        /* the close-up: Sora's face (the poster's 55%, 22%) near where the cartridge's close-up has it, a little right so
+           the credit keeps its white; 1.75 times as big */
+        float ch = kFinal[2] * 1.75f, cw = ch * aspect;
+        float cx = 214.0f - 0.55f * cw, cy = 40.0f - 0.22f * ch;
+        h = ch + (kFinal[2] - ch) * t;
+        x0 = cx + (kFinal[0] - cx) * t;
+        y0 = cy + (kFinal[1] - cy) * t;
+        w = h * aspect;
+    }
+    x0 += (float)gPortScreen.originX;
+    y0 += (float)gPortScreen.originY;
+    {
+        /* cut to the picture (the original view's black bars stay black), the texture in proportion */
+        float cx0 = PPU_MAX(x0, 0.0f), cx1 = PPU_MIN(x0 + w, (float)gPortScreen.width);
+        float cy0 = PPU_MAX(y0, 0.0f), cy1 = PPU_MIN(y0 + h, (float)gPortScreen.height);
+        if (cx1 <= cx0 || cy1 <= cy0)
+            return;
+        u0 = (cx0 - x0) / w; u1 = (cx1 - x0) / w;
+        v0 = (cy0 - y0) / h; v1 = (cy1 - y0) / h;
+        x[0] = x[3] = cx0; x[1] = x[2] = cx1;
+        y[0] = y[1] = cy0; y[2] = y[3] = cy1;
+    }
+    if ((bld & 0x03) && effect == 2)
+        white = PPU_MIN(16, IO16(0x54) & 31) * 255 / 16;
+    else if ((bld & 0x03) && effect == 3)
+        dark = PPU_MIN(16, IO16(0x54) & 31) * 255 / 16;
+    {
+        int pd = 0, pw = 0; /* the title fades its palette too (BG1's, which the close-up shares) */
+        PortPaletteFade((const uint16_t*)gTitleSoraBgPalette, PLTT16 + (gBgPaletteBank[1] & 15) * 16,
+                        256 - (gBgPaletteBank[1] & 15) * 16, &pd, &pw);
+        dark = PPU_MAX(dark, pd);
+        white = PPU_MAX(white, pw);
+    }
+    for (k = 0; k < 4; k++)
+        if (!(x[k] > -4096.0f && x[k] < 8192.0f && y[k] > -4096.0f && y[k] < 8192.0f))
+            return;
+    PortHdTitleArtQueue(x, y, u0, v0, u1, v1, 255, dark, white);
+    sTitleArtHd = (intro ? 1 : 0) | (whole ? 2 : 0);
+    sMainHdAny = 1;
+}
+
 static void QueueMainHdParts(void) {
     uint16_t bldcnt = IO16(0x50);
     int i, eva = IO16(0x52) & 31;
@@ -4611,6 +4713,9 @@ static void QueueMainHdParts(void) {
     memset(sMainHdScreen, 0, sizeof(sMainHdScreen));
     sMainHdAny = sScreenHdAny = 0;
     sTitleLogoBgHd = 0;
+    sTitleArtHd = 0;
+    TitleArtQueue();
+    sTitleBarHd = sTitleBands && gPortConfig.hdTitle && gPortConfig.hdHud && !sEnvTitleBandsOff;
     if (sTitleLogoBg && (IO16(0x00) & 0x400) && ((IO16(0x00) & 7) == 1 || (IO16(0x00) & 7) == 2)) {
         /* BG2 maps screen (sx, sy) to texture ((X + pa sx + pb sy) / 256, (Y + pc sx + pd sy) / 256): the
            texture's corners go back through the inverse to the canvas */
@@ -4766,6 +4871,32 @@ static void HdOverLayer(int screen, int w, int h, const uint8_t* occBg, const ui
     }
 }
 
+/* What the port draws on its copy of the picture (the title's SELECT hint, port_ui.c) stays over the HD
+   illustration: every pixel it changed goes to the layer drawn over the HD parts (port_main.c, after PortUiDraw). */
+void PortPpuOverKeepDrawn(const uint32_t* composite) {
+    int w = gPortScreen.width, h = gPortScreen.height, x, y, x0, y0, x1 = -1, y1 = -1;
+    if (!sTitleArtHd || !composite || composite == gPortFrame || !sMainOver || (size_t)w * h > sMainOverSize)
+        return;
+    x0 = w;
+    y0 = h;
+    for (y = 0; y < h; y++)
+        for (x = 0; x < w; x++)
+            if (composite[y * w + x] != gPortFrame[y * w + x]) {
+                x0 = PPU_MIN(x0, x); x1 = PPU_MAX(x1, x);
+                y0 = PPU_MIN(y0, y); y1 = PPU_MAX(y1, y);
+            }
+    if (x1 < 0)
+        return;
+    if (!sMainOverUsed) {
+        memset(sMainOver, 0, (size_t)w * h * 4);
+        sMainOverUsed = 1;
+    }
+    /* the whole box it drew, its white inside too (the same white as the title's, so unchanged pixel by pixel) */
+    for (y = y0; y <= y1; y++)
+        for (x = x0; x <= x1; x++)
+            sMainOver[y * w + x] = composite[y * w + x] | 0xFF000000u;
+}
+
 static void MainHdOver(void) {
     int w = gPortScreen.width, h = gPortScreen.height;
     sMainOverUsed = sScreenOverUsed = 0;
@@ -4782,6 +4913,19 @@ static void MainHdOver(void) {
         sMainOverSize = (size_t)w * h;
     }
     HdOverLayer(0, w, h, sOccBg, sOccObj, gPortFrame, sMainOver, &sMainOverUsed);
+    if (sTitleArtHd) {
+        /* the HD illustration is the title's bottom layer: whatever the game draws (the press-start bar on BG0, the
+           sprites) goes back over it */
+        int k;
+        for (k = 0; k < w * h; k++)
+            if (sOccBg[k] < 4 || sOccObj[k] != 0xFFFFu) {
+                if (!sMainOverUsed) {
+                    memset(sMainOver, 0, (size_t)w * h * 4);
+                    sMainOverUsed = 1;
+                }
+                sMainOver[k] = gPortFrame[k] | 0xFF000000u;
+            }
+    }
 }
 
 void PortPpuRenderHud(uint32_t* buf) {

@@ -198,6 +198,15 @@ void LoadDecimalDigitTiles(u32 value, u8* glyphs, u8* dst, u16 stride, u16 count
         digit = value % 10;
         value /= 10;
         RequestDma3Copy(&glyphs[digit * stride], &dst[(count - 1 - i) * stride], stride);
+#ifdef PLATFORM_PC
+        {
+            /* the moogle shop's and map cards' numbers are text, as the deck menus' are (card_deckmenu2.c): HD text
+               draws them over these tiles, in their own colours */
+            void PortRegisterBgTextTile(void* address, int code, int style, const void* source32);
+            if (stride == 32)
+                PortRegisterBgTextTile(&dst[(count - 1 - i) * stride], '0' + (int)digit, 2, &glyphs[digit * stride]);
+        }
+#endif
     }
 }
 

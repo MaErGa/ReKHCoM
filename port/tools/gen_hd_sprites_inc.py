@@ -37,7 +37,7 @@ def wrapped(row, text):
 def table():
     # tiles '-': a picture the game draws itself (the HP ring), not a cartridge sprite to match
     rows = [l.split('\t') for l in lines() if l.split('\t')[3] != '-']
-    out = [HEADER, '#include "port/synthesis_requirement_hd.h"\n']
+    out = [HEADER, '#include "port/synthesis_requirement_hd.h"\n', '#include "port/title_words_hd.h"\n']
     for row in rows:
         syms = [row[3]] + ([row[2]] if row[2] != '-' else [])
         out += wrapped(row, ''.join(f'extern const unsigned char {s}[];\n' for s in syms))
@@ -45,8 +45,11 @@ def table():
     for row in rows:
         name, group, frame, tiles, x0, y0, w, h = row[:8]
         frame = 'NULL' if frame == '-' else frame
-        out += wrapped(row, f'    {{ {tiles}, {frame}, "{name}", {x0}, {y0}, {w}, {h}, {group} }},\n')
+        pad = next((op[4:].split(',') for op in (row[9] if len(row) > 9 else '').split(';') if op.startswith('pad=')), None)
+        pad = ', ' + ', '.join(pad) if pad else ''  # the picture past the box (L, R[, T, B])
+        out += wrapped(row, f'    {{ {tiles}, {frame}, "{name}", {x0}, {y0}, {w}, {h}, {group}{pad} }},\n')
     out.append('#include "port/synthesis_requirement_hd_entries.inc"\n')
+    out.append('#include "port/title_words_hd.inc"\n')  # the HD title's words (make_title_words.py)
     out.append('};\n')
     return ''.join(out)
 

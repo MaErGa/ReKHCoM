@@ -399,8 +399,8 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Master volume", "Volume général", "Gesamtlautstärke", "Volume generale", "Volumen general", "全体の音量" },
     { "Music volume", "Volume musique", "Musiklautstärke", "Volume musica", "Volumen música", "音楽の音量" },
     { "Effects volume", "Volume effets", "Effektlautstärke", "Volume effetti", "Volumen efectos", "効果音の音量" },
-    { "Japanese voices (restart)", "Voix japonaises (relancer)", "Japanische Stimmen (Neustart)",
-      "Voci giapponesi (riavvia)", "Voces japonesas (reiniciar)", "日本語ボイス (再起動)" },
+    { "Japanese voices", "Voix japonaises", "Japanische Stimmen",
+      "Voci giapponesi", "Voces japonesas", "日本語ボイス" },
     { "General", "Général", "Allgemein", "Generale", "General", "きほん" },
     { "Save bank", "Banque de sauvegarde", "Speicherbank", "Banco di salvataggio", "Banco de partidas",
       "セーブバンク" },
@@ -829,12 +829,79 @@ static uint32_t Mix(uint32_t a, uint32_t b, int t) {
     return 0xFF000000u | (r << 16) | (g << 8) | bl;
 }
 
+/* The port's own menus keep native layout, but rasterize their font at output
+   resolution with HUD HD. Record paint order so modal panels and fades also
+   cover/shade text that has already been queued. */
+static struct { int code, x, y, alive, pw, run; uint32_t face, shadow; } sHdUiGlyphs[2048];
+static int sHdUiCount, sHdUiRun, sHdUiInText;
+static uint32_t* sHdUiFrame;
+
+/* The panel's picture with the HUD HD: the HD title's illustration (the poster) under the canvas where the cartridge's
+   debug-menu Sora is; the canvas leaves those pixels clear (its veil over the list stays, as translucent white). */
+static int sHdArt[4]; /* x, y, w, h on the canvas; w 0: no HD picture this frame */
+
+int PortUiHdArtUnder(SDL_Renderer* renderer, float x, float y, float scale) {
+    extern int PortHdTitleArtDraw(SDL_Renderer*, float, float, float, float);
+    SDL_FRect r = { x + sHdArt[0] * scale, y + sHdArt[1] * scale, sHdArt[2] * scale, sHdArt[3] * scale };
+    if (sHdArt[2] <= 0)
+        return 0;
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); /* the panel's white, under the poster's soft edges */
+    SDL_RenderFillRect(renderer, &r);
+    return PortHdTitleArtDraw(renderer, r.x, r.y, r.w, r.h);
+}
+
+/* a queued glyph's HD advance; the cartridge font's (scaled) for the arrows and kana, which the HD face draws
+   full-width (an em each), and where it has none */
+static float Advance(SDL_Renderer* renderer, int i, float scale) {
+    extern float PortHdTextUiAdvance(SDL_Renderer*, int, float);
+    float a = sHdUiGlyphs[i].code > 255 ? 0 : PortHdTextUiAdvance(renderer, sHdUiGlyphs[i].code, scale);
+    return a > 0 ? a : sHdUiGlyphs[i].pw * scale;
+}
+
+void PortUiHdDraw(SDL_Renderer* renderer, float x, float y, float scale) {
+    extern void PortHdTextUiGlyph(SDL_Renderer*, int, float, float, float, float, uint32_t, uint32_t);
+    int i, j, k;
+    if (!gPortConfig.hdHud) return;
+    /* each text in the box its pixel letters take, spaced by KHMenu's own advances (stretched or tightened to that
+       box: left and right ends where the cartridge font has them, columns stay aligned) */
+    for (i = 0; i < sHdUiCount; i = j) {
+        float natural = 0, pen, k0;
+        int box;
+        /* a text, up to a glyph drawn some other way (the arrows stay the cartridge's): what follows starts where
+           the pixel text has it */
+        for (j = i; j < sHdUiCount && sHdUiGlyphs[j].run == sHdUiGlyphs[i].run && sHdUiGlyphs[j].y == sHdUiGlyphs[i].y &&
+                    (j == i || sHdUiGlyphs[j].x == sHdUiGlyphs[j - 1].x + sHdUiGlyphs[j - 1].pw); j++)
+            natural += Advance(renderer, j, scale);
+        box = sHdUiGlyphs[j - 1].x + sHdUiGlyphs[j - 1].pw - sHdUiGlyphs[i].x;
+        k0 = natural > 0 && box > 0 ? box * scale / natural : 1.0f;
+        pen = x + sHdUiGlyphs[i].x * scale;
+        for (k = i; k < j; k++) {
+            if (sHdUiGlyphs[k].alive)
+                PortHdTextUiGlyph(renderer, sHdUiGlyphs[k].code, pen, y + sHdUiGlyphs[k].y * scale, scale,
+                                  Advance(renderer, k, scale) * k0,
+                                  sHdUiGlyphs[k].face, sHdUiGlyphs[k].shadow);
+            pen += Advance(renderer, k, scale) * k0;
+        }
+    }
+}
+
 static void Shade(int x0, int y0, int w, int h, uint32_t color, int alpha) {
+    int glyph;
+    if (sFb == sHdUiFrame)
+        for (glyph = 0; glyph < sHdUiCount; glyph++)
+            if (sHdUiGlyphs[glyph].x + 3 >= x0 && sHdUiGlyphs[glyph].x + 3 < x0 + w &&
+                sHdUiGlyphs[glyph].y + 4 >= y0 && sHdUiGlyphs[glyph].y + 4 < y0 + h) {
+                sHdUiGlyphs[glyph].face = Mix(sHdUiGlyphs[glyph].face, color, alpha);
+                sHdUiGlyphs[glyph].shadow = Mix(sHdUiGlyphs[glyph].shadow, color, alpha);
+            }
     int x, y;
 
     for (y = SDL_max(y0, 0); y < SDL_min(y0 + h, sFbH); y++)
         for (x = SDL_max(x0, 0); x < SDL_min(x0 + w, sFbW); x++)
-            sFb[y * sFbW + x] = Mix(sFb[y * sFbW + x], color, alpha);
+            sFb[y * sFbW + x] = !(sFb[y * sFbW + x] >> 24) /* clear (the HD picture under it): a veil of this colour */
+                ? (color & 0xFFFFFFu) | (uint32_t)SDL_min(alpha, 255) << 24
+                : Mix(sFb[y * sFbW + x], color, alpha);
 }
 
 static void Rect(int x0, int y0, int w, int h, uint32_t c) {
@@ -869,6 +936,16 @@ static int TextWidth(const char* s) {
 /* The font's glyphs occupy rows 3..12 of their 16x16 cell; y is the top of
    that band. Colour 1 is the face, colour 2 the shadow. */
 static void DrawGlyph(int code, int x, int y, uint32_t face, uint32_t shadow) {
+    if (sHdUiFrame && sFb == sHdUiFrame && code >= 32 && sHdUiCount < 2048) {
+        int n = sHdUiCount++;
+        sHdUiGlyphs[n].code = code & 0xffff;
+        sHdUiGlyphs[n].x = x; sHdUiGlyphs[n].y = y;
+        sHdUiGlyphs[n].face = face; sHdUiGlyphs[n].shadow = shadow;
+        sHdUiGlyphs[n].alive = 1;
+        sHdUiGlyphs[n].pw = GlyphWidth(code);
+        sHdUiGlyphs[n].run = sHdUiInText ? sHdUiRun : ++sHdUiRun; /* a lone glyph is a text of its own */
+        return;
+    }
     const uint16_t* frame;
     const uint8_t* tiles;
     int px, py, top = 3, bottom = 13;
@@ -934,11 +1011,14 @@ static void DrawGlyph(int code, int x, int y, uint32_t face, uint32_t shadow) {
 }
 
 static int DrawText(const char* s, int x, int y, uint32_t face, uint32_t shadow) {
+    sHdUiRun++;
+    sHdUiInText = 1;
     while (*s) {
         int c = NextChar(&s);
         DrawGlyph(c, x, y, face, shadow);
         x += GlyphWidth(c);
     }
+    sHdUiInText = 0;
     return x;
 }
 
@@ -2514,6 +2594,12 @@ static void DecodeMenuArt(void) {
 }
 
 static void Fill(int x0, int y0, int w, int h, uint32_t c) {
+    int glyph;
+    if (sFb == sHdUiFrame)
+        for (glyph = 0; glyph < sHdUiCount; glyph++)
+            if (sHdUiGlyphs[glyph].x >= x0 && sHdUiGlyphs[glyph].x < x0 + w &&
+                sHdUiGlyphs[glyph].y >= y0 && sHdUiGlyphs[glyph].y < y0 + h)
+                sHdUiGlyphs[glyph].alive = 0;
     int x, y;
 
     for (y = y0; y < y0 + h; y++)
@@ -4107,11 +4193,16 @@ static void DrawMenu(int l, int width, int height) {
     {
         int ah = height, aw = (GBA_SCREEN_W - MENU_ART_X) * height / GBA_SCREEN_H;
         int ax0 = width - aw;
+        extern int PortHdTitleArtReady(float*);
+        int hd = sHdUiFrame && PortHdTitleArtReady(NULL);
         for (y = 0; y < ah; y++)
             for (x = 0; x < aw; x++)
-                Pixel(ax0 + x, y, sMenuArt[(y * GBA_SCREEN_H / ah) * GBA_SCREEN_W + MENU_ART_X +
-                                           x * GBA_SCREEN_H / ah]);
+                Pixel(ax0 + x, y, hd ? 0x00FFFFFFu : sMenuArt[(y * GBA_SCREEN_H / ah) * GBA_SCREEN_W + MENU_ART_X +
+                                                              x * GBA_SCREEN_H / ah]);
         artX = ax0 - MENU_ART_X;
+        if (hd) {
+            sHdArt[0] = ax0; sHdArt[1] = 0; sHdArt[2] = aw; sHdArt[3] = ah;
+        }
     }
     /* keep the list readable where it runs over the picture */
     for (x = barX + barW - 24; x < barX + barW + 16; x++)
@@ -4161,6 +4252,20 @@ static void DrawMenu(int l, int width, int height) {
             DrawText("\xE2\x86\x90", x - 10, y - 2, MENU_RED_DARK, 0xFFD8D8D8u);
             DrawText("\xE2\x86\x92", x + TextWidth(value) + 2, y - 2, MENU_RED_DARK, 0xFFD8D8D8u);
         }
+        if (i == ITEM_MASTER || i == ITEM_MUSIC || i == ITEM_SFX) {
+            int amount = i == ITEM_MASTER ? gPortConfig.masterVolume :
+                         i == ITEM_MUSIC ? gPortConfig.musicVolume : gPortConfig.sfxVolume;
+            int end = x - (sel && on ? 20 : 4);
+            int start = barX + 20 + TextWidth(sLabels[i][l]);
+            int available = SDL_min(48, end - start);
+            if (available >= 12) {
+                int bx = end - available;
+                Fill(bx, y + 1, available, 6, MENU_RED_DARK);
+                Fill(bx + 1, y + 2, available - 2, 4, 0xFFDED8D8u);
+                Fill(bx + 1, y + 2, (available - 2) * amount / 100, 4, MENU_RED);
+                Fill(bx + 1, y + 2, (available - 2) * amount / 100, 1, 0xFFFFAAAAu);
+            }
+        }
         DrawText(value, x, y - 2, face, 0xFFD8D8D8u);
     }
     if (VisibleBetween(i, PageEnd()) > 0)
@@ -4175,6 +4280,14 @@ static void DrawMenu(int l, int width, int height) {
          (sCursor == ITEM_CHEAT_INFHP && !gPortConfig.cheatInfiniteHp) ||
          (sCursor == ITEM_CHEAT_RIKU && !gPortConfig.cheatUnlockRiku)))
         DrawNeedNote(sCheatRebelNote[l], width, height, barX + barW + 8, selY);
+    if (sCursor == ITEM_UNDUB && selY >= 0 && !NeedsLauncher(sCursor)) {
+        static const char* const restart[LANG_COUNT] = {
+            "Restart the game to apply voice changes.", "Relancez le jeu pour appliquer les voix.",
+            "Das Spiel neu starten, um die Stimmen anzuwenden.", "Riavvia il gioco per applicare le voci.",
+            "Reinicia el juego para aplicar el cambio de voces.", "ボイスの変更後はゲームを再起動してください。"
+        };
+        DrawNeedNote(restart[l], width, height, barX + barW + 8, selY);
+    }
     if (sPage == PAGE_CONTROLS && sCursor == ITEM_PAD_LAYOUT)
         DrawNintendoNote(l, width, height, barX + barW + 8);
     int zoom = sCursor == ITEM_BATTLE_ZOOM && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom;
@@ -4580,6 +4693,9 @@ void PortUiDraw(uint32_t* frame, int width, int height) {
     ++sMenuLightDrawClock;
     QuitTrack();
 
+    sHdUiCount = 0;
+    sHdUiFrame = gPortConfig.hdHud ? frame : NULL; /* the panels and the notices over the game (SELECT Options...) */
+    sHdArt[2] = 0;
     sFb = frame;
     sFbW = width;
     sFbH = height;

@@ -30,6 +30,9 @@ typedef struct HdSpriteDef {
     const char* name;
     int16_t x0, y0, w, h; /* the sprite's box in its frame's coordinates */
     uint8_t group;
+    uint8_t padL, padR, padT, padB; /* the picture goes on past the box this many GBA pixels (a Re:CoM word in its
+                                       own proportion, a card's value as big as Re:CoM's: hd_sprites.tsv pad=L,R[,T,B]);
+                                       the edge parts draw it */
 } HdSpriteDef;
 
 #include "port/hd_sprites.inc"
@@ -63,11 +66,12 @@ static int sDrawCount[HD_LAYERS];
 static int GroupOn(int group) {
     switch (group) {
     case 1: return gPortConfig.hdCards;
-    case 2: return gPortConfig.hdTitle;
+    case 2: return gPortConfig.hdTitle && gPortConfig.hdHud;
     case 3: return gPortConfig.hdCards; /* the battle HUD's faces and words go with the cards */
     case 4: return gPortConfig.hdCards; /* the world select's worlds */
     case 5: return gPortConfig.hdCards; /* the menus' title banners, in Re:CoM's lettering */
     case 6: return gPortConfig.hdCards; /* the menus' small cards: Re:CoM's picture in the window, the cartridge's frame */
+    case 7: return gPortConfig.hdTitle && gPortConfig.hdHud; /* the title's words, ours (embedded: TitleWordAsset) */
     default: return 0;
     }
 }
@@ -85,6 +89,14 @@ const char* PortHdSpritePath(char* file, size_t size, const char* name) {
     return PortConfigPath(file);
 }
 
+/* The HD title's words (group 7, make_title_words.py): pictures of the game's own, assets/hd/title/words/<name>.png
+   (embedded), not imported from Re:CoM. */
+static void* TitleWordAsset(const char* name, size_t* size) {
+    char file[160];
+    SDL_snprintf(file, sizeof(file), "assets/hd/title/words/%s.png", name);
+    return PortLoadAsset(file, size);
+}
+
 int PortHdSpriteFind(const void* tiles, const void* frame) {
     int i;
     if (!tiles || (!gPortConfig.hdCards && !gPortConfig.hdTitle))
@@ -96,9 +108,16 @@ int PortHdSpriteFind(const void* tiles, const void* frame) {
         if (!sState[i].present) {
             char file[160];
             FILE* f;
-            f = fopen(SpritePath(file, sizeof(file), d->name), "rb");
-            sState[i].present = f ? 2 : 1;
-            if (f) fclose(f);
+            if (d->group == 7) {
+                size_t size;
+                void* data = TitleWordAsset(d->name, &size);
+                sState[i].present = data ? 2 : 1;
+                SDL_free(data);
+            } else {
+                f = fopen(SpritePath(file, sizeof(file), d->name), "rb");
+                sState[i].present = f ? 2 : 1;
+                if (f) fclose(f);
+            }
         }
         return sState[i].present == 2 ? i + 1 : 0;
     }
@@ -142,12 +161,32 @@ static int Load(int i) {
     unsigned char* px;
     SDL_Surface* s;
     size_t need;
-    px = stbi_load(SpritePath(file, sizeof(file), kHdSprites[i].name), &w, &h, &n, 4);
+    if (kHdSprites[i].group == 7) {
+        size_t size = 0;
+        void* data = TitleWordAsset(kHdSprites[i].name, &size);
+        SDL_snprintf(file, sizeof(file), "%s", kHdSprites[i].name);
+        px = data && size <= 0x7FFFFFFF ? stbi_load_from_memory(data, (int)size, &w, &h, &n, 4) : NULL;
+        SDL_free(data);
+    } else
+        px = stbi_load(SpritePath(file, sizeof(file), kHdSprites[i].name), &w, &h, &n, 4);
     if (!px || w < 1 || h < 1 || w > 4096 || h > 4096) {
         if (px) stbi_image_free(px);
         sState[i].present = 1;
         PortLog("HD sprites: %s unreadable, the cartridge's sprite stays", file);
         return 0;
+    }
+    {
+        /* a picture imported for an older recipe (another width: before pad=): left out until the HD import is run
+           again, not drawn stretched */
+        const HdSpriteDef* d = &kHdSprites[i];
+        float want = (float)(d->padL + d->w + d->padR) / (d->padT + d->h + d->padB), got = (float)w / h;
+        if (got > want * 1.03f || got < want * 0.97f) {
+            stbi_image_free(px);
+            sState[i].present = 1;
+            PortLog("HD sprites: %s is %dx%d, its recipe wants %.3f wide per high: import the HD mod again",
+                    kHdSprites[i].name, w, h, want);
+            return 0;
+        }
     }
     sState[i].textureH = h;
     need = (size_t)w * h * 8;
@@ -190,9 +229,137 @@ static int Load(int i) {
     return 1;
 }
 
+/* The HD title's illustration (assets/hd/title/art/sora.png: the CoM poster, a mod, port/assets/hd/title/art/LEEME.md), drawn
+   on the game's picture under every other HD part, in place of the cartridge's title art (port_ppu.c TitleArtQueue). */
+static SDL_Texture *sArt, *sArtWhite;
+static int sArtTried, sArtW, sArtH;
+static HdSpriteDraw sArtDraws[2];
+static int sArtCount;
+
+int PortHdTitleArtReady(float* aspect) {
+    if (!sArtTried && sRenderer) {
+        size_t size = 0;
+        void* data = PortLoadAsset("assets/hd/title/art/sora.png", &size);
+        int w = 0, h = 0, n = 0, k;
+        unsigned char* px = data && size <= 0x7FFFFFFF ? stbi_load_from_memory(data, (int)size, &w, &h, &n, 4) : NULL;
+        SDL_Surface* s = px ? SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, px, w * 4) : NULL;
+        sArtTried = 1;
+        if (s) {
+            sArt = SDL_CreateTextureFromSurface(sRenderer, s);
+            for (k = 0; k < w * h; k++) px[k * 4] = px[k * 4 + 1] = px[k * 4 + 2] = 255;
+            sArtWhite = SDL_CreateTextureFromSurface(sRenderer, s);
+            SDL_DestroySurface(s);
+        }
+        if (px) stbi_image_free(px);
+        SDL_free(data);
+        if (sArt && sArtWhite) {
+            SDL_SetTextureBlendMode(sArt, SDL_BLENDMODE_BLEND);
+            SDL_SetTextureBlendMode(sArtWhite, SDL_BLENDMODE_BLEND);
+            SDL_SetTextureScaleMode(sArt, (SDL_ScaleMode)PortSmoothScaleMode());
+            SDL_SetTextureScaleMode(sArtWhite, (SDL_ScaleMode)PortSmoothScaleMode());
+            sArtW = w;
+            sArtH = h;
+        } else {
+            if (sArt) SDL_DestroyTexture(sArt);
+            if (sArtWhite) SDL_DestroyTexture(sArtWhite);
+            sArt = sArtWhite = NULL;
+            PortLog("HD title: assets/hd/title/art/sora.png missing, the cartridge's illustration stays");
+        }
+    }
+    if (aspect && sArtH)
+        *aspect = (float)sArtW / sArtH;
+    return sArt != NULL;
+}
+
+/* The illustration in a w x h box at x, y (the Options panel's picture): as tall as the box, its right side kept. */
+int PortHdTitleArtDraw(SDL_Renderer* renderer, float x, float y, float w, float h) {
+    float aw;
+    SDL_FRect src, dst;
+    sRenderer = renderer;
+    if (w <= 0 || h <= 0 || !PortHdTitleArtReady(NULL))
+        return 0;
+    aw = h * sArtW / sArtH;
+    src.y = 0; src.h = (float)sArtH;
+    if (aw > w) { /* cut on the left */
+        src.w = sArtW * w / aw; src.x = sArtW - src.w;
+        dst = (SDL_FRect){ x, y, w, h };
+    } else {
+        src.x = 0; src.w = (float)sArtW;
+        dst = (SDL_FRect){ x + w - aw, y, aw, h };
+    }
+    SDL_SetTextureColorMod(sArt, 255, 255, 255);
+    SDL_SetTextureAlphaMod(sArt, 255);
+    return SDL_RenderTexture(renderer, sArt, &src, &dst);
+}
+
+void PortHdTitleArtQueue(const float* x, const float* y, float u0, float v0, float u1, float v1, int alpha, int dark,
+                         int white) {
+    HdSpriteDraw* q;
+    if (sArtCount == 2)
+        return;
+    q = &sArtDraws[sArtCount++];
+    q->id = 0; /* not a table sprite: only its corners and fades are used */
+    memcpy(q->x, x, sizeof(q->x));
+    memcpy(q->y, y, sizeof(q->y));
+    q->u0 = u0; q->v0 = v0;
+    q->u1 = u1; q->v1 = v1;
+    q->alpha = (uint8_t)SDL_clamp(alpha, 0, 255);
+    q->dark = (uint8_t)SDL_clamp(dark, 0, 255);
+    q->white = (uint8_t)SDL_clamp(white, 0, 255);
+}
+
+/* The title's press-start bar (BG0, a gradient the cartridge steps column by column): its rows as the game colours
+   them (port_ppu.c TitleBarLine), drawn smooth at the output's resolution, colours interpolated between the columns'
+   centres, over the illustration and under the HD words. */
+#define BAR_RUNS 512
+typedef struct BarRun {
+    int16_t y, x0, n;
+    uint32_t c[256];
+} BarRun;
+static BarRun sBar[BAR_RUNS];
+static int sBarCount;
+
+void PortHdTitleBarRow(int y, int x0, int n, const uint32_t* argb) {
+    BarRun* r;
+    if (sBarCount == BAR_RUNS || n < 1)
+        return;
+    r = &sBar[sBarCount++];
+    r->y = (int16_t)y;
+    r->x0 = (int16_t)x0;
+    r->n = (int16_t)SDL_min(n, 256);
+    memcpy(r->c, argb, (size_t)r->n * 4);
+}
+
+static void BarDraw(SDL_Renderer* renderer, float ox, float oy, float scale, float shade) {
+    static SDL_Vertex v[(256 + 2) * 2];
+    static int index[(256 + 1) * 6];
+    int i, k;
+    for (i = 0; i < sBarCount; i++) {
+        const BarRun* r = &sBar[i];
+        float y0 = oy + r->y * scale, y1 = y0 + scale;
+        int nv = 0, ni = 0;
+        for (k = -1; k <= r->n; k++) {
+            /* the run's two ends, then each column's centre */
+            float x = k < 0 ? r->x0 : k == r->n ? r->x0 + r->n : r->x0 + k + 0.5f;
+            uint32_t c = r->c[SDL_clamp(k, 0, r->n - 1)];
+            SDL_FColor f = { ((c >> 16) & 255) / 255.0f * shade, ((c >> 8) & 255) / 255.0f * shade,
+                             (c & 255) / 255.0f * shade, 1.0f };
+            v[nv].position.x = ox + x * scale; v[nv].position.y = y0; v[nv].color = f; nv++;
+            v[nv].position.x = ox + x * scale; v[nv].position.y = y1; v[nv].color = f; nv++;
+        }
+        for (k = 0; k + 3 < nv; k += 2) {
+            index[ni++] = k; index[ni++] = k + 2; index[ni++] = k + 1;
+            index[ni++] = k + 1; index[ni++] = k + 2; index[ni++] = k + 3;
+        }
+        SDL_RenderGeometry(renderer, NULL, v, nv, index, ni);
+    }
+}
+
 void PortHdSpritesBegin(int layer) {
     if ((unsigned)layer < HD_LAYERS)
         sDrawCount[layer] = 0;
+    if (layer == 0)
+        sArtCount = sBarCount = 0;
 }
 
 /* Test aid (KHCOM_HDDRAWLOG=frame,frame,...): this frame's HD drawing is logged ("hd draw <frame> <name> layer <n>",
@@ -248,10 +415,41 @@ int PortHdSpriteQueue(int layer, int id, const float* x, const float* y, int px,
     q->id = id - 1;
     memcpy(q->x, x, sizeof(q->x));
     memcpy(q->y, y, sizeof(q->y));
-    q->u0 = (float)(px - d->x0) / d->w;
-    q->v0 = (float)(py - d->y0) / d->h;
-    q->u1 = (float)(px + pw - d->x0) / d->w;
-    q->v1 = (float)(py + ph - d->y0) / d->h;
+    {
+        /* the picture is padL + w + padR wide: a part on the box's edge carries the overhang, along its own axis */
+        float total = (float)(d->padL + d->w + d->padR);
+        int left = d->padL && px == d->x0, right = d->padR && px + pw == d->x0 + d->w;
+        float ux = (x[1] - x[0]) / pw, uy = (y[1] - y[0]) / pw;
+        q->u0 = (float)(px - d->x0 + d->padL) / total;
+        q->u1 = (float)(px + pw - d->x0 + d->padL) / total;
+        if (left) {
+            q->x[0] -= ux * d->padL; q->y[0] -= uy * d->padL;
+            q->x[3] -= ux * d->padL; q->y[3] -= uy * d->padL;
+            q->u0 = 0;
+        }
+        if (right) {
+            q->x[1] += ux * d->padR; q->y[1] += uy * d->padR;
+            q->x[2] += ux * d->padR; q->y[2] += uy * d->padR;
+            q->u1 = 1;
+        }
+    }
+    {
+        float total = (float)(d->padT + d->h + d->padB);
+        int top = d->padT && py == d->y0, bottom = d->padB && py + ph == d->y0 + d->h;
+        float vx = (q->x[3] - q->x[0]) / ph, vy = (q->y[3] - q->y[0]) / ph; /* down the part, as drawn */
+        q->v0 = (float)(py - d->y0 + d->padT) / total;
+        q->v1 = (float)(py + ph - d->y0 + d->padT) / total;
+        if (top) {
+            q->x[0] -= vx * d->padT; q->y[0] -= vy * d->padT;
+            q->x[1] -= vx * d->padT; q->y[1] -= vy * d->padT;
+            q->v0 = 0;
+        }
+        if (bottom) {
+            q->x[3] += vx * d->padB; q->y[3] += vy * d->padB;
+            q->x[2] += vx * d->padB; q->y[2] += vy * d->padB;
+            q->v1 = 1;
+        }
+    }
     q->alpha = (uint8_t)alpha;
     q->dark = (uint8_t)SDL_clamp(dark, 0, 255);
     q->white = (uint8_t)SDL_clamp(white, 0, 255);
@@ -515,6 +713,16 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
         PortHdGaugeDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
     if (layer == 1)
         PortHdEnemyGaugeDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
+    for (i = 0; layer == 0 && i < sArtCount && sArt; i++) { /* the title's illustration, under everything */
+        const HdSpriteDraw* q = &sArtDraws[i];
+        float shade = 1.0f - SDL_max(darken > 0 ? darken / 16.0f : 0.0f, q->dark / 255.0f);
+        float white = SDL_max(brighten > 0 ? brighten / 16.0f : 0.0f, q->white / 255.0f);
+        Quad(sArt, q, ox, oy, scale, (SDL_FColor){ shade, shade, shade, q->alpha / 255.0f });
+        if (white > 0)
+            Quad(sArtWhite, q, ox, oy, scale, (SDL_FColor){ 1, 1, 1, q->alpha / 255.0f * white });
+    }
+    if (layer == 0 && sBarCount)
+        BarDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
     for (i = 0; i < sDrawCount[layer]; i++) {
         const HdSpriteDraw* q = &sDraws[layer][i];
         HdSpriteState* st = &sState[q->id];
@@ -555,8 +763,29 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
     }
 }
 
+/* How far a palette is faded to black (*dark) or white (*white), 0..255, from its original: the game's fades
+   (engine.c FadeUpdate) scale it (c = o (1 - f)), take a step off every channel (FADE_MODE_BLACK: c = o - a), add one
+   (FADE_MODE_ADD_WHITE: c = o + a) or raise every channel to one (FADE_MODE_WHITE: c = max(o, a)); any of them is
+   recognised, and its share of the way (the channels' sum) is what the HD pictures follow. */
+static int FadeFits(const uint16_t* original, const volatile uint16_t* current, int count, int kind, int f, int a) {
+    int i, k, err = 0;
+    for (i = 1; i < count; i++)
+        for (k = 0; k < 15; k += 5) {
+            int o = (original[i] >> k) & 31, c = (current[i] >> k) & 31, e;
+            switch (kind) {
+            case 0: e = o * (256 - f) / 256; break;           /* scaled to black */
+            case 1: e = SDL_max(0, o - a); break;              /* a step off */
+            case 2: e = o + (31 - o) * f / 256; break;         /* scaled to white */
+            case 3: e = SDL_min(31, o + a); break;             /* a step on */
+            default: e = SDL_max(o, a); break;                 /* raised to a */
+            }
+            err += SDL_abs(c - e);
+        }
+    return err <= 2 * 3 * (count - 1);
+}
+
 void PortPaletteFade(const uint16_t* original, const volatile uint16_t* current, int count, int* dark, int* white) {
-    int i, so = 0, sc = 0, room = 0, err = 0, k;
+    int i, so = 0, sc = 0, room = 0, k, step = 0, top = 0;
     *dark = *white = 0;
     if (!original || count < 2)
         return;
@@ -566,24 +795,22 @@ void PortPaletteFade(const uint16_t* original, const volatile uint16_t* current,
             so += o;
             sc += c;
             room += 31 - o;
+            if (c > 0 && o - c > step) step = o - c; /* the step a black fade took (where it left something) */
+            if (c - o > top) top = c - o;            /* ... a white one added */
         }
     if (sc < so && so > 0) {
         int f = 256 * (so - sc) / so; /* c = o (1 - f) */
-        for (i = 1; i < count; i++)
-            for (k = 0; k < 15; k += 5) {
-                int o = (original[i] >> k) & 31, c = (current[i] >> k) & 31;
-                err += SDL_abs(c - o * (256 - f) / 256);
-            }
-        if (err <= 2 * 3 * (count - 1) && f > 6)
+        if (step == 0) step = 31;     /* everything at black */
+        if (f > 6 && (FadeFits(original, current, count, 0, f, 0) || FadeFits(original, current, count, 1, 0, step)))
             *dark = SDL_min(f, 255);
     } else if (sc > so && room > 0) {
-        int f = 256 * (sc - so) / room; /* c = o + (31 - o) f */
+        int f = 256 * (sc - so) / room, a; /* c = o + (31 - o) f */
+        a = 31; /* FADE_MODE_WHITE's level: the lowest channel left */
         for (i = 1; i < count; i++)
-            for (k = 0; k < 15; k += 5) {
-                int o = (original[i] >> k) & 31, c = (current[i] >> k) & 31;
-                err += SDL_abs(c - (o + (31 - o) * f / 256));
-            }
-        if (err <= 2 * 3 * (count - 1) && f > 6)
+            for (k = 0; k < 15; k += 5)
+                a = SDL_min(a, (current[i] >> k) & 31);
+        if (f > 6 && (FadeFits(original, current, count, 2, f, 0) || FadeFits(original, current, count, 3, 0, top) ||
+                      FadeFits(original, current, count, 4, 0, a)))
             *white = SDL_min(f, 255);
     }
 }
