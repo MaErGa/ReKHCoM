@@ -48,6 +48,8 @@ Steam Deck; zip limpio en KHCoMPC).
 - Builds desde el commit final: Windows, Linux, Steam Deck, Android, PS4, Vita, PS5 (VM), web (sin Switch).
 - Pruebas: `test_update.py` (baja las estables de GitHub), `test_hd_audio.py`, `test_hd_audio_flow.py`,
   `test_frameskip.py`, `test_hd_scenes.py`, `match_hd_scenes.py --check`, `test_launcher.py`, smoke de cada exe.
+- Al publicar la 2.0: avisar en #140 a quien nos ayudó con Steam Deck que llega el modo 64 bits y que debería ir
+  mejor; si ve una regresión o un bug, que nos avise y lo arreglamos (y, como siempre, que Windows va bien por Proton).
 - Al publicar la 2.0: preguntar en #44 (tiene Vita) si corre a velocidad completa y cómo va; dar las gracias.
 - Notas cortas que anuncien el mod HD; `announce_release.py v2.0` para X, Reddit y Patreon (publicar con OK).
 
