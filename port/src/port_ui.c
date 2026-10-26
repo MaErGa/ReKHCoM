@@ -4187,7 +4187,7 @@ static int HarnessOptionsAction(void) {
                 if (key < 0) { event.type = SDL_EVENT_GAMEPAD_BUTTON_DOWN; event.gbutton.button = -(key + 1); }
                 else { event.type = SDL_EVENT_KEY_DOWN; event.key.key = (SDL_Keycode)key; }
                 PortUiHandleEvent(&event); changed = 1;
-                PortLog("achievement-menu-test: filter=%d choice=%d", sAchievementView, sAchievementChoice);
+                PortLog("achievement-menu-test: filter=%d choice=%d list=%d", sAchievementView, sAchievementChoice, sAchievementList);
             }
             p = comma ? comma + 1 : NULL;
         }

@@ -8,6 +8,8 @@ static KhOfflineState sOfflineProgress; /* earned in the game (achievements_offi
 #include "../achievements/recom_set.inc"
 static KhOfflineState sRecomProgress; /* Re:CoM games: achievements_recom_eu.dat, never online */
 static unsigned long long sRecomExtraWhen[RECOM_EXTRA_COUNT]; /* achievements_recom_extra.dat */
+static KhOfflineState sRebelRecomProgress;
+static unsigned long long sRebelRecomExtraWhen[RECOM_EXTRA_COUNT];
 static Uint64 sOfflineReadAt;
 static bool sOfflineRead;
 static bool sAchievementPreview;
@@ -196,55 +198,63 @@ static void PageOfficialAchievements() {
 }
 
 /* The Re:CoM list: games of the Re:CoM version earn it instead of the official one; kept on this computer only. */
-static void PageRecomAchievements() {
-    static Uint64 readAt;
-    static bool read;
-    if (!read || SDL_GetTicks() - readAt > 1000) { /* the game may be writing them */
-        KhOfflineLoad(&sRecomProgress, (sRoot / "achievements_recom_eu.dat").u8string().c_str());
+static void PageRecomAchievements(bool rebel = false) {
+    const int bank = rebel ? 1 : 0;
+    KhOfflineState& progressState = rebel ? sRebelRecomProgress : sRecomProgress;
+    unsigned long long* extraState = rebel ? sRebelRecomExtraWhen : sRecomExtraWhen;
+    const char* progressFile = rebel ? "achievements_rebel_recom_eu.dat" : "achievements_recom_eu.dat";
+    const char* extraFile = rebel ? "achievements_rebel_recom_extra.dat" : "achievements_recom_extra.dat";
+    static Uint64 readAt[2];
+    static bool read[2];
+    if (!read[bank] || SDL_GetTicks() - readAt[bank] > 1000) { /* the game may be writing them */
+        KhOfflineLoad(&progressState, (sRoot / progressFile).u8string().c_str());
 #ifdef _WIN32
-        FILE* f = _wfopen((sRoot / "achievements_recom_extra.dat").wstring().c_str(), L"r");
+        FILE* f = _wfopen((sRoot / extraFile).wstring().c_str(), L"r");
 #else
-        FILE* f = std::fopen((sRoot / "achievements_recom_extra.dat").u8string().c_str(), "r");
+        FILE* f = std::fopen((sRoot / extraFile).u8string().c_str(), "r");
 #endif
-        KhRecomExtraParse(f, sRecomExtraWhen);
+        KhRecomExtraParse(f, extraState);
         if (f) fclose(f);
-        read = true; readAt = SDL_GetTicks();
+        read[bank] = true; readAt[bank] = SDL_GetTicks();
     }
     int lang = sSpanish ? 4 : 0;
-    BeginCard("recom-catalog");
-    Eyebrow(T("LOGROS RE:COM · SOLO EN ESTE EQUIPO", "RE:COM ACHIEVEMENTS · ON THIS COMPUTER ONLY"));
+    BeginCard(rebel ? "rebel-recom-catalog" : "recom-catalog");
+    Eyebrow(rebel ? T("LOGROS RE:COM · MODO REBELDE", "RE:COM ACHIEVEMENTS · REBEL MODE") :
+        T("LOGROS RE:COM · SOLO EN ESTE EQUIPO", "RE:COM ACHIEVEMENTS · ON THIS COMPUTER ONLY"));
     ImGui::PushFont(sFontSmall);
     ImGui::TextWrapped("%s", T("Las partidas de la versión Re:CoM tienen su propia lista: los mismos logros oficiales y los del modo."
         " Los de mundos, jefes y la historia piden la partida entera en Experto. Nunca se suben a RetroAchievements.",
         "Games of the Re:CoM version have their own list: the same official achievements plus the mode's own."
         " Worlds, bosses and the story need the whole game on Proud. They are never sent to RetroAchievements."));
+    if (rebel) ImGui::TextWrapped("%s", T("En modo rebelde: progreso separado de la lista normal y de CoM.",
+        "In Rebel mode: progress is separate from the normal list and CoM."));
     ImGui::PopFont();
     int total = KhOfficialCount() + RECOM_EXTRA_COUNT, earned = 0;
-    for (int i = 0; i < KhOfficialCount(); ++i) earned += sRecomProgress.when[i] != 0;
-    for (int i = 0; i < RECOM_EXTRA_COUNT; ++i) earned += sRecomExtraWhen[i] != 0;
+    for (int i = 0; i < KhOfficialCount(); ++i) earned += progressState.when[i] != 0;
+    for (int i = 0; i < RECOM_EXTRA_COUNT; ++i) earned += extraState[i] != 0;
     char progress[80];
     std::snprintf(progress, sizeof(progress), "%d / %d", earned, total);
     ImGui::Spacing();
     ImGui::ProgressBar((float)earned / total, ImVec2(-1, Px(24)), progress);
     ImGui::Spacing();
     AchievementFilters();
-    bool table = ImGui::BeginTable("recom-achievement-grid", ImGui::GetContentRegionAvail().x >= Px(850) ? 2 : 1,
+    bool table = ImGui::BeginTable(rebel ? "rebel-recom-achievement-grid" : "recom-achievement-grid", ImGui::GetContentRegionAvail().x >= Px(850) ? 2 : 1,
         ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_PadOuterX);
     int shown = 0;
     for (int i = 0; i < RECOM_EXTRA_COUNT; ++i) { /* the mode's own first */
-        bool unlocked = sRecomExtraWhen[i] != 0;
+        bool unlocked = extraState[i] != 0;
         const char* title = kRecomExtraText[i][lang][0];
         const char* description = kRecomExtraText[i][lang][1];
         if (!AchievementMatches(title, description, unlocked)) continue;
         if (table) ImGui::TableNextColumn();
         ImVec2 uv0, uv1;
         GLuint badge = OfficialAchievementBadge(kRecomBadgeCell + i, unlocked, &uv0, &uv1);
-        AchievementRow(0x52450000 + i, title, description, unlocked, nullptr, badge, uv0, uv1, 1);
+        AchievementRow(0x52450000 + i, title, description, unlocked, nullptr, badge, uv0, uv1, rebel ? 2 : 1);
         ++shown;
     }
     for (int i = 0; i < KhOfficialCount(); ++i) {
         const KhOfficialAchievement* a = KhOfficialAt(i);
-        bool unlocked = sRecomProgress.when[i] != 0;
+        bool unlocked = progressState.when[i] != 0;
         const char* title = KhOfficialText(a, lang, 0);
         char description[800];
         std::snprintf(description, sizeof(description), "%s%s", KhOfficialText(a, lang, 1),
@@ -253,7 +263,7 @@ static void PageRecomAchievements() {
         ImVec2 uv0, uv1;
         GLuint badge = OfficialAchievementBadge(i, unlocked, &uv0, &uv1);
         if (table) ImGui::TableNextColumn();
-        AchievementRow(0x52460000 + (int)a->id, title, description, unlocked, nullptr, badge, uv0, uv1, 1);
+        AchievementRow(0x52460000 + (int)a->id, title, description, unlocked, nullptr, badge, uv0, uv1, rebel ? 2 : 1);
         ++shown;
     }
     if (table) ImGui::EndTable();
@@ -266,9 +276,17 @@ static void PageRecomAchievements() {
 static KhOfflineState sRebelProgress;
 static bool RebelListExists() {
     std::error_code ec;
-    return fs::exists(sRoot / "achievements_rebel_eu.dat", ec);
+    return fs::exists(sRoot / "achievements_rebel_eu.dat", ec) ||
+           fs::exists(sRoot / "achievements_rebel_recom_eu.dat", ec) ||
+           fs::exists(sRoot / "rebel_mode.txt", ec);
 }
 static void PageRebelAchievements() {
+    static bool recom = SDL_getenv("DECOMPUI_REBEL_RECOM") != nullptr;
+    if (ImGui::RadioButton("Chain of Memories##rebel-com", !recom)) recom = false;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Re:Chain of Memories##rebel-recom", recom)) recom = true;
+    ImGui::Spacing();
+    if (recom) { PageRecomAchievements(true); return; }
     static Uint64 readAt;
     static bool read;
     if (!read || SDL_GetTicks() - readAt > 1000) { /* the game may be writing it */

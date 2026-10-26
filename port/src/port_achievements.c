@@ -397,7 +397,7 @@ void PortAchievementsFrame(void) {
 #ifdef KH_OFFLINE_EVAL
     if (evaluate && !recom && sOfflineReady)
         rc_runtime_do_frame(&sOfflineRuntime, OfflineEvent, OfflinePeek, NULL, NULL);
-    if (sRebel && sRebelReady && !PortUiActive() && /* Re:CoM games with cheats too: one Rebel list */
+    if (sRebel && !recom && sRebelReady && !PortUiActive() && /* CoM Rebel progress stays separate */
         (gCurrentMode == &gModeMapFld || gCurrentMode == &gModeBattle || sStarted))
         rc_runtime_do_frame(&sRebelRuntime, RebelEvent, OfflinePeek, NULL, NULL);
     {
@@ -407,7 +407,8 @@ void PortAchievementsFrame(void) {
         if (c && SDL_getenv("KHCOM_ACHIEVEMENTS_LIVE") && SDL_sscanf(c, "%u:%d", &f, &m) == 2 && f == sPreviewFrame)
             PortAchievementsMovie(m);
     }
-    RecomFrame(evaluate && recom);
+    RecomFrame(recom && (evaluate || (sRebel && !PortUiActive() &&
+        (gCurrentMode == &gModeMapFld || gCurrentMode == &gModeBattle || sStarted))), sRebel);
     if (!PortUiActive()) {
         RecomNoticesFrame();
         int i, account = 0, spanish;

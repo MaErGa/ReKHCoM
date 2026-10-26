@@ -46,7 +46,7 @@ int PortRecomListCount(void) {
     return 0;
 #endif
 }
-int PortRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex) {
+static int RecomListGet(int index, PortAchievementInfo* out, int* badgeIndex, int rebel) {
 #ifdef KH_OFFLINE_EVAL
     int l = ACHIEVEMENT_TEXT_LANGUAGE;
     if (!out || index < 0 || index >= PortRecomListCount()) return 0;
@@ -58,18 +58,25 @@ int PortRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex) {
         SDL_snprintf(out->description, sizeof(out->description), "%s%s", KhOfficialText(a, l, 1),
                      PortRecomNeedsProud(index) ? kRecomProudNote[l] : "");
         out->points = a->points;
-        out->state = PortRecomUnlocked(index);
+        out->state = rebel ? PortRebelRecomUnlocked(index) : PortRecomUnlocked(index);
         if (badgeIndex) *badgeIndex = index;
     } else {
         int e = index - KhOfficialCount();
         SDL_strlcpy(out->title, PortRecomExtraText(e, l, 0), sizeof(out->title));
         SDL_strlcpy(out->description, PortRecomExtraText(e, l, 1), sizeof(out->description));
-        out->state = PortRecomExtraUnlocked(e);
+        out->state = rebel ? PortRebelRecomExtraUnlocked(e) : PortRecomExtraUnlocked(e);
         if (badgeIndex) *badgeIndex = kRecomBadgeCell + e; /* the mode's own art, row 9 of the atlas */
     }
     return 1;
 #else
-    (void)index; (void)out; (void)badgeIndex;
+    (void)index; (void)out; (void)badgeIndex; (void)rebel;
     return 0;
 #endif
+}
+
+int PortRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex) {
+    return RecomListGet(index, out, badgeIndex, 0);
+}
+int PortRebelRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex) {
+    return RecomListGet(index, out, badgeIndex, 1);
 }

@@ -3,17 +3,29 @@
  *  - the official set again, evaluated the same way into achievements_recom_eu.dat; the ones about a world or a
  *    boss (completing one, defeating one, its challenges) count only when the whole game was played on Proud;
  *  - the mode's own: each story finished per difficulty (a higher one also earns the lower ones) and both on Proud.
- * Cheats, save states and the debug menu pause this list too. */
+ * Normal progress pauses with modifiers; Rebel Re:CoM uses its own evaluator and files. */
 #ifdef KH_OFFLINE_EVAL
 #include "../achievements/recom_set.inc"
-static KhOfflineState sRecom;
-static char sRecomPath[1200], sRecomExtraPath[1200];
-static rc_runtime_t sRecomRuntime;
-static int sRecomReady;
-static uint64_t sRecomNotices[(KH_OFFLINE_MAX + 63) / 64];
-
-static uint64_t sRecomExtra[RECOM_EXTRA_COUNT];
-static unsigned sRecomExtraNotices;
+typedef struct RecomProgress {
+    KhOfflineState progress;
+    char path[1200], extraPath[1200];
+    rc_runtime_t runtime;
+    int ready;
+    uint64_t notices[(KH_OFFLINE_MAX + 63) / 64];
+    uint64_t extra[RECOM_EXTRA_COUNT];
+    unsigned extraNotices;
+} RecomProgress;
+/* Separate evaluators and files: normal Re:CoM and local Rebel Re:CoM. */
+static RecomProgress sRecomProgress[2];
+static int sRecomBank;
+#define sRecom (sRecomProgress[sRecomBank].progress)
+#define sRecomPath (sRecomProgress[sRecomBank].path)
+#define sRecomExtraPath (sRecomProgress[sRecomBank].extraPath)
+#define sRecomRuntime (sRecomProgress[sRecomBank].runtime)
+#define sRecomReady (sRecomProgress[sRecomBank].ready)
+#define sRecomNotices (sRecomProgress[sRecomBank].notices)
+#define sRecomExtra (sRecomProgress[sRecomBank].extra)
+#define sRecomExtraNotices (sRecomProgress[sRecomBank].extraNotices)
 
 int PortRecomExtraCount(void) { return RECOM_EXTRA_COUNT; }
 const char* PortRecomExtraText(int index, int lang, int field) {
@@ -58,7 +70,7 @@ static void RecomExtraUnlock(int index) {
     if (sRecomExtra[index]) return;
     sRecomExtra[index] = RecomNow();
     sRecomExtraNotices |= 1u << index;
-    PortLog("achievement: Re:CoM %d unlocked", index);
+    PortLog("achievement: %sRe:CoM %d unlocked", sRecomBank ? "rebel " : "", index);
     RecomExtraSave();
 }
 
@@ -78,22 +90,28 @@ static void RecomEvent(const rc_runtime_event_t* event) {
         return;
     }
     sRecom.when[index] = RecomNow();
-    PortLog("achievement: Re:CoM %u unlocked", (unsigned)event->id);
+    PortLog("achievement: %sRe:CoM %u unlocked", sRecomBank ? "rebel " : "", (unsigned)event->id);
     if (!KhOfflineSave(&sRecom, sRecomPath)) PortLog("achievements: could not save Re:CoM progress");
     sRecomNotices[index / 64] |= 1ull << (index % 64);
 }
 
 static void RecomInit(void) {
     int i;
-    snprintf(sRecomPath, sizeof(sRecomPath), "%s", PortConfigPath("achievements_recom_eu.dat"));
-    snprintf(sRecomExtraPath, sizeof(sRecomExtraPath), "%s", PortConfigPath("achievements_recom_extra.dat"));
-    KhOfflineLoad(&sRecom, sRecomPath);
-    RecomExtraLoad();
-    rc_runtime_init(&sRecomRuntime);
-    for (i = 0; i < KhOfficialCount(); ++i)
-        if (!sRecom.when[i] &&
-            rc_runtime_activate_achievement(&sRecomRuntime, KhOfficialAt(i)->id, KhOfficialAt(i)->definition, NULL, 0) == RC_OK)
-            sRecomReady++;
+    for (sRecomBank = 0; sRecomBank < 2; ++sRecomBank) {
+        snprintf(sRecomPath, sizeof(sRecomPath), "%s", PortConfigPath(sRecomBank ?
+            "achievements_rebel_recom_eu.dat" : "achievements_recom_eu.dat"));
+        snprintf(sRecomExtraPath, sizeof(sRecomExtraPath), "%s", PortConfigPath(sRecomBank ?
+            "achievements_rebel_recom_extra.dat" : "achievements_recom_extra.dat"));
+        KhOfflineLoad(&sRecom, sRecomPath);
+        RecomExtraLoad();
+        sRecomReady = 0;
+        rc_runtime_init(&sRecomRuntime);
+        for (i = 0; i < KhOfficialCount(); ++i)
+            if (!sRecom.when[i] &&
+                rc_runtime_activate_achievement(&sRecomRuntime, KhOfficialAt(i)->id, KhOfficialAt(i)->definition, NULL, 0) == RC_OK)
+                sRecomReady++;
+    }
+    sRecomBank = 0;
 }
 
 /* the credits movie (mode_movie.c: 4 Sora's story, 5 Reverse/Rebirth): each difficulty up to the one played
@@ -114,32 +132,52 @@ static void RecomStoryFrame(void) {
     if (sRecomExtra[RECOM_SORA_PROUD] && sRecomExtra[RECOM_RIKU_PROUD]) RecomExtraUnlock(RECOM_MASTER);
 }
 
-static void RecomFrame(int evaluate) {
+static void RecomFrame(int evaluate, int rebel) {
+    sRecomBank = rebel ? 1 : 0;
     if (!evaluate) { sRecomCredits = 0; return; }
     if (sRecomReady) rc_runtime_do_frame(&sRecomRuntime, RecomEvent, OfflinePeek, NULL, NULL);
     RecomStoryFrame();
 }
 
-static void RecomNoticesFrame(void) {
+static void RecomBankNoticesFrame(void) {
     int i, l = ACHIEVEMENT_TEXT_LANGUAGE;
     static const char* const kLabel[6] = { "RE:COM ACHIEVEMENT", "SUCCÈS RE:COM", "RE:COM-ERFOLG", "OBIETTIVO RE:COM",
         "LOGRO RE:COM", "Re:CoM 実績" };
+    static const char* const kRebelLabel[6] = { "REBEL RE:COM", "RE:COM REBELLE", "REBEL RE:COM",
+        "RE:COM RIBELLE", "RE:COM REBELDE", "反逆 Re:CoM" };
+    const char* label;
     if (l < 0 || l > 5) l = 0;
+    label = sRecomBank ? kRebelLabel[l] : kLabel[l];
     for (i = 0; i < KhOfficialCount(); ++i)
         if (sRecomNotices[i / 64] & (1ull << (i % 64))) {
             sRecomNotices[i / 64] &= ~(1ull << (i % 64));
-            PortAchievementToast(KhOfficialText(KhOfficialAt(i), l, 0), KhOfficialText(KhOfficialAt(i), l, 1), kLabel[l], i | 0x10000 /* TOAST_FRAMED */);
+            PortAchievementToast(KhOfficialText(KhOfficialAt(i), l, 0), KhOfficialText(KhOfficialAt(i), l, 1), label, i | 0x10000 /* TOAST_FRAMED */);
         }
     for (i = 0; i < RECOM_EXTRA_COUNT; ++i)
         if (sRecomExtraNotices & (1u << i)) {
             sRecomExtraNotices &= ~(1u << i);
-            PortAchievementToast(kRecomExtraText[i][l][0], kRecomExtraText[i][l][1], kLabel[l], (kRecomBadgeCell + i) | 0x10000);
+            PortAchievementToast(kRecomExtraText[i][l][0], kRecomExtraText[i][l][1], label, (kRecomBadgeCell + i) | 0x10000);
         }
 }
 
-/* the Re:CoM list as the Options menu reads it */
-int PortRecomUnlocked(int index) { return index >= 0 && index < KH_OFFLINE_MAX && sRecom.when[index] != 0; }
-int PortRecomExtraUnlocked(int index) { return index >= 0 && index < RECOM_EXTRA_COUNT && sRecomExtra[index] != 0; }
+static void RecomNoticesFrame(void) {
+    for (sRecomBank = 0; sRecomBank < 2; ++sRecomBank) RecomBankNoticesFrame();
+    sRecomBank = 0;
+}
+
+/* Menu getters never depend on the evaluator most recently selected. */
+int PortRecomUnlocked(int index) { return index >= 0 && index < KH_OFFLINE_MAX && sRecomProgress[0].progress.when[index] != 0; }
+int PortRecomExtraUnlocked(int index) { return index >= 0 && index < RECOM_EXTRA_COUNT && sRecomProgress[0].extra[index] != 0; }
+int PortRebelRecomUnlocked(int index) { return index >= 0 && index < KH_OFFLINE_MAX && sRecomProgress[1].progress.when[index] != 0; }
+int PortRebelRecomExtraUnlocked(int index) { return index >= 0 && index < RECOM_EXTRA_COUNT && sRecomProgress[1].extra[index] != 0; }
+#undef sRecom
+#undef sRecomPath
+#undef sRecomExtraPath
+#undef sRecomRuntime
+#undef sRecomReady
+#undef sRecomNotices
+#undef sRecomExtra
+#undef sRecomExtraNotices
 #endif
 #ifndef KH_OFFLINE_EVAL
 void PortAchievementsMovie(int movieId) { (void)movieId; } /* the Re:CoM list is evaluated with the European set */
