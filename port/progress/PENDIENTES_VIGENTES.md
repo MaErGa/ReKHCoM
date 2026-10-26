@@ -5,6 +5,28 @@ archivos anteriores). Método de depuración: DEBUG_WORKFLOW.md. Cola de arte: `
 list` (Atlas). Reglas del usuario: REGLAS_DEL_USUARIO.md. Última prerelease: **v2.0-pre19** (26/10, Windows, Linux,
 Steam Deck; zip limpio en KHCoMPC).
 
+## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)
+
+- **Pedido:** título completo en HD con el mod HD: fondo, botones (Nueva partida, Sora, Riku, Cargar, Combate),
+  «Pulsa Start», crédito y copyright, aviso SELECT; con los fundidos y transiciones del juego, limpio («que se vea
+  clean»); estilo del original. Logo HD ya hecho y aprobado (el de Re:CoM sin «Re»).
+- **Fondo:** la ilustración HD del póster de CoM que dejó el usuario (KHCoMPC/x5zh3428mzyf1.jpg) no está en Recom.pkg
+  (revisado FO0501/FO0505: traen el Sora de Re:CoM, logos y palabras). El usuario decide incluirla como «mod»: va en el
+  paquete como archivo aparte, no dentro del exe; se dibuja solo con el título HD (= con el mod HD).
+- **Diseño en curso (rama `claude/title-hd`):** en port_ppu.c QueueMainHdParts, como el logo de BG2: la ilustración
+  sustituye BG1 (arte final) y BG0 mientras es el primer plano de la intro (sTitleArtFadeBg0), con el alfa del fundido
+  cruzado (BLDALPHA), el blanco/negro de BLDY y el fundido de paleta; lo que el juego dibuja encima (barra en BG0,
+  sprites, logo) vuelve encima por la capa «over». Solo Sora (el título de Riku sigue en píxeles).
+- **Palabras:** FO0505 `<lang>_title.imz` (UK/SP/FR/GR/IT) trae NUEVA PARTIDA, CARGAR PARTIDA, ESCENAS, ATRÁS,
+  DEVELOPED BY SQUARE ENIX: recetas en port/data/hd_sprites.tsv (grupo 2) para gTitleMenuEntry*/SelectedEntry*.
+  Lo que falta en Re:CoM (Sora, Riku, Pulsa Start, Jupiter) se dibuja con KHMenu.otf en el color del cartucho.
+- **Herramientas:** capturas del título en D:/01Claude/ReKHCoM-build/titlehd (khcom.exe aislado, ROM baserom.gba,
+  KHCOM_SHOTS / KHCOM_HDSPRITE_EXPORT + hdsprite_catalog.py); maqueta scratch title_mock.py (obsoleta: ir a capturas
+  reales). Todo visual pasa por Atlas antes de integrar.
+- **Hecho hoy:** #227 Linux 64 pantalla completa (fusionado); Codex integró 087/074/097/061/110/095/naipes mundo/
+  Maléfica estudios y también 112 (#214, que en Atlas pedía cambios: avisar a Codex); zip limpio
+  KHCoMPC/ReKHCoM-v2.0-pre19-main-1fbd9ee-windows-x86.zip. Bat de Maléfica: era para Codex, no se hace aquí.
+
 ## TRASPASO — Claude, 26/10 mañana
 
 - **Corriendo (desacoplado, sobrevive al cierre de sesión):** baterías en khcom-claude-int (`run_batteries.py
