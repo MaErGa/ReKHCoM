@@ -216,6 +216,10 @@ def decompui(n, toolchain, sdl_arch, debug, ra_objs):
     n.build("$builddir/assets/logo.png", "copy_asset", rel(logo),
             variables={"in_win": str(logo), "out_win": str(BUILD / "assets" / "logo.png"),
                        "dir_win": str(BUILD / "assets")})
+    header = ui / "assets" / "steam_header.jpg"  # Add to Steam's wide capsule
+    n.build("$builddir/assets/steam_header.jpg", "copy_asset", rel(header),
+            variables={"in_win": str(header), "out_win": str(BUILD / "assets" / "steam_header.jpg"),
+                       "dir_win": str(BUILD / "assets")})
     font = ROOT / "port" / "assets" / "fonts" / "KHMenu.otf"
     n.build("$builddir/assets/fonts/KHMenu.otf", "copy_asset", rel(font),
             variables={"in_win": str(font), "out_win": str(BUILD / "assets" / "fonts" / "KHMenu.otf"),
@@ -249,6 +253,7 @@ def decompui(n, toolchain, sdl_arch, debug, ra_objs):
                                "dir_win": str(BUILD / "assets/hd-hud/sprites")})
             labels.append(target)
     return ["$builddir/ReKHCoM.exe", "$builddir/assets/boxart.jpg", "$builddir/assets/logo.png",
+            "$builddir/assets/steam_header.jpg",
             "$builddir/assets/hd-hud/pilot/enemy-hp-frame-v2.png",
             "$builddir/assets/fonts/KHMenu.otf",
             "$builddir/assets/fonts/ComicHearts.otf"] + labels
