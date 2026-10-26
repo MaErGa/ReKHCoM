@@ -399,8 +399,8 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Master volume", "Volume général", "Gesamtlautstärke", "Volume generale", "Volumen general", "全体の音量" },
     { "Music volume", "Volume musique", "Musiklautstärke", "Volume musica", "Volumen música", "音楽の音量" },
     { "Effects volume", "Volume effets", "Effektlautstärke", "Volume effetti", "Volumen efectos", "効果音の音量" },
-    { "Japanese voices (restart)", "Voix japonaises (relancer)", "Japanische Stimmen (Neustart)",
-      "Voci giapponesi (riavvia)", "Voces japonesas (reiniciar)", "日本語ボイス (再起動)" },
+    { "Japanese voices", "Voix japonaises", "Japanische Stimmen",
+      "Voci giapponesi", "Voces japonesas", "日本語ボイス" },
     { "General", "Général", "Allgemein", "Generale", "General", "きほん" },
     { "Save bank", "Banque de sauvegarde", "Speicherbank", "Banco di salvataggio", "Banco de partidas",
       "セーブバンク" },
@@ -4161,6 +4161,20 @@ static void DrawMenu(int l, int width, int height) {
             DrawText("\xE2\x86\x90", x - 10, y - 2, MENU_RED_DARK, 0xFFD8D8D8u);
             DrawText("\xE2\x86\x92", x + TextWidth(value) + 2, y - 2, MENU_RED_DARK, 0xFFD8D8D8u);
         }
+        if (i == ITEM_MASTER || i == ITEM_MUSIC || i == ITEM_SFX) {
+            int amount = i == ITEM_MASTER ? gPortConfig.masterVolume :
+                         i == ITEM_MUSIC ? gPortConfig.musicVolume : gPortConfig.sfxVolume;
+            int end = x - (sel && on ? 20 : 4);
+            int start = barX + 20 + TextWidth(sLabels[i][l]);
+            int available = SDL_min(48, end - start);
+            if (available >= 12) {
+                int bx = end - available;
+                Fill(bx, y + 1, available, 6, MENU_RED_DARK);
+                Fill(bx + 1, y + 2, available - 2, 4, 0xFFDED8D8u);
+                Fill(bx + 1, y + 2, (available - 2) * amount / 100, 4, MENU_RED);
+                Fill(bx + 1, y + 2, (available - 2) * amount / 100, 1, 0xFFFFAAAAu);
+            }
+        }
         DrawText(value, x, y - 2, face, 0xFFD8D8D8u);
     }
     if (VisibleBetween(i, PageEnd()) > 0)
@@ -4175,6 +4189,14 @@ static void DrawMenu(int l, int width, int height) {
          (sCursor == ITEM_CHEAT_INFHP && !gPortConfig.cheatInfiniteHp) ||
          (sCursor == ITEM_CHEAT_RIKU && !gPortConfig.cheatUnlockRiku)))
         DrawNeedNote(sCheatRebelNote[l], width, height, barX + barW + 8, selY);
+    if (sCursor == ITEM_UNDUB && selY >= 0 && !NeedsLauncher(sCursor)) {
+        static const char* const restart[LANG_COUNT] = {
+            "Restart the game to apply voice changes.", "Relancez le jeu pour appliquer les voix.",
+            "Das Spiel neu starten, um die Stimmen anzuwenden.", "Riavvia il gioco per applicare le voci.",
+            "Reinicia el juego para aplicar el cambio de voces.", "ボイスの変更はゲーム再起動後に反映されます。"
+        };
+        DrawNeedNote(restart[l], width, height, barX + barW + 8, selY);
+    }
     if (sPage == PAGE_CONTROLS && sCursor == ITEM_PAD_LAYOUT)
         DrawNintendoNote(l, width, height, barX + barW + 8);
     int zoom = sCursor == ITEM_BATTLE_ZOOM && gPortConfig.battleZoom ? gPortConfig.battleZoom : gPortConfig.zoom;
