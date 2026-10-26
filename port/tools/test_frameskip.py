@@ -29,25 +29,28 @@ def main():
 
     work = ROOT / 'build/frameskip' / args.version
     common = [sys.executable, '-u', str(ROOT / 'port/tools/test_events.py'), '--version', args.version,
-              '--frames', str(FRAMES), '--jobs', str(args.jobs), '--resume']
+              '--frames', str(FRAMES), '--jobs', str(args.jobs)]
     if args.build:
         common += ['--build', args.build]
     if args.only:
         common += ['--only', args.only]
 
     def run(name, extra_env):
-        log = open(work / f'{name}.log', 'w', encoding='utf-8')
-        return subprocess.run(common + ['--work', str(work / name)], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
-                              env=dict(os.environ, **extra_env)).returncode
+        with open(work / f'{name}.log', 'w', encoding='utf-8') as log:
+            return subprocess.run(common + ['--work', str(work / name)], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
+                                  env=dict(os.environ, **extra_env)).returncode
 
     work.mkdir(parents=True, exist_ok=True)
     with ThreadPoolExecutor(2) as pool:
         codes = list(pool.map(lambda a: run(*a), [('normal', {}), ('skip', {'KHCOM_SKIPTEST': '1'})]))
 
     lines, differ = [], 0
+    expected = {f'shot_{f:05d}.bmp' for f in (FRAMES // 4, FRAMES // 2, FRAMES * 3 // 4, FRAMES)}
     for case in sorted(p for p in (work / 'normal').iterdir() if p.is_dir() and (p / 'result.json').exists()):
         other = work / 'skip' / case.name
         bad = []
+        if {s.name for s in case.glob('shot_*.bmp')} != expected or {s.name for s in other.glob('shot_*.bmp')} != expected:
+            bad.append('missing/unexpected screenshots')
         for shot in sorted(case.glob('shot_*.bmp')):
             twin = other / shot.name
             if not twin.exists() or hashlib.sha1(shot.read_bytes()).digest() != hashlib.sha1(twin.read_bytes()).digest():
@@ -58,7 +61,7 @@ def main():
     lines.append(f'{differ} of {len(lines)} events differ (passes exit {codes})')
     (work / 'report.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     print('\n'.join(lines[-15:]))
-    sys.exit(1 if differ or any(codes) else 0)
+    sys.exit(1 if differ or any(codes) or len(lines) == 1 else 0)
 
 
 if __name__ == '__main__':

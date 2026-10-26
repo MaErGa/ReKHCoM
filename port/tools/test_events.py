@@ -14,12 +14,31 @@ import json
 import re
 import shutil
 import subprocess
+import hashlib
+from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import case_bin
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+@lru_cache(maxsize=32)
+def file_digest(path, size, modified):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def run_fingerprint(exe_dir, version, frames, wide, timeout):
+    rom = ROOT / 'roms' / {'eu': 'B8CP.gba', 'us': 'B8CE.gba', 'jp': 'B8CJ.gba'}[version]
+    inputs = [exe_dir / 'khcom.exe', exe_dir / 'SDL3.dll', rom, Path(__file__)]
+    digests = []
+    for path in inputs:
+        stat = path.stat()
+        digests.append(file_digest(str(path.resolve()), stat.st_size, stat.st_mtime_ns))
+    env = {k: v for k, v in os.environ.items() if k.startswith(('KHCOM_', 'SDL_'))}
+    payload = [digests, version, frames, wide, timeout, env]
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
 def event_lists():
@@ -55,8 +74,11 @@ def prune_shots(d, wide):
 
 def run(exe_dir, work, version, list_id, index, frames, timeout, wide=False, resume=False, prune=False):
     d = work / f"{list_id}_{index:03d}"
+    fingerprint = run_fingerprint(exe_dir, version, frames, wide, timeout)
     # each finished case leaves result.json: --resume keeps it and goes on from the first case without one
-    if resume and (d / "result.json").exists():
+    if (resume and (d / "result.json").exists() and (d / 'fingerprint.sha256').exists()
+            and (d / 'fingerprint.sha256').read_text() == fingerprint
+            and (list(d.glob('shot_*.bmp')) or (d / 'last_shot.sha1').exists())):
         try:
             code, crash, bios = json.loads((d / "result.json").read_text())
             return code, crash, bios
@@ -70,6 +92,7 @@ def run(exe_dir, work, version, list_id, index, frames, timeout, wide=False, res
     keys = ",".join(f"{f}-{f + 3}:A" for f in range(30, frames, 40))
     shots = ",".join(str(f) for f in (frames // 4, frames // 2, frames * 3 // 4, frames))
     env = {"SDL_VIDEO_DRIVER": "dummy", "SDL_AUDIO_DRIVER": "dummy", "KHCOM_FAST": "1",
+           "KHCOM_PPU_THREADS": "1",
            "KHCOM_EVENT": f"{list_id}:{index}", "KHCOM_KEYS": keys, "KHCOM_SHOTS": shots,
            "KHCOM_QUIT": str(frames + 5)}
     full_env = dict(os.environ, **env)
@@ -86,6 +109,7 @@ def run(exe_dir, work, version, list_id, index, frames, timeout, wide=False, res
     bios = sorted(set(re.findall(r"bios: \w+ \w+ at eip (\w+)", log)))
     (d / "result.tmp").write_text(json.dumps([code, crash, bios]))
     os.replace(d / "result.tmp", d / "result.json")
+    (d / 'fingerprint.sha256').write_text(fingerprint)
     if prune and code == 0 and not crash and not bios and "MISMATCH" not in log:
         prune_shots(d, wide)
     return code, crash, bios
@@ -113,6 +137,9 @@ def main():
     if args.only:
         wanted = {tuple(int(x) for x in s.split(":")) for s in args.only.split(",")}
         events = [e for e in events if (e[0], e[1]) in wanted]
+    if not events:
+        print("No events selected; nothing was checked")
+        return 1
 
     results = {}
     with ThreadPoolExecutor(args.jobs) as pool:
@@ -143,6 +170,9 @@ def main():
         h = hashlib.sha1(shots[-1].read_bytes()).hexdigest() if shots else (pruned.read_text() if pruned.exists() else None)
         if h:
             hashes[h] = hashes.get(h, 0) + 1
+        else:
+            bad += 1
+            lines.append(f"MISSING screenshot evidence: {l}:{i}")
     if hashes and max(hashes.values()) > len(results) // 4:
         lines.append(f"WARNING: {max(hashes.values())} events end on the same picture; were they started?")
     (work / "report.txt").write_text("\n".join(lines) + "\n")
@@ -165,7 +195,8 @@ def main():
             sheet.save(work / "events.png")
     except ImportError:
         pass
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
