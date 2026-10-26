@@ -1823,7 +1823,7 @@ static void Present(void) {
             static SDL_Texture* sMenuAlpha;
             static int sMenuAlphaW, sMenuAlphaH;
             SDL_Texture* frameTex = sTexture;
-            if (menuCanvas && gPortConfig.hdHud && PortUiHdArtUnder(sRenderer, dst.x, dst.y, dst.w / gPortScreen.width)) {
+            if (menuCanvas && gPortConfig.hdTitle && PortUiHdArtUnder(sRenderer, dst.x, dst.y, dst.w / gPortScreen.width)) {
                 if (sMenuAlpha && (sMenuAlphaW != gPortScreen.width || sMenuAlphaH != gPortScreen.height)) {
                     SDL_DestroyTexture(sMenuAlpha);
                     sMenuAlpha = NULL;
@@ -2020,7 +2020,7 @@ static void Present(void) {
             SDL_RenderTexture(sRenderer, sTexture, &ps, &pd);
         }
     }
-    if (gPortConfig.hdHud) {
+    if (gPortConfig.hdTitle) {
         extern void PortUiHdDraw(SDL_Renderer*, float, float, float);
         PortUiHdDraw(sRenderer, worldX, worldY, worldScale);
     }

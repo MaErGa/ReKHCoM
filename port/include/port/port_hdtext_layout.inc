@@ -292,7 +292,7 @@ void PortHdTextUiGlyph(SDL_Renderer* renderer, int code, float x, float y, float
     HdGlyph* glyph;
     PortTextGlyph unit = {0};
     float offset = SDL_max(1.0f, scale * 0.5f);
-    if (!gPortConfig.hdHud || scale <= 0) return;
+    if (!gPortConfig.hdTitle || scale <= 0) return;
     font = FontForScale(scale, 0);
     if (!font->font) return;
     glyph = code > 255 ? GlyphJp(renderer, font, (uint16_t)code) : Glyph(renderer, font, code);
@@ -306,7 +306,7 @@ void PortHdTextUiGlyph(SDL_Renderer* renderer, int code, float x, float y, float
 float PortHdTextUiAdvance(SDL_Renderer* renderer, int code, float scale) {
     HdFont* font;
     HdGlyph* glyph;
-    if (!gPortConfig.hdHud || scale <= 0) return 0;
+    if (!gPortConfig.hdTitle || scale <= 0) return 0;
     font = FontForScale(scale, 0);
     if (!font->font) return 0;
     glyph = code > 255 ? GlyphJp(renderer, font, (uint16_t)code) : Glyph(renderer, font, code);

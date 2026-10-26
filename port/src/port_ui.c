@@ -421,7 +421,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "HD-2D look", "Style HD-2D", "HD-2D-Optik", "Stile HD-2D", "Estilo HD-2D", "HD-2D表示" },
     { "HD subtitles", "Sous-titres HD", "HD-Untertitel", "Sottotitoli HD", "Subtítulos HD", "HDじまく" },
     { "HD text font", "Police du texte HD", "Schrift des HD-Texts", "Font del testo HD", "Fuente del texto HD", "HDテキストのフォント" },
-    { "HD title logo", "Logo de titre HD", "HD-Titellogo", "Logo del titolo HD", "Logo del título HD", "HDタイトルロゴ" },
+    { "HD title and menus", "Titre et menus HD", "HD-Titel und -Menüs", "Titolo e menu HD", "Título y menús HD", "HDタイトルとメニュー" },
     { "Re:CoM mode", "Mode Re:CoM", "Re:CoM-Modus", "Modalità Re:CoM", "Modo Re:CoM", "Re:CoMモード" },
     { "Re:CoM settings", "Réglages Re:CoM", "Re:CoM-Einstellungen", "Impostazioni Re:CoM", "Ajustes Re:CoM",
       "Re:CoMオプション" },
@@ -862,7 +862,7 @@ static float Advance(SDL_Renderer* renderer, int i, float scale) {
 void PortUiHdDraw(SDL_Renderer* renderer, float x, float y, float scale) {
     extern void PortHdTextUiGlyph(SDL_Renderer*, int, float, float, float, float, uint32_t, uint32_t);
     int i, j, k;
-    if (!gPortConfig.hdHud) return;
+    if (!gPortConfig.hdTitle) return;
     /* each text in the box its pixel letters take, spaced by KHMenu's own advances (stretched or tightened to that
        box: left and right ends where the cartridge font has them, columns stay aligned) */
     for (i = 0; i < sHdUiCount; i = j) {
@@ -4694,7 +4694,7 @@ void PortUiDraw(uint32_t* frame, int width, int height) {
     QuitTrack();
 
     sHdUiCount = 0;
-    sHdUiFrame = gPortConfig.hdHud ? frame : NULL; /* the panels and the notices over the game (SELECT Options...) */
+    sHdUiFrame = gPortConfig.hdTitle ? frame : NULL; /* the panels and the notices over the game (SELECT Options...) */
     sHdArt[2] = 0;
     sFb = frame;
     sFbW = width;

@@ -4656,7 +4656,7 @@ static void TitleArtQueue(void) {
     int intro = sTitleArtFadeBg0 && (dispcnt & 0x100), whole = (dispcnt & 0x200) != 0;
     int effect = (bld >> 6) & 3, dark = 0, white = 0, k;
     float aspect = 0.8289f, t, x0, y0, h, w, x[4], y[4], u0, v0, u1, v1;
-    if (!sTitleArtFade || !gPortConfig.hdTitle || !gPortConfig.hdHud || (dispcnt & 7) != 1 || (!intro && !whole) ||
+    if (!sTitleArtFade || !gPortConfig.hdTitle || (dispcnt & 7) != 1 || (!intro && !whole) ||
         !PortHdTitleArtReady(&aspect))
         return;
     /* how far the dissolve is: BG1's share of the blend while both are up */
@@ -4715,7 +4715,7 @@ static void QueueMainHdParts(void) {
     sTitleLogoBgHd = 0;
     sTitleArtHd = 0;
     TitleArtQueue();
-    sTitleBarHd = sTitleBands && gPortConfig.hdTitle && gPortConfig.hdHud && !sEnvTitleBandsOff;
+    sTitleBarHd = sTitleBands && gPortConfig.hdTitle && !sEnvTitleBandsOff;
     if (sTitleLogoBg && (IO16(0x00) & 0x400) && ((IO16(0x00) & 7) == 1 || (IO16(0x00) & 7) == 2)) {
         /* BG2 maps screen (sx, sy) to texture ((X + pa sx + pb sy) / 256, (Y + pc sx + pd sy) / 256): the
            texture's corners go back through the inverse to the canvas */
