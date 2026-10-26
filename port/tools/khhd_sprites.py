@@ -45,8 +45,13 @@ def recipe(path=RECIPE):
     for line in path.read_text(encoding='utf-8').splitlines():
         if line.strip() and not line.startswith('#'):
             f = line.split('\t')
+            box = [int(v) for v in f[4:8]]
+            pad = next(([int(v) for v in op[4:].split(',')] for op in f[9].split(';') if op.startswith('pad=')), None)
+            if pad:  # the picture past the cartridge's box (L, R[, T, B]): what the importer draws
+                box[2] += pad[0] + pad[1]
+                box[3] += (pad[2] + pad[3]) if len(pad) == 4 else 0
             rows.append({'name': f[0], 'group': int(f[1]), 'frame': f[2], 'tiles': f[3],
-                         'box': tuple(int(v) for v in f[4:8]), 'source': f[8], 'ops': f[9]})
+                         'box': tuple(box), 'source': f[8], 'ops': f[9]})
     return rows
 
 
@@ -233,13 +238,31 @@ def inked(part, ink):
     return out
 
 
+def duo(img, colours):
+    """duo=face top,face bottom,outline: a light-on-dark glyph recoloured as the cartridge colours its digit: its light
+    parts the face (a top-to-bottom gradient over the inked rows), its dark parts the outline, mixed by lightness."""
+    face0, face1, line = ([(c >> s) & 255 for s in (16, 8, 0)] for c in colours)
+    out = img.copy()
+    rows = np.nonzero(img[:, :, 3].max(axis=1))[0]
+    if not len(rows):
+        return out
+    y0, y1 = rows[0], rows[-1]
+    light = img[:, :, :3].max(axis=2).astype(np.float64) / 255
+    for y in range(img.shape[0]):
+        t = min(max((y - y0) / max(y1 - y0, 1), 0.0), 1.0)
+        face = [face0[k] + (face1[k] - face0[k]) * t for k in range(3)]
+        for k in range(3):
+            out[y, :, k] = np.floor(line[k] + (face[k] - line[k]) * light[y] + 0.5).astype(np.uint8)
+    return out
+
+
 def apply(img, ops, box, load=None):
     place = None
     source = own = img
     ink = []
     for op in ops.split(';'):
         key, _, val = op.partition('=')
-        v = [int(x) if key not in ('tint', 'ink', 'poly') else x for x in val.split(',')] if val and key != 'src' else []
+        v = [int(x) if key not in ('tint', 'ink', 'poly', 'duo') else x for x in val.split(',')] if val and key != 'src' else []
         if key == 'crop':
             img = img[v[1]:v[3], v[0]:v[2]]
         elif key == 'rot':
@@ -275,6 +298,10 @@ def apply(img, ops, box, load=None):
             img = img.copy()
             for k, s in enumerate((16, 8, 0)):
                 img[:, :, k] = (img[:, :, k].astype(np.uint32) * ((c >> s) & 255) // 255).astype(np.uint8)
+        elif key == 'duo':
+            img = duo(img, [int(x, 16) for x in v])
+        elif key == 'pad':
+            pass  # the box's overhang: in box already (rows())
         elif key == 'place':
             place = v
         elif key == 'scale':

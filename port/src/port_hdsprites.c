@@ -30,8 +30,9 @@ typedef struct HdSpriteDef {
     const char* name;
     int16_t x0, y0, w, h; /* the sprite's box in its frame's coordinates */
     uint8_t group;
-    uint8_t padL, padR; /* the picture goes on past the box this many GBA pixels (a Re:CoM word in its own proportion,
-                           wider than the cartridge's: hd_sprites.tsv pad=L,R); the edge parts draw it */
+    uint8_t padL, padR, padT, padB; /* the picture goes on past the box this many GBA pixels (a Re:CoM word in its
+                                       own proportion, a card's value as big as Re:CoM's: hd_sprites.tsv pad=L,R[,T,B]);
+                                       the edge parts draw it */
 } HdSpriteDef;
 
 #include "port/hd_sprites.inc"
@@ -178,7 +179,7 @@ static int Load(int i) {
         /* a picture imported for an older recipe (another width: before pad=): left out until the HD import is run
            again, not drawn stretched */
         const HdSpriteDef* d = &kHdSprites[i];
-        float want = (float)(d->padL + d->w + d->padR) / d->h, got = (float)w / h;
+        float want = (float)(d->padL + d->w + d->padR) / (d->padT + d->h + d->padB), got = (float)w / h;
         if (got > want * 1.03f || got < want * 0.97f) {
             stbi_image_free(px);
             sState[i].present = 1;
@@ -432,8 +433,23 @@ int PortHdSpriteQueue(int layer, int id, const float* x, const float* y, int px,
             q->u1 = 1;
         }
     }
-    q->v0 = (float)(py - d->y0) / d->h;
-    q->v1 = (float)(py + ph - d->y0) / d->h;
+    {
+        float total = (float)(d->padT + d->h + d->padB);
+        int top = d->padT && py == d->y0, bottom = d->padB && py + ph == d->y0 + d->h;
+        float vx = (q->x[3] - q->x[0]) / ph, vy = (q->y[3] - q->y[0]) / ph; /* down the part, as drawn */
+        q->v0 = (float)(py - d->y0 + d->padT) / total;
+        q->v1 = (float)(py + ph - d->y0 + d->padT) / total;
+        if (top) {
+            q->x[0] -= vx * d->padT; q->y[0] -= vy * d->padT;
+            q->x[1] -= vx * d->padT; q->y[1] -= vy * d->padT;
+            q->v0 = 0;
+        }
+        if (bottom) {
+            q->x[3] += vx * d->padB; q->y[3] += vy * d->padB;
+            q->x[2] += vx * d->padB; q->y[2] += vy * d->padB;
+            q->v1 = 1;
+        }
+    }
     q->alpha = (uint8_t)alpha;
     q->dark = (uint8_t)SDL_clamp(dark, 0, 255);
     q->white = (uint8_t)SDL_clamp(white, 0, 255);

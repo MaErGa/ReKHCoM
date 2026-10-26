@@ -106,42 +106,102 @@ extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame0[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame0[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame0[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame0[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame0[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame1[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame1[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame1[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame1[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame1[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame2[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame2[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame2[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame2[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame2[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame3[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame3[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame3[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame3[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame3[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame4[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame4[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame4[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame4[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame4[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame5[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame5[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame5[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame5[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame5[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame6[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame6[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame6[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame6[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame6[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame7[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame7[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame7[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame7[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame7[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame8[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame8[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame8[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame8[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame8[];
 extern const unsigned char gCardValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame9[];
 extern const unsigned char gCardModifiedValueDigitTiles[];
 extern const unsigned char gCardValueDigitFrame9[];
+extern const unsigned char gCardModifiedValueDigitTiles[];
+extern const unsigned char gCardModifiedValueDigitFrame9[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardValueDigitFrame9[];
+extern const unsigned char gCardPremiumValueDigitTiles[];
+extern const unsigned char gCardPremiumValueDigitFrame9[];
 extern const unsigned char gTitleLogoHeartTiles[];
 extern const unsigned char gTitleLogoKingdomHeartsTiles[];
 extern const unsigned char gTitleLogoCrownTiles[];
@@ -995,26 +1055,56 @@ static const HdSpriteDef kHdSprites[] = {
     { gCardBorderGreenTiles, NULL, "gCardBorderGreenTiles", -16, -20, 32, 39, 1 },
     { gCardBorderBlueTiles, NULL, "gCardBorderBlueTiles", -16, -20, 32, 39, 1 },
     { gCardBorderBlackTiles, NULL, "gCardBorderBlackTiles", -16, -20, 32, 39, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame0, "gCardValueDigitTiles_0", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame0, "gCardModifiedValueDigitTiles_0", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame1, "gCardValueDigitTiles_1", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame1, "gCardModifiedValueDigitTiles_1", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame2, "gCardValueDigitTiles_2", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame2, "gCardModifiedValueDigitTiles_2", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame3, "gCardValueDigitTiles_3", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame3, "gCardModifiedValueDigitTiles_3", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame4, "gCardValueDigitTiles_4", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame4, "gCardModifiedValueDigitTiles_4", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame5, "gCardValueDigitTiles_5", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame5, "gCardModifiedValueDigitTiles_5", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame6, "gCardValueDigitTiles_6", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame6, "gCardModifiedValueDigitTiles_6", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame7, "gCardValueDigitTiles_7", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame7, "gCardModifiedValueDigitTiles_7", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame8, "gCardValueDigitTiles_8", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame8, "gCardModifiedValueDigitTiles_8", 3, 8, 8, 8, 1 },
-    { gCardValueDigitTiles, gCardValueDigitFrame9, "gCardValueDigitTiles_9", 3, 8, 8, 8, 1 },
-    { gCardModifiedValueDigitTiles, gCardValueDigitFrame9, "gCardModifiedValueDigitTiles_9", 3, 8, 8, 8, 1 },
+    { gCardValueDigitTiles, gCardValueDigitFrame0, "gCardValueDigitTiles_0", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame0, "gCardModifiedValueDigitTiles_0", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame0, "gCardModifiedValueDigitTiles_0_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame0, "gCardPremiumValueDigitTiles_0", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame0, "gCardPremiumValueDigitTiles_0_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame1, "gCardValueDigitTiles_1", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame1, "gCardModifiedValueDigitTiles_1", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame1, "gCardModifiedValueDigitTiles_1_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame1, "gCardPremiumValueDigitTiles_1", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame1, "gCardPremiumValueDigitTiles_1_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame2, "gCardValueDigitTiles_2", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame2, "gCardModifiedValueDigitTiles_2", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame2, "gCardModifiedValueDigitTiles_2_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame2, "gCardPremiumValueDigitTiles_2", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame2, "gCardPremiumValueDigitTiles_2_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame3, "gCardValueDigitTiles_3", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame3, "gCardModifiedValueDigitTiles_3", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame3, "gCardModifiedValueDigitTiles_3_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame3, "gCardPremiumValueDigitTiles_3", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame3, "gCardPremiumValueDigitTiles_3_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame4, "gCardValueDigitTiles_4", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame4, "gCardModifiedValueDigitTiles_4", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame4, "gCardModifiedValueDigitTiles_4_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame4, "gCardPremiumValueDigitTiles_4", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame4, "gCardPremiumValueDigitTiles_4_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame5, "gCardValueDigitTiles_5", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame5, "gCardModifiedValueDigitTiles_5", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame5, "gCardModifiedValueDigitTiles_5_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame5, "gCardPremiumValueDigitTiles_5", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame5, "gCardPremiumValueDigitTiles_5_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame6, "gCardValueDigitTiles_6", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame6, "gCardModifiedValueDigitTiles_6", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame6, "gCardModifiedValueDigitTiles_6_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame6, "gCardPremiumValueDigitTiles_6", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame6, "gCardPremiumValueDigitTiles_6_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame7, "gCardValueDigitTiles_7", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame7, "gCardModifiedValueDigitTiles_7", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame7, "gCardModifiedValueDigitTiles_7_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame7, "gCardPremiumValueDigitTiles_7", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame7, "gCardPremiumValueDigitTiles_7_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame8, "gCardValueDigitTiles_8", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame8, "gCardModifiedValueDigitTiles_8", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame8, "gCardModifiedValueDigitTiles_8_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame8, "gCardPremiumValueDigitTiles_8", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame8, "gCardPremiumValueDigitTiles_8_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardValueDigitTiles, gCardValueDigitFrame9, "gCardValueDigitTiles_9", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardValueDigitFrame9, "gCardModifiedValueDigitTiles_9", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardModifiedValueDigitTiles, gCardModifiedValueDigitFrame9, "gCardModifiedValueDigitTiles_9_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardValueDigitFrame9, "gCardPremiumValueDigitTiles_9", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
+    { gCardPremiumValueDigitTiles, gCardPremiumValueDigitFrame9, "gCardPremiumValueDigitTiles_9_play", 3, 8, 8, 8, 1, 2, 2, 2, 2 },
     { gTitleLogoHeartTiles, NULL, "gTitleLogoHeartTiles", -80, -48, 160, 96, 2 },
     { gTitleLogoKingdomHeartsTiles, NULL, "gTitleLogoKingdomHeartsTiles", -75, -32, 152, 40, 2 },
     { gTitleLogoCrownTiles, NULL, "gTitleLogoCrownTiles", -14, -46, 24, 16, 2 },

@@ -46,7 +46,7 @@ def table():
         name, group, frame, tiles, x0, y0, w, h = row[:8]
         frame = 'NULL' if frame == '-' else frame
         pad = next((op[4:].split(',') for op in (row[9] if len(row) > 9 else '').split(';') if op.startswith('pad=')), None)
-        pad = f', {pad[0]}, {pad[1]}' if pad else ''  # the picture past the box (a word in its Re:CoM proportion)
+        pad = ', ' + ', '.join(pad) if pad else ''  # the picture past the box (L, R[, T, B])
         out += wrapped(row, f'    {{ {tiles}, {frame}, "{name}", {x0}, {y0}, {w}, {h}, {group}{pad} }},\n')
     out.append('#include "port/synthesis_requirement_hd_entries.inc"\n')
     out.append('#include "port/title_words_hd.inc"\n')  # the HD title's words (make_title_words.py)
