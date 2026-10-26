@@ -24,6 +24,28 @@ esa autorización; no publicar mientras haya fallos sin resolver.
   Estas tres entregas van en #244; pruebas en `TITLE_MENU_CLOSURE_20261026.md`.
 - [ ] Integrar PR pequeños verificados; completar gates y paquete limpio desde el commit de cierre.
 
+## Pedidos posteriores y cierre técnico
+
+- [x] Título y Opciones: #244 integrado (`124799ea0`); detalle y capturas en `TITLE_MENU_CLOSURE_20261026.md`.
+- [x] Todas las luces de menús HD: #253 integrado (`68d484429`), cinco muestras originales y pulso compartido.
+  Título/Opciones sin HD idénticos al original; renderer verifica también color cálido, fundidos y liberación.
+  Atlas hija `24bee72a8205435792c6192b3a8239a0`, sin modificar calificaciones humanas.
+- [x] Desfase del ojo de primera pestaña: #249 (`1e8905b0d`), cuatro cuadros corregidos; guante, difuminado
+  inferior y Moguri sin cambios de píxeles fuera del defecto. No se cambió ningún estado a «Revisión 0».
+- [x] Validadores de eventos/audio/frameskip: #251 (`795cd757e`) rechaza evidencia incompleta o de un binario antiguo.
+- [x] Input y capturas: #248 (`204367b2a`); 200 ciclos reales de abrir/cerrar y captura de 13 teclas/13 botones
+  correctos en esa versión. La matriz final debe registrar su propio SHA.
+- [x] Galería GBA/HD/ReKHCoM: #250 integrado (`5505dd49a`); regreso al menú y conservación de estado/partida,
+  póster estático, catálogo regional, HD equivalente al gameplay y fallback GBA. Dos revisiones independientes,
+  pilotos de estado/SRAM, final/salto/pausa y alias recuperado tras vídeo corrupto. Sigue pendiente la matriz final.
+- [ ] Manejador Windows: rechazar excepciones de DLL del host, preservando accesos GBA y single-step legítimos;
+  repetir el caso Riku al restablecer modos. Este fallo apareció en la matriz completa de Opciones (#252).
+- [ ] Ejecutar matriz de galería y gates sobre el commit unificado, construir y revisar los paquetes, publicar v2.0 estable.
+
+No atribuir al juego el último fallo de compilación: clang informó explícitamente falta de espacio en C:.
+Se deduplicaron únicamente fixtures propios con hashes verificados; temporales de compilación pasan a D:.
+Partidas y archivos del usuario se conservan.
+
 ## Decisiones
 
 - Se retoma la funcionalidad existente y se mantienen sus preferencias; no se rediseña la estética.
