@@ -119,9 +119,9 @@ int PortMaleficentDragonPixel(const void* map, int x, int y, int cx, int cy, uin
     x -= 256 + FloorDiv(cx - 128,512)*512;
     y -= 256 + FloorDiv(cy - 128,512)*512;
     if (x < 256) return 0;
-    if (map == gBosMdFrame0Map || map == gBosMdFrame7Map || map == gBosMdFrame9Map || map == gBosMdFrame10Map || map == gBosMdFrame11Map || map == gBosMdFrame12Map || map == gBosMdFrame18Map || map == gBosMdFrame22Map || map == gBosMdFrame24Map || map == gBosMdFrame26Map || map == gBosMdFrame32Map || map == gBosMdFrame34Map || map == gBosMdFrame38Map) { pixels=kMdCompletion0;x0=256;y0=57;w=155;h=172; }
-    else if (map == gBosMdFrame2Map || map == gBosMdFrame5Map || map == gBosMdFrame6Map || map == gBosMdFrame8Map || map == gBosMdFrame13Map || map == gBosMdFrame20Map || map == gBosMdFrame21Map || map == gBosMdFrame35Map) { pixels=kMdCompletion1;x0=256;y0=55;w=155;h=175; }
-    else if (map == gBosMdFrame3Map || map == gBosMdFrame4Map || map == gBosMdFrame14Map || map == gBosMdFrame19Map || map == gBosMdFrame36Map || map == gBosMdFrame37Map) { pixels=kMdCompletion2;x0=256;y0=57;w=155;h=169; }
+    if (map == gBosMdFrame0Map || map == gBosMdFrame7Map || map == gBosMdFrame9Map || map == gBosMdFrame10Map || map == gBosMdFrame11Map || map == gBosMdFrame12Map || map == gBosMdFrame18Map || map == gBosMdFrame22Map || map == gBosMdFrame24Map || map == gBosMdFrame26Map || map == gBosMdFrame32Map || map == gBosMdFrame34Map || map == gBosMdFrame38Map) { pixels=kMdCompletion0;x0=256;y0=50;w=162;h=169; }
+    else if (map == gBosMdFrame2Map || map == gBosMdFrame5Map || map == gBosMdFrame6Map || map == gBosMdFrame8Map || map == gBosMdFrame13Map || map == gBosMdFrame20Map || map == gBosMdFrame21Map || map == gBosMdFrame35Map) { pixels=kMdCompletion1;x0=256;y0=48;w=162;h=172; }
+    else if (map == gBosMdFrame3Map || map == gBosMdFrame4Map || map == gBosMdFrame14Map || map == gBosMdFrame19Map || map == gBosMdFrame36Map || map == gBosMdFrame37Map) { pixels=kMdCompletion2;x0=256;y0=50;w=162;h=166; }
     if (!pixels || x<x0 || x>=x0+w || y<y0 || y>=y0+h) return 0;
     n=(y-y0)*w+x-x0;index=(pixels[n/2]>>((n&1)*4))&15;
     if (!index) return 0;

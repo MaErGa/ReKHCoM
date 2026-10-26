@@ -1,0 +1,218 @@
+{
+  "status": "pending",
+  "reference_sha256": "f4b7286b09d00849555e981d624d651811d4a52de2bd5e271ca2f6273925bfb9",
+  "registration": {
+    "scale": 0.24,
+    "offset": [
+      48,
+      8
+    ]
+  },
+  "palette": [
+    [
+      0,
+      255,
+      0
+    ],
+    [
+      0,
+      0,
+      8
+    ],
+    [
+      24,
+      16,
+      41
+    ],
+    [
+      32,
+      24,
+      49
+    ],
+    [
+      41,
+      32,
+      57
+    ],
+    [
+      49,
+      41,
+      74
+    ],
+    [
+      57,
+      0,
+      115
+    ],
+    [
+      90,
+      32,
+      148
+    ],
+    [
+      123,
+      49,
+      180
+    ],
+    [
+      57,
+      49,
+      82
+    ],
+    [
+      90,
+      82,
+      106
+    ],
+    [
+      106,
+      98,
+      131
+    ],
+    [
+      115,
+      49,
+      0
+    ],
+    [
+      197,
+      123,
+      0
+    ],
+    [
+      238,
+      197,
+      0
+    ],
+    [
+      238,
+      255,
+      0
+    ]
+  ],
+  "groups": [
+    {
+      "cut": "cut-01",
+      "representative": 0,
+      "frames": [
+        0,
+        1,
+        7,
+        9,
+        10,
+        11,
+        12,
+        18,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        31,
+        32,
+        33,
+        34,
+        38,
+        39
+      ],
+      "sources": [
+        "gBosMdFrame0Map",
+        "gBosMdFrame7Map",
+        "gBosMdFrame9Map",
+        "gBosMdFrame10Map",
+        "gBosMdFrame11Map",
+        "gBosMdFrame12Map",
+        "gBosMdFrame18Map",
+        "gBosMdFrame22Map",
+        "gBosMdFrame24Map",
+        "gBosMdFrame26Map",
+        "gBosMdFrame32Map",
+        "gBosMdFrame34Map",
+        "gBosMdFrame38Map"
+      ],
+      "bounds": [
+        256,
+        50,
+        162,
+        169
+      ],
+      "native_pixels_changed": 0,
+      "seam_mismatches": 0
+    },
+    {
+      "cut": "cut-02",
+      "representative": 2,
+      "frames": [
+        2,
+        5,
+        6,
+        8,
+        13,
+        16,
+        17,
+        20,
+        21,
+        29,
+        35,
+        40
+      ],
+      "sources": [
+        "gBosMdFrame2Map",
+        "gBosMdFrame5Map",
+        "gBosMdFrame6Map",
+        "gBosMdFrame8Map",
+        "gBosMdFrame13Map",
+        "gBosMdFrame20Map",
+        "gBosMdFrame21Map",
+        "gBosMdFrame35Map"
+      ],
+      "bounds": [
+        256,
+        48,
+        162,
+        172
+      ],
+      "native_pixels_changed": 0,
+      "seam_mismatches": 0
+    },
+    {
+      "cut": "cut-03",
+      "representative": 3,
+      "frames": [
+        3,
+        4,
+        14,
+        15,
+        19,
+        23,
+        30,
+        36,
+        37
+      ],
+      "sources": [
+        "gBosMdFrame3Map",
+        "gBosMdFrame4Map",
+        "gBosMdFrame14Map",
+        "gBosMdFrame19Map",
+        "gBosMdFrame36Map",
+        "gBosMdFrame37Map"
+      ],
+      "bounds": [
+        256,
+        50,
+        162,
+        166
+      ],
+      "native_pixels_changed": 0,
+      "seam_mismatches": 0
+    }
+  ],
+  "states_checked": 41,
+  "native_pixels_changed": 0,
+  "seam_mismatches": 0,
+  "limitations": [
+    "Offline native-index validation; runtime animation capture still separate.",
+    "No human approval inherited from generated studies."
+  ]
+}
