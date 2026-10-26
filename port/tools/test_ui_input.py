@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import time
 
+import case_bin
 from test_text_options import item_numbers
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,9 +25,10 @@ def main():
     parser.add_argument('--rom', type=Path, default=ROOT / 'roms/B8CP.gba')
     parser.add_argument('--cycles', type=int, default=100)
     parser.add_argument('--timeout', type=int, default=180)
+    parser.add_argument('--out', type=Path, help='isolated evidence directory (must not exist)')
     args = parser.parse_args()
     build = args.build.resolve()
-    source = ROOT / 'build/ui-input' / time.strftime('%Y%m%d_%H%M%S')
+    source = args.out.resolve() if args.out else ROOT / 'build/ui-input' / time.strftime('%Y%m%d_%H%M%S')
     source.mkdir(parents=True)
     items = item_numbers()
     cases = [
@@ -43,6 +45,26 @@ def main():
         ('restore-controls', 'kb_a=113\npad_a=1\npad_layout=2\n',
              {'KHCOM_OPTIONS_CURSOR': str(items['CONTROL_RESET']), 'KHCOM_OPTIONS_KEYS': '3:13,6:27,9:27'},
              {'kb_a': '120', 'kb_a_2': '107', 'pad_a': '0', 'pad_layout': '0'}),
+    ]
+    actions = ['a', 'b', 'l', 'r', 'start', 'select', 'up', 'down', 'left', 'right', 'stock', 'dodge', 'unstock']
+    keys, pad = [], ['144-147:RIGHT', '160-163:SOUTH', '180-183:LT']
+    for i, action in enumerate(actions):
+        tick = 3 + i * 12
+        keys += [f'{tick}:13', f'{tick+3}:{102+i}']
+        if i + 1 < len(actions):
+            keys.append(f'{tick+6}:1073741905')
+        if i:
+            frame = 210 + (i - 1) * 100
+            pad += [f'{frame}-{frame+3}:DOWN', f'{frame+20}-{frame+23}:LT', f'{frame+40}-{frame+43}:LT']
+    keys += ['165:27', '168:27']
+    pad.append('1480-1485:START')
+    cases += [
+        ('all-keyboard-bindings', '', {'KHCOM_OPTIONS_CURSOR': str(items['CONTROL_A']),
+             'KHCOM_OPTIONS_KEYS': ','.join(keys), 'KHCOM_OPTIONS_HOLD': '190', 'KHCOM_QUIT': '300'},
+             {'kb_' + action: str(102+i) for i, action in enumerate(actions)}),
+        ('all-axis-bindings', '', {'KHCOM_OPTIONS_CURSOR': str(items['CONTROL_A']),
+             'KHCOM_VPAD': ','.join(pad), 'KHCOM_OPTIONS_HOLD': '1600', 'KHCOM_QUIT': '1520'},
+             {'pad_' + action: '108' for action in actions}),
     ]
     if args.cycles:
         if args.cycles < 1:
@@ -64,13 +86,12 @@ def main():
     for name, ini, extra, expected in cases:
         work = source / name
         work.mkdir()
-        for file in ['khcom.exe', 'SDL3.dll']:
-            shutil.copy2(build / file, work / file)
+        case_bin.place(build, source, work)
         shutil.copytree(ROOT / 'port/assets/fonts', work / 'assets/fonts')
         (work / 'kh_com.ini').write_text('config_version=11\ngraphics_mode=2\ngraphics_mode_applied=2\n'
             'view_mode=4\nwindow_scale=2\nfullscreen=0\nvsync=0\ndodge_button=1\nassets_seen=-1\n' + ini)
         env = {k: v for k, v in os.environ.items() if not k.startswith(('KHCOM_', 'SDL_'))}
-        env.update(SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='dummy', KHCOM_FAST='1', KHCOM_OPTIONS_AUDIT='1',
+        env.update(SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='dummy', KHCOM_FAST='1', KHCOM_PPU_THREADS='1', KHCOM_OPTIONS_AUDIT='1',
             KHCOM_OPTIONS_TOGGLE='100', KHCOM_OPTIONS_HOLD='120', KHCOM_QUIT='260', KHCOM_TRACE_MODES='1')
         if name.startswith('rapid-'):
             env.pop('KHCOM_OPTIONS_TOGGLE')
