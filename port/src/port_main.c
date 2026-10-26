@@ -1837,9 +1837,8 @@ static void Present(void) {
                         SDL_SetTextureBlendMode(sMenuAlpha, SDL_BLENDMODE_BLEND);
                 }
                 if (sMenuAlpha) {
-                    SDL_ScaleMode mode = SDL_SCALEMODE_NEAREST;
-                    SDL_GetTextureScaleMode(sTexture, &mode);
-                    SDL_SetTextureScaleMode(sMenuAlpha, mode);
+                    SDL_SetTextureScaleMode(sMenuAlpha, gPortConfig.filter == PORT_FILTER_LINEAR
+                                                            ? (SDL_ScaleMode)PortSmoothScaleMode() : SDL_SCALEMODE_NEAREST);
                     SDL_UpdateTexture(sMenuAlpha, NULL, sComposite, gPortScreen.width * 4);
                     frameTex = sMenuAlpha;
                 }
