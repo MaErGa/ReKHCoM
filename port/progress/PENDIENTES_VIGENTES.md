@@ -11,6 +11,12 @@ Steam Deck; zip limpio en KHCoMPC).
   retomar sus pendientes hasta acabar y lanzar la 2.0». Claude sigue PR #231 en la rama `claude/v20-close`
   (worktree D:/01Claude/ReKHCoM-build/v20-wt, base origin/codex/hd-ui-v20-completion 3b1a04ae3), con la lista de
   port/progress/CIERRE_V20_EN_CURSO.md y HANDOFF_V20_20261026.md de esa rama. No se toca el árbol de Codex.
+- Hecho en `claude/v20-close` (26/10): título HD completo (entradas, seleccionadas, Brillo Sora/Riku, crédito,
+  cursor, «Pulsa Start» en 5 idiomas: make_title_words.py, KHMenu ajustada a la tinta, embebido grupo 7), barra de
+  Pulsa Start lisa, fundidos del título arreglados (fundido restando del juego), Opciones HD (ilustración HD bajo el
+  panel, textos sin solaparse), avisos del port en HD. Faltan: proporción de piezas Re:CoM (avisos de combate
+  aplastados), números HD de cartas no rojas + mejoradas/premium, textos HD del mazo en la tienda Moguri, galería
+  desde saves viejos, Steam, #202, builds y pruebas de la 2.0.
 
 ## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)
 
