@@ -38,6 +38,17 @@ Steam Deck; zip limpio en KHCoMPC).
   Lo que no existe en Re:CoM (Pulsa Start, Sora, Riku, Combate, «/ Jupiter», el aviso SELECT del port) se dibuja con
   KHMenu.otf en el color del cartucho (negro con sombra gris), con el texto dentro de su caja (el usuario marcó que
   SELECT Opciones se salía) y sin el píxel suelto bajo el cuadro naranja de Pulsa Start.
+- **Piezas HD del menú, método probado (26/10):** filas en port/data/hd_sprites.tsv (grupo 2, región eu) con
+  letras de FORM/0505/FO0505.RTM:SP_title.imz#4 (gris: NUEVA PARTIDA y532-904/32-62, CARGAR PARTIDA y96-124, ESCENAS
+  y162-190, ATRÁS y228-256; blancas con borde y290-458; DEVELOPED BY/SQUARE ENIX x9-231 y341-395). Hechas: Spanish
+  Frame0 de gTitleMenuEntry (gris), gTitleMenuSelectedEntry (negra) y gTitleMenuSelectedBar (degradado liso de 116
+  polys). REGLA: la caja (x0 y0 w h) = unión de las partes OAM del frame (bloques 8/16/32), no lo visible; si no,
+  «part ... outside its box» en kh_com.log y no se dibuja. Generar: `py -3.12 port/tools/khhd_sprites.py
+  "<install>/Image/dt/Recom.hed" <dir> --only <nombres>` y `python port/tools/gen_hd_sprites_inc.py`; probar con
+  KHCOM_HDDRAWLOG=<frame>. FALTAN: cursor (gTitleMenuCursorFrame0..4, cuadro naranja), resto de frames 1..5
+  (Cargar partida, Sora, Riku, Combate: componer letras con sblit y src= de UK/FR/GR/IT para O, L, K, M, B),
+  BRILLO (gTitleSoraLumiSpanishFrame0..2, cinta roja con flechas), Pulsa Start (gTitlePressStartSpanishFrame0..4 + barra
+  BG0), crédito (gTitleDevelopedBySpanish), los otros 4 idiomas EU y US/JP.
 - **En Atlas (26/10):** be70ed17 (título final, hija de c4e96953) y d31ab43e (primer plano de la intro): esperar
   valoración. Ratios 1920/2560/3840x1080 revisados (ratios.png): el arte queda dentro del marco. En el primer plano
   «Jupiter» aún roza el panel de Goofy. Ojo: la carpeta de prueba se contamina (salta a MenuNew en el frame 511) si

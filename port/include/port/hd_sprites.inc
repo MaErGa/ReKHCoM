@@ -1516,11 +1516,11 @@ static const HdSpriteDef kHdSprites[] = {
     { gDeckMenuTextItalianTiles, gDeckAddGridMap, "gDeckAddGridItalianBanner", 0, 0, 104, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gTitleMenuSelectedEntrySpanishTiles, gTitleMenuSelectedEntrySpanishFrame0, "gTitleMenuSelectedEntrySpanishFrame0", 16, 0, 103, 11, 2 },
+    { gTitleMenuSelectedEntrySpanishTiles, gTitleMenuSelectedEntrySpanishFrame0, "gTitleMenuSelectedEntrySpanishFrame0", 16, 0, 112, 16, 2 },
 #endif
 #if defined(VERSION_EU)
-    { gTitleMenuEntrySpanishTiles, gTitleMenuEntrySpanishFrame0, "gTitleMenuEntrySpanishFrame0", 3, 0, 116, 15, 2 },
+    { gTitleMenuEntrySpanishTiles, gTitleMenuEntrySpanishFrame0, "gTitleMenuEntrySpanishFrame0", 0, 0, 128, 16, 2 },
 #endif
-    { gTitleMenuSelectedBarTiles, NULL, "gTitleMenuSelectedBar", 3, 11, 116, 4, 2 },
+    { gTitleMenuSelectedBarTiles, NULL, "gTitleMenuSelectedBar", 0, 8, 128, 8, 2 },
 #include "port/synthesis_requirement_hd_entries.inc"
 };
