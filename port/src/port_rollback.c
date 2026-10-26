@@ -116,6 +116,11 @@ static void VisitAll(PortStateVisitor visit) {
     visit(&sTimeline, sizeof(sTimeline));
 }
 
+/* Internal, same-build visual replay checkpoint. No disk state or achievement invalidation. */
+void PortReplayVisitState(PortStateVisitor visit) {
+    VisitAll(visit);
+}
+
 static int Prepare(void) {
     int i;
     if (sSnap[0])

@@ -82,6 +82,17 @@ void Event_0(s32 arg) {
     EvtArg cfg;
     EventBackgroundDef* bg;
 
+#ifdef PLATFORM_PC
+    {
+        extern int gPortGalleryEvent;
+        if (gPortGalleryEvent) {
+            ResetGameState();
+            if ((arg & 0x7FFF) >= EVENT_149_RIKU_B12F_OPNING) SetupRikuNewGame();
+            else SetupSoraNewGame();
+        }
+    }
+#endif
+
     gEventState = EwramAlloc(sizeof(EventState));
     bg = gEventBackgroundDefs[arg & 0x7FFF];
     gBldCnt = 0;
@@ -158,6 +169,7 @@ void Event_0(s32 arg) {
 void EventDebugUpdate() {
     if (gEventState == NULL) {
         ModeRequest(&gModeEventselect, 0);
+        return;
     }
 
     if (!sEventPaused) {
@@ -171,9 +183,9 @@ void EventDebugUpdate() {
 #ifdef PLATFORM_PC
     {
         extern int gPortGalleryEvent;
-        if (gPortGalleryEvent && !gEventState->running) { /* Options > Scenes: straight back to the title */
-            gPortGalleryEvent = 0;
-            ModeRequest(&gModeTitle, 0);
+        if (gPortGalleryEvent && !gEventState->running) {
+            extern void PortSceneGalleryReturn(void);
+            PortSceneGalleryReturn(); /* restore the paused game and the exact gallery list */
             return;
         }
     }

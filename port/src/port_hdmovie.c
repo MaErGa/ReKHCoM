@@ -19,6 +19,7 @@
  * Frames already late when decoded are not uploaded.
  */
 #include "port/port.h"
+#include "port/port_scene_gallery.h"
 
 #if defined(_WIN32) || defined(__ANDROID__) || defined(PORT_ANDROID64) || defined(PORT_LINUX) || defined(PORT_LINUX64_GUEST)
 #include <stdio.h>
@@ -137,6 +138,32 @@ int PortHdMoviePlayName(const char* movie) {
     return PlayFile(movie);
 }
 
+/* The gallery uses the same mapping and movie offsets as live gameplay; never guess a file from an event number. */
+const char* PortHdGalleryMovieName(int sceneId) {
+    int i, startAt;
+    if (PORT_SCENE_IS_MOVIE(sceneId)) return MovieFile(sceneId - PORT_SCENE_MOVIE_BASE, &startAt);
+    for (i = 0; i < PortHdSceneCount(); i++)
+        if (kHdScenes[i].eventId == sceneId) return kHdScenes[i].movie;
+    return NULL;
+}
+int PortHdGalleryMovieOffset(int sceneId) {
+    int startAt = 0;
+    if (PORT_SCENE_IS_MOVIE(sceneId)) MovieFile(sceneId - PORT_SCENE_MOVIE_BASE, &startAt);
+    return startAt;
+}
+
+int PortHdGalleryPlayScene(int sceneId, int hybrid) {
+    const char* movie = PortHdGalleryMovieName(sceneId);
+    int oldStart = sStartAt, played;
+    if (!movie || !PortHdSceneImported(movie)) return 0;
+    if (PORT_SCENE_IS_MOVIE(sceneId)) MovieFile(sceneId - PORT_SCENE_MOVIE_BASE, &sStartAt);
+    if (hybrid && !PORT_SCENE_IS_MOVIE(sceneId)) PlayExtras(sceneId, 1);
+    played = PlayFile(movie);
+    if (hybrid && played && !PORT_SCENE_IS_MOVIE(sceneId)) PlayExtras(sceneId, 0);
+    sStartAt = oldStart;
+    return played;
+}
+
 int PortHdScenePlay(int eventId) {
     size_t i;
     eventId &= 0x7FFF; /* the debug menu's events carry 0x8000 (mode_event.c) */
@@ -167,6 +194,7 @@ int PortHdScenePlay(int eventId) {
 int PortHdMoviePlay(int movieId) {
     int startAt, played;
     const char* name = MovieFile(movieId, &startAt);
+    if (gPortGalleryEvent) return 0; /* the GBA tab always replays the cartridge's own cinematic */
     if (!gPortConfig.hdMovies || name == NULL)
         return 0;
     if ((movieId == 4 && sEndingScenePlayed) || (sLastScene && strcmp(sLastScene, name) == 0)) {
@@ -207,6 +235,81 @@ unsigned char* PortPortableHdTextCover(const char* text, int px, int pad, int* w
 #endif
 
 SDL_Renderer* PortRenderer(void);
+
+#ifdef _WIN32
+/* One selected gallery still, with no audio stream, textures or background decoder retained. */
+int PortHdScenePreview(const char* name, uint32_t* out, int ow, int oh, int second) {
+    char path[1024];
+    WCHAR wpath[1024];
+    IMFAttributes* attrs = NULL;
+    IMFSourceReader* reader = NULL;
+    IMFMediaType* type = NULL;
+    IMFSample* sample = NULL;
+    IMFMediaBuffer* buffer = NULL;
+    IMF2DBuffer* two = NULL;
+    UINT64 size = 0;
+    UINT32 width = 0, height = 0;
+    int ok = 0, i, x, y;
+    BYTE* pixels = NULL;
+    LONG pitch = 0;
+    DWORD length = 0;
+    if (!name || !*name || ow <= 0 || oh <= 0) return 0;
+    MoviePath(name, path, sizeof(path));
+    if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES) return 0;
+    if (!MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, 1024)) return 0;
+    if (FAILED(MFStartup(MF_VERSION, MFSTARTUP_LITE))) return 0;
+    if (FAILED(MFCreateAttributes(&attrs, 1))) goto done;
+    IMFAttributes_SetUINT32(attrs, &MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, TRUE);
+    if (FAILED(MFCreateSourceReaderFromURL(wpath, attrs, &reader))) goto done;
+    IMFSourceReader_SetStreamSelection(reader, (DWORD)MF_SOURCE_READER_ALL_STREAMS, FALSE);
+    IMFSourceReader_SetStreamSelection(reader, (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, TRUE);
+    if (FAILED(MFCreateMediaType(&type))) goto done;
+    IMFMediaType_SetGUID(type, &MF_MT_MAJOR_TYPE, &MFMediaType_Video);
+    IMFMediaType_SetGUID(type, &MF_MT_SUBTYPE, &MFVideoFormat_RGB32);
+    if (FAILED(IMFSourceReader_SetCurrentMediaType(reader, (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, type))) goto done;
+    IMFMediaType_Release(type); type = NULL;
+    if (FAILED(IMFSourceReader_GetCurrentMediaType(reader, (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, &type))) goto done;
+    if (FAILED(IMFMediaType_GetUINT64(type, &MF_MT_FRAME_SIZE, &size))) goto done;
+    width = (UINT32)(size >> 32); height = (UINT32)size;
+    if (!width || !height || width > 4096 || height > 2160) goto done;
+    {
+        static const GUID timeFormat = {0};
+        PROPVARIANT at;
+        PropVariantInit(&at); at.vt = VT_I8; at.hVal.QuadPart = (LONGLONG)second * 10000000;
+        IMFSourceReader_SetCurrentPosition(reader, &timeFormat, &at);
+        PropVariantClear(&at);
+    }
+    for (i = 0; i < 8 && !sample; i++) {
+        DWORD flags = 0;
+        if (FAILED(IMFSourceReader_ReadSample(reader, (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, &flags, NULL, &sample))) goto done;
+        if (flags & MF_SOURCE_READERF_ENDOFSTREAM) goto done;
+    }
+    if (!sample || FAILED(IMFSample_ConvertToContiguousBuffer(sample, &buffer))) goto done;
+    if (SUCCEEDED(IMFMediaBuffer_QueryInterface(buffer, &IID_IMF2DBuffer, (void**)&two)) &&
+        SUCCEEDED(IMF2DBuffer_Lock2D(two, &pixels, &pitch))) {
+        for (y = 0; y < oh; y++) for (x = 0; x < ow; x++)
+            out[y * ow + x] = ((const uint32_t*)(pixels + (LONG)(y * height / oh) * pitch))[x * width / ow] | 0xFF000000u;
+        IMF2DBuffer_Unlock2D(two);
+        ok = 1;
+    } else if (SUCCEEDED(IMFMediaBuffer_Lock(buffer, &pixels, NULL, &length))) {
+        if (length >= (size_t)width * height * 4) {
+            for (y = 0; y < oh; y++) for (x = 0; x < ow; x++)
+                out[y * ow + x] = ((const uint32_t*)pixels)[(y * height / oh) * width + x * width / ow] | 0xFF000000u;
+            ok = 1;
+        }
+        IMFMediaBuffer_Unlock(buffer);
+    }
+done:
+    if (two) IMF2DBuffer_Release(two);
+    if (buffer) IMFMediaBuffer_Release(buffer);
+    if (sample) IMFSample_Release(sample);
+    if (type) IMFMediaType_Release(type);
+    if (reader) IMFSourceReader_Release(reader);
+    if (attrs) IMFAttributes_Release(attrs);
+    MFShutdown();
+    return ok;
+}
+#endif
 
 /* START (the pad's or the keyboard's), Escape or a tap pause the movie under the game's scene pause (back, or skip
    after asking); A and B do nothing, so a press meant for the dialogue before never ends a movie. 1: pause wanted. */
@@ -300,14 +403,16 @@ static int MoviePause(SDL_Renderer* renderer, SDL_Surface* shot, SDL_AudioStream
     {
         /* test harness (KHCOM_HDMOVIE_PAUSETEST): the pause is walked to "skip" and "yes" by key presses */
         static const SDL_Keycode walk[] = { SDLK_DOWN, SDLK_RETURN, SDLK_UP, SDLK_RETURN };
+        static const SDL_Keycode cancelWalk[] = { SDLK_DOWN, SDLK_RETURN, SDLK_ESCAPE, SDLK_ESCAPE };
         int step = 0, tick = 0, test = SDL_getenv("KHCOM_HDMOVIE_PAUSETEST") != NULL;
+        const char* pauseAction = SDL_getenv("KHCOM_HDMOVIE_PAUSE_ACTION");
     while (PortUiActive() && !*quit) {
         SDL_Event e;
         if (test && ++tick % 10 == 0 && step < 4) {
             SDL_Event k;
             SDL_zero(k);
             k.type = SDL_EVENT_KEY_DOWN;
-            k.key.key = walk[step++];
+            k.key.key = pauseAction && !SDL_strcmp(pauseAction, "cancel") ? cancelWalk[step++] : walk[step++];
             k.key.down = true;
             SDL_PushEvent(&k);
         }
@@ -576,7 +681,7 @@ static int PlayFile(const char* name) {
     LONGLONG audioPushed = 0; /* 100 ns units of audio handed to the stream */
     LONGLONG nextVideo = -1;
     IMFSample* pending = NULL;
-    int quit = 0, videoDone = 0, audioDone = 0, played = 0, shown = 0;
+    int quit = 0, videoDone = 0, audioDone = 0, played = 0, shown = 0, tested = 0;
     Subs subs;
     HRESULT hr;
 
@@ -719,7 +824,6 @@ static int PlayFile(const char* name) {
         LONGLONG clock;
         int pause = PauseWanted(&quit);
         {
-            static int tested;
             const char* at = SDL_getenv("KHCOM_HDMOVIE_PAUSETEST");
             if (at && !tested && nextVideo >= (LONGLONG)SDL_atoi(at) * 10000000) {
                 tested = 1;
@@ -920,6 +1024,10 @@ static int PlayFile(const char* name) {
                     skipEnd = clock + 3000000;
                 continue;
             }
+            if (shown >= 10) {
+                extern void PortSceneGalleryMovieCapture(SDL_Renderer* renderer);
+                PortSceneGalleryMovieCapture(renderer);
+            }
             SDL_RenderPresent(renderer);
         }
         {
@@ -974,6 +1082,23 @@ static void ShellQuote(const char* in, char* out, size_t size) {
     out[n] = 0;
 }
 
+int PortHdScenePreview(const char* name, uint32_t* out, int ow, int oh, int second) {
+    char path[1024], quoted[2200], command[2600];
+    FILE* decoder;
+    int ok;
+    if (!name || !*name || ow != 160 || oh != 90) return 0;
+    MoviePath(name, path, sizeof(path));
+    if (access(path, R_OK)) return 0;
+    ShellQuote(path, quoted, sizeof(quoted));
+    SDL_snprintf(command, sizeof(command), "ffmpeg -v error -nostdin -ss %d -i %s -frames:v 1 -vf scale=160:90 "
+                 "-an -f rawvideo -pix_fmt bgra - 2>/dev/null", second, quoted);
+    decoder = popen(command, "r");
+    if (!decoder) return 0;
+    ok = fread(out, 4, (size_t)ow * oh, decoder) == (size_t)ow * oh;
+    if (pclose(decoder) != 0) ok = 0; /* wait/reap: never leave a decoder behind when changing selection */
+    return ok;
+}
+
 static int PlayFile(const char* name) {
     char path[1024], quoted[2200], command[2600], line[256];
     SDL_Renderer* renderer = PortRenderer();
@@ -984,7 +1109,7 @@ static int PlayFile(const char* name) {
     size_t frameBytes = 0;
     int width = 0, height = 0, outW = 0, outH = 0, rate = 48000, channels = 2;
     LONGLONG frameTime = 333333, duration = 0, skipEnd = -1, audioPushed = 0, nextVideo = 0;
-    int quit = 0, videoDone = 0, audioDone = 0, played = 0, shown = 0, dropped = 0, havePending = 0;
+    int quit = 0, videoDone = 0, audioDone = 0, played = 0, shown = 0, dropped = 0, havePending = 0, tested = 0;
     Subs subs;
 
     if (name == NULL || renderer == NULL)
@@ -1067,7 +1192,6 @@ static int PlayFile(const char* name) {
         LONGLONG clock;
         int pause = PauseWanted(&quit);
         {
-            static int tested;
             const char* at = SDL_getenv("KHCOM_HDMOVIE_PAUSETEST");
             if (at && !tested && nextVideo >= (LONGLONG)SDL_atoi(at) * 10000000) {
                 tested = 1;
@@ -1172,6 +1296,10 @@ static int PlayFile(const char* name) {
                 if (skip && skipEnd < 0)
                     skipEnd = clock + 3000000;
                 continue;
+            }
+            if (shown >= 10) {
+                extern void PortSceneGalleryMovieCapture(SDL_Renderer* renderer);
+                PortSceneGalleryMovieCapture(renderer);
             }
             SDL_RenderPresent(renderer);
         }
@@ -1281,6 +1409,9 @@ int PortHdMoviePlayName(const char* movie) {
     (void)movie;
     return 0;
 }
+const char* PortHdGalleryMovieName(int sceneId) { (void)sceneId; return NULL; }
+int PortHdGalleryMovieOffset(int sceneId) { (void)sceneId; return 0; }
+int PortHdGalleryPlayScene(int sceneId, int hybrid) { (void)sceneId; (void)hybrid; return 0; }
 int PortHdMoviePlay(int movieId) {
     (void)movieId;
     return 0;
