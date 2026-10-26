@@ -1,0 +1,40 @@
+{
+  "purpose": "Comprar y Canjear; reproducción determinista por entradas, no savestate RAM binario",
+  "base_commit": "ed820ea11264ed9b0e26948cf486937b76124347",
+  "language": "es",
+  "rom": "roms/B8CP.gba",
+  "save_source": "C:\\Users\\MP\\Documents\\00 Claude\\KHCoMPC\\respaldos\\saves\\jugar\\ReKHCoM-v1.9.15-completo\\kh_com.sav",
+  "save_sha256": "876b3287beec70d727eb7cdc45c46a379b0c6ebf6834f3773efae4fb6388741f",
+  "build": "build/pc-atlas",
+  "hd_sprites": "C:\\Users\\MP\\Documents\\00 Claude\\KHCoMPC\\khcom-claude-int\\build\\hdfull\\hd\\sprites",
+  "config": "config_version=11\nview_mode=4\nzoom=6\nhd_text=1\nhd_cards=1\nhd_title=1\nhd_font=0\nvsync=0\n",
+  "cases": [
+    {
+      "name": "comprar",
+      "env": {
+        "KHCOM_KEYS": "200-203:A,250-253:A,300-303:A,350-353:A,400-403:A,450-453:A,500-503:A,550-553:A,600-603:A,650-653:A,700-703:A,750-753:A,800-803:A,850-853:A,900-903:A",
+        "KHCOM_MODE": "1000:mode_ms_shop"
+      },
+      "frames": [
+        1420,
+        1500
+      ]
+    },
+    {
+      "name": "canjear",
+      "env": {
+        "KHCOM_KEYS": "200-203:A,250-253:A,300-303:A,350-353:A,400-403:A,450-453:A,500-503:A,550-553:A,600-603:A,650-653:A,700-703:A,750-753:A,800-803:A,850-853:A,900-903:A",
+        "KHCOM_MODE": "1000:mode_ms_charge"
+      },
+      "frames": [
+        1420,
+        1500
+      ]
+    }
+  ],
+  "evidence": "build/atlas-moguri-after",
+  "limitations": [
+    "EU/es, renderer software, 1920x1080; las demás variantes no se declaran probadas.",
+    "El guardado se copia a una carpeta aislada; nunca escribir sobre la fuente."
+  ]
+}
