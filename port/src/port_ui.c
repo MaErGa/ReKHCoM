@@ -3990,12 +3990,12 @@ static const char* const sConfirmStatesAsk[LANG_COUNT] = {
     "¿Activar los estados rápidos?", "クイックステートをオンにしますか？",
 };
 static const char* const sConfirmStatesWarn[LANG_COUNT] = {
-    "Only for testing or reproducing bugs. While they are on, no achievements unlock until you turn them off.",
-    "Uniquement pour tester ou reproduire des bugs. Tant qu'ils sont actifs, aucun succès ne se débloque.",
-    "Nur zum Testen oder Nachstellen von Fehlern. Solange sie an sind, werden keine Erfolge freigeschaltet.",
-    "Solo per test o per riprodurre bug. Finché sono attivi non si sblocca nessun obiettivo.",
-    "Solo para pruebas o para replicar errores. Mientras estén activos no se desbloquean logros.",
-    "テストやバグのさいげんのためだけです。オンのあいだはじっせきがかいじょされません。",
+    "Meant for testing. While quick states are on, achievements are paused: none unlock until you turn them off.",
+    "Prévu pour les tests. Tant que les états rapides sont actifs, les succès sont en pause : aucun ne se débloque.",
+    "Zum Testen gedacht. Solange Schnellstände an sind, sind Erfolge pausiert: Es wird keiner freigeschaltet.",
+    "Pensato per i test. Finché gli stati rapidi sono attivi, gli obiettivi sono in pausa: non se ne sblocca nessuno.",
+    "Pensado para pruebas. Mientras los estados rápidos estén activos, los logros quedan en pausa: no se desbloquea ninguno.",
+    "テスト用です。クイックステートがオンのあいだ、じっせきはていしし、かいじょされません。",
 };
 static const char* const sConfirmStatesRows[2][LANG_COUNT] = {
     { "No", "Non", "Nein", "No", "No", "いいえ" },
