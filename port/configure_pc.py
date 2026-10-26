@@ -114,6 +114,17 @@ def main():
         n.rule("as", "$cc -c $in -o $out", description="AS $in")
         n.variable("windres", "\"" + str(toolchain / "bin" / "i686-w64-mingw32-windres.exe").replace("\\", "/") + "\"")
         n.rule("rc", "$windres -I port/decompui/assets -I port/assets/fonts -I port/include $in -O coff -o $out", description="RC $in")
+        sys.path.insert(0, str(ROOT / 'port/tools'))
+        from core_assets import core_assets
+        core_files = core_assets()
+        n.rule("core_resources", '"' + sys.executable.replace('\\', '/') +
+               '" port/tools/gen_core_resources.py --out "$out"', description="CORE ASSETS $out")
+        n.build("$builddir/port/core_assets.rc", "core_resources",
+                implicit=["port/tools/gen_core_resources.py", "port/tools/core_assets.py",
+                          "port/tools/review_hd_hud.py", "port/assets/hd-hud/sprites/manifest.json"] +
+                         [rel(p) for p in core_files.values()])
+        n.build("$builddir/port/core_assets_rc.o", "rc", "$builddir/port/core_assets.rc",
+                implicit=[rel(p) for p in core_files.values()])
         n.rule("link", "$cc @$out.rsp -o $out $ldflags", rspfile="$out.rsp", rspfile_content="$in",
                description="LINK $out")
         n.rule("copy", 'cmd /c copy /y "$in_win" "$out_win" >nul', description="COPY $out")
@@ -151,6 +162,7 @@ def main():
                 implicit=["port/decompui/assets/rekhcom.ico", "port/include/port/port_font_resources.h",
                           "port/assets/fonts/KHMenu.otf", "port/assets/fonts/ComicHearts.otf"])
         objs.append("$builddir/port/rekhcom_rc.o")
+        objs.append("$builddir/port/core_assets_rc.o")
         n.newline()
         n.build("$builddir/khcom.exe", "link", objs)
         dll = sdl_arch / "bin" / "SDL3.dll"
@@ -186,6 +198,7 @@ def decompui(n, toolchain, sdl_arch, debug, ra_objs):
         n.build(obj, "cxx_ui", rel(src))
         objs.append(obj)
     objs.append("$builddir/port/rekhcom_rc.o")
+    objs.append("$builddir/port/core_assets_rc.o")
     n.build("$builddir/decompui/offline_achievements.o", "cc_port", "port/achievements/offline_achievements.c",
             implicit=["port/achievements/official_set_eu.inc"])
     objs += ra_objs + ["$builddir/decompui/offline_achievements.o"]

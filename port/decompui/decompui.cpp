@@ -39,6 +39,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include "port/port_embedded_assets.h"
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -238,8 +239,15 @@ static std::string Sha1Hex(const std::vector<unsigned char>& data) {
 
 static bool ReadFile(const fs::path& path, std::vector<unsigned char>& out, size_t limit = 64u << 20) {
     std::ifstream f(path, std::ios::binary);
-    if (!f)
-        return false;
+    if (!f) {
+        std::string name = path.lexically_relative(sRoot).generic_string();
+        size_t bytes = 0;
+        const auto* data = name.rfind("assets/", 0) == 0 ?
+            static_cast<const unsigned char*>(PortEmbeddedAssetData(name.c_str(), &bytes)) : nullptr;
+        if (!data || bytes > limit) return false;
+        out.assign(data, data + bytes);
+        return true;
+    }
     f.seekg(0, std::ios::end);
     std::streamoff size = f.tellg();
     if (size <= 0 || size > (std::streamoff)limit)
@@ -978,9 +986,17 @@ static void LoadFonts() {
         std::string kh = (sRoot / "assets" / "fonts" / "KHMenu.otf").string();
         static const ImWchar khRanges[] = { 0x0020, 0x00FF, 0 };
         static const ImWchar arrows[] = { 0x2190, 0x2193, 0x25B6, 0x25C0, 0 };
-        if (fs::exists(kh)) {
+        size_t embeddedSize = 0;
+        const void* embedded = PortEmbeddedAssetData("assets/fonts/KHMenu.otf", &embeddedSize);
+        if (fs::exists(kh) || embedded) {
             auto load = [&](float size) {
-                ImFont* f = io.Fonts->AddFontFromFileTTF(kh.c_str(), size, &cfg, khRanges);
+                ImFont* f = fs::exists(kh) ? io.Fonts->AddFontFromFileTTF(kh.c_str(), size, &cfg, khRanges) : nullptr;
+                if (!f && embedded && embeddedSize <= 0x7fffffff) {
+                    ImFontConfig memoryConfig = cfg;
+                    memoryConfig.FontDataOwnedByAtlas = false;
+                    f = io.Fonts->AddFontFromMemoryTTF(const_cast<void*>(embedded), (int)embeddedSize,
+                                                      size, &memoryConfig, khRanges);
+                }
                 if (f && fs::exists(regular)) {
                     ImFontConfig merge = cfg;
                     merge.MergeMode = true;

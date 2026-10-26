@@ -9,6 +9,7 @@
 #endif
 
 #include "port/port.h"
+#include "port/port_embedded_assets.h"
 #include "port/port_aspect.h"
 
 PortConfig gPortConfig = {
@@ -246,10 +247,20 @@ void* PortLoadAsset(const char* name, size_t* size) {
     }
     if (!data && SDL_strncmp(name, "assets/", 7) == 0)
         data = SDL_LoadFile(name + 7, size);
+    if (!data) {
+        size_t embeddedSize = 0;
+        const void* embedded = PortEmbeddedAssetData(name, &embeddedSize);
+        if (embedded && embeddedSize < (size_t)-1 && (data = SDL_malloc(embeddedSize + 1)) != NULL) {
+            SDL_memcpy(data, embedded, embeddedSize);
+            ((unsigned char*)data)[embeddedSize] = 0;
+            if (size) *size = embeddedSize;
+            PortLog("core asset: embedded %s (%u bytes)", name, (unsigned)embeddedSize);
+        }
+    }
     if (!data && SDL_strcmp(name, "assets/achievements/badges.png") == 0 &&
         (data = SDL_malloc(sizeof(sBadgesPng))) != NULL) {
         SDL_memcpy(data, sBadgesPng, sizeof(sBadgesPng));
-        *size = sizeof(sBadgesPng);
+        if (size) *size = sizeof(sBadgesPng);
     }
     return data;
 }
@@ -348,11 +359,11 @@ static void ApplyEnvConfig(void) {
         char* eq;
         next = SDL_strchr(item, ';');
         if (next)
-            *next++ = ' ';
+            *next++ = '\0';
         eq = SDL_strchr(item, '=');
         if (!eq)
             continue;
-        *eq = ' ';
+        *eq = '\0';
         for (i = 0; i < sizeof(sKeys) / sizeof(sKeys[0]); i++)
             if (SDL_strcmp(Trim(item), sKeys[i].name) == 0)
                 *sKeys[i].value = SDL_clamp(SDL_atoi(eq + 1), sKeys[i].min, sKeys[i].max);
