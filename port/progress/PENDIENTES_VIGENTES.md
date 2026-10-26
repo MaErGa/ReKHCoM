@@ -1,5 +1,15 @@
 # Pendientes vigentes hacia la v2.0 (lista limpia, 25/10/2026 noche)
 
+## TRASPASO ACTIVO — Codex, 25/10 noche
+
+Prioridad más reciente del usuario: **integrar lo aprobado → terminar pendientes de código → ZIP clean → Atlas al final**. Claude está pausado; Codex continúa la integración. Las listas históricas de abajo no reabren funciones ya integradas.
+
+- Fuentes core, rama `codex/core-fonts-clean`: reproducida la pérdida en la copia de prueba de barriles (`hd_text=1`, KHMenu elegida, carpeta de fuentes ausente). KHMenu y Comic Hearts quedan también dentro del ejecutable Windows, sin cambiar la elección Sistema ni Texto HD apagado. El ZIP conserva ambas fuentes y el empaquetador rechaza binarios sin esos recursos. Compilación EU, arranque sin assets, comprobación de payload y `check_sources.py` correctos. Recursos de versión sincronizados con pre19.
+- Integrado: PR192, pintor de píxeles Atlas y respuestas generales conjuntas; PR193, versiones aprobadas exactas de 081/097/110/112 (`bd784a0b2f7c62646a365dc5ebdc4e79dadf2646`). Sus comentarios nuevos siguen en Atlas; no equivalen a errores pendientes de integración.
+- Código siguiente: unificar la línea roja de opciones no instaladas (HD y ROM japonesa); lista Re:CoM del modo rebelde; revisar resultados pendientes de baterías y retest Android 123/124. Bancos por banco siguen aplazados según el diseño vigente. El botón Opciones y el título HD esperan su arte y van al final con Atlas.
+- ZIP pre19 existente: todavía anterior a estas integraciones; **no entregarlo como build actual**. Reconstruir EU/US/JP desde el cierre de código, verificar fuentes y limpieza antes de entregarlo. No publicar release sin autorización.
+
+
 ## Meta vigente del usuario — 25/10/2026
 
 Ver [META_V2_0.md](META_V2_0.md): arena Trickmaster → escena099 →004 → Síntesis (carta HD dinámica) → Añadir naipes (cantidades detrás del selector); después el resto de piezas comentadas y verificaciones técnicas vigentes. Este orden sustituye órdenes históricos. PR111/114 integrados; propuestas nuevas121/122/123/124 en Atlas y en revisión, no cerradas por subirlas. El documento conserva las mejoras futuras fuera de bloqueantes por defecto. Publicar la estable requiere OK.

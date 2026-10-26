@@ -14,6 +14,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def check_core_fonts(files):
+    """Reject stale game binaries that would lose their fonts when copied alone."""
+    fonts = {name: files["assets/fonts/" + name].read_bytes()
+             for name in ("KHMenu.otf", "ComicHearts.otf")}
+    for name, data in fonts.items():
+        if not data.startswith(b"OTTO"):
+            raise ValueError(f"invalid core font: {name}")
+    for region in ("eu", "us", "jp"):
+        name = f"bin/khcom_{region}.exe"
+        binary = files[name].read_bytes()
+        for font, data in fonts.items():
+            if data not in binary:
+                raise ValueError(f"{name} has no embedded {font}; rebuild this region before packaging")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
@@ -56,6 +71,10 @@ def main():
     for source in files.values():
         if not source.is_file():
             parser.error(f"missing package input: {source}")
+    try:
+        check_core_fonts(files)
+    except ValueError as error:
+        parser.error(str(error))
     if args.nightly_notice:
         if not args.nightly_notice.is_file():
             parser.error(f"missing nightly notice: {args.nightly_notice}")

@@ -113,7 +113,7 @@ def main():
                depfile="$out.d", deps="gcc")
         n.rule("as", "$cc -c $in -o $out", description="AS $in")
         n.variable("windres", "\"" + str(toolchain / "bin" / "i686-w64-mingw32-windres.exe").replace("\\", "/") + "\"")
-        n.rule("rc", "$windres -I port/decompui/assets $in -O coff -o $out", description="RC $in")
+        n.rule("rc", "$windres -I port/decompui/assets -I port/assets/fonts -I port/include $in -O coff -o $out", description="RC $in")
         n.rule("link", "$cc @$out.rsp -o $out $ldflags", rspfile="$out.rsp", rspfile_content="$in",
                description="LINK $out")
         n.rule("copy", 'cmd /c copy /y "$in_win" "$out_win" >nul', description="COPY $out")
@@ -148,7 +148,8 @@ def main():
             objs.append(obj)
         # the icon (port/decompui/assets/rekhcom.ico), for the game and the launcher
         n.build("$builddir/port/rekhcom_rc.o", "rc", "port/decompui/rekhcom.rc",
-                implicit=["port/decompui/assets/rekhcom.ico"])
+                implicit=["port/decompui/assets/rekhcom.ico", "port/include/port/port_font_resources.h",
+                          "port/assets/fonts/KHMenu.otf", "port/assets/fonts/ComicHearts.otf"])
         objs.append("$builddir/port/rekhcom_rc.o")
         n.newline()
         n.build("$builddir/khcom.exe", "link", objs)
