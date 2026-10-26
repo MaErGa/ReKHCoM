@@ -1,0 +1,41 @@
+[
+  {
+    "cut": "01",
+    "id": "2f93c47e6dad42d1b61a96ca3d8e7083",
+    "parent": "42f2b038ff7a4907b9b798c4ae41ffec",
+    "submission": "20261025-172335-4d7739",
+    "path": "port/art/proposals/maleficent-lomo-r2/cut-01-study.png",
+    "size": [
+      1774,
+      887
+    ],
+    "kind": "generated-art-study",
+    "native_adaptation": "pending"
+  },
+  {
+    "cut": "02",
+    "id": "d44b24262467494cbe3fc454ed5df1f5",
+    "parent": "608f0f55d2e448e98be2869cbcd59cb9",
+    "submission": "20261025-172346-992d44",
+    "path": "port/art/proposals/maleficent-lomo-r2/cut-02-study.png",
+    "size": [
+      1774,
+      887
+    ],
+    "kind": "generated-art-study",
+    "native_adaptation": "pending"
+  },
+  {
+    "cut": "03",
+    "id": "47658cfa72ee4785b2469abec62eddd0",
+    "parent": "71dbfe5051d54081afc19d6b69c5cdd6",
+    "submission": "20261025-172354-778103",
+    "path": "port/art/proposals/maleficent-lomo-r2/cut-03-study.png",
+    "size": [
+      1774,
+      887
+    ],
+    "kind": "generated-art-study",
+    "native_adaptation": "pending"
+  }
+]
