@@ -83,13 +83,18 @@ void ModeBlankDisplay() {
 
 #ifdef PLATFORM_PC
 extern Mode gModeDeck, gModeStatus, gModeJiminy, gModeAllmap, gModeMapinspect, gModeWorldinspect,
-    gModeWorldselect, gModeWORLDSELECT, gModeWorldwarp, gModeMsTop;
+    gModeWorldselect, gModeWORLDSELECT, gModeWorldwarp, gModeMsTop, gModeMsShop, gModeMsCharge;
+
+int PortMoogleMenu(void) {
+    return gCurrentMode == &gModeMsShop || gCurrentMode == &gModeMsCharge;
+}
 
 /* Derive this from the live mode so loading a state needs no extra flag. */
 int PortMenuBackgroundOnly(void) {
     /* menus whose own BG panels reach the edge: sprites there (NEW badges,
        the pointing glove) must never be carried into the margin */
-    return gCurrentMode == &gModeStatus || gCurrentMode == &gModeMapinspect || gCurrentMode == &gModeDeck;
+    return gCurrentMode == &gModeStatus || gCurrentMode == &gModeMapinspect || gCurrentMode == &gModeDeck
+        || gCurrentMode == &gModeMsShop || gCurrentMode == &gModeMsCharge;
 }
 
 /* The menu screens drawn over the whole GBA picture: their backgrounds end
@@ -98,6 +103,7 @@ static int ModeIsFullScreenMenu(const Mode* mode) {
     return mode == &gModeDeck || mode == &gModeStatus || mode == &gModeJiminy || mode == &gModeAllmap
         || mode == &gModeMapinspect || mode == &gModeWorldinspect || mode == &gModeWorldselect
         || mode == &gModeWORLDSELECT || mode == &gModeWorldwarp || mode == &gModeMsTop
+        || mode == &gModeMsShop || mode == &gModeMsCharge
         || mode == &gModeMenuNew || mode == &gModeMenuLoad;
 }
 #endif
@@ -121,7 +127,8 @@ void ModeStart(Mode* mode, s32 arg) {
     PortMenuPanelSide(-1);
     PortMenuHeaderSource(NULL, NULL, NULL);
     PortSideStyle(mode == &gModeAllmap ? PORT_SIDE_PATTERN :
-                  (mode == &gModeDeck || mode == &gModeStatus || mode == &gModeMapinspect)
+                  (mode == &gModeDeck || mode == &gModeStatus || mode == &gModeMapinspect ||
+                   mode == &gModeMsShop || mode == &gModeMsCharge)
                       ? PORT_SIDE_MENU :
                   /* live backgrounds: the blurred reflection, with the bars carried on */
                   (mode == &gModeWORLDSELECT || mode == &gModeWorldwarp) ? PORT_SIDE_BLUR_BANDS
