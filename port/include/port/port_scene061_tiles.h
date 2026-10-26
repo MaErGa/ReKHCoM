@@ -23,9 +23,11 @@ static inline int PortScene061TileSource(int bg, int width, int height, int* x, 
             *y += 6;
             return 1;
         }
-        if (bg == 2 && *x >= -5 && *x <= 3 && *y >= 3 && *y <= 7) {
+        if (bg == 2 && *x >= -5 && *x <= 3 && *y >= 3 && *y <= 7 && 2 * *y - *x > 4) {
             /* Original transparent entry: keep the old extension ornament
-             * from being drawn over the newly completed floor diamond. */
+             * from being drawn over the newly completed floor diamond.
+             * Keep the diagonal wall toe above that floor, including its
+             * two partial tiles: a rectangular mask cut those tips away. */
             *x = 0;
             *y = 3;
             return 1;
