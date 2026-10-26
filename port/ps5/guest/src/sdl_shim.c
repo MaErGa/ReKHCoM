@@ -234,7 +234,16 @@ SDL_Window** SDL_GetWindows(int* count) {
     return list;
 }
 bool SDL_SyncWindow(SDL_Window* w) { (void)w; return true; }
-bool SDL_SetWindowFullscreen(SDL_Window* w, bool f) { (void)w; (void)f; return true; }
+bool SDL_SetWindowFullscreen(SDL_Window* w, bool f) {
+    (void)w;
+#ifdef PORT_LINUX64_GUEST
+    /* octal: "\x01f..." would read as the one character 0x1f */
+    h_set_title(f ? "\001fullscreen=1" : "\001fullscreen=0"); /* the 64-bit Linux host (port/linux64) */
+#else
+    (void)f;
+#endif
+    return true;
+}
 bool SDL_SetWindowFullscreenMode(SDL_Window* w, const SDL_DisplayMode* m) { (void)w; (void)m; return true; }
 const SDL_DisplayMode* SDL_GetWindowFullscreenMode(SDL_Window* w) { (void)w; return NULL; }
 bool SDL_SetWindowSize(SDL_Window* w, int a, int b) { (void)w; (void)a; (void)b; return true; }
