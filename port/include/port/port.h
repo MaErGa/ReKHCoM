@@ -174,6 +174,7 @@ typedef struct PortConfig {
     int hdSubtitles;           /* HD mod: the HD movies and scenes show Re:CoM's subtitles in the game's language (on) */
     int hdCards;               /* HD mod, beta: battle cards drawn with Re:CoM's HD art (port_hdsprites.c, off) */
     int hdTitle;               /* HD mod, beta: the title screen's logo drawn with Re:CoM's HD art (port_hdsprites.c, off) */
+    int titleBrightnessButton; /* experimental: restore the cartridge's title brightness control outside Original view */
     int graphicsMode;          /* PORT_MODE_*: chosen on the first start (0 asks), each with its presets (PortApplyGraphicsMode) */
     int graphicsModeApplied;   /* the mode whose presets were last applied: the launcher only changes graphics_mode */
     int gbaBorder;             /* GBA classic: the decorative border around the GBA picture (0 none, 1..3 designs) */
@@ -213,6 +214,7 @@ int PortEventBackdropPanel(void); /* single authored backdrop panel, or -1 */
 int PortEventTiledBackdrop(void); /* Riku scenery eligible for verified tile-band extension, or -1 */
 int PortEventBackdropProfile(void); /* current story event, -1 outside events */
 void PortConfigLoad(void);
+int PortTitleBrightnessAllowed(void);
 void PortConfigSetDataPath(const char* path);
 void PortConfigSave(void);
 /* Graphics modes (first start, launcher, Options > reset to a mode's defaults). */
@@ -342,6 +344,7 @@ uint32_t PortMenuHeaderPixel(int y, int phase);
 uint32_t PortMenuHeaderPixelAt(int y, int distance); /* follows the header sprite's slide */
 uint32_t PortMenuBandPixel(int y, int phase);
 uint32_t PortTitleBandPixel(int side, int y);
+uint32_t PortTitleFooterPixel(int side, int y); /* OBJ underline only, above the title's HD illustration */
 int PortSpotlightActive(void);
 uint32_t PortMenuTabPixel(int y, int phase, int side);
 

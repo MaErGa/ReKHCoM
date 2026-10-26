@@ -861,6 +861,19 @@ u8 task_title_lumichange_1(TitleLumiChangeWork* work) {
     u32 i;
     s32 j;
 
+#ifdef PLATFORM_PC
+    extern int PortTitleBrightnessAllowed(void);
+    if (!PortTitleBrightnessAllowed()) {
+        /* This compensates for the original GBA's physical display. Modern
+           modes keep neutral colours; hidden L/R must not change them. */
+        if (GetPaletteEffect() != 0) {
+            SetPaletteEffect(0);
+            TitleLoadPaletteBuffer();
+        }
+        return 1;
+    }
+#endif
+
     effect = GetPaletteEffect();
     memcpy(levels, sTitleLumiLevels, sizeof(levels));
 
@@ -899,6 +912,11 @@ void task_title_lumichange_2(TitleLumiChangeWork* work) {
     s16 effect;
     void** frames;
     s16 x;
+
+#ifdef PLATFORM_PC
+    extern int PortTitleBrightnessAllowed(void);
+    if (!PortTitleBrightnessAllowed()) return;
+#endif
 
     effect = GetPaletteEffect();
 

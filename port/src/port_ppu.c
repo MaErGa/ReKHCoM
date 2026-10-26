@@ -342,9 +342,13 @@ static int sSceneNarrow, sNarrowWanted, sNarrowWait; /* PortSceneNarrow, below *
 static int sSpotlight;
 static int sTitleArtFade, sTitleBands;
 static uint32_t sTitleBand[2][GBA_SCREEN_H];
+static uint8_t sTitleBandObj[2][GBA_SCREEN_H];
 void PortTitleBands(int enabled) { sTitleBands = enabled != 0; }
 unsigned int PortTitleBandPixel(int side, int y) {
     return sTitleBands && y >= 0 && y < GBA_SCREEN_H ? sTitleBand[side > 0][y] : 0;
+}
+unsigned int PortTitleFooterPixel(int side, int y) {
+    return sTitleBands && y >= 0 && y < GBA_SCREEN_H && sTitleBandObj[side > 0][y] ? sTitleBand[side > 0][y] : 0;
 }
 static uint16_t sTitlePalette[256], sTitleFadeColors[49][256];
 static uint8_t sTitleFadeReady[49][256];
@@ -817,6 +821,10 @@ static PPU_TLS uint16_t sObjLine[PORT_MAX_W];
 static PPU_TLS int sLineHasObjects;
 static PPU_TLS uint8_t sObjPrio[PORT_MAX_W];
 static PPU_TLS uint8_t sObjIndex[PORT_MAX_W];
+/* Native pixels suppressed by HD title signs, used only to continue their
+   authored footer bands. They never draw back over the HD lettering. */
+static PPU_TLS uint16_t sTitleSampleLine[PORT_MAX_W];
+static PPU_TLS uint8_t sTitleSamplePrio[PORT_MAX_W], sTitleSampleSemi[PORT_MAX_W];
 /* HUD layer: what covers each canvas pixel in the GBA's own compositing, so
    HUD sprites stay behind what the cartridge draws in front of them: the
    highest-priority opaque BG (4: none) and the winning other OBJ as
@@ -2328,6 +2336,8 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
         sScrPrio[i] = 4;
         sScrIndex[i] = 127;
         sObjWin[i] = 0;
+        sTitleSampleLine[i] = TRANSPARENT;
+        sTitleSamplePrio[i] = 4;
     }
     if (!(dispcnt & 0x1000))
         return;
@@ -2348,6 +2358,7 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
         int palBank = a2 >> 12;
         int16_t pa = 0x100, pb = 0, pc = 0, pd = 0x100;
         int objMosaic = (a0 >> 12) & 1;
+        int bandOnly = sMainHdPart[i] && !PortHdSpriteKeepsCartridge(sOamHd[i].id);
 
         if (!affine && dbl)
             continue; /* disabled */
@@ -2357,7 +2368,7 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
             continue; /* drawn by PortPpuRenderHud */
         if (HdTextGlyph(i) && sOamTag[i].style != 2)
             continue; /* drawn by port_hdtext.c */
-        if (sMainHdPart[i] && !PortHdSpriteKeepsCartridge(sOamHd[i].id))
+        if (bandOnly && !(sTitleBarHd && gy >= 143))
             continue; /* drawn by port_hdsprites.c over the picture */
         ow = sObjSize[shape][size][0];
         oh = sObjSize[shape][size][1];
@@ -2471,6 +2482,14 @@ static void DrawObjs(int gy, uint16_t dispcnt) {
             }
             if (col < 0)
                 continue;
+            if (bandOnly) {
+                if (sTitleSampleLine[x] == TRANSPARENT || prio < sTitleSamplePrio[x]) {
+                    sTitleSampleLine[x] = (uint16_t)col;
+                    sTitleSamplePrio[x] = (uint8_t)prio;
+                    sTitleSampleSemi[x] = mode == 1;
+                }
+                continue;
+            }
             if (sOamTag[i].header && x < gPortScreen.originX) {
                 /* off the GBA screen: the band, not hidden lettering */
                 int band = HeaderBandColor(gy, x - gPortScreen.originX); /* headers are drawn at y 0 */
@@ -2946,7 +2965,7 @@ static void BuildTitleBands(int gy, const int* bgOn) {
     if (!sTitleBands || gy < 0 || gy >= GBA_SCREEN_H || sEnvTitleBandsOff) return;
     for (side = 0; side < 2; side++) {
         int edge = gPortScreen.originX + (side ? GBA_SCREEN_W - 1 : 0);
-        int step = side ? -1 : 1, k, layer = -1;
+        int step = side ? -1 : 1, k, layer = -1, objSemi = 0;
         uint16_t c = TRANSPARENT, white = PLTT16[31] & 0x7FFF;
         uint16_t ctrl = IO16(0x50), alpha = IO16(0x52);
         int effect = (ctrl >> 6) & 3;
@@ -2958,13 +2977,32 @@ static void BuildTitleBands(int gy, const int* bgOn) {
         }
         /* The brightness footer is an OBJ rooted at the native edge.
            Its authored band begins at y=143; labels remain inside. */
-        if (gy >= 143 && sObjLine[edge] != TRANSPARENT) {
-            uint16_t obj = sObjLine[edge];
-            for (k = 0; k < 8 && sObjLine[edge + k * step] == obj; k++) {}
-            if (k == 8) { c = obj; layer = LAYER_OBJ; }
+        if (gy >= 143) {
+            /* Title signs can be assigned to the independent screen layer.
+               Its black underline must be sampled there too. */
+            int sample = sTitleSampleLine[edge] != TRANSPARENT;
+            int screen = sOverlay && sScrLine[edge] != TRANSPARENT;
+            const uint16_t* line = sample ? sTitleSampleLine : screen ? sScrLine : sObjLine;
+            if (line[edge] != TRANSPARENT) {
+                uint16_t obj = line[edge];
+                for (k = 0; k < 8 && line[edge + k * step] == obj; k++) {}
+                if (k == 8) {
+                    c = obj; layer = LAYER_OBJ;
+                    objSemi = sample ? sTitleSampleSemi[edge] : screen ? sScrSemi[edge] : sObjSemi[edge];
+                }
+            }
         }
         if (layer < 0) continue;
-        if ((layer == LAYER_OBJ && sObjSemi[edge]) ||
+        if (sTitleBarHd) {
+            /* The HD illustration covers the presenter's old margin bands.
+               Extend the actual BG0 run before queueing its smooth HD bar,
+               so both its pink stripe and black footer reach the edge. */
+            int x, begin = side ? edge + 1 : 0, end = side ? gPortScreen.width : edge;
+            for (x = begin; x < end; x++) {
+                if (layer == 0) sBgLine[0][x] = c;
+            }
+        }
+        if ((layer == LAYER_OBJ && objSemi) ||
             (effect == 1 && (ctrl & (1 << layer))))
             c = Blend(c, white, (alpha & 31) > 16 ? 16 : alpha & 31,
                       ((alpha >> 8) & 31) > 16 ? 16 : (alpha >> 8) & 31);
@@ -2975,6 +3013,7 @@ static void BuildTitleBands(int gy, const int* bgOn) {
             if (effect == 3) c = Darken(c, evy);
         }
         sTitleBand[side][gy] = sColorLut[c];
+        sTitleBandObj[side][gy] = layer == LAYER_OBJ;
     }
 }
 
@@ -3516,6 +3555,7 @@ void PortPpuBeginFrame(void) {
     }
 
     memset(sTitleBand, 0, sizeof(sTitleBand));
+    memset(sTitleBandObj, 0, sizeof(sTitleBandObj));
     BuildLut();
     UpdateSceneNarrow(dispcnt);
     for (b = 0; b < 4; b++) {

@@ -150,6 +150,7 @@ static const Key sKeys[] = {
     { "hd_subtitles", &gPortConfig.hdSubtitles, 0, 1 },
     { "hd_cards", &gPortConfig.hdCards, 0, 1 },
     { "hd_title", &gPortConfig.hdTitle, 0, 1 },
+    { "experimental_title_brightness", &gPortConfig.titleBrightnessButton, 0, 1 },
     { "graphics_mode", &gPortConfig.graphicsMode, 0, PORT_MODE_COUNT - 1 },
     { "graphics_mode_applied", &gPortConfig.graphicsModeApplied, 0, PORT_MODE_COUNT - 1 },
     { "gba_border", &gPortConfig.gbaBorder, 0, 3 },
@@ -522,6 +523,11 @@ int PortAssetsPresentMask(void) {
     for (i = 0; i < PORT_ASSET_COUNT; i++)
         mask |= PortAssetPresent(i) << i;
     return mask;
+}
+
+int PortTitleBrightnessAllowed(void) {
+    return gPortConfig.titleBrightnessButton || gPortConfig.graphicsMode == PORT_MODE_GBA_CLASSIC ||
+           gPortConfig.viewMode == PORT_VIEW_ORIGINAL;
 }
 
 void PortApplyGraphicsMode(int mode) {

@@ -162,6 +162,7 @@ enum {
     ITEM_CHEAT_REBEL_LIST,    /* its own achievements */
     ITEM_CHEAT_DEBUG_HEADING, /* section heading, not selectable */
     ITEM_CHEAT_GBA_MAP,
+    ITEM_CHEAT_TITLE_BRIGHTNESS,
     ITEM_CHEATS_BACK,
     ITEM_REMATCH_0, /* PortRematchCount() rows: the bosses, then the two tutorials */
     ITEM_REMATCH_LAST = ITEM_REMATCH_0 + 13,
@@ -483,6 +484,8 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Debug mode", "Mode debug", "Debug-Modus", "Modalità debug", "Modo debug", "デバッグモード" },
     { "[ReKHCoM] GBA map logic", "[ReKHCoM] Logique carte GBA", "[ReKHCoM] GBA-Kartenlogik",
       "[ReKHCoM] Logica mappa GBA", "[ReKHCoM] Lógica Mapa GBA", "[ReKHCoM] GBAマップロジック" },
+    { "GBA title brightness", "Luminosité du titre GBA", "GBA-Titelhelligkeit", "Luminosità titolo GBA",
+      "Brillo del título GBA", "GBAタイトルの明るさ" },
     { "Back", "Retour", "Zurück", "Indietro", "Volver", "戻る" },
     { "Guard Armor", "Guard Armor", "Guard Armor", "Guard Armor", "Guard Armor", "Guard Armor" },
     { "Trickmaster", "Trickmaster", "Trickmaster", "Trickmaster", "Trickmaster", "Trickmaster" },
@@ -664,8 +667,8 @@ static const char* const sHelpNg[LANG_COUNT] = {
     "ââ Elegir   ââ Cambiar   A Comenzar",
     "ââ 選択   ââ 変更   A はじめる",
 };
-static const char* const sTitleHint[LANG_COUNT] = { "SELECT  Options", "SELECT  Options", "SELECT  Optionen",
-                                                    "SELECT  Opzioni", "SELECT  Opciones",
+static const char* const sTitleHint[LANG_COUNT] = { "SELECT  OPTIONS", "SELECT  OPTIONS", "SELECT  OPTIONEN",
+                                                    "SELECT  OPZIONI", "SELECT  OPCIONES",
     "SELECT  オプション",
 };
 static const char* const sDifficulty[3][LANG_COUNT] = {
@@ -888,6 +891,8 @@ void PortUiHdDraw(SDL_Renderer* renderer, float x, float y, float scale) {
 
 static void Shade(int x0, int y0, int w, int h, uint32_t color, int alpha) {
     int glyph;
+    if (alpha <= 0) return;
+    alpha = SDL_min(alpha, 256);
     if (sFb == sHdUiFrame)
         for (glyph = 0; glyph < sHdUiCount; glyph++)
             if (sHdUiGlyphs[glyph].x + 3 >= x0 && sHdUiGlyphs[glyph].x + 3 < x0 + w &&
@@ -898,10 +903,21 @@ static void Shade(int x0, int y0, int w, int h, uint32_t color, int alpha) {
     int x, y;
 
     for (y = SDL_max(y0, 0); y < SDL_min(y0 + h, sFbH); y++)
-        for (x = SDL_max(x0, 0); x < SDL_min(x0 + w, sFbW); x++)
-            sFb[y * sFbW + x] = !(sFb[y * sFbW + x] >> 24) /* clear (the HD picture under it): a veil of this colour */
-                ? (color & 0xFFFFFFu) | (uint32_t)SDL_min(alpha, 255) << 24
-                : Mix(sFb[y * sFbW + x], color, alpha);
+        for (x = SDL_max(x0, 0); x < SDL_min(x0 + w, sFbW); x++) {
+            uint32_t old = sFb[y * sFbW + x], a = old >> 24;
+            if (a == 255) {
+                sFb[y * sFbW + x] = Mix(old, color, alpha);
+            } else {
+                /* Source-over in straight alpha: the Options HD picture is
+                   drawn below this canvas. Making its translucent veil opaque
+                   on the next shade hid the picture during entrance/exit. */
+                uint32_t keep = a * (256 - alpha) >> 8, outA = alpha + keep;
+                uint32_t r = (((old >> 16) & 255) * keep + ((color >> 16) & 255) * alpha) / outA;
+                uint32_t g = (((old >> 8) & 255) * keep + ((color >> 8) & 255) * alpha) / outA;
+                uint32_t b = ((old & 255) * keep + (color & 255) * alpha) / outA;
+                sFb[y * sFbW + x] = (SDL_min(outA, 255u) << 24) | r << 16 | g << 8 | b;
+            }
+        }
 }
 
 static void Rect(int x0, int y0, int w, int h, uint32_t c) {
@@ -1327,6 +1343,9 @@ static void ValueText(int item, char* out, size_t size) {
         case ITEM_MOOGLE_NOTICE:
             SDL_strlcpy(out, sOnOff[gPortConfig.moogleNotice != 0][l], size);
             break;
+        case ITEM_CHEAT_TITLE_BRIGHTNESS:
+            SDL_strlcpy(out, sOnOff[gPortConfig.titleBrightnessButton != 0][l], size);
+            break;
         case ITEM_UNSTOCK:
             SDL_strlcpy(out, sOnOff[gPortConfig.unstockButton != 0][l], size);
             break;
@@ -1732,6 +1751,9 @@ static void Change(int item, int dir) {
             return;
         case ITEM_CHEAT_GBA_MAP:
             gPortConfig.gbaMapLogic = gPortConfig.gbaMapLogic == 1 ? 2 : gPortConfig.gbaMapLogic == 2 ? 0 : 1;
+            break;
+        case ITEM_CHEAT_TITLE_BRIGHTNESS:
+            gPortConfig.titleBrightnessButton = !gPortConfig.titleBrightnessButton;
             break;
         case ITEM_CHEAT_MAXLEVEL:
         case ITEM_CHEAT_MAPCARDS:
@@ -2733,8 +2755,23 @@ static void MenuButton(int x, int y, const char* text, int key) {
     Shade(x - 3, y - 2, w + 6, 14, 0xFFFFFFFFu, 224);
     MenuBar(x, y, w, 1);
     if (key)
-        DrawGlyph(key, x + 15, y - 2, MENU_RED_DARK, 0xFFD8D8D8u);
-    DrawText(text, x + 16 + keyW, y - 2, MENU_INK, 0xFFD8D8D8u);
+        DrawGlyph(key, x + 15, y, MENU_RED_DARK, 0xFFD8D8D8u);
+    DrawText(text, x + 16 + keyW, y, MENU_INK, 0xFFD8D8D8u);
+}
+
+/* Match the title's PULSA START sign: uppercase text, eight native pixels
+   after the eleven-pixel indicator, and the same six-pixel edge inset. */
+static void DrawTitleHint(int l) {
+    const char* text = sTitleHint[l];
+    int w = TextWidth(text) + 23;
+    int x = gPortScreen.originX + GBA_SCREEN_W - 6 - w;
+    int y = gPortScreen.originY + 6;
+    Shade(x - 3, y - 2, w + 6, 14, 0xFFFFFFFFu, 224);
+    MenuBar(x, y, w, 1);
+    /* KHMenu's uppercase ink starts one row below its origin. Lift that
+       origin one row: the ink stays inside the plate and leaves the same
+       native row before the underline as PULSA START. */
+    DrawText(text, x + 19, y - 1, MENU_INK, 0xFFD8D8D8u);
 }
 
 /* A value without its explanation in brackets, for the narrow list. */
@@ -3219,10 +3256,28 @@ static int DrawWrapped(const char* text, int x, int y, int maxW, uint32_t color,
         while (1) {
             const char* e = WrapUnit(q);
             n = (int)(e - p);
-            if (n >= (int)sizeof(line)) break;
-            SDL_memcpy(line, p, (size_t)n);
-            line[n] = 0;
-            if (TextWidth(line) > maxW && best != NULL) break;
+            if (n < (int)sizeof(line)) {
+                SDL_memcpy(line, p, (size_t)n);
+                line[n] = 0;
+            }
+            if (n >= (int)sizeof(line) || TextWidth(line) > maxW) {
+                if (best == NULL) {
+                    /* A word wider than the whole box still has to fit.
+                       Split only at UTF-8 boundaries, retaining every byte. */
+                    const char* part = p;
+                    while (part < e) {
+                        const char* next = part + 1;
+                        while (((unsigned char)*next & 0xC0) == 0x80) next++;
+                        n = (int)(next - p);
+                        if (n >= (int)sizeof(line)) break;
+                        SDL_memcpy(line, p, (size_t)n); line[n] = 0;
+                        if (TextWidth(line) > maxW && best != NULL) break;
+                        best = next;
+                        part = next;
+                    }
+                }
+                break;
+            }
             best = e;
             if (!*e) break;
             q = *e == ' ' ? e + 1 : e;
@@ -4056,6 +4111,7 @@ static void DrawConfirm(int l, int width, int height) {
     char ask[200];
     static char hd[600];
     int rows = ConfirmRows(), i, panelW = SDL_min(width - 24, 250), textW = panelW - 30, x0, y0, h, y, warnH, compact;
+    int titleH, labelH[4], badgeH = sConfirm == CONFIRM_STATES ? (height >= 200 ? 30 : 20) : 0;
 
     if (sConfirm == CONFIRM_FONT) {
         DrawFontChoice(l, width, height);
@@ -4123,11 +4179,14 @@ static void DrawConfirm(int l, int width, int height) {
         }
     }
     /* measure; on the GBA's 160 lines a window too tall shows only the chosen row's description */
+    titleH = DrawWrapped(ask, 0, 0, panelW - 16, 0, 0) * 11 + 11;
+    for (i = 0; i < rows; i++)
+        labelH[i] = SDL_max(14, DrawWrapped(labels[i], 0, 0, textW, 0, 0) * 11 + 3);
     warnH = DrawWrapped(warn, 0, 0, panelW - 32, 0, 0) * 11 + 4;
     for (compact = 0; compact < 2; compact++) {
-        h = 22 + warnH;
+        h = titleH + warnH + badgeH;
         for (i = 0; i < rows; i++)
-            h += 14 + (subs[i] && (!compact || i == sConfirmCursor) ? DrawWrapped(subs[i], 0, 0, textW, 0, 0) * 11 + 4 : 0);
+            h += labelH[i] + (subs[i] && (!compact || i == sConfirmCursor) ? DrawWrapped(subs[i], 0, 0, textW, 0, 0) * 11 + 4 : 0);
         h += 16;
         if (h <= height - 4)
             break;
@@ -4138,17 +4197,35 @@ static void DrawConfirm(int l, int width, int height) {
     Shade(0, 0, width, height, 0xFF000000u, 160); /* the options stay behind */
     Fill(x0 - 2, y0 - 2, panelW + 4, h + 4, MENU_GREY);
     Fill(x0, y0, panelW, h, 0xFFFFFFFFu);
-    DrawText(ask, x0 + 8, y0 + 4, MENU_RED_DARK, 0xFFD8D8D8u);
-    Fill(x0 + 8, y0 + 17, panelW - 16, 1, MENU_GREY);
-    y = y0 + 22;
+    DrawWrapped(ask, x0 + 8, y0 + 4, panelW - 16, MENU_RED_DARK, 1);
+    Fill(x0 + 8, y0 + titleH - 5, panelW - 16, 1, MENU_GREY);
+    y = y0 + titleH;
     DrawGlyph('!', x0 + 10, y, MENU_RED_DARK, 0xFFD8D8D8u);
     DrawWrapped(warn, x0 + 24, y, panelW - 32, MENU_RED_DARK, 1);
     y += warnH;
+    if (badgeH) {
+        /* Finish Claude's infographic: turning quick states on changes the
+           achievement mode. Use the same existing atlas at both ends. */
+        static const int badges[3] = { 0, 12, 40 };
+        int k, size = badgeH - 8, gap = 4, row = 3 * size + 2 * gap;
+        int bx = x0 + (panelW - (2 * row + 24)) / 2;
+        for (k = 0; k < 3; k++) {
+            int cx = bx + row + 24 + k * (size + gap), d;
+            AchievementBadgeSmall(badges[k], bx + k * (size + gap), y, size, 0);
+            if (AchievementBadgeSmall(badges[k], cx, y, size, 1))
+                for (d = 2; d < size - 2; d++) {
+                    Fill(cx + d, y + d, 1, 1, MENU_RED_DARK);
+                    Fill(cx + size - 1 - d, y + d, 1, 1, MENU_RED_DARK);
+                }
+        }
+        DrawText(">", bx + row + 8, y + (size - 10) / 2, MENU_RED_DARK, 0xFFD8D8D8u);
+        y += badgeH;
+    }
     for (i = 0; i < rows; i++) {
         int sel = i == sConfirmCursor, off = ConfirmRowOff(i);
         MenuBar(x0 + 8, y + 2, panelW - 16, sel);
-        DrawText(labels[i], x0 + 24, y, off ? MENU_DIM : MENU_INK, 0xFFD8D8D8u);
-        y += 14;
+        DrawWrapped(labels[i], x0 + 24, y, textW, off ? MENU_DIM : MENU_INK, 1);
+        y += labelH[i];
         if (subs[i] && (!compact || sel))
             y += DrawWrapped(subs[i], x0 + 24, y, textW, sel && !off ? MENU_INK : MENU_DIM, 1) * 11 + 4;
     }
@@ -4306,6 +4383,17 @@ static void DrawMenu(int l, int width, int height) {
         DrawControlDiagram(barX, top + rows * rowH + 2, barW, height - 15 - (top + rows * rowH + 2));
     if (sPage == PAGE_CHEATS && sCursor == ITEM_CHEAT_GBA_MAP)
         DrawGbaMapNote(l, width, height, barX + barW + 8);
+    if (sPage == PAGE_CHEATS && sCursor == ITEM_CHEAT_TITLE_BRIGHTNESS && selY >= 0) {
+        static const char* const note[LANG_COUNT] = {
+            "Restores the title's L/R brightness control. It compensated for the original GBA screen; modern displays do not need it. Always available in GBA Original.",
+            "Rétablit le réglage L/R du titre, prévu pour l'écran GBA d'origine. Inutile sur un écran moderne. Toujours disponible en mode GBA Original.",
+            "Stellt die L/R-Helligkeit im Titel wieder her. Sie glich den originalen GBA-Bildschirm aus; moderne Anzeigen benötigen sie nicht. Im GBA-Originalmodus immer verfügbar.",
+            "Ripristina la luminosità L/R del titolo, pensata per lo schermo GBA originale. Non serve sugli schermi moderni. Sempre disponibile in GBA Originale.",
+            "Restaura el brillo L/R del título. Compensaba la pantalla de la GBA original; no hace falta en pantallas modernas. Siempre disponible en GBA original.",
+            "タイトルのL/R明るさボタンを復元します。元のGBA画面用で、現代の画面では不要です。GBAオリジナルでは常に使えます。"
+        };
+        DrawNeedNote(note[l], width, height, barX + barW + 8, selY);
+    }
     /* a cheat that changes the achievements' mode: what turning it on means, before it is on (user 25/10) */
     if (sPage == PAGE_CHEATS && selY >= 0 && !PortRebelActive() &&
         ((sCursor == ITEM_CHEAT_ONEHIT && !gPortConfig.cheatOneHit) ||
@@ -4766,11 +4854,8 @@ void PortUiDraw(uint32_t* frame, int width, int height) {
         if (sSkipPrompt && !sSkipOwnLayer)
             DrawSkipPrompt(l);
         if (sTitleHintFrames > 0) {
-            const char* hint = sTitleHint[l];
-            int gx = gPortScreen.originX + GBA_SCREEN_W - TextWidth(hint) - 6;
-            int gy = gPortScreen.originY + 4;
             sTitleHintFrames--;
-            MenuButton(gx - 18, gy + 2, hint, 0);
+            DrawTitleHint(l);
         }
         return;
     }

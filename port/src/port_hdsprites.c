@@ -336,7 +336,11 @@ static void BarDraw(SDL_Renderer* renderer, float ox, float oy, float scale, flo
     int i, k;
     for (i = 0; i < sBarCount; i++) {
         const BarRun* r = &sBar[i];
-        float y0 = oy + r->y * scale, y1 = y0 + scale;
+        /* Match the presenter's nearest-sampled row boundaries. Fractional
+           geometry edges otherwise leave a one-pixel slit before the native
+           black border, especially at 1920x1080 (scale 6.75). */
+        float y0 = SDL_ceilf(oy + r->y * scale - 0.5f);
+        float y1 = SDL_ceilf(oy + (r->y + 1) * scale - 0.5f);
         int nv = 0, ni = 0;
         for (k = -1; k <= r->n; k++) {
             /* the run's two ends, then each column's centre */
