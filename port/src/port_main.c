@@ -704,6 +704,7 @@ static int sFadeSideW[2], sMenuSideW[2];
 static int sSideStyle; /* engine.h: stretch, colour, texture, blur, menu, pattern */
 static int sMenuPanelSide = -1;
 extern int PortMenuBackgroundOnly(void);
+extern int PortMoogleMenu(void);
 void PortMenuPanelSide(int side) { sMenuPanelSide = side; }
 
 void PortSideStyle(int style) {
@@ -768,6 +769,7 @@ static void SideBar(int sx, int sy, int side, float y, float scale, float x0, fl
     float w = SIDE_STRIP * scale;
     int band;
     int backgroundOnly = PortMenuBackgroundOnly();
+    int moogleMenu = PortMoogleMenu();
 
     if (x1 - x0 <= 0)
         return;
@@ -915,7 +917,7 @@ static void SideBar(int sx, int sy, int side, float y, float scale, float x0, fl
                    its floor badge and text retain the plain edge fill. */
                 if (sSideStyle == 5 && (best || plain))
                     sample = side < 0 ? sx + ((-1 - d) & 15) : sx + (d & 15);
-                *px = bgRow[sample];
+                *px = moogleMenu ? bgRow[edgeX] : bgRow[sample];
                 /* the badge's rows: the edge as it shows, sprites included
                    (while it slides in, its lower rows are a sprite) */
                 if (badge)
