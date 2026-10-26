@@ -354,14 +354,12 @@ static int RedirectAccess(uint32_t fault, int write, DWORD eip, int* reg, uint32
 }
 
 #ifdef _WIN32
+static DWORD sExeBase, sExeSize;
 static LONG CALLBACK BiosFaultHandler(EXCEPTION_POINTERS* info) {
     EXCEPTION_RECORD* r = info->ExceptionRecord;
     CONTEXT* c = info->ContextRecord;
 
     sFaultEsp = c->Esp;
-
-    if (r->ExceptionCode == EXCEPTION_INT_DIVIDE_BY_ZERO)
-        return SkipDivision(&c->Eip, &c->Eax, &c->Edx) ? EXCEPTION_CONTINUE_EXECUTION : EXCEPTION_CONTINUE_SEARCH;
 
     if (r->ExceptionCode == EXCEPTION_SINGLE_STEP) {
         if (sPending.reg < 0 || sPending.thread != GetCurrentThreadId())
@@ -377,6 +375,13 @@ static LONG CALLBACK BiosFaultHandler(EXCEPTION_POINTERS* info) {
         c->EFlags &= ~0x100u;
         return EXCEPTION_CONTINUE_EXECUTION;
     }
+    /* Only this executable emulates the GBA bus. A system/codec DLL may use
+       access violations internally; rewriting its registers corrupts its own
+       exception recovery. Keep platform code in the EXE eligible, as before. */
+    if (c->Eip - sExeBase >= sExeSize)
+        return EXCEPTION_CONTINUE_SEARCH;
+    if (r->ExceptionCode == EXCEPTION_INT_DIVIDE_BY_ZERO)
+        return SkipDivision(&c->Eip, &c->Eax, &c->Edx) ? EXCEPTION_CONTINUE_EXECUTION : EXCEPTION_CONTINUE_SEARCH;
     if (r->ExceptionCode != EXCEPTION_ACCESS_VIOLATION || r->NumberParameters < 2 || r->ExceptionInformation[0] == 8
         || sPending.reg >= 0)
         return EXCEPTION_CONTINUE_SEARCH;
@@ -397,6 +402,11 @@ static LONG CALLBACK BiosFaultHandler(EXCEPTION_POINTERS* info) {
 }
 
 void PortBiosFaultInstall(void) {
+    const uint8_t* image = (const uint8_t*)GetModuleHandleA(NULL);
+    const IMAGE_DOS_HEADER* dos = (const IMAGE_DOS_HEADER*)image;
+    const IMAGE_NT_HEADERS* nt = (const IMAGE_NT_HEADERS*)(image + dos->e_lfanew);
+    sExeBase = (DWORD)(uintptr_t)image;
+    sExeSize = nt->OptionalHeader.SizeOfImage;
     AddVectoredExceptionHandler(1, BiosFaultHandler);
 }
 #else
