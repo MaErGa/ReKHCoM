@@ -33,6 +33,8 @@ void PortPaletteFade(const uint16_t* original, const volatile uint16_t* current,
 /* Draw a layer's queued parts, back to front, over its canvas placed at (ox, oy) with this scale; darken/brighten
    0..16 follow the game's fade. */
 void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, float scale, int darken, int brighten);
+/* Press Start's authored light, smoothly interpolated and shared by port-owned menus. */
+int PortHdMenuLightDraw(SDL_Renderer* renderer, float x, float y, float size, uint64_t ticks, float shade, float white);
 #endif
 void PortHdSpritesShutdown(void);
 /* The HD title's illustration (assets/hd/title/art/sora.png): 1 once it is loaded (its width/height in *aspect); queued

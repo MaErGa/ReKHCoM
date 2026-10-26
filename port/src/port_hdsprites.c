@@ -22,6 +22,7 @@
 #include "port/port.h"
 #include "port/port_hdlayout.h"
 #include "port/port_hdsprites.h"
+#include "port/port_menu_light.h"
 #include "../decompui/third_party/stb_image.h"
 
 typedef struct HdSpriteDef {
@@ -95,6 +96,73 @@ static void* TitleWordAsset(const char* name, size_t* size) {
     char file[160];
     SDL_snprintf(file, sizeof(file), "assets/hd/title/words/%s.png", name);
     return PortLoadAsset(file, size);
+}
+
+/* The same authored light for every HD menu. Five small samples and one
+   interpolated texture are allocated lazily, never a second animation/video. */
+enum { MENU_LIGHT_SIZE = 88, MENU_LIGHT_BYTES = 88 * 88 * 4 };
+static unsigned char* sMenuLightSamples;
+static unsigned char* sMenuLightPixels;
+static SDL_Texture *sMenuLightImage, *sMenuLightWhite;
+static int sMenuLightTried, sMenuLightPhase = -1;
+
+static void MenuLightRelease(void) {
+    if (sMenuLightImage) SDL_DestroyTexture(sMenuLightImage);
+    if (sMenuLightWhite) SDL_DestroyTexture(sMenuLightWhite);
+    sMenuLightImage = sMenuLightWhite = NULL;
+    SDL_free(sMenuLightSamples); SDL_free(sMenuLightPixels);
+    sMenuLightSamples = sMenuLightPixels = NULL;
+    sMenuLightTried = 0; sMenuLightPhase = -1;
+}
+
+static int MenuLightReady(SDL_Renderer* renderer) {
+    int frame, row;
+    SDL_Surface* surface;
+    if (sMenuLightTried) return sMenuLightImage && sMenuLightWhite;
+    sMenuLightTried = 1;
+    sMenuLightSamples = SDL_malloc(MENU_LIGHT_BYTES * 5);
+    sMenuLightPixels = SDL_malloc(MENU_LIGHT_BYTES);
+    if (!sMenuLightSamples || !sMenuLightPixels) goto fail;
+    for (frame = 0; frame < 5; frame++) {
+        char name[64]; size_t size = 0;
+        int w, h, channels;
+        SDL_snprintf(name, sizeof(name), "gTitleMenuCursorFrame%d", frame);
+        void* file = TitleWordAsset(name, &size);
+        unsigned char* pixels = file && size <= 0x7FFFFFFF ? stbi_load_from_memory(file, (int)size, &w, &h, &channels, 4) : NULL;
+        SDL_free(file);
+        if (!pixels || w != 128 || h != 128) { if (pixels) stbi_image_free(pixels); goto fail; }
+        for (row = 0; row < MENU_LIGHT_SIZE; row++)
+            memcpy(sMenuLightSamples + frame * MENU_LIGHT_BYTES + row * MENU_LIGHT_SIZE * 4,
+                   pixels + (row * w + 24) * 4, MENU_LIGHT_SIZE * 4);
+        stbi_image_free(pixels);
+    }
+    memcpy(sMenuLightPixels, sMenuLightSamples, MENU_LIGHT_BYTES);
+    surface = SDL_CreateSurfaceFrom(MENU_LIGHT_SIZE, MENU_LIGHT_SIZE, SDL_PIXELFORMAT_RGBA32,
+                                    sMenuLightPixels, MENU_LIGHT_SIZE * 4);
+    if (!surface) goto fail;
+    /* This image is updated from RGBA bytes every animation tick. A texture
+       converted from a surface may use a renderer-native BGRA format. */
+    sMenuLightImage = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING,
+                                        MENU_LIGHT_SIZE, MENU_LIGHT_SIZE);
+    if (sMenuLightImage) SDL_UpdateTexture(sMenuLightImage, NULL, sMenuLightSamples, MENU_LIGHT_SIZE * 4);
+    for (row = 0; row < MENU_LIGHT_BYTES; row += 4)
+        sMenuLightPixels[row] = sMenuLightPixels[row + 1] = sMenuLightPixels[row + 2] = 255;
+    sMenuLightWhite = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_DestroySurface(surface);
+    if (!sMenuLightImage || !sMenuLightWhite) goto fail;
+    SDL_SetTextureBlendMode(sMenuLightImage, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureBlendMode(sMenuLightWhite, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(sMenuLightImage, (SDL_ScaleMode)PortSmoothScaleMode());
+    SDL_SetTextureScaleMode(sMenuLightWhite, (SDL_ScaleMode)PortSmoothScaleMode());
+    return 1;
+fail:
+    MenuLightRelease();
+    sMenuLightTried = 1; /* missing samples keep the existing cartridge light */
+    return 0;
+}
+
+static int MenuLightName(const char* name) {
+    return !SDL_strncmp(name, "gTitleMenuCursorFrame", 21) || !SDL_strncmp(name, "gTitlePressStart", 16);
 }
 
 int PortHdSpriteFind(const void* tiles, const void* frame) {
@@ -187,6 +255,15 @@ static int Load(int i) {
                     kHdSprites[i].name, w, h, want);
             return 0;
         }
+    }
+    if (kHdSprites[i].group == 7 && MenuLightName(kHdSprites[i].name) && MenuLightReady(sRenderer)) {
+        /* Remove only this light's box, not its words, bar or underline.
+           German Press Start has eight extra rows above the same orb. */
+        const HdSpriteDef* d = &kHdSprites[i];
+        int left = 3 * w / d->w, right = 14 * w / d->w;
+        int top = SDL_max(0, d->h - 16) * h / d->h, bottom = top + 11 * h / d->h;
+        for (int y = top; y < bottom; y++)
+            for (int x = left; x < right; x++) px[(y * w + x) * 4 + 3] = 0;
     }
     sState[i].textureH = h;
     need = (size_t)w * h * 8;
@@ -567,6 +644,67 @@ static void Quad(SDL_Texture* t, const HdSpriteDraw* q, float ox, float oy, floa
     }
 }
 
+static int MenuLightPaint(SDL_Renderer* renderer, const float* x, const float* y,
+                          const float* u, const float* v, uint64_t ticks, float shade, float white, float alpha) {
+    static const int indices[6] = {0,1,2,0,2,3};
+    SDL_Vertex vertices[4];
+    int a, b, k, phase = (int)(ticks % 64);
+    float blend;
+    if (!MenuLightReady(renderer)) return 0;
+    if (phase != sMenuLightPhase) {
+        PortMenuLightFrames(ticks, &a, &b, &blend);
+        for (k = 0; k < MENU_LIGHT_BYTES; k++) {
+            int first = sMenuLightSamples[a * MENU_LIGHT_BYTES + k];
+            int next = sMenuLightSamples[b * MENU_LIGHT_BYTES + k];
+            sMenuLightPixels[k] = (unsigned char)(first + (next - first) * blend + 0.5f);
+        }
+        SDL_UpdateTexture(sMenuLightImage, NULL, sMenuLightPixels, MENU_LIGHT_SIZE * 4);
+        sMenuLightPhase = phase;
+    }
+    for (k = 0; k < 4; k++) {
+        vertices[k].position = (SDL_FPoint){x[k],y[k]};
+        vertices[k].tex_coord = (SDL_FPoint){u[k],v[k]};
+        vertices[k].color = (SDL_FColor){shade,shade,shade,alpha};
+    }
+    /* Keep SDL's software renderer on its clipped geometry path, as Quad. */
+    if (x[0] == x[1] || y[0] == y[1]) {
+        vertices[1].position.x += 0.01f;
+        vertices[1].position.y += 0.01f;
+    }
+    SDL_RenderGeometry(renderer, sMenuLightImage, vertices, 4, indices, 6);
+    if (white > 0) {
+        for (k = 0; k < 4; k++) vertices[k].color = (SDL_FColor){1,1,1,alpha * white};
+        SDL_RenderGeometry(renderer, sMenuLightWhite, vertices, 4, indices, 6);
+    }
+    return 1;
+}
+
+int PortHdMenuLightDraw(SDL_Renderer* renderer, float x, float y, float size, uint64_t ticks, float shade, float white) {
+    float xx[4] = {x,x+size,x+size,x}, yy[4] = {y,y,y+size,y+size};
+    static const float u[4] = {0,1,1,0}, v[4] = {0,0,1,1};
+    return gPortConfig.hdTitle && size > 0 && MenuLightPaint(renderer, xx, yy, u, v, ticks, shade, white, 1);
+}
+
+static void SpriteMenuLight(SDL_Renderer* renderer, const HdSpriteDraw* q, float ox, float oy,
+                            float scale, float shade, float white) {
+    extern uint64_t PortUiMenuLightTicks(void);
+    const HdSpriteDef* d = &kHdSprites[q->id];
+    float top = (float)SDL_max(0, d->h - 16);
+    float left = SDL_max(q->u0 * d->w, 3.0f), right = SDL_min(q->u1 * d->w, 14.0f);
+    float y0 = SDL_max(q->v0 * d->h, top), y1 = SDL_min(q->v1 * d->h, top + 11);
+    float xx[4], yy[4], u[4], v[4];
+    if (right <= left || y1 <= y0 || q->u1 <= q->u0 || q->v1 <= q->v0) return;
+    for (int k = 0; k < 4; k++) {
+        float sx = k == 0 || k == 3 ? left : right, sy = k < 2 ? y0 : y1;
+        float a = (sx / d->w - q->u0) / (q->u1 - q->u0);
+        float b = (sy / d->h - q->v0) / (q->v1 - q->v0);
+        xx[k] = ox + ((1-b)*((1-a)*q->x[0]+a*q->x[1]) + b*((1-a)*q->x[3]+a*q->x[2])) * scale;
+        yy[k] = oy + ((1-b)*((1-a)*q->y[0]+a*q->y[1]) + b*((1-a)*q->y[3]+a*q->y[2])) * scale;
+        u[k] = (sx - 3) / 11; v[k] = (sy - top) / 11;
+    }
+    MenuLightPaint(renderer, xx, yy, u, v, PortUiMenuLightTicks(), shade, white, q->alpha / 255.0f);
+}
+
 /* ---- HP ring (Re:CoM's player gauge, the user's pick 22/10) ---------------------------------------------------
    hd/sprites/gBtlHpRing.png is pl_gauge at 8 pixels a GBA pixel: a ring (green between radii 128 and 170 around
    RING_CX, RING_CY, open at the top right) that runs into a bar along the top. Re:CoM's own fill logic is in its
@@ -748,6 +886,8 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
         Quad(st->image, q, ox, oy, scale, (SDL_FColor){ shade, shade, shade, q->alpha / 255.0f });
         if (white > 0)
             Quad(st->white, q, ox, oy, scale, (SDL_FColor){ 1, 1, 1, q->alpha / 255.0f * white });
+        if (kHdSprites[q->id].group == 7 && MenuLightName(kHdSprites[q->id].name))
+            SpriteMenuLight(renderer, q, ox, oy, scale, shade, white);
         if (q->u0 <= 0.0f && SDL_strstr(kHdSprites[q->id].name, "PremireChanceTitle")) {
             /* Bonus Elite's banner starts at the cartridge screen's left edge, over a black band (the other menus'
                banners sit on a band of their own colour that the wide view carries on): its first column goes on to
@@ -822,6 +962,7 @@ void PortPaletteFade(const uint16_t* original, const volatile uint16_t* current,
 /* Renderer gone (or the HD files re-imported): drop the textures and look the files up again. */
 void PortHdSpritesShutdown(void) {
     int i;
+    MenuLightRelease();
     if (sRingFull) SDL_DestroyTexture(sRingFull);
     if (sRingEmpty) SDL_DestroyTexture(sRingEmpty);
     sRingFull = sRingEmpty = NULL;
