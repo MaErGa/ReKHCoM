@@ -58,14 +58,20 @@ def run(exe_dir, hd, name):
                                   'hd_scenes=0\n')
     shutil.copytree(hd / 'music', d / 'hd' / 'music')
     env = dict(os.environ, SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='disk', SDL_AUDIO_DISK_OUTPUT_FILE='out.raw',
+               KHCOM_PPU_THREADS='1',
                KHCOM_HDAUDIOLOG='hdaudio.log',
                KHCOM_QUIT=str(frames), **env_extra)
     env.pop('KHCOM_FAST', None)
     try:
-        subprocess.run([str(d / 'khcom.exe'), '--language', 'es', '--rom', str(ROOT / 'roms/B8CP.gba')], cwd=d, env=env,
+        result = subprocess.run([str(d / 'khcom.exe'), '--language', 'es', '--rom', str(ROOT / 'roms/B8CP.gba')], cwd=d, env=env,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=frames / 50 + 120)
     except subprocess.TimeoutExpired:
         return {'error': 'timed out'}
+    if result.returncode:
+        return {'error': f'game exited {result.returncode}'}
+    game_log = d / 'kh_com.log'
+    if game_log.exists() and 'CRASH' in game_log.read_text(errors='replace'):
+        return {'error': 'game crashed'}
     log = d / 'hdaudio.log'
     rows = [list(map(float, l.split())) for l in log.read_text().splitlines() if l.strip()] if log.exists() else []
     out = analyse(rows)
@@ -164,6 +170,9 @@ def main():
     ap.add_argument('--jobs', type=int, default=3)
     args = ap.parse_args()
     names = [n for n in SCENARIOS if not args.only or n in args.only.split(',')]
+    if not names:
+        print('No scenarios selected; nothing was checked')
+        sys.exit(1)
     with ThreadPoolExecutor(args.jobs) as pool:
         results = dict(zip(names, pool.map(lambda n: run(ROOT / args.build, Path(args.hd), n), names)))
     bad = 0

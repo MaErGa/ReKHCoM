@@ -51,14 +51,19 @@ def run(exe_dir, name):
         shutil.copy2(exe_dir / f, d / f)
     (d / 'kh_com.ini').write_text('config_version=2\nview_mode=4\nhd_music=1\n')
     env = dict(os.environ, SDL_VIDEO_DRIVER='dummy', SDL_AUDIO_DRIVER='dummy', KHCOM_FAST='1', KHCOM_AUDIOCHECK='1',
+               KHCOM_PPU_THREADS='1',
                KHCOM_HD_MUSIC=HD_MUSIC, KHCOM_KEYS=PRESSES, KHCOM_QUIT='1400', **SCENARIOS[name])
     try:
-        subprocess.run([str(d / 'khcom.exe'), '--language', 'es', '--rom', str(ROOT / 'roms/B8CP.gba')], cwd=d, env=env,
+        result = subprocess.run([str(d / 'khcom.exe'), '--language', 'es', '--rom', str(ROOT / 'roms/B8CP.gba')], cwd=d, env=env,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
     except subprocess.TimeoutExpired:
         return ['timed out'], True
     log = (d / 'kh_com.log').read_text(encoding='utf-8', errors='replace') if (d / 'kh_com.log').exists() else ''
     bad = [l for l in log.splitlines() if l.startswith('audio check:')]
+    if result.returncode:
+        bad.append(f'game exited {result.returncode}')
+    if 'CRASH' in log:
+        bad.append('game crashed')
     if log and 'hd music: song' not in log and name not in SILENT_OK:
         bad.append('the HD music never played: nothing was checked')
     shutil.rmtree(d, ignore_errors=True)
@@ -72,6 +77,9 @@ def main():
     ap.add_argument('--jobs', type=int, default=3)
     args = ap.parse_args()
     names = [n for n in SCENARIOS if not args.only or n in args.only.split(',')]
+    if not names:
+        print('No scenarios selected; nothing was checked')
+        sys.exit(1)
     with ThreadPoolExecutor(args.jobs) as pool:
         results = dict(zip(names, pool.map(lambda n: run(ROOT / args.build, n), names)))
     failed = 0
