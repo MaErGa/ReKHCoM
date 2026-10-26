@@ -8,7 +8,7 @@ Steam Deck; zip limpio en KHCoMPC).
 ## TÍTULO HD — estado y cómo seguir (rama `claude/title-hd`, actualizado en cada paso)
 
 **Hecho y subido en la rama:**
-1. `port/assets/mods/title-sora.png` (+ LEEME.md): el póster del usuario con el papel blanco transparente y bordes
+1. `port/assets/hd/title/art/sora.png` (+ LEEME.md): el póster del usuario con el papel blanco transparente y bordes
    fundidos (arriba 6 %, abajo 7 %, izquierda 30 % bajo el logo, derecha 5 %); lo genera `port/tools/make_title_art.py`
    (solo PIL; la fuente es KHCoMPC/x5zh3428mzyf1.jpg). Registrado en `port/tools/core_assets.py` (paquete + recursos).
 2. `port_hdsprites.c`: `PortHdTitleArtReady()` (carga con PortLoadAsset + stb, textura y copia blanca) y
@@ -45,7 +45,15 @@ Steam Deck; zip limpio en KHCoMPC).
   releases «para que no se note». Claude no lo cifra para ocultarlo (es arte de Square Enix; esconderlo empeora el
   riesgo, y Quiver revisa los releases). Propuesta: no incluirlo en los releases; el juego lo busca primero como
   archivo opcional del jugador (hd/sprites o hd/title-sora.png) y solo con el título HD/mod HD. Hasta que decida,
-  NO publicar un release con port/assets/mods/title-sora.png en core_assets.py.
+  NO publicar un release con port/assets/hd/title/art/sora.png en core_assets.py.
+- **Verificado 26/10 (capturas 1920x1080, vista original y ancha, D:/01Claude/ReKHCoM-build/titlehd/views.png):**
+  primer plano → zoom de salida → arte completo con Pulsa Start encima; recortado al lienzo (sin salirse al negro).
+  Asset en port/assets/hd/title/art/sora.png (subcarpetas, pedido del usuario); va en el release y solo se usa con el
+  mod HD (decisión del usuario: F resuelta, sin cifrar).
+- **Bugs abiertos del título HD:** (1) el aviso «SELECT Opciones» del port queda bajo el arte HD (se ve «ECT Opc»):
+  dibujarlo después de la capa 0 HD o meterlo en la capa «over»; (2) en el primer plano el panel de Goofy cae bajo el
+  crédito: mover el foco del primer plano (cx 200→215) o subir el fundido izquierdo; (3) pulir encuadre final a ojo vs
+  GBA; (4) probar 2560x1080, 3840x1080 y 4:3; (5) piezas C (botones, Pulsa Start, crédito) pendientes.
 - G. Captura de ventana: KHCOM_OUTPUT_SHOT no sacó nada con offscreen; usar KHCOM_PRESENTSHOTS=a-b (rango).
 
 ## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)

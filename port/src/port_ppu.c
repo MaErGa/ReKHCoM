@@ -4618,7 +4618,7 @@ static void TitleArtQueue(void) {
     uint16_t dispcnt = IO16(0x00), bld = IO16(0x50);
     int intro = sTitleArtFadeBg0 && (dispcnt & 0x100), whole = (dispcnt & 0x200) != 0;
     int effect = (bld >> 6) & 3, dark = 0, white = 0, k;
-    float aspect = 0.8289f, t, x0, y0, h, w, x[4], y[4];
+    float aspect = 0.8289f, t, x0, y0, h, w, x[4], y[4], u0, v0, u1, v1;
     if (!sTitleArtFade || !gPortConfig.hdTitle || (dispcnt & 7) != 1 || (!intro && !whole) ||
         !PortHdTitleArtReady(&aspect))
         return;
@@ -4636,8 +4636,17 @@ static void TitleArtQueue(void) {
     }
     x0 += (float)gPortScreen.originX;
     y0 += (float)gPortScreen.originY;
-    x[0] = x[3] = x0; x[1] = x[2] = x0 + w;
-    y[0] = y[1] = y0; y[2] = y[3] = y0 + h;
+    {
+        /* cut to the picture (the original view's black bars stay black), the texture in proportion */
+        float cx0 = SDL_max(x0, 0.0f), cx1 = SDL_min(x0 + w, (float)gPortScreen.width);
+        float cy0 = SDL_max(y0, 0.0f), cy1 = SDL_min(y0 + h, (float)gPortScreen.height);
+        if (cx1 <= cx0 || cy1 <= cy0)
+            return;
+        u0 = (cx0 - x0) / w; u1 = (cx1 - x0) / w;
+        v0 = (cy0 - y0) / h; v1 = (cy1 - y0) / h;
+        x[0] = x[3] = cx0; x[1] = x[2] = cx1;
+        y[0] = y[1] = cy0; y[2] = y[3] = cy1;
+    }
     if ((bld & 0x03) && effect == 2)
         white = SDL_min(16, IO16(0x54) & 31) * 255 / 16;
     else if ((bld & 0x03) && effect == 3)
@@ -4652,7 +4661,7 @@ static void TitleArtQueue(void) {
     for (k = 0; k < 4; k++)
         if (!(x[k] > -4096.0f && x[k] < 8192.0f && y[k] > -4096.0f && y[k] < 8192.0f))
             return;
-    PortHdTitleArtQueue(x, y, 255, dark, white);
+    PortHdTitleArtQueue(x, y, u0, v0, u1, v1, 255, dark, white);
     sTitleArtHd = (intro ? 1 : 0) | (whole ? 2 : 0);
     sMainHdAny = 1;
 }

@@ -9,7 +9,7 @@ def core_assets():
         'assets/boxart.jpg': ROOT / 'port/decompui/assets/boxart.jpg',
         'assets/logo.png': ROOT / 'port/decompui/assets/logo.png',
         'assets/achievements/badges.png': ROOT / 'port/assets/achievements/badges.png',
-        'assets/mods/title-sora.png': ROOT / 'port/assets/mods/title-sora.png',  # the HD title's illustration (mod)
+        'assets/hd/title/art/sora.png': ROOT / 'port/assets/hd/title/art/sora.png',  # the HD title's illustration (mod)
     }
     for name in ('enemy-hp-frame-v2.png', 'label-hp-v2.png', 'label-vt-v2.png',
                  'label-lp-v1.png', 'label-pv-v3.png'):

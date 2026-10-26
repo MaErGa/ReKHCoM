@@ -190,7 +190,7 @@ static int Load(int i) {
     return 1;
 }
 
-/* The HD title's illustration (assets/mods/title-sora.png: the CoM poster, a mod, port/assets/mods/LEEME.md), drawn
+/* The HD title's illustration (assets/hd/title/art/sora.png: the CoM poster, a mod, port/assets/hd/title/art/LEEME.md), drawn
    on the game's picture under every other HD part, in place of the cartridge's title art (port_ppu.c TitleArtQueue). */
 static SDL_Texture *sArt, *sArtWhite;
 static int sArtTried, sArtW, sArtH;
@@ -200,7 +200,7 @@ static int sArtCount;
 int PortHdTitleArtReady(float* aspect) {
     if (!sArtTried && sRenderer) {
         size_t size = 0;
-        void* data = PortLoadAsset("assets/mods/title-sora.png", &size);
+        void* data = PortLoadAsset("assets/hd/title/art/sora.png", &size);
         int w = 0, h = 0, n = 0, k;
         unsigned char* px = data && size <= 0x7FFFFFFF ? stbi_load_from_memory(data, (int)size, &w, &h, &n, 4) : NULL;
         SDL_Surface* s = px ? SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, px, w * 4) : NULL;
@@ -224,7 +224,7 @@ int PortHdTitleArtReady(float* aspect) {
             if (sArt) SDL_DestroyTexture(sArt);
             if (sArtWhite) SDL_DestroyTexture(sArtWhite);
             sArt = sArtWhite = NULL;
-            PortLog("HD title: assets/mods/title-sora.png missing, the cartridge's illustration stays");
+            PortLog("HD title: assets/hd/title/art/sora.png missing, the cartridge's illustration stays");
         }
     }
     if (aspect && sArtH)
@@ -232,7 +232,8 @@ int PortHdTitleArtReady(float* aspect) {
     return sArt != NULL;
 }
 
-void PortHdTitleArtQueue(const float* x, const float* y, int alpha, int dark, int white) {
+void PortHdTitleArtQueue(const float* x, const float* y, float u0, float v0, float u1, float v1, int alpha, int dark,
+                         int white) {
     HdSpriteDraw* q;
     if (sArtCount == 2)
         return;
@@ -240,8 +241,8 @@ void PortHdTitleArtQueue(const float* x, const float* y, int alpha, int dark, in
     q->id = 0; /* not a table sprite: only its corners and fades are used */
     memcpy(q->x, x, sizeof(q->x));
     memcpy(q->y, y, sizeof(q->y));
-    q->u0 = q->v0 = 0.0f;
-    q->u1 = q->v1 = 1.0f;
+    q->u0 = u0; q->v0 = v0;
+    q->u1 = u1; q->v1 = v1;
     q->alpha = (uint8_t)SDL_clamp(alpha, 0, 255);
     q->dark = (uint8_t)SDL_clamp(dark, 0, 255);
     q->white = (uint8_t)SDL_clamp(white, 0, 255);
