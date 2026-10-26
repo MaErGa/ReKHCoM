@@ -38,6 +38,10 @@ Steam Deck; zip limpio en KHCoMPC).
   Lo que no existe en Re:CoM (Pulsa Start, Sora, Riku, Combate, «/ Jupiter», el aviso SELECT del port) se dibuja con
   KHMenu.otf en el color del cartucho (negro con sombra gris), con el texto dentro de su caja (el usuario marcó que
   SELECT Opciones se salía) y sin el píxel suelto bajo el cuadro naranja de Pulsa Start.
+- **En Atlas (26/10):** be70ed17 (título final, hija de c4e96953) y d31ab43e (primer plano de la intro): esperar
+  valoración. Ratios 1920/2560/3840x1080 revisados (ratios.png): el arte queda dentro del marco. En el primer plano
+  «Jupiter» aún roza el panel de Goofy. Ojo: la carpeta de prueba se contamina (salta a MenuNew en el frame 511) si
+  queda kh_com.sav; borrar partidas y usar experimental_frame_skip=0 para capturas.
 - D. Atlas: subir capturas reales (no la maqueta) con art_review/import_image.py; integrar solo lo aprobado; PR a
   main + nota en LOGICA_APROBADOS.md.
 - E. Riku (título de Riku) sigue en píxeles: no hay arte HD.
