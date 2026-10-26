@@ -66,12 +66,12 @@ static int sDrawCount[HD_LAYERS];
 static int GroupOn(int group) {
     switch (group) {
     case 1: return gPortConfig.hdCards;
-    case 2: return gPortConfig.hdTitle && gPortConfig.hdHud;
+    case 2: return gPortConfig.hdTitle;
     case 3: return gPortConfig.hdCards; /* the battle HUD's faces and words go with the cards */
     case 4: return gPortConfig.hdCards; /* the world select's worlds */
     case 5: return gPortConfig.hdCards; /* the menus' title banners, in Re:CoM's lettering */
     case 6: return gPortConfig.hdCards; /* the menus' small cards: Re:CoM's picture in the window, the cartridge's frame */
-    case 7: return gPortConfig.hdTitle && gPortConfig.hdHud; /* the title's words, ours (embedded: TitleWordAsset) */
+    case 7: return gPortConfig.hdTitle; /* the title's words, ours (embedded: TitleWordAsset) */
     default: return 0;
     }
 }
