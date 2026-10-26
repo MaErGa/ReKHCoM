@@ -1,5 +1,104 @@
 # Changelog
 
+## v2.0 — 2026-10-26
+
+**The HD mod.** With your own copy of KINGDOM HEARTS -HD 1.5+2.5 ReMIX- on PC, the launcher imports Re:Chain of
+Memories' HD music, movies and story scenes (with their subtitles in every language Re:CoM has), and the game uses
+them in place of the cartridge's: the opening and endings, 97 of Re:CoM's 100 story scenes, and the HD soundtrack.
+All optional, under Options > Re:CoM improvements and in the New Game window. v1.9.15 came out only as a test
+prerelease; this release carries all of it, and everything from the v2.0 test builds (pre13 to pre19) below.
+
+Windows, Linux and Steam Deck are stable; Android, Switch, PS Vita, PS4, PS5, Anbernic and the web player are betas.
+HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes on Windows and Android.
+
+Since the last test build (pre19):
+
+- **HD title and Options** (with the HD HUD): every word of the title in HD (menu, Brightness, credit, Press Start,
+  in each European language), the press-start bar smooth, the fades exactly as the game's; the Options panel with the
+  HD illustration and its texts in HD.
+- **Re:CoM's battle words in their own proportion**: Card Break, Guard, Recover, Level Up and the menus' banners no
+  longer squeezed into the cartridge's box.
+- **Card values as big as Re:CoM's**, and HD values for boosted (blue) and premium (gold) cards too.
+- Moogle shop, save screen and link numbers in HD text, as the deck menus.
+- **Scene gallery**: saves from before it get the scenes they already went through (#163).
+- Add to Steam: a wide banner and, with the HD mod, the title's HD logo as the library logo.
+
+
+- **HD graphics (beta)**, imported the same way, where Re:CoM has the very same picture: the battle cards
+  (illustrations, frames and values), Sora's and Riku's faces on the HP gauge, the battle words (Card Break, Guard,
+  Recover, Level Up, in each European language) and the title screen's logo, from its intro to the credits, with
+  "Chain of Memories" under the Kingdom Hearts logo. Options > Re:CoM improvements: "HD cards and battle HUD",
+  "HD title logo".
+- **Graphics modes**, asked on the first start: **HD mode** (every HD asset and improvement) or **GBA mode**, then
+  **GBA enhanced** (the widescreen view and ReKHCoM's improvements, HD extras off) or **GBA classic** (everything off:
+  the GBA picture at a whole scale inside a decorative border in the manner of the Super Game Boy's, almost an
+  emulator but native). The launcher's Graphics has "Graphics mode" (choose on start by default), and Options
+  "Reset to a mode's defaults". A new game in GBA classic still offers the widescreen view.
+
+- **Touch buttons**: three looks (Clear, Dark, Color) and a layout editor: Options > "Move touch buttons", drag
+  the d-pad, L, R, the face buttons, SELECT, START and the menu button where you want them (Android, web, Switch).
+- **Android**: the app opens on the same launcher as the PC's (home, enhancements, graphics, sound and controls,
+  achievements, save editor), with the system's file pickers for dumps, saves and the PC's HD folder.
+- **Quick states are now off by default**, so a run plays as on the cartridge: turn them on in Options > Cheats
+  (only for testing or reproducing bugs). F5 saves, **F8 loads** (was F9), F6/F7 change the slot; no achievements
+  unlock while they are on.
+- First start: behind the mode question, how the screen will look with the mode you are on.
+- HD import on the graphics card, about twice as fast as before.
+- HD import keeps what is already loaded: loading again only does the movies that are missing, broken or at
+  another quality (seconds instead of minutes), and with everything loaded the launcher says so instead of offering
+  the big load button.
+
+- HD scenes: smooth in and out of each scene (no flash of the event's picture when it ends), skipping a scene or
+  movie fades the picture and its sound out instead of cutting them, the field's music fades out before a scene
+  starts, and the scene pause sounds like the game's menus.
+- Agrabah: the street of Aladdin's rescue and the Genie's market now continue to the edges of the widescreen view.
+
+- Switch: with "Hide touch controls" on, no touch button shows anywhere, pause and Options included; hold Minus +
+  Plus for three seconds to open the Options (#36).
+- Switch and PS Vita: when the console cannot draw every frame, the frame is skipped instead of slowing the game:
+  the game and the sound keep their original speed (#35, #36). Options > Experimental, on by default everywhere.
+- PS Vita: the picture is drawn by the GPU.
+- Consoles and Android 64-bit: the sound's buffer level is measured in the right units.
+- Android: the HD mod's movies play (opening and endings, with subtitles), imported from the PC's `hd` folder.
+- HD mod: the sound effects play again with the HD music on (button clicks, menus, attacks, level-up, pause:
+  most of them were taken for music and muted with it), and the HD music now plays at the cartridge's loudness.
+- HD mod: no more hitch at doors and battle starts when the HD track changes (it loads in the background, in
+  silence instead of a moment of the cartridge's song), and no jump or overlap around menus: the HD track keeps
+  playing under the Options as the cartridge's song does, and waits in place when the game holds its sound.
+- HD movies and scenes: our scene pause works on them (Start/Escape: back to the game or skip, after asking);
+  they no longer end by themselves when the dialogue's button was still pressed.
+- HD scenes: 97 of Re:CoM's 100 scenes now replace their story event (25 more, one corrected), matched by their
+  dialogue in five languages and their order; the other three exist only in Re:CoM or are part of the opening.
+- Options: the HD mod's settings are under "Re:CoM improvements"; the New Game window offers HD music and movies,
+  and, for Re:CoM, the HD scenes.
+- Battle start: no more frame of the small heart over the battlefield right before the white flash (widescreen).
+- Title: the first illustration (the developer credit over Sora) now fades into white at its right edge too.
+- Windows: the HD movies also play with the software renderer (they closed the game there).
+- Battle HP gauges: no division by zero when the deck menu goes back into a battle before the HP are set
+  (closed the game on Android, the web and Linux ARM; #40).
+- New Game window: its options start as your graphics mode set them (HD text no longer turns itself off), and the
+  HD mod's rows are always listed: greyed out until the launcher imports them.
+- Options that need files (the HD mod's parts, the Japanese ROM of the undub) are never turned on without them,
+  by the graphics modes or the launcher either.
+- Something new loaded since the last start (an HD part, the undub's ROM): the game says so on the title ("Undub
+  loaded!") and offers to turn it on; several at once get a switch each.
+- Launcher: tabs Home, Enhancements, Settings (Graphics, Sound and Controls inside), Achievements, Save editor. The HD
+  mod is now at the top of Enhancements, with what is loaded at a glance and one button that loads everything from
+  KINGDOM HEARTS HD 1.5+2.5 (Steam or Epic, found by itself) at the size you choose, or from a folder you pick; when
+  the game is installed and nothing is loaded yet, the launcher offers it. Home shows "1.5 HD mode" and the undub,
+  greyed out with a link to what they need until it is there.
+- Launcher: "Install ROM..." first installs whatever you left in the roms folder (dumps under any name, zips with a
+  dump or the HD mod's folders, an hd folder) by moving it, and sends leftovers to the Recycle Bin; a zip with other
+  files (a backup) is kept.
+- Options: the game's settings first (roll, stock, volumes, save bank, undub), the picture's after.
+- Tablets and foldables (screens taller than 16:9): the picture is framed as on a 16:9 screen, bigger and without
+  the black band above the backdrop.
+- No more crash going fullscreen with the "smooth" filter on PCs without a GPU (SDL's software renderer).
+- Touch controls in menus take the d-pad's main direction only: going down in Options no longer changed a value or
+  opened Achievements by itself.
+- Options: "Return to title screen" is now the last row and "Reset to a mode's defaults" asks which mode; both ask
+  twice in a window with a warning, as skipping a scene does.
+
 ## v2.0-pre19 — 2026-10-26
 
 Test build: pre18 plus
@@ -83,92 +182,6 @@ This test build includes the changes merged since v2.0-pre5:
   Gaming Mode flow still needs confirmation on a real Deck.
 - The Android Jafar card-pickup crash (#83) remains under investigation; this build is for another reproduction
   attempt, not a confirmed fix.
-
-## v2.0 — 2026-10-22
-
-**The HD mod.** With your own copy of KINGDOM HEARTS -HD 1.5+2.5 ReMIX- on PC, the launcher imports Re:Chain of
-Memories' HD music, movies and story scenes (with their subtitles in every language Re:CoM has), and the game uses
-them in place of the cartridge's: the opening and endings, 97 of Re:CoM's 100 story scenes, and the HD soundtrack.
-All optional, under Options > Re:CoM improvements and in the New Game window. v1.9.15 came out only as a test
-prerelease; this release carries all of it.
-
-Windows, Linux and Steam Deck are stable; Android, Switch, PS Vita, PS4, PS5, Anbernic and the web player are betas.
-HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes on Windows and Android.
-
-- **HD graphics (beta)**, imported the same way, where Re:CoM has the very same picture: the battle cards
-  (illustrations, frames and values), Sora's and Riku's faces on the HP gauge, the battle words (Card Break, Guard,
-  Recover, Level Up, in each European language) and the title screen's logo, from its intro to the credits, with
-  "Chain of Memories" under the Kingdom Hearts logo. Options > Re:CoM improvements: "HD cards and battle HUD",
-  "HD title logo".
-- **Graphics modes**, asked on the first start: **HD mode** (every HD asset and improvement) or **GBA mode**, then
-  **GBA enhanced** (the widescreen view and ReKHCoM's improvements, HD extras off) or **GBA classic** (everything off:
-  the GBA picture at a whole scale inside a decorative border in the manner of the Super Game Boy's, almost an
-  emulator but native). The launcher's Graphics has "Graphics mode" (choose on start by default), and Options
-  "Reset to a mode's defaults". A new game in GBA classic still offers the widescreen view.
-
-- **Touch buttons**: three looks (Clear, Dark, Color) and a layout editor: Options > "Move touch buttons", drag
-  the d-pad, L, R, the face buttons, SELECT, START and the menu button where you want them (Android, web, Switch).
-- **Android**: the app opens on the same launcher as the PC's (home, enhancements, graphics, sound and controls,
-  achievements, save editor), with the system's file pickers for dumps, saves and the PC's HD folder.
-- **Quick states are now off by default**, so a run plays as on the cartridge: turn them on in Options > Cheats
-  (only for testing or reproducing bugs). F5 saves, **F8 loads** (was F9), F6/F7 change the slot; no achievements
-  unlock while they are on.
-- First start: behind the mode question, how the screen will look with the mode you are on.
-- HD import on the graphics card, about twice as fast as before.
-- HD import keeps what is already loaded: loading again only does the movies that are missing, broken or at
-  another quality (seconds instead of minutes), and with everything loaded the launcher says so instead of offering
-  the big load button.
-
-- HD scenes: smooth in and out of each scene (no flash of the event's picture when it ends), skipping a scene or
-  movie fades the picture and its sound out instead of cutting them, the field's music fades out before a scene
-  starts, and the scene pause sounds like the game's menus.
-- Agrabah: the street of Aladdin's rescue and the Genie's market now continue to the edges of the widescreen view.
-
-- Switch: with "Hide touch controls" on, no touch button shows anywhere, pause and Options included; hold Minus +
-  Plus for three seconds to open the Options (#36).
-- Switch and PS Vita: when the console cannot draw every frame, the frame is skipped instead of slowing the game:
-  the game and the sound keep their original speed (#35, #36). Options > Experimental, on by default everywhere.
-- PS Vita: the picture is drawn by the GPU.
-- Consoles and Android 64-bit: the sound's buffer level is measured in the right units.
-- Android: the HD mod's movies play (opening and endings, with subtitles), imported from the PC's `hd` folder.
-- HD mod: the sound effects play again with the HD music on (button clicks, menus, attacks, level-up, pause:
-  most of them were taken for music and muted with it), and the HD music now plays at the cartridge's loudness.
-- HD mod: no more hitch at doors and battle starts when the HD track changes (it loads in the background, in
-  silence instead of a moment of the cartridge's song), and no jump or overlap around menus: the HD track keeps
-  playing under the Options as the cartridge's song does, and waits in place when the game holds its sound.
-- HD movies and scenes: our scene pause works on them (Start/Escape: back to the game or skip, after asking);
-  they no longer end by themselves when the dialogue's button was still pressed.
-- HD scenes: 97 of Re:CoM's 100 scenes now replace their story event (25 more, one corrected), matched by their
-  dialogue in five languages and their order; the other three exist only in Re:CoM or are part of the opening.
-- Options: the HD mod's settings are under "Re:CoM improvements"; the New Game window offers HD music and movies,
-  and, for Re:CoM, the HD scenes.
-- Battle start: no more frame of the small heart over the battlefield right before the white flash (widescreen).
-- Title: the first illustration (the developer credit over Sora) now fades into white at its right edge too.
-- Windows: the HD movies also play with the software renderer (they closed the game there).
-- Battle HP gauges: no division by zero when the deck menu goes back into a battle before the HP are set
-  (closed the game on Android, the web and Linux ARM; #40).
-- New Game window: its options start as your graphics mode set them (HD text no longer turns itself off), and the
-  HD mod's rows are always listed: greyed out until the launcher imports them.
-- Options that need files (the HD mod's parts, the Japanese ROM of the undub) are never turned on without them,
-  by the graphics modes or the launcher either.
-- Something new loaded since the last start (an HD part, the undub's ROM): the game says so on the title ("Undub
-  loaded!") and offers to turn it on; several at once get a switch each.
-- Launcher: tabs Home, Enhancements, Settings (Graphics, Sound and Controls inside), Achievements, Save editor. The HD
-  mod is now at the top of Enhancements, with what is loaded at a glance and one button that loads everything from
-  KINGDOM HEARTS HD 1.5+2.5 (Steam or Epic, found by itself) at the size you choose, or from a folder you pick; when
-  the game is installed and nothing is loaded yet, the launcher offers it. Home shows "1.5 HD mode" and the undub,
-  greyed out with a link to what they need until it is there.
-- Launcher: "Install ROM..." first installs whatever you left in the roms folder (dumps under any name, zips with a
-  dump or the HD mod's folders, an hd folder) by moving it, and sends leftovers to the Recycle Bin; a zip with other
-  files (a backup) is kept.
-- Options: the game's settings first (roll, stock, volumes, save bank, undub), the picture's after.
-- Tablets and foldables (screens taller than 16:9): the picture is framed as on a 16:9 screen, bigger and without
-  the black band above the backdrop.
-- No more crash going fullscreen with the "smooth" filter on PCs without a GPU (SDL's software renderer).
-- Touch controls in menus take the d-pad's main direction only: going down in Options no longer changed a value or
-  opened Achievements by itself.
-- Options: "Return to title screen" is now the last row and "Reset to a mode's defaults" asks which mode; both ask
-  twice in a window with a warning, as skipping a scene does.
 
 ## v1.9.14 — 2026-10-21
 
