@@ -556,6 +556,27 @@ static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==87 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
+        int diagonal=2*wy+wx;
+        if (p->v[1]==3 && diagonal<128) {
+            /* The upper landing uses the same 2:1 slope as its source.
+             * A pixel donor preserves the half-tile phase at either edge. */
+            *sx=PortSceneTileMod(wx,16);
+            *sy=(diagonal-*sx)/2;
+            if (*sy>=0 && *sy<64) return 1;
+            *sx=PortSceneTileMod(wx,32); *sy=0;
+            return 1;
+        }
+        if ((p->v[1]==2 || p->v[1]==3) && wx<192 && diagonal>=400) {
+            /* Repeat a complete 16x8 diagonal module, including its lit lip,
+             * instead of restarting the donor on each eight-pixel row. */
+            *sx=32+PortSceneTileMod(wx-32,16);
+            *sy=(diagonal-*sx)/2;
+            if (*sy>=192 && *sy<256) return 1;
+            if (p->v[1]==2) { *sx=0; *sy=120; return 1; }
+        }
+    }
+
     if (p && p->v[0]==81) {
         if (p->v[1]==1 || p->v[1]==3) {
             /* Replace the cartridge's finite left cap with the same smooth
