@@ -1939,7 +1939,7 @@ void PortUiTouchEdit(int on) {
 static int sFade;    /* frames since the menu opened */
 static int sClosing; /* frames left of the menu fading to black */
 static int sReturn;  /* frames left of the black fading back to the game */
-static int sHarnessTick;
+static int sHarnessTick, sHarnessShotPending;
 
 /* Options > Return to title screen, once the menu has closed (PortFrame resets the game). */
 int PortUiTakeTitleRequest(void) {
@@ -1995,6 +1995,7 @@ void PortUiOpenOptions(void) {
     sScroll = 0;
     sPage = PAGE_MAIN;
     sHarnessTick = 0;
+    sHarnessShotPending = 0;
     if (SDL_getenv("KHCOM_OPTIONS_CURSOR")) /* test harness: shot of a lower row */
         sCursor = SDL_clamp(SDL_atoi(SDL_getenv("KHCOM_OPTIONS_CURSOR")), 0, ITEM_COUNT - 1);
     if (SDL_getenv("KHCOM_OPTIONS_FONTCHOICE")) /* test harness: the HD text font window open */
@@ -4726,6 +4727,13 @@ static int HarnessOptionsAction(void) {
     return changed;
 }
 
+void PortUiHarnessStep(void) {
+    /* Change/ConfirmKey may resize the canvas. Match ordinary input's timing:
+       never mutate video geometry from inside Present -> PortUiDraw. */
+    if (sOpen && !sClosing && sFade >= MENU_FADE * 2)
+        sHarnessShotPending |= HarnessOptionsAction();
+}
+
 static void HarnessOptionsShot(uint32_t* frame, int width, int height) {
     char name[64];
     SDL_Surface* surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_XRGB8888, frame, width * 4);
@@ -5015,8 +5023,10 @@ void PortUiDraw(uint32_t* frame, int width, int height) {
         HarnessFadeShot(width, height);
         return;
     }
-    if (sFade >= MENU_FADE * 2)
-        harnessShot = HarnessOptionsAction();
+    if (sFade >= MENU_FADE * 2) {
+        harnessShot = sHarnessShotPending;
+        sHarnessShotPending = 0;
+    }
     DrawMenu(l, width, height);
     if (harnessShot)
         HarnessOptionsShot(frame, width, height);
