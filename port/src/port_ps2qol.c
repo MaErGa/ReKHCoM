@@ -166,6 +166,8 @@ void PortRecomSaved(int file) {
    was started with come back; files never recorded keep today's settings. */
 void PortRecomLoaded(int file) {
     int v;
+    void PortScenesFromGame(void);
+    PortScenesFromGame(); /* the scene gallery: what this game has already seen */
     Load();
     v = sTable[Key(file)];
     PortLog("recom: loaded file %d (bank %d): %s", file, gPortConfig.saveBank,
