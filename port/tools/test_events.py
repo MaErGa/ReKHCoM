@@ -88,6 +88,10 @@ def run(exe_dir, work, version, list_id, index, frames, timeout, wide=False, res
         shutil.rmtree(d)
     d.mkdir(parents=True)
     case_bin.place(exe_dir, work, d)
+    if run_fingerprint(d, version, frames, wide, timeout) != fingerprint:
+        # case_bin can retain its previous shared copy when another process holds it open.
+        # Never stamp the requested build's fingerprint onto a different executable.
+        return "stale executable copy", False, []
     (d / "kh_com.ini").write_text(f"config_version=2\nview_mode={4 if wide else 0}\n")
     keys = ",".join(f"{f}-{f + 3}:A" for f in range(30, frames, 40))
     shots = ",".join(str(f) for f in (frames // 4, frames // 2, frames * 3 // 4, frames))

@@ -137,6 +137,17 @@ class GateResults(unittest.TestCase):
             case(200)
             self.assertEqual(execute.call_count, 6)
 
+    def test_stale_shared_copy_cannot_claim_new_fingerprint(self):
+        m = load('test_events')
+        def stale(exe, work, d):
+            for f in ('khcom.exe', 'SDL3.dll'):
+                (d / f).write_bytes(b'previous build')
+        with patch.object(m, 'ROOT', self.root), patch.object(m.case_bin, 'place', side_effect=stale), \
+                patch.object(m.subprocess, 'run') as execute:
+            code, _, _ = m.run(self.build, self.root / 'events', 'eu', 0, 0, 100, 20)
+        self.assertNotEqual(code, 0)
+        execute.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
