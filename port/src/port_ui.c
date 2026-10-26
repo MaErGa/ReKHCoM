@@ -2768,7 +2768,10 @@ static void DrawTitleHint(int l) {
     int y = gPortScreen.originY + 6;
     Shade(x - 3, y - 2, w + 6, 14, 0xFFFFFFFFu, 224);
     MenuBar(x, y, w, 1);
-    DrawText(text, x + 19, y, MENU_INK, 0xFFD8D8D8u);
+    /* KHMenu's uppercase ink starts one row below its origin. Lift that
+       origin one row: the ink stays inside the plate and leaves the same
+       native row before the underline as PULSA START. */
+    DrawText(text, x + 19, y - 1, MENU_INK, 0xFFD8D8D8u);
 }
 
 /* A value without its explanation in brackets, for the narrow list. */

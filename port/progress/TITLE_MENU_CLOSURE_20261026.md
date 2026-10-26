@@ -7,7 +7,8 @@
 - Brillo del título y L/R sólo en GBA original/vista Original, o mediante la opción experimental explícita del
   juego y del launcher. Fuera de esos casos se restaura la paleta neutra.
 - Se termina la infografía de logros del aviso de estados rápidos que Claude dejó sin commit; su WIP se conserva.
-- SELECT usa el estilo y separación de PULSA START. El logo HD sin «Re:» viene de la importación existente;
+- SELECT usa el estilo y separación de PULSA START; la tinta queda una fila nativa por encima de la línea negra
+  (siete píxeles visibles de separación en ambos avisos a 1920×1080). El logo HD sin «Re:» viene de la importación existente;
   una captura sin `hd/sprites` había mostrado correctamente el fallback GBA, no una regresión del importador.
 - Franja roja y línea negra llegan al borde derecho. La fila vacía se eliminó haciendo coincidir la cuadrícula
   de geometría con la del presentador. La extensión roja no recibe después el rosa de la paleta original.
@@ -28,6 +29,10 @@ Compilación EU y launcher: OK. Sobre una copia aislada, con vídeo/audio dummy:
   la unión y en el extremo: RGB (140,8,49); negro: RGB (0,0,0).
 
 Evidencia privada reproducible: `D:/01Claude/ReKHCoM-build/root-title-verified/report.json` y `title.png` por tamaño.
-SHA-256 del ejecutable de esa pasada: `fa2561fbd458fbad7dbbe8c58334da6f545cbc6ad3867740cf11bda1bc7c7e62`.
+SHA-256 del ejecutable de esa pasada: `c520dff8d5927af91b454ed26e459e9a6cbf88d80df4a7a15c0c6c17733a053c`.
 Es evidencia de este arreglo, no el paquete final de lanzamiento. Opciones: informes de `root-ui-confirm` y
 `build/ui-runtime`; sus manifiestos conservan las fuentes. Toda prueba final posterior debe registrar su propio SHA.
+
+Pedido posterior del usuario: unificar todas las luces de menús HD con el indicador suave de PULSA START,
+manteniendo los originales cuando los menús HD están apagados. Se entrega como cambio separado, sin reabrir
+los arreglos de color, separación ni composición de esta pasada.
