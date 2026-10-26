@@ -21,8 +21,12 @@ rápida exigen 100 pares de aperturas/cierres reales tanto en campo como durante
 
 Evidencia inicial: 120/120 casos de la matriz principal pasaron con el ejecutable EU de #248. Las extensiones se
 ejecutaron después sobre main `204367b2a` (#244 + #248). Detectaron una excepción nativa al cambiar GBA original a
-mejorado con mod presente: el handler BIOS interceptaba lecturas de una DLL. La prueba conserva esa señal como
-fallo; no se permite concluir la auditoría hasta repetirla con el arreglo y el ejecutable final de integración.
+mejorado con mod presente. Se aisló la causa: el arnés ejecutaba `ConfirmKey` desde `PortUiDraw`, cambiando las
+dimensiones después de que `Present` preparara su buffer; el handler BIOS ocultaba la lectura fuera de límites
+de SDL. El recorrido con mando SDL real y la guardia BIOS pasó sin esa excepción. Ahora `PortUiHarnessStep`
+ejecuta las acciones al procesar entrada, antes de preparar el siguiente frame; la captura queda para ese dibujo.
+No se modifica `Present`. El contexto de reproducción completo pasó 19/19 tras mover el arnés. La matriz de
+integración sigue siendo necesaria; no se infiere de ello cobertura final de todas las plataformas.
 
 Ejemplo reproducible (ROM y mod propios):
 

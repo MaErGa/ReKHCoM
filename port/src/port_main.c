@@ -2654,6 +2654,7 @@ static void PumpEvents(void) {
             continue;
         PortInputHandleEvent(&ev);
     }
+    PortUiHarnessStep();
 }
 
 /* The frame timer always paces the game; vsync only removes tearing. On a

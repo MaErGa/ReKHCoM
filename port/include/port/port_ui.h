@@ -20,6 +20,8 @@ int PortUiSceneFade(void);
 void PortUiOpenOptions(void);
 /* Test harness (KHCOM_OPTIONS_TOGGLE): open, or close as the player would. */
 void PortUiHarnessToggle(void);
+/* Test actions run with input, before the next presentation prepares its canvas. */
+void PortUiHarnessStep(void);
 /* Called by the title screen while the options hint should be shown. */
 void PortUiTitleHint(void);
 /* Short message in the corner of the screen (UTF-8). */
