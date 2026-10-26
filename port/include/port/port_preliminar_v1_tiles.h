@@ -722,10 +722,12 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
                     /* Above the purple corner, sample the same wall plane. */
                     if (wx>=48 && wx<112) *sy=0;
                 } else {
-                    /* Quiet plaster, without the repeated crack islands or
-                     * the roof texture: continue one coherent wall plane. */
-                    *sx=160+PortSceneTileMod(wx-160,32);
-                    *sy=8+PortSceneTileMod(wy,16);
+                    /* Fold the complete upper wall strip up, then back at
+                     * each new edge: the user's rolling-mirror continuation.
+                     * Keep its full texture instead of a short repeated sliver. */
+                    int phase=PortSceneTileMod(-wy-1,128);
+                    *sx=160+PortSceneTileMod(wx-160,352);
+                    *sy=phase<64?phase:127-phase;
                 }
             } else {
                 *sx=wy>=144 && wy<264?320+PortSceneTileMod(wx-320,160):320+PortSceneTileMod(wx-320,192);
