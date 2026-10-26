@@ -9,8 +9,8 @@
  * Glyphs are rasterised with GDI and cached as textures, drawn unscaled at
  * whole pixels.
  *
- * The font is assets/fonts/KHMenu.otf next to the executable (Segoe UI when
- * it is missing). Letters a font lacks are built from it where possible:
+ * Fonts are distributed in assets/fonts and embedded as core resources, so
+ * loose test executables retain KHMenu too. Letters a font lacks are built from it where possible:
  * accented letters are the base letter with the accent of the fallback font
  * (Segoe UI), and the Spanish opening marks are ? and ! turned over; anything
  * else comes from the fallback font.
@@ -20,6 +20,7 @@
 #include <SDL3/SDL.h>
 
 #include "port/port.h"
+#include "port/port_font_resources.h"
 
 /* The pixel font's capitals are 7 pixels tall, from row 4 to row 10 of the
    16x16 cell: the baseline is row 11. */
@@ -64,6 +65,21 @@ static HdFont sFonts[3][2]; /* [style][cache slot]; style 2: numbers, menu face 
 static int sNextFont[3];
 static int sCustomTried;
 static const WCHAR* sFace[2] = { L"Segoe UI", L"Segoe UI" }; /* menu / dialogue, movie subtitles */
+static HANDLE sEmbeddedFonts[2]; /* process-private resources, kept for GDI's lifetime */
+
+static int LoadEmbeddedFont(int i) {
+    static const int ids[2] = { PORT_FONT_KHMENU_RESOURCE, PORT_FONT_COMIC_HEARTS_RESOURCE };
+    HMODULE module = GetModuleHandleW(NULL);
+    HRSRC resource = FindResourceW(module, MAKEINTRESOURCEW(ids[i]), MAKEINTRESOURCEW(10)); /* RCDATA */
+    HGLOBAL loaded;
+    void* data;
+    DWORD size, count = 0;
+    if (!resource || !(size = SizeofResource(module, resource)) ||
+        !(loaded = LoadResource(module, resource)) || !(data = LockResource(loaded)))
+        return 0;
+    sEmbeddedFonts[i] = AddFontMemResourceEx(data, size, NULL, &count);
+    return sEmbeddedFonts[i] != NULL && count > 0;
+}
 
 static void LoadCustomFont(void) {
     static const char* const files[2] = { "assets/fonts/KHMenu.otf", "assets/fonts/ComicHearts.otf" };
@@ -83,9 +99,14 @@ static void LoadCustomFont(void) {
         SDL_strlcpy(path, PortConfigPath(files[i]), sizeof(path));
         if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES)
             SDL_snprintf(path, sizeof(path), "%s%s", base ? base : "", files[i]);
+        if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES && base)
+            SDL_snprintf(path, sizeof(path), "%s../%s", base, files[i]);
         if (MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, 1024) > 0 && AddFontResourceExW(wpath, FR_PRIVATE, NULL) > 0) {
             sFace[i] = faces[i];
             PortLog("HD text: font %s", path);
+        } else if (LoadEmbeddedFont(i)) {
+            sFace[i] = faces[i];
+            PortLog("HD text: font %s (embedded core resource)", i ? "Comic Hearts" : "KHMenu");
         } else {
             PortLog("HD text: unable to load %s; using fallback", path);
         }
