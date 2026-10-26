@@ -577,6 +577,12 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
         }
     }
 
+    if (p && p->v[0]==95 && p->v[1]==1 && wx>=-16 && wx<0 && wy>=272 && wy<352) {
+        /* Only the topiary cut at the map seam: complete its missing half
+         * using the original crown, without cloning the whole foreground. */
+        *sx=-1-wx; *sy=wy; return 1;
+    }
+
     if (p && p->v[0]==81) {
         if (p->v[1]==1 || p->v[1]==3) {
             /* Replace the cartridge's finite left cap with the same smooth
@@ -701,12 +707,12 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
             int phase=PortSceneTileMod(wx,64);
             *sx=96+(phase<32?phase:63-phase); *sy=wy; return 1;
         }
-        if (wx>=512 && 2*wy-wx>=-128 && 2*wy-wx<0) {
+        if (wx>=512 && 2*wy-wx>=-128 && 2*wy-wx<64) {
             /* Reflect the whole left hedge bay, including its flowers, rather
              * than chopping the right hedge into four-column stair steps. */
             int reflected=559-wx;
             *sx=64+PortSceneTileMod(reflected-64,96);
-            *sy=wy+(reflected-*sx)/2;
+            *sy=(2*wy-wx+576-*sx)/2; /* align the flower row, not just the blank hedge */
             return 1;
         }
         if (!PortPreliminarTileSource(p,&tx,&ty)) return 0;
