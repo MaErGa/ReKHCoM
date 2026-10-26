@@ -1816,7 +1816,36 @@ static void Present(void) {
             DrawBlurredReflection(&backdrop, outW, outH);
         }
         DrawClassicBorder(&dst);
-        SDL_RenderTexture(sRenderer, sTexture, NULL, &dst);
+        {
+            /* the Options panel's HD picture under its canvas, which leaves it clear (port_ui.c): the canvas then goes
+               up with its alpha, in a texture of its own (the frame's has none) */
+            extern int PortUiHdArtUnder(SDL_Renderer*, float, float, float);
+            static SDL_Texture* sMenuAlpha;
+            static int sMenuAlphaW, sMenuAlphaH;
+            SDL_Texture* frameTex = sTexture;
+            if (menuCanvas && gPortConfig.hdHud && PortUiHdArtUnder(sRenderer, dst.x, dst.y, dst.w / gPortScreen.width)) {
+                if (sMenuAlpha && (sMenuAlphaW != gPortScreen.width || sMenuAlphaH != gPortScreen.height)) {
+                    SDL_DestroyTexture(sMenuAlpha);
+                    sMenuAlpha = NULL;
+                }
+                if (!sMenuAlpha) {
+                    sMenuAlphaW = gPortScreen.width;
+                    sMenuAlphaH = gPortScreen.height;
+                    sMenuAlpha = SDL_CreateTexture(sRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                                                   sMenuAlphaW, sMenuAlphaH);
+                    if (sMenuAlpha)
+                        SDL_SetTextureBlendMode(sMenuAlpha, SDL_BLENDMODE_BLEND);
+                }
+                if (sMenuAlpha) {
+                    SDL_ScaleMode mode = SDL_SCALEMODE_NEAREST;
+                    SDL_GetTextureScaleMode(sTexture, &mode);
+                    SDL_SetTextureScaleMode(sMenuAlpha, mode);
+                    SDL_UpdateTexture(sMenuAlpha, NULL, sComposite, gPortScreen.width * 4);
+                    frameTex = sMenuAlpha;
+                }
+            }
+            SDL_RenderTexture(sRenderer, frameTex, NULL, &dst);
+        }
         worldScale = dst.w / gPortScreen.width;
         worldX = dst.x;
         worldY = dst.y;
@@ -1992,7 +2021,7 @@ static void Present(void) {
             SDL_RenderTexture(sRenderer, sTexture, &ps, &pd);
         }
     }
-    if (menuCanvas && gPortConfig.hdHud) {
+    if (gPortConfig.hdHud) {
         extern void PortUiHdDraw(SDL_Renderer*, float, float, float);
         PortUiHdDraw(sRenderer, worldX, worldY, worldScale);
     }

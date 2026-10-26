@@ -255,6 +255,27 @@ int PortHdTitleArtReady(float* aspect) {
     return sArt != NULL;
 }
 
+/* The illustration in a w x h box at x, y (the Options panel's picture): as tall as the box, its right side kept. */
+int PortHdTitleArtDraw(SDL_Renderer* renderer, float x, float y, float w, float h) {
+    float aw;
+    SDL_FRect src, dst;
+    sRenderer = renderer;
+    if (w <= 0 || h <= 0 || !PortHdTitleArtReady(NULL))
+        return 0;
+    aw = h * sArtW / sArtH;
+    src.y = 0; src.h = (float)sArtH;
+    if (aw > w) { /* cut on the left */
+        src.w = sArtW * w / aw; src.x = sArtW - src.w;
+        dst = (SDL_FRect){ x, y, w, h };
+    } else {
+        src.x = 0; src.w = (float)sArtW;
+        dst = (SDL_FRect){ x + w - aw, y, aw, h };
+    }
+    SDL_SetTextureColorMod(sArt, 255, 255, 255);
+    SDL_SetTextureAlphaMod(sArt, 255);
+    return SDL_RenderTexture(renderer, sArt, &src, &dst);
+}
+
 void PortHdTitleArtQueue(const float* x, const float* y, float u0, float v0, float u1, float v1, int alpha, int dark,
                          int white) {
     HdSpriteDraw* q;
