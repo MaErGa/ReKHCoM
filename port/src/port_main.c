@@ -920,10 +920,10 @@ static void SideBar(int sx, int sy, int side, float y, float scale, float x0, fl
                 *px = moogleMenu ? bgRow[edgeX] : bgRow[sample];
                 /* The last charge tab's oval touches the GBA edge. Its ink
                    is foreground decoration, never a horizontal background
-                   band. The grid silhouettes also touch that edge. Continue the
-                   clear gutter below the tabs through the panel instead,
+                   band. Continue the clear gutter only beside the tabs; lower
+                   rows retain their own shading and bottom transition,
                    using this frame's BG so fades stay synchronized. */
-                if (moogleMenu == 2 && side > 0 && yy >= 16 && yy < 159)
+                if (moogleMenu == 2 && side > 0 && yy >= 16 && yy < 32)
                     *px = gPortMenuBackground[(sy + 32) * gPortScreen.width + edgeX];
                 /* the badge's rows: the edge as it shows, sprites included
                    (while it slides in, its lower rows are a sprite) */

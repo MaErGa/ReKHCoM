@@ -17,3 +17,6 @@ Para retomar: revisar primero aprobados nuevos y PRs; después abrir las captura
 Padre bbfce11b25f34df0a2004146597afb99, envío20261026-071224-dc7307, nube69f4acf0-5614-4535-a159-2d503e7692ca. El óvalo de la última pestaña toca el borde GBA y su tinta se prolongaba horizontalmente; otras filas copiaban siluetas de la rejilla. El perfil de Canjear continúa el fondo limpio bajo las pestañas por la columna derecha, desde la cabecera hasta antes de la línea inferior. Se toma el BG del mismo frame, manteniendo el fundido. Comprar conserva el rojo ya aprobado.
 
 Retomar con `python port/tools/atlas_moguri_tabs_replay.py`: cuatro fases1420/1433/1447/1462 en una misma ejecución aislada. Carpeta build/atlas-moguri-tabs-r2/canjear, PNG, BMP, runtime.log, kh_com.log, ini y review.png. Se verificó fondo uniforme en la columna de margen de las cuatro fases y centro GBA idéntico al padre en1420. Compilación EU768MB, check_sources y diff --check pasan. La nueva hija requiere valoración; el padre aprobado se integró en PR228.
+
+
+Revisión directa posterior (usuario26/10, sin Atlas): se retira la sustitución de todo el margen16..158. Solo se reemplaza la tinta junto a las pestañas16..31; desde fila32 cada fila vuelve a continuar su propio BG, incluido el degradado inferior original. Comparar con padre aprobado1420..1462: región inferior debe ser idéntica.
