@@ -41,6 +41,7 @@ typedef struct HdSpriteState {
     SDL_Texture *image, *white;
     uint32_t lastUsed;
     size_t bytes;
+    int textureH;
     uint8_t present; /* 0 not looked up yet, 1 missing, 2 on disk */
 } HdSpriteState;
 
@@ -148,6 +149,7 @@ static int Load(int i) {
         PortLog("HD sprites: %s unreadable, the cartridge's sprite stays", file);
         return 0;
     }
+    sState[i].textureH = h;
     need = (size_t)w * h * 8;
     /* the cards on screen stay; the oldest others make room (32 MB; 12 MB on Switch and PS Vita, whose memory is
        shared with the game's image and the host's own copy of each texture) */
@@ -303,6 +305,16 @@ static void Quad(SDL_Texture* t, const HdSpriteDraw* q, float ox, float oy, floa
             v[0].tex_coord.y = v[1].tex_coord.y = w0 + (w1 - w0) * (cy0 - y0) / (y1 - y0);
             v[2].tex_coord.y = v[3].tex_coord.y = w0 + (w1 - w0) * (cy1 - y0) / (y1 - y0);
         }
+    }
+    if (kHdSprites[q->id].group == 5 && sState[q->id].textureH > 0 &&
+        SDL_fabsf(scale - SDL_roundf(scale)) > 0.001f &&
+        SDL_strstr(kHdSprites[q->id].name, "gWorldInspectBar") == kHdSprites[q->id].name) {
+        /* Match the cartridge band's pixel-centre convention. At fractional
+         * scales the exact texel-boundary sample otherwise removes a row from
+         * both white strokes where the HD header meets its native margin. */
+        float halfTexel = 0.5f / sState[q->id].textureH;
+        for (k = 0; k < 4; k++)
+            v[k].tex_coord.y = SDL_clamp(v[k].tex_coord.y - halfTexel, 0.0f, 1.0f);
     }
     /* SDL turns an axis-aligned quad into a texture copy, and the software
        renderer's scaled copy reads outside the texture when the quad is

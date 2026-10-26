@@ -112,7 +112,7 @@ def game_includes(region):
 
 
 def common_flags():
-    return [TARGET, '-ffreestanding', '-nostdinc', '-isystem', resource_dir(), f'-I{HERE / "guest/include"}',
+    return [TARGET, '-DPORT_PS5_GUEST', *(['-DPORT_LINUX64_GUEST'] if os.environ.get('REKHCOM_GUEST_LINUX64') else []), '-ffreestanding', '-nostdinc', '-isystem', resource_dir(), f'-I{HERE / "guest/include"}',
             f'-I{HERE / "shared"}', '-O2', '-funsigned-char', '-fno-strict-aliasing', '-fwrapv', '-fno-pic', '-fno-pie',
             '-fno-stack-protector', '-fno-asynchronous-unwind-tables', '-fno-common', '-fno-omit-frame-pointer', '-msse4.1', '-fno-builtin-printf',
             '-fno-math-errno']
@@ -168,7 +168,8 @@ def build_guest(region, jobs):
         if src.stem in PORT_EXCLUDED:
             continue
         if src.name in PORT_PATCHES:
-            src = patched_source(src, out / 'patched')
+            # the 64-bit Linux image (port/linux64) has a PC pad: no DualSense patches
+            src = patched_source(src, out / 'patched', dualsense=os.environ.get('REKHCOM_GUEST_DUALSENSE', '1') != '0')
         units.append((src, out / 'port' / (src.stem + '.o'), port_flags))
     units.append((pc / 'rom_relocs.c', out / 'port/rom_relocs.o', port_flags))
     for src in sorted((HERE / 'guest/src').glob('*.c')):

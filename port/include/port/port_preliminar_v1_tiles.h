@@ -556,6 +556,27 @@ static inline int PortPreliminar099Floor(int wx, int wy, int* sx, int* sy) {
 }
 
 static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int wx, int wy, int* sx, int* sy) {
+    if (p && p->v[0]==87 && (wx<0 || wx>=256 || wy<0 || wy>=256)) {
+        int diagonal=2*wy+wx;
+        if (p->v[1]==3 && diagonal<128) {
+            /* The upper landing uses the same 2:1 slope as its source.
+             * A pixel donor preserves the half-tile phase at either edge. */
+            *sx=PortSceneTileMod(wx,16);
+            *sy=(diagonal-*sx)/2;
+            if (*sy>=0 && *sy<64) return 1;
+            *sx=PortSceneTileMod(wx,32); *sy=0;
+            return 1;
+        }
+        if ((p->v[1]==2 || p->v[1]==3) && wx<192 && diagonal>=400) {
+            /* Repeat a complete 16x8 diagonal module, including its lit lip,
+             * instead of restarting the donor on each eight-pixel row. */
+            *sx=32+PortSceneTileMod(wx-32,16);
+            *sy=(diagonal-*sx)/2;
+            if (*sy>=192 && *sy<256) return 1;
+            if (p->v[1]==2) { *sx=0; *sy=120; return 1; }
+        }
+    }
+
     if (p && p->v[0]==95 && p->v[1]==1 && wx>=-16 && wx<0 && wy>=272 && wy<352) {
         /* Only the topiary cut at the map seam: complete its missing half
          * using the original crown, without cloning the whole foreground. */
@@ -574,10 +595,10 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
             *sx=504;*sy=504;return 1; /* no detached corner props */
         }
     }
-    if (p && p->v[0]==112 && p->v[1]==2 && (wy<0 || wx>=512 || (wx>=416 && wx<456 && wy<24))) {
+    if (p && p->v[0]==112 && p->v[1]==2 && (wy<0 || wx>=512 || (wx>=416 && wx<464 && wy<24))) {
         if (wy<0 && wx>=192 && wx<208) {
             *sx=504; *sy=344; /* leave the corner shaft's gold face to BG3 */
-        } else if (wx>=448 && wx<456 && wy<24) {
+        } else if (wx>=448 && wx<464 && wy<24) {
             *sx=wx; *sy=80; /* continue the existing outer jamb up with the tall door */
         } else if (wx>=352 && wx<448 && wy<24) {
             /* User 25/10: temporarily stretch the door's colour straight
@@ -728,10 +749,12 @@ static inline int PortPreliminarPixelSource(const PortPreliminarRecipe* p, int w
                     /* Above the purple corner, sample the same wall plane. */
                     if (wx>=48 && wx<112) *sy=0;
                 } else {
-                    /* Quiet plaster, without the repeated crack islands or
-                     * the roof texture: continue one coherent wall plane. */
-                    *sx=160+PortSceneTileMod(wx-160,32);
-                    *sy=8+PortSceneTileMod(wy,16);
+                    /* Fold the complete upper wall strip up, then back at
+                     * each new edge: the user's rolling-mirror continuation.
+                     * Keep its full texture instead of a short repeated sliver. */
+                    int phase=PortSceneTileMod(-wy-1,128);
+                    *sx=160+PortSceneTileMod(wx-160,352);
+                    *sy=phase<64?phase:127-phase;
                 }
             } else {
                 *sx=wy>=144 && wy<264?320+PortSceneTileMod(wx-320,160):320+PortSceneTileMod(wx-320,192);

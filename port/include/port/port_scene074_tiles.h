@@ -13,9 +13,10 @@
 static inline int PortScene074TileSource(int bg, int* x, int* y) {
     if ((bg < 1 || bg > 3) || *x < 0 || *y < 0)
         return 0;
-    if (bg == 2 && *x >= 32 && *x <= 34 && *y >= 17 && *y <= 21) {
+    if (bg == 2 && *x >= 32 && *x <= 34 && *y >= 17 && *y <= 24) {
         /* Nineteen existing entries match the original left counterpart.
-         * Continue its tail instead of repeating its beginning diagonally. */
+         * Continue its tail and the empty rows below it; otherwise the
+         * generic diagonal lookup copies a loose blue ornament fragment. */
         *x -= 20;
         *y += 1;
         return 1;
