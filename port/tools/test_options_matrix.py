@@ -65,7 +65,11 @@ def main():
                            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if (args.roms / 'B8CJ.gba').is_file():
                 (work / 'roms').mkdir()
-                os.link(args.roms / 'B8CJ.gba', work / 'roms/B8CJ.gba')
+                shared_rom = out / '_roms/B8CJ.gba'
+                if not shared_rom.exists():
+                    shared_rom.parent.mkdir(exist_ok=True)
+                    shutil.copy2(args.roms / 'B8CJ.gba', shared_rom)
+                os.link(shared_rom, work / 'roms/B8CJ.gba')
         settings = dict(config_version=11, graphics_mode=mode, graphics_mode_applied=mode, assets_seen=-1,
             view_mode=0 if mode == 3 else 4, zoom=8, window_scale=2, fullscreen=0, vsync=0,
             hd_text=int(mode != 3), hd_font=0, hd_cards=0, hd_title=0, hd_music=0, hd_movies=0, hd_scenes=0,
