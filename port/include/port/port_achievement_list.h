@@ -16,4 +16,5 @@ int PortAchievementsListGet(int index, PortAchievementInfo* out);
    badgeIndex: the official badge, -1 for the mode's own. */
 int PortRecomListCount(void);
 int PortRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex);
+int PortRebelRecomListGet(int index, PortAchievementInfo* out, int* badgeIndex);
 #endif

@@ -1,5 +1,5 @@
 static int sAchievementChoice, sAchievementScroll, sAchievementView;
-static int sAchievementList; /* 0 the official list, 1 the Re:CoM one, 2 Rebel mode's (opened from Cheats) */
+static int sAchievementList; /* 0 official, 1 Re:CoM, 2 Rebel CoM, 3 Rebel Re:CoM (from Cheats) */
 int PortRebelEarned(int index);
 int PortRecomActive(void);
 /* The set's badges: assets/achievements/badges.png, one atlas (10 per row in
@@ -38,7 +38,7 @@ static void AchievementMenuBadge(const PortAchievementInfo* info, int index, int
             const unsigned char* p = sAchievementAtlas +
                 (((kMenuRecomFrame / 10) * 64 + py * 64 / 80) * 640 + (kMenuRecomFrame % 10) * 64 + px * 64 / 80) * 4;
             if (p[3] < 128) continue;
-            if (sAchievementList == 2) { /* Rebel mode: the same filigree in black, its light kept as dark greys */
+            if (sAchievementList >= 2) { /* Rebel mode: the same filigree in black, its light kept as dark greys */
                 unsigned v = ((p[0] * 77 + p[1] * 150 + p[2] * 29) >> 8) / 4;
                 Pixel(x - 8 + px, y - 8 + py, 0xFF000000u | v << 16 | v << 8 | v);
             } else {
@@ -50,13 +50,13 @@ static void AchievementMenuBadge(const PortAchievementInfo* info, int index, int
 /* Read-only, portable list inside Options. Account controls stay in launcher. */
 /* the list shown, row i: its text and badge (-1 none) */
 static int AchievementMenuCount(void) {
-    return sAchievementList == 1 ? PortRecomListCount() : PortAchievementsListCount();
+    return (sAchievementList == 1 || sAchievementList == 3) ? PortRecomListCount() : PortAchievementsListCount();
 }
 static int AchievementMenuGet(int i, PortAchievementInfo* info, int* badge) {
     if (sAchievementList == 1) return PortRecomListGet(i, info, badge);
-    if (sAchievementList == 2) { /* the official set, as Rebel mode earned it */
-        int ok = PortAchievementsListGet(i, info);
-        if (badge) *badge = i;
+    if (sAchievementList >= 2) { /* the official set, as Rebel mode earned it */
+        int ok = sAchievementList == 3 ? PortRebelRecomListGet(i, info, badge) : PortAchievementsListGet(i, info);
+        if (badge && sAchievementList == 2) *badge = i;
         if (ok) {
             static const char* const kIn[6] = { "In Rebel mode: ", "En mode rebelle : ", "Im Rebellen-Modus: ",
                 "In modalità ribelle: ", "En modo rebelde: ", "反逆モードで: " };
@@ -65,7 +65,7 @@ static int AchievementMenuGet(int i, PortAchievementInfo* info, int* badge) {
             if (l < 0 || l > 5) l = 0;
             SDL_snprintf(text, sizeof(text), "%s%s", kIn[l], info->description);
             SDL_strlcpy(info->description, text, sizeof(info->description));
-            info->state = PortRebelEarned(i);
+            if (sAchievementList == 2) info->state = PortRebelEarned(i);
         }
         return ok;
     }
@@ -93,7 +93,7 @@ static void AchievementMenuOpen(void) {
 }
 static void RebelMenuOpen(void) {
     AchievementMenuOpen();
-    sAchievementList = 2;
+    sAchievementList = PortRecomActive() && PortRecomListCount() > 0 ? 3 : 2;
 }
 static int AchievementMenuInput(const SDL_Event* ev) {
     int move = 0, filter = 0, back = 0, list = 0, indices[256], earned, count;
@@ -128,10 +128,12 @@ static int AchievementMenuInput(const SDL_Event* ev) {
         if (down && !held[t]) list = 1;
         held[t] = ev->gaxis.value > 8000;
     }
-    if (back && sAchievementList == 2) { sPage = PAGE_CHEATS; sCursor = ITEM_CHEAT_REBEL_LIST; sScroll = 0; return 1; }
+    if (back && sAchievementList >= 2) { sPage = PAGE_CHEATS; sCursor = ITEM_CHEAT_REBEL_LIST; sScroll = 0; return 1; }
     if (back) { sPage = PAGE_MAIN; sCursor = ITEM_ACHIEVEMENTS_MENU; sScroll = 0; return 1; }
-    if (list && sAchievementList == 2) list = 0; /* Rebel mode's list stays its own */
-    if (list && PortRecomListCount() > 0) { sAchievementList = !sAchievementList; sAchievementChoice = sAchievementScroll = 0; }
+    if (list && PortRecomListCount() > 0) {
+        sAchievementList = sAchievementList >= 2 ? (sAchievementList == 2 ? 3 : 2) : !sAchievementList;
+        sAchievementChoice = sAchievementScroll = 0;
+    }
     if (filter) { sAchievementView = Wrap(sAchievementView + filter, 3); sAchievementChoice = sAchievementScroll = 0; }
     count = AchievementMenuRows(indices, &earned);
     if (move && count) {
@@ -157,7 +159,8 @@ static void DrawAchievementMenu(int l, int width, int height) {
     PortAchievementInfo info;
     char text[160];
     Fill(0, 0, width, height, 0xFFFFFFFFu);
-    DrawText(sAchievementList == 2 ? (es ? "Logros · Modo rebelde" : "Achievements · Rebel mode")
+    DrawText(sAchievementList == 3 ? (es ? "Logros · Rebelde Re:CoM" : "Achievements · Rebel Re:CoM")
+             : sAchievementList == 2 ? (es ? "Logros · Rebelde CoM" : "Achievements · Rebel CoM")
              : sAchievementList ? (es ? "Logros · Re:Chain of Memories" : "Achievements · Re:Chain of Memories")
                               : (es ? "Logros · Chain of Memories" : "Achievements · Chain of Memories"),
              x, MENU_TITLE_Y, MENU_INK, 0xFFD8D8D8u);
@@ -194,7 +197,7 @@ static void DrawAchievementMenu(int l, int width, int height) {
     }
     {
 #ifdef VERSION_EU
-        const char* note = sAchievementList == 2 ? (es ? "Con trucos; solo en este equipo, nunca en RetroAchievements" :
+        const char* note = sAchievementList >= 2 ? (es ? "Con trucos; solo en este equipo, nunca en RetroAchievements" :
                                                        "With cheats; on this device only, never on RetroAchievements")
                          : sAchievementList ? (es ? "Partidas Re:CoM; solo en este equipo, nunca en línea" :
                                                     "Re:CoM games; kept on this device, never online")

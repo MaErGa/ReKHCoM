@@ -10,7 +10,8 @@ Prioridad más reciente del usuario: **integrar lo aprobado → terminar pendien
 - Opciones no instaladas: mensaje HD compartido con el primer arranque y aviso de ROM japonesa con el mismo formato, ambos en rojo. Compilación EU, check_sources y capturas reales de las dos opciones correctos.
 - Cerrado: PR195, avisos rojos HD/ROM japonesa, merge `18465ed91fa7bf04e477af5e5b185d808e5a07fe`.
 - Recursos core, rama `codex/core-assets-embedded`: fuentes, insignias, imágenes del launcher y HUD distribuible dentro de los ejecutables. Se mantiene la carga externa y sólo se incorporan piezas del catálogo empaquetable, sin importaciones privadas. Ejecutable EU compilado; recursos recuperados mediante Win32 con bytes idénticos. Launcher compilado en prioridad baja con límite total de 768 MB. Cargador nativo: diez recursos válidos; validadores de paquete EU/launcher y check_sources correctos. EU/US/JP finales se reconstruyen al cerrar el código.
-- Código siguiente: lista Re:CoM del modo rebelde; revisar resultados pendientes de baterías y retest Android 123/124. Bancos por banco siguen aplazados según el diseño vigente. El botón Opciones y el título HD esperan su arte y van al final con Atlas.
+- Re:CoM rebelde implementado: progreso y evaluadores separados, archivos propios, selector CoM/Re:CoM dentro del modo rebelde en juego y launcher. Compilaciones EU/launcher y cuatro ejecuciones con reinicios verifican aislamiento y requisitos de historia.
+- Código siguiente: revisar resultados pendientes de baterías y retest Android 123/124. Bancos por banco siguen aplazados según el diseño vigente. El botón Opciones y el título HD esperan su arte y van al final con Atlas.
 - ZIP pre19 existente: todavía anterior a estas integraciones; **no entregarlo como build actual**. Reconstruir EU/US/JP desde el cierre de código, verificar fuentes y limpieza antes de entregarlo. No publicar release sin autorización.
 
 
