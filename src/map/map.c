@@ -79,6 +79,14 @@ void PortLog(const char* fmt, ...);
 #include "macros.h"
 #include "mode_sio_api.h"
 #include "card_ui_types.h"
+#ifdef PLATFORM_PC
+/* number tiles registered as HD text, as the deck menus do (card_deckmenu2.c) */
+void PortRegisterBgTextTile(void* address, int code, int style, const void* source32);
+#define PORT_BG_DIGIT(dst, d, src) PortRegisterBgTextTile((void*)(dst), '0' + (d), 2, (const void*)(src))
+#else
+#define PORT_BG_DIGIT(dst, d, src) ((void)0)
+#endif
+
 
 #ifndef PORT_MENU_LEFT
 #define PORT_MENU_LEFT(x) (x)
@@ -3678,6 +3686,7 @@ void NewGameSlotMenuLoadLevelTiles(u8 slot, u16 level) {
 
     while (i <= 2) {
         RequestDma3Copy((void*)&gSaveSlotDigitTiles[*digit * 32], (u8*)GetBgCharBase(1) + off + i * 32, 0x20);
+        PORT_BG_DIGIT((u8*)GetBgCharBase(1) + off + i * 32, *digit, &gSaveSlotDigitTiles[*digit * 32]);
         digit++;
         i++;
     }
@@ -3707,6 +3716,7 @@ void NewGameSlotMenuLoadTimeTiles(u8 slot, u32 playTime) {
 
     while (i <= 5) {
         RequestDma3Copy((void*)&gSaveSlotDigitTiles[*digit * 32], (u8*)GetBgCharBase(1) + off + i * 32, 0x20);
+        PORT_BG_DIGIT((u8*)GetBgCharBase(1) + off + i * 32, *digit, &gSaveSlotDigitTiles[*digit * 32]);
         digit++;
         i++;
     }
@@ -4180,6 +4190,7 @@ void LoadGameMenuLoadLevelTiles(u8 slot, u16 level) {
 
     while (i <= 2) {
         RequestDma3Copy((void*)&gSaveSlotDigitTiles[*digit * 32], (u8*)GetBgCharBase(1) + off + i * 32, 0x20);
+        PORT_BG_DIGIT((u8*)GetBgCharBase(1) + off + i * 32, *digit, &gSaveSlotDigitTiles[*digit * 32]);
         digit++;
         i++;
     }
@@ -4208,6 +4219,7 @@ void LoadGameMenuLoadTimeTiles(u8 slot, u32 playTime) {
 
     while (i <= 5) {
         RequestDma3Copy((void*)&gSaveSlotDigitTiles[*digit * 32], (u8*)GetBgCharBase(1) + off + i * 32, 0x20);
+        PORT_BG_DIGIT((u8*)GetBgCharBase(1) + off + i * 32, *digit, &gSaveSlotDigitTiles[*digit * 32]);
         digit++;
         i++;
     }
@@ -6217,6 +6229,7 @@ void MapSaveLoadLevelTiles(u16 level) {
 
     for (i = 1; i < 3; i++) {
         RequestDma3Copy((void*)&gSaveSlotDigitTiles[digits[i] * 32], (u8*)GetBgCharBase(0) + off, 0x20);
+        PORT_BG_DIGIT((u8*)GetBgCharBase(0) + off, digits[i], &gSaveSlotDigitTiles[digits[i] * 32]);
         off += 0x20;
     }
 }
@@ -6243,6 +6256,7 @@ void MapSaveLoadTimeTiles(u32 playTime) {
 
     for (i = 0; i < 6; i++) {
         RequestDma3Copy((void*)&gSaveSlotDigitTiles[*digit * 32], (u8*)GetBgCharBase(0) + off, 0x20);
+        PORT_BG_DIGIT((u8*)GetBgCharBase(0) + off, *digit, &gSaveSlotDigitTiles[*digit * 32]);
         off += 0x20;
         digit++;
     }
