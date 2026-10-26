@@ -8,19 +8,28 @@ them in place of the cartridge's: the opening and endings, 97 of Re:CoM's 100 st
 All optional, under Options > Re:CoM improvements and in the New Game window. v1.9.15 came out only as a test
 prerelease; this release carries all of it, and everything from the v2.0 test builds (pre13 to pre19) below.
 
-Windows, Linux and Steam Deck are stable; Android, Switch, PS Vita, PS4, PS5, Anbernic and the web player are betas.
+Windows, Linux and Steam Deck are stable; Android, PS Vita, PS4, PS5, Anbernic and the web player are betas.
+This release does not include a Switch package.
 HD music plays on PC, Steam Deck, Android and the consoles; HD movies and scenes on Windows and Android.
 
 Since the last test build (pre19):
 
-- **HD title and Options** (with the HD HUD): every word of the title in HD (menu, Brightness, credit, Press Start,
+- **HD title and Options** (with HD title and menus enabled): every word of the title in HD (menu, Brightness, credit, Press Start,
   in each European language), the press-start bar smooth, the fades exactly as the game's; the Options panel with the
   HD illustration and its texts in HD.
+- HD menu indicators share Press Start's warm glow and smooth pulse. Original lights stay unchanged with HD menus off.
+- The title's red bar and black underline reach the window edge, and SELECT has the same underline clearance as Press Start.
+- Brightness and its L/R shortcut appear in GBA classic or Original view; an explained experimental option can enable them elsewhere.
+- Restoring controls also clears old bindings and capture state. Trigger navigation handles slow presses and releases consistently.
+- Deck menu transitions keep their border synchronized without changing the glove or lower fade.
 - **Re:CoM's battle words in their own proportion**: Card Break, Guard, Recover, Level Up and the menus' banners no
   longer squeezed into the cartridge's box.
 - **Card values as big as Re:CoM's**, and HD values for boosted (blue) and premium (gold) cards too.
 - Moogle shop, save screen and link numbers in HD text, as the deck menus.
-- **Scene gallery**: saves from before it get the scenes they already went through (#163).
+- **Scene gallery**: GBA, HD and ReKHCoM lists, with named static previews. ReKHCoM uses the same available HD
+  scenes as gameplay and keeps the GBA engine scenes where there is no equivalent. Playback returns to the same
+  gallery selection and restores the current game, settings and save; missing or broken HD files retain native fallbacks.
+  Saves from before the gallery get the scenes they already went through (#163).
 - Add to Steam: a wide banner and, with the HD mod, the title's HD logo as the library logo.
 
 
