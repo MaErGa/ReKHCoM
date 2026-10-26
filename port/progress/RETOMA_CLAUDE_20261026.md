@@ -22,6 +22,8 @@ esa autorización; no publicar mientras haya fallos sin resolver.
 - [x] Corregir texto fuera de cajas, centrar el aviso GBA, completar franja inferior HD y fundidos de Opciones.
 - [x] Terminar infografía de estados rápidos que Claude dejó en WIP; texto claro sobre logros.
   Estas tres entregas van en #244; pruebas en `TITLE_MENU_CLOSURE_20261026.md`.
+- [ ] **Claude (27/10, tomado):** repaso de textos propios (Opciones, avisos, carteles, launcher): prolijo,
+  profesional, lenguaje de juego claro y respetuoso, sin cambiar el sentido ni romper los anchos. PR propio.
 - [ ] Integrar PR pequeños verificados; completar gates y paquete limpio desde el commit de cierre.
 
 ## Pedidos posteriores y cierre técnico

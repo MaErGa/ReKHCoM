@@ -356,6 +356,9 @@ static void DryRunFrame(void) {
 
 void PortAchievementsFrame(void) {
     int evaluate, recom;
+    extern int PortSceneGalleryActive(void);
+    if (PortSceneGalleryActive())
+        return; /* visual replays neither award achievements nor invalidate the original session */
 #ifdef PORT_RETROACHIEVEMENTS
     DryRunFrame();
 #endif

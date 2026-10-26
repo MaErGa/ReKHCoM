@@ -1974,6 +1974,12 @@ unsigned PortUiOpenSerial(void) {
 }
 
 void PortUiOpenOptions(void) {
+    extern int PortSceneGalleryActive(void);
+    if (PortSceneGalleryActive()) {
+        extern void PortUiOpenScenePause(int skippable);
+        PortUiOpenScenePause(1); /* pause the replay; never switch banks or edit its paused original game */
+        return;
+    }
     if (sOpen)
         return;
     sOpen = 1;
@@ -1999,7 +2005,7 @@ void PortUiOpenOptions(void) {
         sPage = PAGE_CONTROLS;
     RefreshModes();
     if (SDL_getenv("KHCOM_ACHIEVEMENTS_SHOT")) AchievementMenuOpen();
-    if (SDL_getenv("KHCOM_SCENES_SHOT")) { SceneMenuOpen(); sSceneHd = SDL_atoi(SDL_getenv("KHCOM_SCENES_SHOT")) == 2; }
+    if (SDL_getenv("KHCOM_SCENES_SHOT")) SceneMenuOpen();
     if (SDL_getenv("KHCOM_OPTIONS_AUDIT"))
         PortLog("options-lifecycle: open serial=%u frame=%u", sOpenSerial, PortFrameCount());
     AuditOptions("open");
@@ -3984,12 +3990,12 @@ static const char* const sConfirmStatesAsk[LANG_COUNT] = {
     "¿Activar los estados rápidos?", "クイックステートをオンにしますか？",
 };
 static const char* const sConfirmStatesWarn[LANG_COUNT] = {
-    "Only for testing or reproducing bugs. While they are on, no achievements unlock until you turn them off.",
-    "Uniquement pour tester ou reproduire des bugs. Tant qu'ils sont actifs, aucun succès ne se débloque.",
-    "Nur zum Testen oder Nachstellen von Fehlern. Solange sie an sind, werden keine Erfolge freigeschaltet.",
-    "Solo per test o per riprodurre bug. Finché sono attivi non si sblocca nessun obiettivo.",
-    "Solo para pruebas o para replicar errores. Mientras estén activos no se desbloquean logros.",
-    "テストやバグのさいげんのためだけです。オンのあいだはじっせきがかいじょされません。",
+    "Meant for testing. While quick states are on, achievements are paused: none unlock until you turn them off.",
+    "Prévu pour les tests. Tant que les états rapides sont actifs, les succès sont en pause : aucun ne se débloque.",
+    "Zum Testen gedacht. Solange Schnellstände an sind, sind Erfolge pausiert: Es wird keiner freigeschaltet.",
+    "Pensato per i test. Finché gli stati rapidi sono attivi, gli obiettivi sono in pausa: non se ne sblocca nessuno.",
+    "Pensado para pruebas. Mientras los estados rápidos estén activos, los logros quedan en pausa: no se desbloquea ninguno.",
+    "テスト用です。クイックステートがオンのあいだ、じっせきはていしし、かいじょされません。",
 };
 static const char* const sConfirmStatesRows[2][LANG_COUNT] = {
     { "No", "Non", "Nein", "No", "No", "いいえ" },
@@ -4757,12 +4763,14 @@ static const char* const sMoviePauseAsk[LANG_COUNT] = {
     "¿Saltar esta cinemática?", "このムービーをスキップしますか？",
 };
 static int sSceneSkippable, sSceneStep, sSceneCursor, sSceneMovie;
+static int sGalleryPauseHarnessTick;
 
 void PortUiOpenScenePause(int skippable) {
     if (sOpen || sScenePause)
         return;
     sScenePause = 1;
     ResetMenuAxes();
+    sGalleryPauseHarnessTick = 0;
     sSceneSkippable = skippable;
     sSceneStep = 0;
     sSceneCursor = 0;
@@ -4891,6 +4899,20 @@ int PortUiScenePauseRect(int r[4]) {
 }
 
 static void DrawScenePause(int l, int width, int height) {
+    {
+        extern int gPortGalleryEvent;
+        const char* route = SDL_getenv("KHCOM_GALLERY_NATIVE_PAUSE");
+        if (gPortGalleryEvent && route) {
+            int tick = ++sGalleryPauseHarnessTick, cancel = !SDL_strcmp(route, "cancel");
+            if (tick == 10) ScenePauseKey(1);
+            if (tick == 20) ScenePauseKey(2);
+            if (tick == 30) ScenePauseKey(cancel ? 3 : 0);
+            if (tick == 40) {
+                ScenePauseKey(cancel ? 3 : 2);
+                PortLog("scene gallery native pause test: %s", cancel ? "cancelled skip; resumed" : "skipped");
+            }
+        }
+    }
     const char* title = sSceneStep == 0 ? sScenePauseTitle[l] : (sSceneMovie ? sMoviePauseAsk[l] : sScenePauseAsk[l]);
     const char* rows[2];
     int i, panelW, h = 22 + 2 * 16 + 6, x0, y0, y;

@@ -42,6 +42,7 @@ extern const char* GetModeName(void);
 #include "types.h"
 #ifdef PLATFORM_PC
 #include "port/port.h"
+#include "port/port_scene_gallery.h"
 #include "display.h"
 #include "m4a_song.h"
 #include "songs.h"
@@ -230,11 +231,15 @@ int PortDebugModeAvailable(void) {
    select does, without its end message); back to the title when it ends (mode_event.c). */
 int gPortGalleryEvent;
 extern Mode gModeEventDebug;
-int PortSceneGalleryPlay(int eventId) {
-    if (!PortDebugModeAvailable())
-        return 0;
+void PortSceneGalleryGoTitle(void) {
+    gPortGalleryEvent = 0;
+    ModeRequestHeapReset(&gModeTitle, 0);
+}
+int PortSceneGalleryBegin(int eventId) {
     gPortGalleryEvent = 1;
-    ModeRequest(&gModeEventDebug, (eventId & 0x7FFF) | 0x8000);
+    if (PORT_SCENE_IS_MOVIE(eventId)) {
+        ModeRequestHeapReset(&gModeMovie, eventId - PORT_SCENE_MOVIE_BASE);
+    } else ModeRequestHeapReset(&gModeEventDebug, (eventId & 0x7FFF) | 0x8000);
     return 1;
 }
 
