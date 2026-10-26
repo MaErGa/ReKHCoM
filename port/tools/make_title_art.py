@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 SRC = r'C:\Users\MP\Documents\00 Claude\KHCoMPC\x5zh3428mzyf1.jpg'
-OUT = Path(r'C:\Users\MP\Documents\00 Claude\KHCoMPC\khcom-recom-art\port\assets\mods\title-sora.png')
+OUT = Path(r'C:\Users\MP\Documents\00 Claude\KHCoMPC\khcom-recom-art\port\assets\hd\title\art\sora.png')
 PREVIEW = r'D:\01Claude\ReKHCoM-build\titlehd\art_check.png'
 
 im = Image.open(SRC).convert('RGB')
