@@ -13,8 +13,10 @@ Steam Deck; zip limpio en KHCoMPC).
   (son ~400 corridas: horas, no es un cuelgue).
 - **Pruebas de la 2.0 ya pasadas (pre19 / main):** test_update (las 4 estables → ok), test_launcher 11/11,
   test_hd_audio 0/13 con problemas, match_hd_scenes --check, primer arranque modo + ventana (fullscreen=0).
-- **Linux 64 bits** hecho (juego, GPU, videos HD con subtítulos); la fila de pantalla completa en Opciones no está
-  (F11 y fullscreen=1 sí): hace falta una entrada nueva en el puente y en todos los hosts; queda para después.
+- **Linux 64, rama `wip/linux64-fullscreen-row`:** la fila de pantalla completa ya sale y cambia en Opciones (la
+  imagen manda la orden por `set_title` con prefijo `\x01fullscreen=`, sin tocar el puente); falta ver por qué el host
+  no registra la orden en la VM (vmshare-fs64/run.sh). En la misma rama: la fila de escenas HD salía apagada en esa
+  imagen (HD_MOVIES_PLAY sin PORT_LINUX64_GUEST), ya corregido.
 
 ## Reglas que no se olvidan
 
@@ -26,16 +28,17 @@ Steam Deck; zip limpio en KHCoMPC).
 
 ## 1. Código (Claude)
 
-- [x] **#202 Modo CRT (26/10):** vista CRT 320x240 con salida 240p nativa, superresolución x6/x8 y 480p 2x, en juego y launcher; test enviado a itsNateDev (rama test-builds), esperando su prueba.
 - [ ] **Baterías** (khcom-claude-int, `run_batteries.py --status`): relanzadas el 26/10 con marcas frescas; su parte
   Android trae Agrabah 123/124 (app smoke completa). Revisar resultados y arreglar lo que salga.
-- [x] **Linux 64 bits (port/linux64, 26/10):** host x86-64 con GPU en los paquetes, videos HD con ffmpeg y subtítulos (stb_truetype), pistas SELECT. Falta solo: la fila de pantalla completa en Opciones (F11 y fullscreen=1 funcionan).
+- [ ] **Linux 64: fila de pantalla completa** (rama `wip/linux64-fullscreen-row`, ver TRASPASO) y PR.
 - [ ] **Antes de la 2.0** (sección 3): correr la lista de pruebas sobre el commit final.
 
 ## 2. Arte (Atlas — Codex)
 
+- Codex manda por PR lo aprobado en Atlas; Claude lo integra al llegar. Los PR abiertos #206, #210–#216, #222 y
+  #226 son propuestas sin aprobación en la cola: no se integran hasta que lo estén.
 - Cola: arena de Agrabah (frente), tienda moguri, cambiar naipes, añadir naipes (esquina), botón Opciones del menú,
-  banner de Steam, escena 087, y lo que Codex tiene en curso (057, 061, 074, 097, diario, Maléfica, remates).
+  banner de Steam, y lo que Codex tiene en curso (057, 061, 097, 095 castillo, diario, Maléfica, remates, título HD).
 - Al entregar el botón Opciones: el código lo agrega al menú y quita Start+Select para Opciones (solo menú y título).
 - Título HD hasta cargar la partida y Opciones en HD con el HUD HD: diseño en Atlas, luego código.
 
@@ -51,6 +54,7 @@ Steam Deck; zip limpio en KHCoMPC).
 ## 4. Esperando a otros (no se trabaja hasta que llegue)
 
 - #163 duartepedro: revisión de la galería de escenas y del test3 (videos HD desde el segundo justo).
+- #202 itsNateDev: prueba del modo CRT (240p, superresolución, 480p) enviada por test-builds.
 - Material del usuario para los modos PS2 con REA (ISO/ELF de PS2 y carpeta 1.5 HD).
 - Reportes: cara HD de Sora con el pelo cortado al recibir daño; cuadro negro en Agrabah con HUD HD (falta captura);
   Vita: undub por cabecera y velocidad.
@@ -58,6 +62,6 @@ Steam Deck; zip limpio en KHCoMPC).
 ## 5. Después de la v2.0
 
 - Modos de Re:CoM basados en PS2 con REA: mejorar o arreglar los modos que ya hay (no modos nuevos).
-- Consolas a más potencia solo con ajustes documentados. (Linux/Steam Deck 64 bits: hecho el 26/10, port/linux64.)
+- Consolas a más potencia solo con ajustes documentados.
 - iOS (IPA por fuera de la App Store; hace falta una Mac para compilar).
 - Switch (SWITCH_MOTOR.md); Vita/PS4 a la GPU; online (~70 %); rutas de Sora y Reverse/Rebirth (#39).
