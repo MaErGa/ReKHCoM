@@ -218,7 +218,7 @@ static int sConfirm, sConfirmStep, sConfirmCursor, sConfirmMode;
 static void ConfirmOpen(int what);
 static void ConfirmKey(int key);
 static const char* const sModeNames[PORT_MODE_COUNT][LANG_COUNT] = {
-    { "Choose", "Choisir", "Wählen", "Scegli", "Escoger", "選ぶ" },
+    { "Choose", "Choisir", "Wählen", "Scegli", "Elegir", "選ぶ" },
     { "HD mode", "Mode HD", "HD-Modus", "Modalità HD", "Modo HD", "HDモード" },
     { "GBA enhanced", "GBA amélioré", "GBA verbessert", "GBA migliorato", "GBA mejorado", "GBA強化" },
     { "GBA classic", "GBA classique", "GBA klassisch", "GBA classico", "GBA clásico", "GBAクラシック" },
@@ -394,7 +394,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Subir cartas en combate", "カードを上げる" },
     { "Invert card scrolling", "Inverser le défilement", "Kartenauswahl umkehren", "Inverti scorrimento carte",
       "Invertir selección de cartas", "カード送りを反転" },
-    { "Video", "Vidéo", "Video", "Video", "Vídeo", "ビデオ" },
+    { "Video", "Vidéo", "Video", "Video", "Video", "ビデオ" },
     { "View", "Vue", "Ansicht", "Visuale", "Vista", "表示" },
     { "CRT output", "Sortie CRT", "CRT-Ausgabe", "Uscita CRT", "Salida CRT", "CRTしゅつりょく" },
     { "Aspect ratio", "Format d'image", "Seitenverhältnis", "Proporzioni", "Relación de aspecto", "画面の形" },
@@ -405,7 +405,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "GBA-size scenes", "Scènes format GBA", "Szenen im GBA-Format", "Scene formato GBA", "Escenas tamaño GBA", "GBAサイズの場面" },
     { "Fullscreen", "Plein écran", "Vollbild", "Schermo intero", "Pantalla completa", "フルスクリーン" },
     { "Fullscreen resolution", "Résolution plein écran", "Vollbild-Auflösung", "Risoluzione a schermo intero",
-      "Resolución completa", "フルスクリーン解像度" },
+      "Resolución en pantalla completa", "フルスクリーン解像度" },
     { "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR", "VSync / VRR" },
     { "Filter", "Filtre", "Filter", "Filtro", "Filtro", "フィルター" },
     { "Scanlines", "Lignes de balayage", "Scanlines", "Linee di scansione", "Scanlines", "スキャンライン" },
@@ -456,7 +456,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Return stocked cards", "Rendre les cartes en réserve", "Vorratskarten zurücknehmen",
       "Riprendi carte accumulate", "Devolver cartas acumuladas", "ストックをてふだに戻す" },
     { "Skip frames when slow", "Sauter des images si lent", "Bilder überspringen wenn langsam",
-      "Salta fotogrammi se lento", "Saltar cuadros si va lento", "遅い時はフレームを飛ばす" },
+      "Salta fotogrammi se lento", "Saltar fotogramas si va lento", "遅い時はフレームを飛ばす" },
     { "More", "Plus", "Mehr", "Altro", "Más", "その他" },
     { "Controls", "Commandes", "Steuerung", "Controlli", "Controles", "コントロール" },
     { "Achievements", "Succès", "Erfolge", "Obiettivi", "Logros", "じっせき" },
@@ -491,7 +491,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "Level 99 with every bonus", "Niveau 99 avec tous les bonus", "Stufe 99 mit allen Boni",
       "Livello 99 con tutti i bonus", "Nivel 99 con todos los bonos", "全ボーナスつきレベル99" },
     { "Every map card (9 each)", "Toutes les cartes de salle (9)", "Alle Raumkarten (je 9)",
-      "Tutte le carte stanza (9)", "Todas las cartas de mapa (9 c/u)", "全マップカード (9枚ずつ)" },
+      "Tutte le carte stanza (9)", "Todas las cartas de mapa (9 de cada una)", "全マップカード (9枚ずつ)" },
     { "Complete the journal", "Compléter le journal", "Tagebuch vervollständigen",
       "Completa il diario", "Completar el diario", "日記をすべてうめる" },
     { "Unlock all scenes", "Débloquer toutes les scènes", "Alle Szenen freischalten", "Sblocca tutte le scene",
@@ -502,7 +502,7 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
       "Logros del modo rebelde", "反逆モードのじっせき" },
     { "Debug mode", "Mode debug", "Debug-Modus", "Modalità debug", "Modo debug", "デバッグモード" },
     { "[ReKHCoM] GBA map logic", "[ReKHCoM] Logique carte GBA", "[ReKHCoM] GBA-Kartenlogik",
-      "[ReKHCoM] Logica mappa GBA", "[ReKHCoM] Lógica Mapa GBA", "[ReKHCoM] GBAマップロジック" },
+      "[ReKHCoM] Logica mappa GBA", "[ReKHCoM] Lógica del mapa GBA", "[ReKHCoM] GBAマップロジック" },
     { "GBA title brightness", "Luminosité du titre GBA", "GBA-Titelhelligkeit", "Luminosità titolo GBA",
       "Brillo del título GBA", "GBAタイトルの明るさ" },
     { "Back", "Retour", "Zurück", "Indietro", "Volver", "戻る" },
@@ -527,18 +527,18 @@ static const char* const sLabels[ITEM_COUNT][LANG_COUNT] = {
     { "R", "R", "R", "R", "R", "R" },
     { "Start", "Start", "Start", "Start", "Start", "Start" },
     { "Select", "Select", "Select", "Select", "Select", "Select" },
-    { "Arriba", "Haut", "Oben", "Su", "Arriba", "上" },
-    { "Abajo", "Bas", "Unten", "Giù", "Abajo", "下" },
-    { "Izquierda", "Gauche", "Links", "Sinistra", "Izquierda", "左" },
-    { "Derecha", "Droite", "Rechts", "Destra", "Derecha", "右" },
-    { "Acumular", "Stock", "Stock", "Accumula", "Acumular", "ストック" },
-    { "Esquivar", "Esquive", "Ausweichen", "Schiva", "Esquivar", "ドッジ" },
-    { "Devolver cartas", "Rendre les cartes", "Karten zurückgeben", "Restituisci carte", "Devolver cartas", "カードを戻す" },
-    { "Restaurar valores predeterminados", "Restaurer les valeurs par défaut", "Standardwerte wiederherstellen", "Ripristina valori predefiniti", "Restaurar valores predeterminados", "初期値に戻す" },
+    { "Up", "Haut", "Oben", "Su", "Arriba", "上" },
+    { "Down", "Bas", "Unten", "Giù", "Abajo", "下" },
+    { "Left", "Gauche", "Links", "Sinistra", "Izquierda", "左" },
+    { "Right", "Droite", "Rechts", "Destra", "Derecha", "右" },
+    { "Stock", "Stock", "Stock", "Accumula", "Acumular", "ストック" },
+    { "Dodge roll", "Esquive", "Ausweichen", "Schiva", "Esquivar", "ドッジ" },
+    { "Return cards", "Rendre les cartes", "Karten zurückgeben", "Restituisci carte", "Devolver cartas", "カードを戻す" },
+    { "Restore defaults", "Restaurer par défaut", "Standard wiederherstellen", "Ripristina predefiniti", "Restaurar predeterminados", "初期値に戻す" },
     { "Nintendo controller", "Manette Nintendo", "Nintendo-Controller", "Controller Nintendo", "Mando Nintendo", "ニンテンドーのコントローラー" },
     { "Force Nintendo layout", "Forcer la disposition Nintendo", "Nintendo-Belegung erzwingen", "Forza disposizione Nintendo",
       "Forzar mando Nintendo", "ニンテンドーの配置にこてい" },
-    { "Volver", "Retour", "Zurück", "Indietro", "Volver", "戻る" },
+    { "Back", "Retour", "Zurück", "Indietro", "Volver", "戻る" },
 };
 static const char* const sCheatsTitle[LANG_COUNT] = { "Cheats", "Codes", "Cheats", "Trucchi", "Trucos", "チート" };
 static const char* const sCheatsHelp[LANG_COUNT] = {
@@ -693,7 +693,7 @@ static const char* const sTitleHint[LANG_COUNT] = { "SELECT  OPTIONS", "SELECT  
 static const char* const sDifficulty[3][LANG_COUNT] = {
     { "Standard", "Standard", "Standard", "Standard", "Estándar", "スタンダード" },
     { "Beginner", "Débutant", "Anfänger", "Principiante", "Principiante", "ビギナー" },
-    { "Proud", "Fier", "Stolz", "Orgoglioso", "Orgulloso", "プラウド" },
+    { "Proud", "Fier", "Stolz", "Orgoglioso", "Experto", "プラウド" },
 };
 static const char* const sOnOff[2][LANG_COUNT] = {
     { "Off", "Non", "Aus", "No", "No", "オフ" },
@@ -3600,7 +3600,7 @@ static const char* const sGbaMapNote[LANG_COUNT] = {
 static const char* const sGbaMapNoteCaption[3][LANG_COUNT] = {
     { "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM", "ReKHCoM" },
     { "GBA", "GBA", "GBA", "GBA", "GBA", "GBA" },
-    { "GBA+fade", "GBA+fade", "GBA+fade", "GBA+fade", "GBA+fade", "GBA+fade" },
+    { "GBA+fundido", "GBA+fundido", "GBA+fundido", "GBA+fundido", "GBA+fundido", "GBA+fundido" },
 };
 
 /* A field Heartless, 5x7 drawn at 2x: black, two yellow eyes; only a faint
@@ -3873,17 +3873,17 @@ static const char* const sConfirmSure[LANG_COUNT] = {
     "Are you sure?", "Tu es sûr ?", "Bist du sicher?", "Sei sicuro?", "¿Seguro?", "本当によいですか？",
 };
 static const char* const sConfirmTitleWarn[2][LANG_COUNT] = {
-    { "Anything not saved since your last save is lost.",
+    { "Any progress since your last save will be lost.",
       "Tout ce qui n'a pas été sauvegardé depuis ta dernière sauvegarde sera perdu.",
       "Alles, was seit dem letzten Speichern nicht gesichert wurde, geht verloren.",
       "Tutto ciò che non hai salvato dall'ultimo salvataggio andrà perso.",
-      "Se pierde todo lo que no guardaste desde tu última partida guardada.",
+      "Se perderá todo el progreso desde tu último guardado.",
       "最後にセーブしてからの進行は失われます。" },
     { "Last confirmation: unsaved progress cannot be recovered.",
       "Dernière confirmation : la progression non sauvegardée ne pourra pas être récupérée.",
       "Letzte Bestätigung: nicht gespeicherter Fortschritt lässt sich nicht wiederherstellen.",
       "Ultima conferma: i progressi non salvati non si potranno recuperare.",
-      "Confirmación final: lo que no guardaste no se puede recuperar.",
+      "Última confirmación: el progreso sin guardar no se podrá recuperar.",
       "最終確認：セーブしていない進行はもどせません。" },
 };
 static const char* const sConfirmTitleRows[2][LANG_COUNT] = {
@@ -3936,17 +3936,17 @@ static const char* const sConfirmQuitAsk[LANG_COUNT] = {
     "Quit the game?", "Quitter le jeu ?", "Spiel beenden?", "Uscire dal gioco?", "¿Salir del juego?", "ゲームを終了しますか？",
 };
 static const char* const sConfirmQuitWarn[2][LANG_COUNT] = {
-    { "The game and its launcher close. Anything not saved since your last save is lost.",
+    { "The game and the launcher will close. Any progress since your last save will be lost.",
       "Le jeu et son lanceur se ferment. Tout ce qui n'a pas été sauvegardé sera perdu.",
       "Spiel und Launcher werden geschlossen. Nicht Gespeichertes geht verloren.",
       "Il gioco e il launcher si chiudono. Ciò che non hai salvato andrà perso.",
-      "Se cierran el juego y su lanzador. Se pierde lo que no guardaste desde tu última partida guardada.",
+      "Se cerrarán el juego y el launcher. Se perderá todo el progreso desde tu último guardado.",
       "ゲームとランチャーを閉じます。セーブしていない進行は失われます。" },
     { "Last confirmation: unsaved progress cannot be recovered.",
       "Dernière confirmation : la progression non sauvegardée ne pourra pas être récupérée.",
       "Letzte Bestätigung: nicht gespeicherter Fortschritt lässt sich nicht wiederherstellen.",
       "Ultima conferma: i progressi non salvati non si potranno recuperare.",
-      "Confirmación final: lo que no guardaste no se puede recuperar.",
+      "Última confirmación: el progreso sin guardar no se podrá recuperar.",
       "最終確認：セーブしていない進行はもどせません。" },
 };
 static const char* const sConfirmQuitRows[2][LANG_COUNT] = {
@@ -3967,17 +3967,17 @@ static const char* const sConfirmModeWarn[3][LANG_COUNT] = {
     { "The same choices as on the first start.", "Les mêmes choix qu'au premier démarrage.",
       "Dieselbe Auswahl wie beim ersten Start.", "Le stesse scelte del primo avvio.",
       "Las mismas opciones del primer inicio.", "初回起動と同じえらびかたです。" },
-    { "Your current settings are replaced by this mode's presets. Your saves are not touched.",
+    { "Your current settings will be replaced by this mode's presets. Your saves are not affected.",
       "Tes réglages actuels sont remplacés par ceux de ce mode. Tes sauvegardes ne sont pas touchées.",
       "Deine Einstellungen werden durch die dieses Modus ersetzt. Spielstände bleiben unberührt.",
       "Le impostazioni attuali vengono sostituite da quelle di questa modalità. I salvataggi restano intatti.",
-      "Tus ajustes actuales se reemplazan por los de este modo. Tus partidas no se tocan.",
+      "Tus ajustes actuales se reemplazarán por los de este modo. Tus partidas guardadas no se modifican.",
       "今のオプションはこのモードの初期値に置き換わります。セーブデータはそのままです。" },
     { "Last confirmation: your current settings cannot be brought back.",
       "Dernière confirmation : tes réglages actuels ne pourront pas être rétablis.",
       "Letzte Bestätigung: die aktuellen Einstellungen lassen sich nicht zurückholen.",
       "Ultima conferma: le impostazioni attuali non si potranno ripristinare.",
-      "Confirmación final: tus ajustes actuales no se pueden recuperar.",
+      "Última confirmación: tus ajustes actuales no se podrán recuperar.",
       "最終確認：今のオプションにはもどせません。" },
 };
 static const char* const sConfirmModeRows[2][LANG_COUNT] = {
@@ -4187,7 +4187,7 @@ static void DrawFontChoice(int l, int width, int height) {
         { "KHMenu (default)", "KHMenu (par défaut)", "KHMenu (Standard)", "KHMenu (predefinito)", "KHMenu (predeterminada)", "KHMenu (きほん)" },
         { "System", "Système", "System", "Sistema", "Sistema", "システム" } };
     static const char* const kNote[LANG_COUNT] = { "Subtitles keep their own font.", "Les sous-titres gardent la leur.",
-        "Untertitel behalten ihre Schrift.", "I sottotitoli tengono il loro.", "Los subtítulos conservan la suya.",
+        "Untertitel behalten ihre Schrift.", "I sottotitoli tengono il loro.", "Los subtítulos mantienen su propia fuente.",
         "じまくはそのままです。" };
     int panelW = SDL_min(width - 24, 250), x0 = (width - panelW) / 2, rowH = 14 + 30, h = 22 + rowH * 2 + 16, y0, i, y;
     y0 = SDL_max(2, (height - h) / 2);
