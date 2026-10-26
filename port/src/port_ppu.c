@@ -1723,7 +1723,7 @@ static void DrawTextBg(int bg, int gy, uint16_t dispcnt) {
                 continue;
             }
         }
-        if (sDarksideLayer[bg] && (outside || gx < 0 || gx >= GBA_SCREEN_W)) {
+        if (sDarksideLayer[bg] && (sDarksideLayer[bg] == 2 || outside || gx < 0 || gx >= GBA_SCREEN_W)) {
             const BgLatch* l = &sBgLatch[bg];
             int wx = l->x + gx + (hofs - l->hofs), wy = l->y + gy + (vofs - l->vofs);
             if (sDarksideLayer[bg] == 1 ? PortDarksideShorePixel(wx, wy, &out[x])
