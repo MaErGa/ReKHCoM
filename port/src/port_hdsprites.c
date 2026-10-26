@@ -30,6 +30,8 @@ typedef struct HdSpriteDef {
     const char* name;
     int16_t x0, y0, w, h; /* the sprite's box in its frame's coordinates */
     uint8_t group;
+    uint8_t padL, padR; /* the picture goes on past the box this many GBA pixels (a Re:CoM word in its own proportion,
+                           wider than the cartridge's: hd_sprites.tsv pad=L,R); the edge parts draw it */
 } HdSpriteDef;
 
 #include "port/hd_sprites.inc"
@@ -171,6 +173,19 @@ static int Load(int i) {
         sState[i].present = 1;
         PortLog("HD sprites: %s unreadable, the cartridge's sprite stays", file);
         return 0;
+    }
+    {
+        /* a picture imported for an older recipe (another width: before pad=): left out until the HD import is run
+           again, not drawn stretched */
+        const HdSpriteDef* d = &kHdSprites[i];
+        float want = (float)(d->padL + d->w + d->padR) / d->h, got = (float)w / h;
+        if (got > want * 1.03f || got < want * 0.97f) {
+            stbi_image_free(px);
+            sState[i].present = 1;
+            PortLog("HD sprites: %s is %dx%d, its recipe wants %.3f wide per high: import the HD mod again",
+                    kHdSprites[i].name, w, h, want);
+            return 0;
+        }
     }
     sState[i].textureH = h;
     need = (size_t)w * h * 8;
@@ -399,9 +414,25 @@ int PortHdSpriteQueue(int layer, int id, const float* x, const float* y, int px,
     q->id = id - 1;
     memcpy(q->x, x, sizeof(q->x));
     memcpy(q->y, y, sizeof(q->y));
-    q->u0 = (float)(px - d->x0) / d->w;
+    {
+        /* the picture is padL + w + padR wide: a part on the box's edge carries the overhang, along its own axis */
+        float total = (float)(d->padL + d->w + d->padR);
+        int left = d->padL && px == d->x0, right = d->padR && px + pw == d->x0 + d->w;
+        float ux = (x[1] - x[0]) / pw, uy = (y[1] - y[0]) / pw;
+        q->u0 = (float)(px - d->x0 + d->padL) / total;
+        q->u1 = (float)(px + pw - d->x0 + d->padL) / total;
+        if (left) {
+            q->x[0] -= ux * d->padL; q->y[0] -= uy * d->padL;
+            q->x[3] -= ux * d->padL; q->y[3] -= uy * d->padL;
+            q->u0 = 0;
+        }
+        if (right) {
+            q->x[1] += ux * d->padR; q->y[1] += uy * d->padR;
+            q->x[2] += ux * d->padR; q->y[2] += uy * d->padR;
+            q->u1 = 1;
+        }
+    }
     q->v0 = (float)(py - d->y0) / d->h;
-    q->u1 = (float)(px + pw - d->x0) / d->w;
     q->v1 = (float)(py + ph - d->y0) / d->h;
     q->alpha = (uint8_t)alpha;
     q->dark = (uint8_t)SDL_clamp(dark, 0, 255);

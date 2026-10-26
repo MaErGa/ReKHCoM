@@ -829,6 +829,17 @@ static void Ink(Rgba& part, const std::vector<unsigned>& ink) {
     }
 }
 
+/* pad=L,R: the picture is L + R GBA pixels wider than the sprite's box (port_hdsprites.c HdSpriteDef) */
+static int RecipePad(const std::string& ops) {
+    size_t p = ops.find("pad=");
+    int l = 0, r = 0;
+    if (p == std::string::npos || (p && ops[p - 1] != ';'))
+        return 0;
+    if (sscanf(ops.c_str() + p + 4, "%d,%d", &l, &r) != 2)
+        return 0;
+    return l + r;
+}
+
 /* The recipe's operations on the texture, in order (khhd_sprites.apply); false on a malformed recipe. */
 static bool ApplyRecipe(Rgba img, const std::string& ops, int boxW, int boxH, Rgba& out,
                         const std::function<bool(const std::string&, Rgba&)>& load) {
@@ -932,6 +943,8 @@ static bool ApplyRecipe(Rgba img, const std::string& ops, int boxW, int boxH, Rg
             for (size_t i = 0; i < img.px.size(); i += 4)
                 for (int k = 0; k < 3; k++)
                     img.px[i + k] = (unsigned char)(img.px[i + k] * ((c >> (16 - 8 * k)) & 255) / 255);
+        } else if (key == "pad" && v.size() == 2) {
+            /* the box's overhang (RecipePad): already in boxW */
         } else if (key == "place" && v.size() == 4) {
             memcpy(place, v.data(), sizeof(place));
         } else if (key == "scale" && v.size() == 1 && start > ops.size()) {
@@ -1105,7 +1118,7 @@ static int WriteSprites(const fs::path& hed, const fs::path& data) {
             }
             Rgba img, out;
             if (!ok || !extras.count(tex) || !DecodeTexture(extras[tex], index, img) ||
-                !ApplyRecipe(img, f[9], atoi(f[6].c_str()), atoi(f[7].c_str()), out, load))
+                !ApplyRecipe(img, f[9], atoi(f[6].c_str()) + RecipePad(f[9]), atoi(f[7].c_str()), out, load))
                 continue;
             size_t len = 0;
             void* png = tdefl_write_image_to_png_file_in_memory_ex(out.px.data(), out.w, out.h, 4, &len, 10, 0);

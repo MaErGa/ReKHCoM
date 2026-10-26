@@ -290,6 +290,17 @@ void mode_chkbtl_0() {
     if (!(gDebugFlags & DEBUG_FLAG_CHKBTL)) {
         func_08085FB0();
         InitDebugDecks();
+#ifdef PLATFORM_PC
+        {
+            /* test harness: KHCOM_BATTLE_DECK=0..2 picks the debug deck (2: the mixed one, magic and items) */
+            extern char* getenv(const char*);
+            extern int atoi(const char*);
+            void SetActiveDeckIndex(u8 index);
+            const char* deck = getenv("KHCOM_BATTLE_DECK");
+            if (deck)
+                SetActiveDeckIndex((u8)atoi(deck));
+        }
+#endif
         gGameState.progression.cp = 9999;
         gDebugFlags |= DEBUG_FLAG_CHKBTL;
         gGameState.progression.friendFlags = 0xFFFF;

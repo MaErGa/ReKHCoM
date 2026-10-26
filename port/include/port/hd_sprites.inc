@@ -1027,58 +1027,58 @@ static const HdSpriteDef kHdSprites[] = {
     { gBtlHpRikuFaceTiles, gBtlHpRikuFaceFrame0, "gBtlHpRikuFaceTiles_0", -12, -9, 40, 32, 3 },
     { gBtlHpRikuFaceTiles, gBtlHpRikuFaceFrame1, "gBtlHpRikuFaceTiles_1", -12, -9, 40, 32, 3 },
 #if defined(VERSION_EU) || defined(VERSION_US)
-    { gBtlPopCardBreakTiles, gBtlPopCardBreakFrame0, "gBtlPopCardBreakTiles", -24, -8, 48, 16, 3 },
+    { gBtlPopCardBreakTiles, gBtlPopCardBreakFrame0, "gBtlPopCardBreakTiles", -24, -8, 48, 16, 3, 15, 15 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopCardBreakGermanTiles, gBtlPopCardBreakGermanFrame0, "gBtlPopCardBreakGermanTiles", -24, -8, 48, 16, 3 },
+    { gBtlPopCardBreakGermanTiles, gBtlPopCardBreakGermanFrame0, "gBtlPopCardBreakGermanTiles", -24, -8, 48, 16, 3, 18, 18 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopCardBreakItalianTiles, gBtlPopCardBreakItalianFrame0, "gBtlPopCardBreakItalianTiles", -24, -8, 48, 16, 3 },
+    { gBtlPopCardBreakItalianTiles, gBtlPopCardBreakItalianFrame0, "gBtlPopCardBreakItalianTiles", -24, -8, 48, 16, 3, 16, 16 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopCardBreakSpanishTiles, gBtlPopCardBreakSpanishFrame0, "gBtlPopCardBreakSpanishTiles", -24, -8, 48, 16, 3 },
+    { gBtlPopCardBreakSpanishTiles, gBtlPopCardBreakSpanishFrame0, "gBtlPopCardBreakSpanishTiles", -24, -8, 48, 16, 3, 23, 23 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
-    { gBtlPopGuardTiles, gBtlPopGuardFrame0, "gBtlPopGuardTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopGuardTiles, gBtlPopGuardFrame0, "gBtlPopGuardTiles", -16, -8, 32, 16, 3, 7, 7 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopGuardFrenchTiles, gBtlPopGuardFrenchFrame0, "gBtlPopGuardFrenchTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopGuardFrenchTiles, gBtlPopGuardFrenchFrame0, "gBtlPopGuardFrenchTiles", -16, -8, 32, 16, 3, 9, 9 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopGuardGermanTiles, gBtlPopGuardGermanFrame0, "gBtlPopGuardGermanTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopGuardGermanTiles, gBtlPopGuardGermanFrame0, "gBtlPopGuardGermanTiles", -16, -8, 32, 16, 3, 9, 9 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopGuardItalianTiles, gBtlPopGuardItalianFrame0, "gBtlPopGuardItalianTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopGuardItalianTiles, gBtlPopGuardItalianFrame0, "gBtlPopGuardItalianTiles", -16, -8, 32, 16, 3, 9, 9 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopGuardSpanishTiles, gBtlPopGuardSpanishFrame0, "gBtlPopGuardSpanishTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopGuardSpanishTiles, gBtlPopGuardSpanishFrame0, "gBtlPopGuardSpanishTiles", -16, -8, 32, 16, 3, 9, 9 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
-    { gBtlPopRecoverTiles, gBtlPopRecoverFrame0, "gBtlPopRecoverTiles", -20, -8, 40, 16, 3 },
+    { gBtlPopRecoverTiles, gBtlPopRecoverFrame0, "gBtlPopRecoverTiles", -20, -8, 40, 16, 3, 9, 9 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopRecoverFrenchTiles, gBtlPopRecoverFrenchFrame0, "gBtlPopRecoverFrenchTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopRecoverFrenchTiles, gBtlPopRecoverFrenchFrame0, "gBtlPopRecoverFrenchTiles", -16, -8, 32, 16, 3, 13, 13 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopRecoverGermanTiles, gBtlPopRecoverGermanFrame0, "gBtlPopRecoverGermanTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopRecoverGermanTiles, gBtlPopRecoverGermanFrame0, "gBtlPopRecoverGermanTiles", -16, -8, 32, 16, 3, 9, 9 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopRecoverItalianTiles, gBtlPopRecoverItalianFrame0, "gBtlPopRecoverItalianTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopRecoverItalianTiles, gBtlPopRecoverItalianFrame0, "gBtlPopRecoverItalianTiles", -16, -8, 32, 16, 3, 2, 2 },
 #endif
 #if defined(VERSION_EU)
-    { gBtlPopRecoverSpanishTiles, gBtlPopRecoverSpanishFrame0, "gBtlPopRecoverSpanishTiles", -16, -8, 32, 16, 3 },
+    { gBtlPopRecoverSpanishTiles, gBtlPopRecoverSpanishFrame0, "gBtlPopRecoverSpanishTiles", -16, -8, 32, 16, 3, 17, 17 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
-    { gLvupLogoTiles, gLvupLogoFrame0, "gLvupLogoTiles", -32, -8, 64, 16, 3 },
+    { gLvupLogoTiles, gLvupLogoFrame0, "gLvupLogoTiles", -32, -8, 64, 16, 3, 23, 23 },
 #endif
 #if defined(VERSION_EU)
-    { gLvupLogoFrenchTiles, gLvupLogoFrame0, "gLvupLogoFrenchTiles", -32, -8, 64, 16, 3 },
+    { gLvupLogoFrenchTiles, gLvupLogoFrame0, "gLvupLogoFrenchTiles", -32, -8, 64, 16, 3, 17, 17 },
 #endif
 #if defined(VERSION_EU)
-    { gLvupLogoGermanTiles, gLvupLogoFrame0, "gLvupLogoGermanTiles", -32, -8, 64, 16, 3 },
+    { gLvupLogoGermanTiles, gLvupLogoFrame0, "gLvupLogoGermanTiles", -32, -8, 64, 16, 3, 33, 33 },
 #endif
 #if defined(VERSION_EU)
-    { gLvupLogoItalianTiles, gLvupLogoFrame0, "gLvupLogoItalianTiles", -32, -8, 64, 16, 3 },
+    { gLvupLogoItalianTiles, gLvupLogoFrame0, "gLvupLogoItalianTiles", -32, -8, 64, 16, 3, 19, 19 },
 #endif
 #if defined(VERSION_EU)
     { gLvupLogoSpanishTiles, gLvupLogoFrame0, "gLvupLogoSpanishTiles", -32, -8, 64, 16, 3 },
@@ -1290,10 +1290,10 @@ static const HdSpriteDef kHdSprites[] = {
     { gMapSelectTitleSpanishTiles, gMapSelectTitleSpanishFrame0, "gMapSelectTitleSpanishBanner", 0, 0, 128, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gWorldWarpBarSpanishTiles, gWorldWarpBarSpanishFrame0, "gWorldWarpBarSpanishBanner", 0, 0, 72, 16, 5 },
+    { gWorldWarpBarSpanishTiles, gWorldWarpBarSpanishFrame0, "gWorldWarpBarSpanishBanner", 0, 0, 72, 16, 5, 0, 10 },
 #endif
 #if defined(VERSION_EU)
-    { gWorldselectTitleSpanishTiles, gWorldselectTitleSpanishFrame0, "gWorldselectTitleSpanishBanner", 0, 0, 120, 16, 5 },
+    { gWorldselectTitleSpanishTiles, gWorldselectTitleSpanishFrame0, "gWorldselectTitleSpanishBanner", 0, 0, 120, 16, 5, 0, 19 },
 #endif
 #if defined(VERSION_EU)
     { gLevelUpHeaderSpanishTiles, gLevelUpHeaderSpanishFrame10, "gLevelUpHeaderSpanishBanner", 0, 0, 80, 16, 5 },
@@ -1329,7 +1329,7 @@ static const HdSpriteDef kHdSprites[] = {
     { gMapSelectTitleFrenchTiles, gMapSelectTitleFrenchFrame0, "gMapSelectTitleFrenchBanner", 0, 0, 128, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gWorldselectTitleFrenchTiles, gWorldselectTitleFrenchFrame0, "gWorldselectTitleFrenchBanner", 0, 0, 120, 16, 5 },
+    { gWorldselectTitleFrenchTiles, gWorldselectTitleFrenchFrame0, "gWorldselectTitleFrenchBanner", 0, 0, 120, 16, 5, 0, 19 },
 #endif
 #if defined(VERSION_EU)
     { gLevelUpHeaderFrenchTiles, gLevelUpHeaderFrenchFrame10, "gLevelUpHeaderFrenchBanner", 0, 0, 80, 16, 5 },
@@ -1338,13 +1338,13 @@ static const HdSpriteDef kHdSprites[] = {
     { gPremireChanceTitleFrenchTiles, gPremireChanceTitleFrenchFrame0, "gPremireChanceTitleFrenchBanner", 0, 0, 104, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gDeckTitleBannerFrenchTiles, gDeckTitleBannerFrenchFrame0, "gDeckTitleBannerFrenchBanner", 0, 0, 104, 16, 5 },
+    { gDeckTitleBannerFrenchTiles, gDeckTitleBannerFrenchFrame0, "gDeckTitleBannerFrenchBanner", 0, 0, 104, 16, 5, 0, 10 },
 #endif
 #if defined(VERSION_EU)
     { gRikuDeckTitleBannerFrenchTiles, gRikuDeckTitleBannerFrenchFrame0, "gRikuDeckTitleBannerFrenchBanner", 0, 0, 104, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gJiminyTitleLocalizedTiles, gJiminyTitleLocalizedFrame0, "gJiminyTitleLocalizedFrame0Banner", 0, 0, 72, 16, 5 },
+    { gJiminyTitleLocalizedTiles, gJiminyTitleLocalizedFrame0, "gJiminyTitleLocalizedFrame0Banner", 0, 0, 72, 16, 5, 0, 7 },
 #endif
 #if defined(VERSION_EU)
     { gMapMenuTitleGermanTiles, gMapMenuTitleGermanFrame0, "gMapMenuTitleGermanBanner", 0, 0, 64, 16, 5 },
@@ -1356,19 +1356,19 @@ static const HdSpriteDef kHdSprites[] = {
     { gMapInspectBarDeTiles, gMapInspectBarDeFrame5, "gMapInspectBarDeBanner", 0, 0, 96, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gMenuLoadTitleGermanTiles, gMenuLoadTitleGermanFrame0, "gMenuLoadTitleGermanBanner", 0, 0, 64, 16, 5 },
+    { gMenuLoadTitleGermanTiles, gMenuLoadTitleGermanFrame0, "gMenuLoadTitleGermanBanner", 0, 0, 64, 16, 5, 0, 7 },
 #endif
 #if defined(VERSION_EU)
-    { gMapSaveTitleGermanTiles, gMapSaveTitleGermanFrame0, "gMapSaveTitleGermanBanner", 0, 0, 96, 16, 5 },
+    { gMapSaveTitleGermanTiles, gMapSaveTitleGermanFrame0, "gMapSaveTitleGermanBanner", 0, 0, 96, 16, 5, 0, 13 },
 #endif
 #if defined(VERSION_EU)
     { gMapSelectTitleGermanTiles, gMapSelectTitleGermanFrame0, "gMapSelectTitleGermanBanner", 0, 0, 128, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gWorldWarpBarGermanTiles, gWorldWarpBarGermanFrame0, "gWorldWarpBarGermanBanner", 0, 0, 96, 16, 5 },
+    { gWorldWarpBarGermanTiles, gWorldWarpBarGermanFrame0, "gWorldWarpBarGermanBanner", 0, 0, 96, 16, 5, 0, 17 },
 #endif
 #if defined(VERSION_EU)
-    { gWorldselectTitleGermanTiles, gWorldselectTitleGermanFrame0, "gWorldselectTitleGermanBanner", 0, 0, 128, 16, 5 },
+    { gWorldselectTitleGermanTiles, gWorldselectTitleGermanFrame0, "gWorldselectTitleGermanBanner", 0, 0, 128, 16, 5, 0, 22 },
 #endif
 #if defined(VERSION_EU)
     { gPremireChanceTitleGermanTiles, gPremireChanceTitleGermanFrame0, "gPremireChanceTitleGermanBanner", 0, 0, 120, 16, 5 },
@@ -1377,7 +1377,7 @@ static const HdSpriteDef kHdSprites[] = {
     { gMsTopBarTiles, gMsTopBarGermanFrame0, "gMsTopBarGermanBanner", 0, 0, 104, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gDeckTitleBannerGermanTiles, gDeckTitleBannerGermanFrame0, "gDeckTitleBannerGermanBanner", 0, 0, 104, 16, 5 },
+    { gDeckTitleBannerGermanTiles, gDeckTitleBannerGermanFrame0, "gDeckTitleBannerGermanBanner", 0, 0, 104, 16, 5, 0, 10 },
 #endif
 #if defined(VERSION_EU)
     { gRikuDeckTitleBannerGermanTiles, gRikuDeckTitleBannerGermanFrame0, "gRikuDeckTitleBannerGermanBanner", 0, 0, 104, 16, 5 },
@@ -1398,7 +1398,7 @@ static const HdSpriteDef kHdSprites[] = {
     { gMenuLoadTitleItalianTiles, gMenuLoadTitleItalianFrame0, "gMenuLoadTitleItalianBanner", 0, 0, 64, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gMapSaveTitleItalianTiles, gMapSaveTitleItalianFrame0, "gMapSaveTitleItalianBanner", 0, 0, 64, 16, 5 },
+    { gMapSaveTitleItalianTiles, gMapSaveTitleItalianFrame0, "gMapSaveTitleItalianBanner", 0, 0, 64, 16, 5, 0, 5 },
 #endif
 #if defined(VERSION_EU)
     { gMapSelectTitleItalianTiles, gMapSelectTitleItalianFrame0, "gMapSelectTitleItalianBanner", 0, 0, 128, 16, 5 },
@@ -1416,16 +1416,16 @@ static const HdSpriteDef kHdSprites[] = {
     { gMsTopBarTiles, gMsTopBarItalianFrame0, "gMsTopBarItalianBanner", 0, 0, 112, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gDeckTitleBannerItalianTiles, gDeckTitleBannerItalianFrame0, "gDeckTitleBannerItalianBanner", 0, 0, 104, 16, 5 },
+    { gDeckTitleBannerItalianTiles, gDeckTitleBannerItalianFrame0, "gDeckTitleBannerItalianBanner", 0, 0, 104, 16, 5, 0, 37 },
 #endif
 #if defined(VERSION_EU)
-    { gRikuDeckTitleBannerItalianTiles, gRikuDeckTitleBannerItalianFrame0, "gRikuDeckTitleBannerItalianBanner", 0, 0, 104, 16, 5 },
+    { gRikuDeckTitleBannerItalianTiles, gRikuDeckTitleBannerItalianFrame0, "gRikuDeckTitleBannerItalianBanner", 0, 0, 104, 16, 5, 0, 41 },
 #endif
 #if defined(VERSION_EU)
     { gLevelUpHeaderItalianTiles, gLevelUpHeaderItalianFrame10, "gLevelUpHeaderItalianBanner", 0, 0, 80, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gJiminyTitleLocalizedTiles, gJiminyTitleLocalizedFrame6, "gJiminyTitleLocalizedFrame6Banner", 0, 0, 80, 16, 5 },
+    { gJiminyTitleLocalizedTiles, gJiminyTitleLocalizedFrame6, "gJiminyTitleLocalizedFrame6Banner", 0, 0, 80, 16, 5, 0, 12 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
     { gMapMenuTitleTiles, gMapMenuTitleFrame0, "gMapMenuTitleBanner", 0, 0, 64, 16, 5 },
@@ -1443,7 +1443,7 @@ static const HdSpriteDef kHdSprites[] = {
     { gMenuLoadTitleTiles, gMenuLoadTitleFrame0, "gMenuLoadTitleBanner", 0, 0, 64, 16, 5 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
-    { gJiminyTitleTiles, gJiminyTitleFrame0, "gJiminyTitleBanner", 0, 0, 104, 16, 5 },
+    { gJiminyTitleTiles, gJiminyTitleFrame0, "gJiminyTitleBanner", 0, 0, 104, 16, 5, 0, 7 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
     { gMapSaveTitleTiles, gMapSaveTitleFrame0, "gMapSaveTitleBanner", 0, 0, 64, 16, 5 },
@@ -1455,7 +1455,7 @@ static const HdSpriteDef kHdSprites[] = {
     { gWorldWarpBarTiles, gWorldWarpBarFrame0, "gWorldWarpBarBanner", 0, 0, 96, 16, 5 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
-    { gWorldselectTitleTiles, gWorldselectTitleFrame0, "gWorldselectTitleBanner", 0, 0, 112, 16, 5 },
+    { gWorldselectTitleTiles, gWorldselectTitleFrame0, "gWorldselectTitleBanner", 0, 0, 112, 16, 5, 0, 16 },
 #endif
 #if defined(VERSION_EU) || defined(VERSION_US)
     { gLevelUpHeaderTiles, gLevelUpHeaderFrame10, "gLevelUpHeaderBanner", 0, 0, 80, 16, 5 },
@@ -1494,7 +1494,7 @@ static const HdSpriteDef kHdSprites[] = {
     { gDeckMenuTextFrenchTiles, gDeckRemoveGridMap, "gDeckRemoveGridFrenchBanner", 0, 0, 112, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gDeckMenuTextFrenchTiles, gDeckAddGridMap, "gDeckAddGridFrenchBanner", 0, 0, 104, 16, 5 },
+    { gDeckMenuTextFrenchTiles, gDeckAddGridMap, "gDeckAddGridFrenchBanner", 0, 0, 104, 16, 5, 0, 20 },
 #endif
 #if defined(VERSION_EU)
     { gDeckMenuTextGermanTiles, gDeckRemoveGridMap, "gDeckRemoveGridGermanBanner", 0, 0, 96, 16, 5 },
@@ -1506,7 +1506,7 @@ static const HdSpriteDef kHdSprites[] = {
     { gDeckMenuTextItalianTiles, gDeckRemoveGridMap, "gDeckRemoveGridItalianBanner", 0, 0, 96, 16, 5 },
 #endif
 #if defined(VERSION_EU)
-    { gDeckMenuTextItalianTiles, gDeckAddGridMap, "gDeckAddGridItalianBanner", 0, 0, 104, 16, 5 },
+    { gDeckMenuTextItalianTiles, gDeckAddGridMap, "gDeckAddGridItalianBanner", 0, 0, 104, 16, 5, 0, 18 },
 #endif
     { gTitleMenuSelectedBarTiles, NULL, "gTitleMenuSelectedBar", 0, 8, 128, 8, 2 },
 #include "port/synthesis_requirement_hd_entries.inc"
