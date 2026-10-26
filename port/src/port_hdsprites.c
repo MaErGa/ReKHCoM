@@ -190,9 +190,68 @@ static int Load(int i) {
     return 1;
 }
 
+/* The HD title's illustration (assets/mods/title-sora.png: the CoM poster, a mod, port/assets/mods/LEEME.md), drawn
+   on the game's picture under every other HD part, in place of the cartridge's title art (port_ppu.c TitleArtQueue). */
+static SDL_Texture *sArt, *sArtWhite;
+static int sArtTried, sArtW, sArtH;
+static HdSpriteDraw sArtDraws[2];
+static int sArtCount;
+
+int PortHdTitleArtReady(float* aspect) {
+    if (!sArtTried && sRenderer) {
+        size_t size = 0;
+        void* data = PortLoadAsset("assets/mods/title-sora.png", &size);
+        int w = 0, h = 0, n = 0, k;
+        unsigned char* px = data && size <= 0x7FFFFFFF ? stbi_load_from_memory(data, (int)size, &w, &h, &n, 4) : NULL;
+        SDL_Surface* s = px ? SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, px, w * 4) : NULL;
+        sArtTried = 1;
+        if (s) {
+            sArt = SDL_CreateTextureFromSurface(sRenderer, s);
+            for (k = 0; k < w * h; k++) px[k * 4] = px[k * 4 + 1] = px[k * 4 + 2] = 255;
+            sArtWhite = SDL_CreateTextureFromSurface(sRenderer, s);
+            SDL_DestroySurface(s);
+        }
+        if (px) stbi_image_free(px);
+        SDL_free(data);
+        if (sArt && sArtWhite) {
+            SDL_SetTextureBlendMode(sArt, SDL_BLENDMODE_BLEND);
+            SDL_SetTextureBlendMode(sArtWhite, SDL_BLENDMODE_BLEND);
+            SDL_SetTextureScaleMode(sArt, (SDL_ScaleMode)PortSmoothScaleMode());
+            SDL_SetTextureScaleMode(sArtWhite, (SDL_ScaleMode)PortSmoothScaleMode());
+            sArtW = w;
+            sArtH = h;
+        } else {
+            if (sArt) SDL_DestroyTexture(sArt);
+            if (sArtWhite) SDL_DestroyTexture(sArtWhite);
+            sArt = sArtWhite = NULL;
+            PortLog("HD title: assets/mods/title-sora.png missing, the cartridge's illustration stays");
+        }
+    }
+    if (aspect && sArtH)
+        *aspect = (float)sArtW / sArtH;
+    return sArt != NULL;
+}
+
+void PortHdTitleArtQueue(const float* x, const float* y, int alpha, int dark, int white) {
+    HdSpriteDraw* q;
+    if (sArtCount == 2)
+        return;
+    q = &sArtDraws[sArtCount++];
+    q->id = 0; /* not a table sprite: only its corners and fades are used */
+    memcpy(q->x, x, sizeof(q->x));
+    memcpy(q->y, y, sizeof(q->y));
+    q->u0 = q->v0 = 0.0f;
+    q->u1 = q->v1 = 1.0f;
+    q->alpha = (uint8_t)SDL_clamp(alpha, 0, 255);
+    q->dark = (uint8_t)SDL_clamp(dark, 0, 255);
+    q->white = (uint8_t)SDL_clamp(white, 0, 255);
+}
+
 void PortHdSpritesBegin(int layer) {
     if ((unsigned)layer < HD_LAYERS)
         sDrawCount[layer] = 0;
+    if (layer == 0)
+        sArtCount = 0;
 }
 
 /* Test aid (KHCOM_HDDRAWLOG=frame,frame,...): this frame's HD drawing is logged ("hd draw <frame> <name> layer <n>",
@@ -515,6 +574,14 @@ void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, fl
         PortHdGaugeDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
     if (layer == 1)
         PortHdEnemyGaugeDraw(renderer, ox, oy, scale, 1.0f - (darken > 0 ? darken / 16.0f : 0.0f));
+    for (i = 0; layer == 0 && i < sArtCount && sArt; i++) { /* the title's illustration, under everything */
+        const HdSpriteDraw* q = &sArtDraws[i];
+        float shade = 1.0f - SDL_max(darken > 0 ? darken / 16.0f : 0.0f, q->dark / 255.0f);
+        float white = SDL_max(brighten > 0 ? brighten / 16.0f : 0.0f, q->white / 255.0f);
+        Quad(sArt, q, ox, oy, scale, (SDL_FColor){ shade, shade, shade, q->alpha / 255.0f });
+        if (white > 0)
+            Quad(sArtWhite, q, ox, oy, scale, (SDL_FColor){ 1, 1, 1, q->alpha / 255.0f * white });
+    }
     for (i = 0; i < sDrawCount[layer]; i++) {
         const HdSpriteDraw* q = &sDraws[layer][i];
         HdSpriteState* st = &sState[q->id];

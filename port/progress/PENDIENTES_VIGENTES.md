@@ -5,6 +5,43 @@ archivos anteriores). Método de depuración: DEBUG_WORKFLOW.md. Cola de arte: `
 list` (Atlas). Reglas del usuario: REGLAS_DEL_USUARIO.md. Última prerelease: **v2.0-pre19** (26/10, Windows, Linux,
 Steam Deck; zip limpio en KHCoMPC).
 
+## TÍTULO HD — estado y cómo seguir (rama `claude/title-hd`, actualizado en cada paso)
+
+**Hecho y subido en la rama:**
+1. `port/assets/mods/title-sora.png` (+ LEEME.md): el póster del usuario con el papel blanco transparente y bordes
+   fundidos (arriba 6 %, abajo 7 %, izquierda 30 % bajo el logo, derecha 5 %); lo genera `port/tools/make_title_art.py`
+   (solo PIL; la fuente es KHCoMPC/x5zh3428mzyf1.jpg). Registrado en `port/tools/core_assets.py` (paquete + recursos).
+2. `port_hdsprites.c`: `PortHdTitleArtReady()` (carga con PortLoadAsset + stb, textura y copia blanca) y
+   `PortHdTitleArtQueue()`; se dibuja en la capa 0 antes que todas las piezas HD (bajo el logo HD).
+3. `port_ppu.c` `TitleArtQueue()` (llamado al principio de QueueMainHdParts): solo con `sTitleArtFade` (título de
+   Sora) y `gPortConfig.hdTitle`; BG0 mientras `sTitleArtFadeBg0` (primer plano de la intro) y BG1 (arte completo).
+   Encuadre final: izquierda 112.5, arriba -4, alto 168 (píxeles GBA, + originX/Y del lienzo). Primer plano: 1.75x con
+   la cara (55 %, 22 % del póster) en (200, 40). Durante el fundido cruzado (BLDALPHA, 16 pasos) interpola del primer
+   plano al final con smoothstep (zoom de salida en vez del doble fundido). Blanco/negro: BLDY sobre BG0/BG1 y
+   PortPaletteFade de gTitleSoraBgPalette. Oculta BG0/BG1 del cartucho (bgOn) y en MainHdOver vuelve a poner encima lo
+   que el juego dibuja (sOccBg<4 o sprite).
+
+**Falta (en orden) y cómo:**
+- A. Verificar en capturas: `D:/01Claude/ReKHCoM-build/titlehd` (khcom.exe copiado de build/pc-main, ROM baserom.gba,
+  assets/mods copiado). Compilar: desde la raíz del repo `../toolchain/bin/ninja.exe -f build/pc-main/build.ninja`.
+  Capturas: SDL_AUDIO_DRIVER=dummy SDL_VIDEO_DRIVER=offscreen KHCOM_WINDOW=1920x1080 KHCOM_HD_SPRITES=D:/01Claude/
+  ReKHCoM-build/hd-completo/sprites KHCOM_SHOTS/KHCOM_PRESENTSHOTS (mirar el nombre exacto de la variable de captura
+  de ventana en port_main.c HarnessFrame si no sale present_*). Fases: 600-760 zoom del logo, 840 primer plano,
+  880-920 fundido, 960+ arte completo, START en 1250, menú 1300. Ajustar kFinal / primer plano a ojo frente al GBA.
+- B. Ratios: probar 1920x1080, 2560x1080, 3840x1080, 1440x1080 (4:3), vista original/ancha; el arte no debe cortarse
+  feo a la derecha (si se corta, anclarlo al borde derecho del lienzo en vez de a la posición GBA).
+- C. Piezas HD (recetas en port/data/hd_sprites.tsv, grupo 2, como gTitleLogo*): FO0505 `<lang>_title.imz` trae
+  NUEVA PARTIDA / CARGAR PARTIDA / ESCENAS / ATRÁS / DEVELOPED BY SQUARE ENIX (UK/SP/FR/GR/IT). Mapear a
+  gTitleMenuEntry<lang>Frame0..5 y gTitleMenuSelectedEntry<lang>Frame*, con `ink=` del color del cartucho.
+  Exportar las piezas del juego: KHCOM_HDSPRITE_EXPORT=<dir> + `python port/tools/hdsprite_catalog.py <dir> --region eu`
+  (cajas en catalog.tsv). Para ver Sora/Riku/Cargar hace falta una partida guardada en la carpeta de prueba.
+  Lo que no existe en Re:CoM (Pulsa Start, Sora, Riku, Combate, «/ Jupiter», el aviso SELECT del port) se dibuja con
+  KHMenu.otf en el color del cartucho (negro con sombra gris), con el texto dentro de su caja (el usuario marcó que
+  SELECT Opciones se salía) y sin el píxel suelto bajo el cuadro naranja de Pulsa Start.
+- D. Atlas: subir capturas reales (no la maqueta) con art_review/import_image.py; integrar solo lo aprobado; PR a
+  main + nota en LOGICA_APROBADOS.md.
+- E. Riku (título de Riku) sigue en píxeles: no hay arte HD.
+
 ## TRASPASO — Claude, 26/10 mediodía: TÍTULO HD (prioridad del usuario)
 
 - **Pedido:** título completo en HD con el mod HD: fondo, botones (Nueva partida, Sora, Riku, Cargar, Combate),

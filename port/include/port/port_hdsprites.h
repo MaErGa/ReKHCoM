@@ -35,6 +35,10 @@ void PortPaletteFade(const uint16_t* original, const volatile uint16_t* current,
 void PortHdSpritesDraw(SDL_Renderer* renderer, int layer, float ox, float oy, float scale, int darken, int brighten);
 #endif
 void PortHdSpritesShutdown(void);
+/* The HD title's illustration (assets/mods/title-sora.png): 1 once it is loaded (its width/height in *aspect); queued
+   on layer 0 with its four corners, drawn there under every other part. */
+int PortHdTitleArtReady(float* aspect);
+void PortHdTitleArtQueue(const float* x, const float* y, int alpha, int dark, int white);
 /* The HP ring (Re:CoM's player gauge) around this HD face, filled to ratio/256 this frame: 1 when it is drawn (HD
    cards on, the face's HD picture there), so the cartridge's gauge is left out; 0 keeps it. */
 int PortHdHpRing(const void* faceTiles, const void* faceFrame, int ratio);
