@@ -8,6 +8,7 @@ def core_assets():
     files = {
         'assets/boxart.jpg': ROOT / 'port/decompui/assets/boxart.jpg',
         'assets/logo.png': ROOT / 'port/decompui/assets/logo.png',
+        'assets/steam_header.jpg': ROOT / 'port/decompui/assets/steam_header.jpg',  # Add to Steam: the wide capsule
         'assets/achievements/badges.png': ROOT / 'port/assets/achievements/badges.png',
         'assets/hd/title/art/sora.png': ROOT / 'port/assets/hd/title/art/sora.png',  # the HD title's illustration (mod)
     }

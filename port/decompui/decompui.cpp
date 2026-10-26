@@ -2770,6 +2770,40 @@ static void CreateDesktopShortcut() {
 #endif
 }
 
+/* The library's logo with the HD mod: the title's HD logo (Re:CoM's, without its "Re:", imported from the player's own
+   copy: hd/sprites/gTitleLogoBgTiles.png, never shipped), cut to what it draws. false: not imported, ours stays. */
+static bool SteamHdLogo(const fs::path& to) {
+    std::ifstream in(sRoot / "hd" / "sprites" / "gTitleLogoBgTiles.png", std::ios::binary);
+    std::vector<unsigned char> file((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    int w = 0, h = 0, n = 0, x0, y0, x1 = -1, y1 = -1;
+    unsigned char* px = file.empty() ? nullptr : stbi_load_from_memory(file.data(), (int)file.size(), &w, &h, &n, 4);
+    if (!px)
+        return false;
+    x0 = w; y0 = h;
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            if (px[(y * w + x) * 4 + 3] > 8) {
+                x0 = std::min(x0, x); x1 = std::max(x1, x);
+                y0 = std::min(y0, y); y1 = std::max(y1, y);
+            }
+    bool ok = false;
+    if (x1 >= x0 && y1 >= y0) {
+        int cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+        std::vector<unsigned char> cut((size_t)cw * ch * 4);
+        for (int y = 0; y < ch; y++)
+            memcpy(&cut[(size_t)y * cw * 4], px + ((size_t)(y0 + y) * w + x0) * 4, (size_t)cw * 4);
+        size_t len = 0;
+        void* png = tdefl_write_image_to_png_file_in_memory_ex(cut.data(), cw, ch, 4, &len, 6, 0);
+        if (png) {
+            std::ofstream(to, std::ios::binary | std::ios::trunc).write((const char*)png, (std::streamsize)len);
+            mz_free(png);
+            ok = true;
+        }
+    }
+    stbi_image_free(px);
+    return ok;
+}
+
 /* ---- "Add to Steam": a non-Steam game in Steam's shortcuts.vdf (binary KeyValues: 0x00 a map, 0x01 a string,
    0x02 an int32, 0x07 a uint64, 0x08 the map's end; names and strings end with a zero) ---- */
 struct Vdf {
@@ -3072,7 +3106,10 @@ static void AddToSteam() {
         fs::create_directories(config / "grid", ec);
         std::string id = std::to_string(appid);
         fs::copy_file(sRoot / "assets" / "boxart.jpg", config / "grid" / (id + "p.jpg"), fs::copy_options::overwrite_existing, ec);
-        fs::copy_file(sRoot / "assets" / "logo.png", config / "grid" / (id + "_logo.png"), fs::copy_options::overwrite_existing, ec);
+        /* the wide capsule: a battle as the game shows it (x4, the cartridge's art) */
+        fs::copy_file(sRoot / "assets" / "steam_header.jpg", config / "grid" / (id + ".jpg"), fs::copy_options::overwrite_existing, ec);
+        if (!SteamHdLogo(config / "grid" / (id + "_logo.png")))
+            fs::copy_file(sRoot / "assets" / "logo.png", config / "grid" / (id + "_logo.png"), fs::copy_options::overwrite_existing, ec);
         done++;
     }
     sSteamState = -1;
