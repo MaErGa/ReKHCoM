@@ -2111,10 +2111,11 @@ static void Present(void) {
     PortFbPresent(sRenderer);
 #endif
     {
-        /* KHCOM_PRESENTSHOTS=a-b (harness): the window as shown, frames a..b (present_<frame>.bmp) */
+        /* KHCOM_PRESENTSHOTS=a-b[/step] (harness): the window as shown, frames a..b (present_<frame>.bmp) */
         const char* range = SDL_getenv("KHCOM_PRESENTSHOTS");
-        int from = 0, to = -1;
-        if (range && SDL_sscanf(range, "%d-%d", &from, &to) == 2 && (int)sFrameCount >= from && (int)sFrameCount <= to) {
+        int from = 0, to = -1, step = 1;
+        if (range && SDL_sscanf(range, "%d-%d/%d", &from, &to, &step) >= 2 && (int)sFrameCount >= from &&
+            (int)sFrameCount <= to && ((int)sFrameCount - from) % (step > 0 ? step : 1) == 0) {
             SDL_Surface* s = SDL_RenderReadPixels(sRenderer, NULL);
             if (s) {
                 char name[64];

@@ -68,6 +68,7 @@ static int GroupOn(int group) {
     case 4: return gPortConfig.hdCards; /* the world select's worlds */
     case 5: return gPortConfig.hdCards; /* the menus' title banners, in Re:CoM's lettering */
     case 6: return gPortConfig.hdCards; /* the menus' small cards: Re:CoM's picture in the window, the cartridge's frame */
+    case 7: return gPortConfig.hdTitle && gPortConfig.hdHud; /* the title's words, ours (embedded: TitleWordAsset) */
     default: return 0;
     }
 }
@@ -85,6 +86,14 @@ const char* PortHdSpritePath(char* file, size_t size, const char* name) {
     return PortConfigPath(file);
 }
 
+/* The HD title's words (group 7, make_title_words.py): pictures of the game's own, assets/hd/title/words/<name>.png
+   (embedded), not imported from Re:CoM. */
+static void* TitleWordAsset(const char* name, size_t* size) {
+    char file[160];
+    SDL_snprintf(file, sizeof(file), "assets/hd/title/words/%s.png", name);
+    return PortLoadAsset(file, size);
+}
+
 int PortHdSpriteFind(const void* tiles, const void* frame) {
     int i;
     if (!tiles || (!gPortConfig.hdCards && !gPortConfig.hdTitle))
@@ -96,9 +105,16 @@ int PortHdSpriteFind(const void* tiles, const void* frame) {
         if (!sState[i].present) {
             char file[160];
             FILE* f;
-            f = fopen(SpritePath(file, sizeof(file), d->name), "rb");
-            sState[i].present = f ? 2 : 1;
-            if (f) fclose(f);
+            if (d->group == 7) {
+                size_t size;
+                void* data = TitleWordAsset(d->name, &size);
+                sState[i].present = data ? 2 : 1;
+                SDL_free(data);
+            } else {
+                f = fopen(SpritePath(file, sizeof(file), d->name), "rb");
+                sState[i].present = f ? 2 : 1;
+                if (f) fclose(f);
+            }
         }
         return sState[i].present == 2 ? i + 1 : 0;
     }
@@ -142,7 +158,14 @@ static int Load(int i) {
     unsigned char* px;
     SDL_Surface* s;
     size_t need;
-    px = stbi_load(SpritePath(file, sizeof(file), kHdSprites[i].name), &w, &h, &n, 4);
+    if (kHdSprites[i].group == 7) {
+        size_t size = 0;
+        void* data = TitleWordAsset(kHdSprites[i].name, &size);
+        SDL_snprintf(file, sizeof(file), "%s", kHdSprites[i].name);
+        px = data && size <= 0x7FFFFFFF ? stbi_load_from_memory(data, (int)size, &w, &h, &n, 4) : NULL;
+        SDL_free(data);
+    } else
+        px = stbi_load(SpritePath(file, sizeof(file), kHdSprites[i].name), &w, &h, &n, 4);
     if (!px || w < 1 || h < 1 || w > 4096 || h > 4096) {
         if (px) stbi_image_free(px);
         sState[i].present = 1;
