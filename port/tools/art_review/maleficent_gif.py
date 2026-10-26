@@ -48,7 +48,8 @@ for slot, ticks in timeline:
     frame = canvas.crop(crop).convert('RGB')
     frame = frame.resize((frame.width * 3, frame.height * 3), Image.Resampling.NEAREST)
     frames.append(frame.quantize(palette=fixed, dither=Image.Dither.NONE))
-    elapsed += ticks
+    # MdAnimUpdate advances only when --timer < 0: each entry lasts duration+1.
+    elapsed += ticks + 1
     milliseconds = round(elapsed * 1000 / 60 / 10) * 10
     durations.append(milliseconds - previous_ms)
     previous_ms = milliseconds
